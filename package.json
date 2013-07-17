@@ -1,0 +1,22 @@
+{
+  "name": "jsnotebook",
+  "version": "0.0.0",
+  "description": "jsnotebook ==========",
+  "private": true,
+  "dependencies": {
+    "express": "~3.3.4",
+    "github": "~0.1.10"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/eastridge/jsnotebook.git"
+  },
+  "author": "",
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "e3b8735cdcdc7b9df5ac062f446e1033de92bb96"
+}
