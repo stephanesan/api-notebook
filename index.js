@@ -10,6 +10,16 @@ var express = require('express')
 var GITHUB_CLIENT_ID = "a7f8014691fcc748aced"
 var GITHUB_CLIENT_SECRET = "ea758e7cde897016e56dd816c901d82c82568964";
 
+var token = '';
+
+var GitHubApi = require("github");
+
+var github = new GitHubApi({
+    // required
+    version: "3.0.0",
+    // optional
+    timeout: 15000
+});
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -38,6 +48,11 @@ passport.use(new GitHubStrategy({
     scope: ["gist"]
   },
   function(accessToken, refreshToken, profile, done) {
+
+    github.authenticate({
+      type: "oauth",
+      token: accessToken
+    });
     // asynchronous verification, for effect...
     process.nextTick(function () {
       
@@ -71,7 +86,51 @@ app.configure(function() {
 
 
 app.get('/', function(req, res){
-  res.render('index', { user: req.user });
+  res.redirect('/index.html');
+});
+
+//retrieve all gists
+app.get('/gists', ensureAuthenticated, function(req, res) {
+  github.gists.getAll({}, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+//create a gist
+app.post('/gists', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    "description": "the description for this gist",
+    "public": false,
+    "files": {
+      "testgist.txt": {
+        "content": "testing creating a gist over api"
+      }
+    } 
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+//update a gist
+app.put('/gists/:id', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    id: req.params.id,
+    "files": {
+      "testgist.txt": {
+        "content": "testing creating a gist over api"
+      }
+    } 
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+//delete a gist
+app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    id: req.params.id
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
 });
 
 app.get('/account', ensureAuthenticated, function(req, res){
