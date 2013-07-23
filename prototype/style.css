@@ -61,12 +61,11 @@
   display: block;
   width: 120px;
   height: 30px;
-  margin: 5px;
-  border: 1px solid #000;
-  border-radius: 3px;
+  margin: 2px 5px;
+  border: 0;
 
-  background-color: #eee;
-  background-image: -webkit-linear-gradient(top, rgba(255,255,255, 0.2), rgba(0,0,0,0.2));
+  background: transparent;
+  color: #fff;
   font-size: 12px;
   line-height: 22px;
   text-align: left;
