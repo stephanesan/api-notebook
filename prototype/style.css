@@ -17,6 +17,7 @@
   width: 100%;
   height: 0;
   margin: 0;
+  min-height: 3em;
   padding: 10px;
   border: 1px solid #ccc;
   
@@ -27,6 +28,10 @@
 
 .cell textarea:focus {
   outline: none;
+}
+
+.pending {
+  visibility: hidden;
 }
 
 .cell-controls {
@@ -97,6 +102,15 @@
   font-size: 13px;
 }
 
+.cell div,
+.cell pre {
+  margin-left: 32px;
+}
+
+.cell-code textarea:before {
+  content: "&gt;"
+}
+
 .cell-text textarea {
   border: 1px solid transparent;
 
@@ -111,14 +125,12 @@
 .cell-results {
   position: relative;
 
-  margin: 0 -1px;
-  padding: 10px 10px 10px 35px;
+  padding: 10px 10px 10px 2em;
   border: 1px solid #ccc;
   border-top: 0;
   border-radius: 0 0 3px 3px;
 
-  background: #333;
-  color: #fff;
+  color: #aaa;
   font-family: Source Code Pro, monospace, serif;
   font-size: 13px;
 }
@@ -153,16 +165,12 @@
 }
 
 .cell:hover .cell-handle {
-  display: block;
-
-  opacity: 1;
+  /*display: block;
+  opacity: 1;*/
 }
 
 .cell-tag {
-  position: absolute;
-  right: 0;
-  bottom: 8px;
-
+  float: left;
   padding: 0 10px;
 
   background: rgba(255,0,0,0.5);

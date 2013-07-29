@@ -9,83 +9,31 @@
 </head>
 <body>
   <div class="notebook">
-    <section class="cell cell-title">
+    <!-- STATIC ELEMENTS -->
+
+    <section id="cell-title" class="cell cell-title">
       <textarea placeholder="Notebook Title">Sample Notebook Title</textarea>
+      <p>Below is a simple interactive prototype of a notbook shell UI.
+      You can enter JavaScript statements and see the results of evaluating
+      them by pressing "return". Enter a multi-line statement by holding shift
+      and pressing "return".</p>
     </section>
 
-    <section class="cell cell-code">
-      <div class="cell-controls">
-        <button><i class="icon-font icon-white"></i> Switch to Text</button>
-        <button><i class="icon-plus icon-white"></i> Add Cell</button>
-        <button><i class="icon-hdd icon-white"></i> Copy Cell</button>
-        <button><i class="icon-trash icon-white"></i> Delete Cell</button>
-      </div>
+    <!-- PROTO ELEMENTS -->
+    <div id="proto-controls" class="cell-controls">
+      <button><i class="icon-file icon-white"></i> Switch to Code</button>
+      <button><i class="icon-plus icon-white"></i> Add Cell</button>
+      <button><i class="icon-hdd icon-white"></i> Copy Cell</button>
+      <button><i class="icon-trash icon-white"></i> Delete Cell</button>
+    </div>
 
+    <section id="proto-section" class="cell cell-code pending">
+      <span class="cell-tag">0</span>
       <div class="cell-code-primary">
         <span class="cell-handle"><i class="icon-move"></i></span>
-        <span class="cell-tag">0</span>
-        <textarea name="" id="" cols="30" rows="10">var object = {};
-
-_.extend(object, Backbone.Events);
-
-object.on("alert", function(msg) {
-  alert("Triggered " + msg);
-});
-
-object.trigger("alert", "an event");</textarea>
+        <textarea name="" id="" cols="30" rows="10"></textarea>
       </div>
-
-      <pre class="cell-results"><button class="cell-results-toggle">-</button>Object {
-  bind: function (name, callback, context) {
-  listenTo: function (obj, name, callback) {
-  listenToOnce: function (obj, name, callback) {
-  off: function (name, callback, context) {
-  on: function (name, callback, context) {
-  once: function (name, callback, context) {
-  stopListening: function (obj, name, callback) {
-  trigger: function (name) {
-  unbind: function (name, callback, context) {
-  __proto__: Object
-}</pre>
-    </section>
-
-    <section class="cell cell-text">
-      <span class="cell-handle"><i class="icon-move"></i></span>
-
-      <div class="cell-controls">
-        <button><i class="icon-file icon-white"></i> Switch to Code</button>
-        <button><i class="icon-plus icon-white"></i> Add Cell</button>
-        <button><i class="icon-hdd icon-white"></i> Copy Cell</button>
-        <button><i class="icon-trash icon-white"></i> Delete Cell</button>
-      </div>
-
-      <textarea name="" id="" cols="30" rows="10">For example, to make a handy event dispatcher that can coordinate events among different areas of your application: var dispatcher = _.clone(Backbone.Events)</textarea>
-    </section>
-
-    <section class="cell cell-code">
-      <div class="cell-controls">
-        <button><i class="icon-font icon-white"></i> Switch to Text</button>
-        <button><i class="icon-plus icon-white"></i> Add Cell</button>
-        <button><i class="icon-hdd icon-white"></i> Copy Cell</button>
-        <button><i class="icon-trash icon-white"></i> Delete Cell</button>
-      </div>
-
-      <div class="cell-code-primary">
-        <span class="cell-handle"><i class="icon-move"></i></span>
-        <span class="cell-tag">2</span>
-
-        <textarea name="" id="" cols="30" rows="10">var object = {};
-
-_.extend(object, Backbone.Events);
-
-object.on("alert", function(msg) {
-  alert("Triggered " + msg);
-});
-
-object.trigger("alert", "an event");</textarea>
-      </div>
-
-      <pre class="cell-results"><button class="cell-results-toggle">+</button>Object {...}</pre>
+      <pre class="cell-results pending"></pre>
     </section>
 
   </div>
@@ -93,17 +41,69 @@ object.trigger("alert", "an event");</textarea>
 <script src="jquery.min.js"></script>
 <script src="jquery.autosize.js"></script>
 <script>
-  $('textarea').autosize();
+// Hack - global for results
+var results = [];
 
-  $('.cell textarea').on('focus', function() {
+$(function(jQuery){
+  
+  var _cellIds = 0;
+  var $protoSection = $('#proto-section');
+  var $protoControls = $('#proto-controls');
+
+  function _onTextAreaFocus() {
     var parent = $(this).parents('.cell');
     parent.addClass('active');
-  })
-
-  $('.cell textarea').on('blur', function() {
+  }
+  function _onTextAreaBlur() {
     var parent = $(this).parents('.cell');
     parent.removeClass('active');
-  })
+  }
+  function _onTextAreaKeypress(e) {
+    if (e.keyCode === 13 && e.shiftKey === false) {
+      e.preventDefault();
+      var $currentCell = $(this).parents('.cell');
+      renderResults($currentCell);
+      addCell($currentCell);
+      return false;
+    }
+  }
+  
+  function renderResults($cell) {
+    var cellIndex = window.parseInt($cell.attr('id').substr(5), 10);
+    var statement = $cell.find('textarea').val();
+    var result;
+    try {
+      result = eval(statement);
+    } catch(error) {
+      result = error;
+    }
+    results[cellIndex] = result;
+    $cell.find('.cell-results')
+      .text(result)
+      .removeClass('pending');
+  }
+
+  function addCell($currentCell) {
+    // Only add cell if current cell is the last in list
+    if ($currentCell.attr('id') === 'cell-' + (_cellIds - 1) || _cellIds === 0) {
+      var $newCell = $protoSection.clone().attr({id: 'cell-' + _cellIds});
+      $newCell.find('.cell-tag').text(_cellIds);
+      _cellIds++;
+      $currentCell.after($newCell);
+      $newCell
+        .removeClass('pending')
+        .find('textarea')
+          .on('focus', _onTextAreaFocus)
+          .on('blur', _onTextAreaBlur)
+          .on('keypress', _onTextAreaKeypress)
+          .autosize()
+          .focus();
+    }
+  }
+
+  // INIT
+  addCell($('#cell-title'));
+});
 </script>
 </body>
 </html>
