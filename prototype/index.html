@@ -100,7 +100,7 @@ $(function(jQuery){
     var statement = $cell.find('textarea').val();
     var result;
     try {
-      result = eval(statement);
+      result = (1,eval)(statement);
     } catch(error) {
       result = error;
     }
