@@ -12,19 +12,51 @@ JS Notebook UX Spec
 ## Overview
 
 ### Definitions
-- **Cell**: A block of content. There are two types: Code cell and Text cell. Text cells use Markdown for formatting. [CodeMirror](http://codemirror.net/) supports Markdown, so it probably makes sense to implement each cell as a CodeMirror instance.
+- **Cell**: A block of either code or text.
+  - Code cells have one or more statements.
+  - A Result cell always follows a code cell, and contains the result of the
+    last statement invocation in the code cell.
+  - Text cells use Markdown for formatting.
+- **Object inspector**: A webkit developer tools-like object inspector for
+  navigating statement result objects. Appears in a result cell.
 - **Current cell**: The cell that currently has focus.
-- **Toolbar**: The pop-out row of buttons that appear next to a **cell** when it has focus, or when the user mouses over it.
-- **Object inspector**: A webkit developer tools-like object inspector for navigating statement result objects.
-- **Result panel**: The panel underneath a code cell that contains the object inspector.
+  - A focused cell becomes editable.
+  - An edited code cell's statements are executed upon de-focus by any means.
+- **Toolbar**: The pop-out row of buttons that appear next to a **cell** when it
+  has focus, or when the user mouses over a cell.
 
 ### Key requirements
-- Application should expose an API to enable programmatic population of notebooks. The UI client should be built on top of this API.
+- Notebook should behave like a JavaScript console, much like the Webkit web
+  inspector console.
+- Notebook should be able to incorporate text notes as a secondary function.
 - Code cells should provide syntax highlighting and auto-completion.
 - Code cells should yield a result that can be referred to programmatically.
-- Asynchronous code cells should halt execution (through use of [grunt-like syntax](http://gruntjs.com/creating-tasks#custom-tasks): `var done = this.async();`).
+- Application should expose an API to enable programmatic population of
+  notebooks. The UI client should be built on top of this API.
 
 ## Behavior Specifics
+
+### Code cell
+- Has a blue prompt when active.
+- Has a gray prompt when inactive (statment has been executed).
+
+### Result Cell
+- Appears when the preceding code cell statment is executed and the result has
+  been calculated.
+- Displays the result of the last statement in the code cell.
+- Will populate an object inspector when a statment invocation returns an object
+  or an array.
+
+### Object Inspector
+- Can be expanded to browse object properties (model: webkit developer tools).
+- Is always collapsed by default.
+
+### Text cell
+- Supports markdown.
+- Content is surrounded by JavaScript block comment markers.
+- Can be started by typing "/*" in a code cell.
+  - Any previous code cell statements are broken off into a separate code cell.
+- Can be ended by typing "*/".
 
 ### Toolbar Controls
 - Toggle cell type:
@@ -37,31 +69,24 @@ JS Notebook UX Spec
 - Delete cell:
   - Prompts the user to confirm intent; deletes cell on confirmation.
 
-### Result Panel
-- Is empty when a new code cell is created.
-- Has a "Waiting..." label when waiting for an async result.
-- Will populate an object inspector when a code execution result is available.
-
-### Object Inspector
-- Synchronous code cell: Displays the result of the last statement in the code cell.
-- Asynchronous code cell: Displays the first non-error argument to the asynchronous callback.
-- Can be expanded to browse object properties (model: webkit developer tools).
-- Is always collapsed by default
-
 ### Running Code
-- The code in a notebook executes automatically when the notebook loads (for now).
+- The code in a notebook will not execute until the user presses a "run" button.
 - Code cells are executed sequentially.
 - Cells can depend on state set by preceding cells (notebook is one scope).
-- Cells can be designated async by the use of a statement like `var done = this.async();`. The async cell is marked as complete by calling `done` as a callback: `done(null, result);`.
-- Code in following cells won't execute until preceding async cells have been marked as complete.
 
 ### Creating a New Cell
-
-- User can create a new cell after an existing cell by clicking the "New Cell" button in an existing cell's toolbar.
-- If a new, empty cell already exists after the current cell, the "New Cell" button should be disabled.
+- User can create a new cell after an existing cell by clicking the "New Cell"
+  button in an existing cell's toolbar, or:
+  - by pressing "return" in the last (code) cell in the notebook.
+  - by entering "*/" on the last line of the last (text) cell in the notebook.
+- If a new, empty cell already exists after the current cell, the "New Cell"
+  button should be disabled.
 
 ### Other Features
-- Hovering (mousing) over a cell reveals a "move" handle in top right corner. Dragging this handle lets the user move the cell vertically, changing the internal order of cells.
+- Hovering (mousing) over a cell reveals a "move" handle in top right corner.
+  Dragging this handle lets the user move the cell vertically, changing the
+  internal order of cells. This changes the internal index of the cell, and any
+  reference to the cell's result will have to be changed manually.
 
 ## UI Behavior Tables
 
@@ -77,17 +102,21 @@ JS Notebook UX Spec
 ### Keymap
 
 Mac OS X bindings. For PC, substitute "Ctrl" for "Cmd", and "alt" for "opt".
+Commands with modifier eys are tentative and serve mostly to illustrate
+possibilities.
 
 <table>
   <tr><th>Key Combination</th><th>Action</th></tr>
-  <tr><td>Cmd-return</td><td>Create new cell underneath current cell</td></tr>
+  <tr><td>return</td><td>Execute current statement</td></tr>
+  <tr><td>shift-return</td><td>Add newline to current code cell, making room for
+  another statement</td></tr>
   <tr><td>Cmd-backspace</td><td>Delete cell (confirmation)</td></tr>
   <tr><td>Cmd-opt-c</td><td>Copy cell</td></tr>
-  <tr><td>Cmd-opt-m</td><td>Change cell type (text/code)</td></tr>
-  <tr><td>Cmd-uparrow</td><td>Focus on previous cell</td></tr>
-  <tr><td>Cmd-downarrow</td><td>Focus on next cell</td></tr>
-  <tr><td>Cmd-opt-uparrow</td><td>Move cell up one position</td></tr>
-  <tr><td>Cmd-opt-downarrow</td><td>Move cell down one position</td></tr>
+  <tr><td>Cmd-opt-b</td><td>Change cell type (text/code)</td></tr>
+  <tr><td>Cmd-opt-uparrow</td><td>Focus on previous cell</td></tr>
+  <tr><td>Cmd-opt-downarrow</td><td>Focus on next cell</td></tr>
+  <tr><td>Cmd-opt-shift-uparrow</td><td>Move cell up one position</td></tr>
+  <tr><td>Cmd-opt-shift-downarrow</td><td>Move cell down one position</td></tr>
 </table>
 
 ## Meta
@@ -122,3 +151,8 @@ Mac OS X bindings. For PC, substitute "Ctrl" for "Cmd", and "alt" for "opt".
 - The future!
 - Markdown editor more like [prose.io](http://prose.io/)
 - Auto-fix code cell result references when order of cells change
+
+### Resources
+
+- [CodeMirror](http://codemirror.net/)
+- [Markdown](http://daringfireball.net/projects/markdown/)
