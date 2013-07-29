@@ -17,6 +17,10 @@
       You can enter JavaScript statements and see the results of evaluating
       them by pressing "return". Enter a multi-line statement by holding shift
       and pressing "return".</p>
+      <p>You can refer back to previous results via the global
+      <code>results</code>.</p>
+      <p>You can create a text comment by entering <code>/*</code> in the code
+        cell. End the comment by entering <code>*/</code>.</p>
     </section>
 
     <!-- PROTO ELEMENTS -->
@@ -29,7 +33,7 @@
 
     <section id="proto-section" class="cell cell-code pending">
       <span class="cell-tag">0</span>
-      <div class="cell-code-primary">
+      <div class="cell-primary">
         <span class="cell-handle"><i class="icon-move"></i></span>
         <textarea name="" id="" cols="30" rows="10"></textarea>
       </div>
@@ -45,7 +49,6 @@
 var results = [];
 
 $(function(jQuery){
-  
   var _cellIds = 0;
   var $protoSection = $('#proto-section');
   var $protoControls = $('#proto-controls');
@@ -54,12 +57,16 @@ $(function(jQuery){
     var parent = $(this).parents('.cell');
     parent.addClass('active');
   }
+
   function _onTextAreaBlur() {
     var parent = $(this).parents('.cell');
     parent.removeClass('active');
   }
-  function _onTextAreaKeypress(e) {
+
+  // For handling return keypresses
+  function _onCodeCellKeypress(e) {
     if (e.keyCode === 13 && e.shiftKey === false) {
+      // Otherwise, parse and render results
       e.preventDefault();
       var $currentCell = $(this).parents('.cell');
       renderResults($currentCell);
@@ -68,6 +75,26 @@ $(function(jQuery){
     }
   }
   
+  // For handling keyup (changing cell mode by entering code block text
+  function _onCellKeyup(e) {
+    var $el = $(this);
+    var $parent = $($el.parents('.cell').get(0));
+    var value = e.target.value;
+    // If block comment was just started, change cell to text cell
+    if (value === '/*') {
+      $parent
+        .removeClass('cell-code')
+        .addClass('cell-text')
+        .remove('.cell-results')
+        .find('textarea')
+          .off('keypress', _onCodeCellKeypress)
+          .val(value + "\n\t")
+    // If block comment ends, finalize text cell
+    } else if ($parent.hasClass('cell-text') && value.substr(-2) === '*/') {
+      addCell($parent);
+    }
+  }
+
   function renderResults($cell) {
     var cellIndex = window.parseInt($cell.attr('id').substr(5), 10);
     var statement = $cell.find('textarea').val();
@@ -86,20 +113,23 @@ $(function(jQuery){
   function addCell($currentCell) {
     // Only add cell if current cell is the last in list
     if ($currentCell.attr('id') === 'cell-' + (_cellIds - 1) || _cellIds === 0) {
-      var $newCell = $protoSection.clone().attr({id: 'cell-' + _cellIds});
-      $newCell.find('.cell-tag').text(_cellIds);
-      _cellIds++;
+      var cellIndex = _cellIds++;
+      var $newCell = $protoSection.clone().attr({id: 'cell-' + cellIndex});
+      $newCell.find('.cell-tag').text(cellIndex);
       $currentCell.after($newCell);
       $newCell
         .removeClass('pending')
         .find('textarea')
           .on('focus', _onTextAreaFocus)
           .on('blur', _onTextAreaBlur)
-          .on('keypress', _onTextAreaKeypress)
+          .on('keypress', _onCodeCellKeypress)
+          .on('keyup', _onCellKeyup)
           .autosize()
           .focus();
     }
   }
+
+  // $('section').on('keypress', '.cell', _onCodeCellKeypress);
 
   // INIT
   addCell($('#cell-title'));

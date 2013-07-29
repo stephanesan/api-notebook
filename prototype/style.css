@@ -151,8 +151,14 @@
   line-height: 0;
 }
 
-.cell-code-primary {
+.cell .cell-primary {
   position: relative;
+}
+
+.cell-text .cell-primary {
+  overflow: hidden;
+  word-wrap: break-word;
+  resize: none;
 }
 
 .cell-handle {
