@@ -105,8 +105,10 @@ $(function(jQuery){
       result = error;
     }
     results[cellIndex] = result;
+    // Implicitly call result.toString()
+    resultText =  (typeof result === 'undefined') ? 'undefined' : result;
     $cell.find('.cell-results')
-      .text(result)
+      .text(resultText)
       .removeClass('pending');
   }
 
