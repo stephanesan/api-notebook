@@ -14,11 +14,14 @@ JS Notebook UX Spec
 ### Definitions
 - **Cell**: A block of either code or text.
   - Code cells have one or more statements.
-  - A Result cell always follows a code cell, and contains the result of the
-    last statement invocation in the code cell.
+  - A code cell consists of statements and a result. The result pertains to the
+    last statement invocation of the code cell.
   - Text cells use Markdown for formatting.
 - **Object inspector**: A webkit developer tools-like object inspector for
   navigating statement result objects. Appears in a result cell.
+- **Cell Label**: The number next to a cell.
+  - Used to refer to the result via `result[label]`.
+  - Should be editable (result global should be a hash).
 - **Current cell**: The cell that currently has focus.
   - A focused cell becomes editable.
   - An edited code cell's statements are executed upon de-focus by any means.
@@ -36,16 +39,16 @@ JS Notebook UX Spec
 
 ## Behavior Specifics
 
-### Code cell
+### Code cell - Statement
 - Has a blue prompt when active.
-- Has a gray prompt when inactive (statment has been executed).
+- Has a gray prompt when inactive (statement has been executed).
 
-### Result Cell
-- Appears when the preceding code cell statment is executed and the result has
+### Code Cell - Result
+- Appears when the preceding code cell statement is executed and the result has
   been calculated.
 - Displays the result of the last statement in the code cell.
-- Will populate an object inspector when a statment invocation returns an object
-  or an array.
+- Will populate an object inspector when a statement invocation returns an
+  object or an array.
 
 ### Object Inspector
 - Can be expanded to browse object properties (model: webkit developer tools).
@@ -57,6 +60,13 @@ JS Notebook UX Spec
 - Can be started by typing "/*" in a code cell.
   - Any previous code cell statements are broken off into a separate code cell.
 - Can be ended by typing "*/".
+- If a text cell loses focus, "\n*/" should be appended.
+- Note on visual style: The comment markers should remain visible (as a queue for
+  closing the cell), but have a smaller font size and subdued color.
+
+### Cell Labels
+- Clicking a cell label lets the user edit the label
+- The label is used as a lookup property in the global `results` hash.
 
 ### Toolbar Controls
 - Toggle cell type:
@@ -94,7 +104,7 @@ JS Notebook UX Spec
 <table>
   <tr><th>Feature</th><th>hover</th><th>focus</th></tr>
   <tr><td>Drag handle</td><td>x</td><td></td></tr>
-  <tr><td>Heavy border</td><td>x</td><td>x</td></tr>
+  <tr><td>Heavy border</td><td>x</td><td></td></tr>
   <tr><td>Toolbar</td><td>x</td><td>x</td></tr>
   <tr><td>Edit mode</td><td></td><td>x</td></tr>
 </table>
@@ -130,9 +140,12 @@ possibilities.
 
 ### Open questions
 
+- When editing and re-executing a code cell, should the entire scope be rebuilt,
+  or should the cell be exeuted on top of existing scope?
 - We should consider mobile usability
-- Can we use _one_ CodeMirror instance, and specify multiple subareas (with different syntax) for cells?
-- Is there a way to leverage Webkit web inspector code?
+- Can we use _one_ CodeMirror instance, and specify multiple subareas (with
+  different syntax) for cells?
+- Can we leverage Webkit web inspector code?
 
 ### Development Phases
 
@@ -148,7 +161,6 @@ possibilities.
 - Notebook should be embeddable in any web page context
 
 #### Phase 3
-- The future!
 - Markdown editor more like [prose.io](http://prose.io/)
 - Auto-fix code cell result references when order of cells change
 
