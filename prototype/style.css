@@ -33,7 +33,7 @@ pre {
   margin: 0;
   min-height: 2em;
   padding: 10px;
-  border-top: 2px solid #ccc;
+  border-top: 2px solid #eee;
   transition: none;
 
   box-shadow: none;
@@ -51,7 +51,7 @@ pre {
 
 .cell-controls {
   position: absolute;
-  top: 0;
+  top: -44px;
   right: -145px;
   border-radius: 5px;
 
@@ -136,7 +136,8 @@ pre {
   font-size: 15px;
 }
 
-.cell:hover .cell-internal-wrapper {
+.cell:hover .cell-internal-wrapper,
+.cell:not(:hover) textarea:focus {
   outline: 2px solid #ccc;
 }
 
@@ -189,9 +190,9 @@ pre {
 }
 
 .cell:hover .cell-handle {
-  /*display: block;
+  display: block;
   opacity: 1;
-  cursor: move;*/
+  cursor: move;
 }
 
 .cell-tag {

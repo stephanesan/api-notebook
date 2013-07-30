@@ -48,14 +48,15 @@
 
 <script src="jquery.min.js"></script>
 <script src="jquery.autosize.js"></script>
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
 <script>
 // Hack - global for results
 var results = [];
 
 $(function(jQuery){
   var _cellIds = 0;
-  var $protoSection = $('#proto-section');
-  var $protoControls = $('#proto-controls');
+  var _$protoSection = $('#proto-section');
+  var _$protoControls = $('#proto-controls');
 
   function _onTextAreaFocus() {
     var parent = $(this).parents('.cell');
@@ -120,10 +121,17 @@ $(function(jQuery){
   function addCell($currentCell) {
     // Only add cell if current cell is the last in list
     if ($currentCell.attr('id') === 'cell-' + (_cellIds - 1) || _cellIds === 0) {
+      // Grab a fersh index
       var cellIndex = _cellIds++;
-      var $newCell = $protoSection.clone().attr({id: 'cell-' + cellIndex});
+      // Clone a cell and inject a controls-section
+      var $newCell = _$protoSection.clone().attr({id: 'cell-' + cellIndex});
+      var $controls = _$protoControls.clone().attr(
+        {id: 'cell-controls-' + cellIndex}
+      );
+      $newCell.prepend($controls);
       $newCell.find('.cell-tag').text(cellIndex);
       $currentCell.after($newCell);
+      // initialize stuff
       $newCell
         .removeClass('pending')
         .find('textarea')
@@ -135,8 +143,6 @@ $(function(jQuery){
           .focus();
     }
   }
-
-  // $('section').on('keypress', '.cell', _onCodeCellKeypress);
 
   // INIT
   addCell($('#cell-title'));
