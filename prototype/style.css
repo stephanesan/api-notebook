@@ -178,14 +178,15 @@
 
 .cell:hover .cell-handle {
   /*display: block;
-  opacity: 1;*/
+  opacity: 1;
+  cursor: move;*/
 }
 
 .cell-tag {
   float: left;
   padding: 0 10px;
 
-  background: rgba(255,0,0,0.5);
-  color: #fff;
+  background: rgba(0,0,0,0.05);
+  color: #aaa;
   font-size: 12px;
 }
