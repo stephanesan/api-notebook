@@ -95,6 +95,7 @@
 }
 
 .cell-code textarea {
+  padding-left: 20px;
   border-radius: 3px 3px 0 0;
 
   background: #fafafa;
@@ -107,8 +108,13 @@
   margin-left: 32px;
 }
 
-.cell-code textarea:before {
-  content: "&gt;"
+.cell-code .cell-primary:before {
+  content: '❯';
+  position: absolute;
+  top: 10px;
+  left: 9px;
+  display: block;
+  color: rgb(50, 132, 214);
 }
 
 .cell-text textarea {
