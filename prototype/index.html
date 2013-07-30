@@ -93,6 +93,7 @@ $(function(jQuery){
         .find('textarea')
           .off('keypress', _onCodeCellKeypress)
           .val(value + "\n\t")
+          .trigger('input')
     // If block comment ends, finalize text cell
     } else if ($parent.hasClass('cell-text') && value.substr(-2) === '*/') {
       addCell($parent);
