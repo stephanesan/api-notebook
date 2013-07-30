@@ -2,15 +2,29 @@
   box-sizing: border-box;
 }
 
+body {
+    font: 13px Helvetica, arial, freesans, clean, sans-serif;
+}
+
+textarea,
+pre {
+  border: none;
+  border-radius: 0px;
+  margin: 0px;
+}
+
 .notebook {
   width: 600px;
   margin: 0 auto;
 }
 
+.preamble {
+  margin-top: 2em;
+}
+
 .cell {
   position: relative;
-
-  margin: 20px 0;
+  margin: 0px;
 }
 
 .cell textarea {
@@ -19,8 +33,9 @@
   margin: 0;
   min-height: 2em;
   padding: 10px;
-  border: 1px solid #ccc;
-  
+  border-top: 2px solid #ccc;
+  transition: none;
+
   box-shadow: none;
   line-height: 1.5;
   resize: none;
@@ -31,7 +46,7 @@
 }
 
 .pending {
-  visibility: hidden;
+  display:none;
 }
 
 .cell-controls {
@@ -89,29 +104,28 @@
   border: 0;
 
   background: none;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: bold;
   text-align: center;
+
+  margin: 20px;
 }
 
 .cell-code textarea {
   padding-left: 20px;
-  border-radius: 3px 3px 0 0;
-
   background: #fafafa;
-  font-family: Source Code Pro, monospace, serif;
-  font-size: 13px;
+  font-family: "Source Code Pro", Monaco, monospace, serif;
+  font-size: 11px;
 }
 
-.cell div,
-.cell pre {
+.cell .cell-internal-wrapper {
   margin-left: 32px;
 }
 
 .cell-code .cell-primary:before {
   content: '❯';
   position: absolute;
-  top: 10px;
+  top: 12px;
   left: 9px;
   display: block;
   color: rgb(50, 132, 214);
@@ -119,26 +133,24 @@
 
 .cell-text textarea {
   border: 1px solid transparent;
-
-  font-size: 16px;
+  font-size: 15px;
 }
 
-.cell-text:hover textarea,
-.cell-text textarea:focus {
-  border: 1px solid #ccc;
+.cell:hover .cell-internal-wrapper {
+  outline: 2px solid #ccc;
+}
+
+.cell-code:hover textarea {
+  border-top: 2px solid transparent;
 }
 
 .cell-results {
   position: relative;
 
   padding: 10px 10px 10px 2em;
-  border: 1px solid #ccc;
-  border-top: 0;
-  border-radius: 0 0 3px 3px;
-
   color: #aaa;
-  font-family: Source Code Pro, monospace, serif;
-  font-size: 13px;
+  font-family: "Source Code Pro", Monaco, monospace, serif;
+  font-size: 11px;
 }
 
 .cell-results-toggle {
@@ -189,4 +201,5 @@
   background: rgba(0,0,0,0.05);
   color: #aaa;
   font-size: 12px;
+  margin-top: 12px;
 }
