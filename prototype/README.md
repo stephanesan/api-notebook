@@ -1,5 +1,5 @@
-JS Notebook UX Spec
-===================
+JS Notebook Spec
+================
 
 ## Running the prototype
 
@@ -36,8 +36,9 @@ JS Notebook UX Spec
 - Code cells should yield a result that can be referred to programmatically.
 - Application should expose an API to enable programmatic population of
   notebooks. The UI client should be built on top of this API.
+- 
 
-## Behavior Specifics
+## UX - Behavior Specifics
 
 ### Code cell - Statement
 - Has a blue prompt when active.
@@ -123,48 +124,8 @@ possibilities.
   <tr><td>Cmd-backspace</td><td>Delete cell (confirmation)</td></tr>
   <tr><td>Cmd-opt-c</td><td>Copy cell</td></tr>
   <tr><td>Cmd-opt-b</td><td>Change cell type (text/code)</td></tr>
-  <tr><td>Cmd-opt-uparrow</td><td>Focus on previous cell</td></tr>
-  <tr><td>Cmd-opt-downarrow</td><td>Focus on next cell</td></tr>
-  <tr><td>Cmd-opt-shift-uparrow</td><td>Move cell up one position</td></tr>
-  <tr><td>Cmd-opt-shift-downarrow</td><td>Move cell down one position</td></tr>
+  <tr><td>opt-uparrow</td><td>Focus on previous cell</td></tr>
+  <tr><td>opt-downarrow</td><td>Focus on next cell</td></tr>
+  <tr><td>Cmd-opt-uparrow</td><td>Move cell up one position</td></tr>
+  <tr><td>Cmd-opt-downarrow</td><td>Move cell down one position</td></tr>
 </table>
-
-## Meta
-
-### Mockup TODOs
-
-- Find better icons:
-  - Code mode
-  - Text mode
-  - Copy
-
-### Open questions
-
-- When editing and re-executing a code cell, should the entire scope be rebuilt,
-  or should the cell be exeuted on top of existing scope?
-- We should consider mobile usability
-- Can we use _one_ CodeMirror instance, and specify multiple subareas (with
-  different syntax) for cells?
-- Can we leverage Webkit web inspector code?
-
-### Development Phases
-
-#### Phase 1
-- JS Notebook API
-- UI (MVP) built on top of API
-  - Basic markdown support
-  - Syntax highlighting
-  - Auto-completion
-  - Fully keyboard-navigable
-
-#### Phase 2
-- Notebook should be embeddable in any web page context
-
-#### Phase 3
-- Markdown editor more like [prose.io](http://prose.io/)
-- Auto-fix code cell result references when order of cells change
-
-### Resources
-
-- [CodeMirror](http://codemirror.net/)
-- [Markdown](http://daringfireball.net/projects/markdown/)
