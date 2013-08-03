@@ -1,14 +1,14 @@
 {
-  "name": "jsnotebook",
-  "version": "0.0.0",
-  "description": "jsnotebook ==========",
+  "name": "JSNotebook",
+  "version": "0.0.1",
+  "description": "JSNotebook API proxy",
   "private": true,
   "dependencies": {
-    "express": "~3.3.4",
-    "github": "~0.1.10",
-    "passport": "~0.1.17",
-    "passport-github": "~0.1.5",
-    "ejs": "~0.8.4"
+    "express": "~3.3",
+    "github": "~0.1",
+    "passport": "~0.1",
+    "passport-github": "~0.1",
+    "ejs": "~0.8"
   },
   "devDependencies": {},
   "scripts": {
@@ -18,8 +18,7 @@
     "type": "git",
     "url": "git://github.com/eastridge/jsnotebook.git"
   },
-  "author": "",
+  "author": "FormidableLabs",
   "license": "BSD",
-  "readmeFilename": "README.md",
-  "gitHead": "e3b8735cdcdc7b9df5ac062f446e1033de92bb96"
+  "readmeFilename": "README.md"
 }
