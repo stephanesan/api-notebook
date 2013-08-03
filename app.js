@@ -189,19 +189,22 @@ app.get('/gists', ensureAuthenticated, function(req, res) {
 
 /*
   Create a Gist for logged-in user
-  TODO actually use POST body
 */
 app.post('/gists', ensureAuthenticated, function(req, res) {
-  var public = (typeof req.body.public === 'boolean') ? req.body.public : true;
+  var body = req.body;
   var files = {};
-  files[req.body.gistName] = {
-    content: req.body.gistBody
+  var gist = {};
+  var public = (typeof body.public === 'boolean') ? body.public : true;
+
+  files[body.gistName] = {
+    content: body.gistBody
   };
-  var gist= {
-    description: req.body.gistDescription,
+  gist = {
+    description: body.gistDescription,
     public: public,
     files: files
   };
+
   github.gists.create(gist, function(error, gistData) {
     if (error) {
       console.error('error creating gist', error);
