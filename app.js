@@ -3,6 +3,7 @@
 /*jshint node: true*/
 
 var express = require('express')
+  , engine = require('ejs-locals')
   , passport = require('passport')
   , util = require('util')
   , GitHubStrategy = require('passport-github').Strategy;
@@ -75,7 +76,13 @@ var app = express();
 
 // configure Express
 app.configure(function() {
+
+  // use ejs-locals for all ejs templates:
+  app.engine('ejs', engine);
+
+  app.set('views',__dirname + '/views');
   app.set('view engine', 'ejs');
+
   app.use(express.logger());
   app.use(express.cookieParser());
   app.use(express.bodyParser());
