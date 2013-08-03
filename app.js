@@ -8,6 +8,8 @@ var express = require('express')
   , util = require('util')
   , GitHubStrategy = require('passport-github').Strategy;
 
+var PORT = 8000;
+
 var GITHUB_CLIENT_ID = "a7f8014691fcc748aced";
 var GITHUB_CLIENT_SECRET = "ea758e7cde897016e56dd816c901d82c82568964";
 
@@ -19,6 +21,11 @@ var github = new GitHubApi({
     // optional
     timeout: 15000
   });
+
+
+// ============
+// AUTH METHODS
+// ============
 
 
 // Simple route middleware to ensure user is authenticated.
@@ -72,6 +79,12 @@ passport.use(new GitHubStrategy({
   }
 ));
 
+
+// =================
+// APP CONFIGURATION
+// =================
+
+
 var app = express();
 
 // configure Express
@@ -100,57 +113,11 @@ app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
-app.get('/', function(req, res){
-  res.render('index', {user: req.user});
-});
 
-//retrieve all gists
-app.get('/gists', ensureAuthenticated, function(req, res) {
-  github.gists.getAll({}, function(error, gistData) {
-    res.send(gistData);
-  });
-});
-//create a gist
-app.post('/gists', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    "description": "the description for this gist",
-    "public": false,
-    "files": {
-      "testgist.txt": {
-        "content": "testing creating a gist over api"
-      }
-    }
-  }, function(error, gistData) {
-    res.send(gistData);
-  });
-});
+// ============
+// AUTH ROUTES
+// ============
 
-//update a gist
-app.put('/gists/:id', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    id: req.params.id,
-    "files": {
-      "testgist.txt": {
-        "content": "testing creating a gist over api"
-      }
-    }
-  }, function(error, gistData) {
-    res.send(gistData);
-  });
-});
-
-//delete a gist
-app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    id: req.params.id
-  }, function(error, gistData) {
-    res.send(gistData);
-  });
-});
-
-app.get('/account', ensureAuthenticated, function(req, res){
-  res.render('account', { user: req.user });
-});
 
 app.get('/login', function(req, res){
   res.render('login', { user: req.user });
@@ -184,7 +151,96 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-var PORT = 8000;
+
+// ===========
+// VIEW ROUTES
+// ===========
+
+
+/*
+  Render index
+*/
+app.get('/', function(req, res){
+  res.render('index', {user: req.user});
+});
+
+
+/*
+  Render user account information.
+*/
+app.get('/account', ensureAuthenticated, function(req, res){
+  res.render('account', { user: req.user });
+});
+
+
+// ===========
+// REST ROUTES
+// ===========
+
+
+/*
+  Retrieve all gists for logged-in user
+*/
+app.get('/gists', ensureAuthenticated, function(req, res) {
+  github.gists.getAll({}, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+/*
+  Create a Gist for logged-in user
+  TODO actually use POST body
+*/
+app.post('/gists', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    "description": "the description for this gist",
+    "public": false,
+    "files": {
+      "testgist.txt": {
+        "content": "testing creating a gist over api"
+      }
+    }
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+/*
+  Update a GIST with a given ID.
+  Logged in user must have write access to the Gist.
+  TODO Use passed in ID
+*/
+app.put('/gists/:id', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    id: req.params.id,
+    "files": {
+      "testgist.txt": {
+        "content": "testing creating a gist over api"
+      }
+    }
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+/*
+  Delete a GIST with a given ID.
+  Logged in user must have write access to the Gist.
+  TODO Use passed in ID
+*/
+app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
+  github.gists.create({
+    id: req.params.id
+  }, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+
+// =========
+// START APP
+// =========
+
+
 app.listen(PORT);
 console.log('Localhost server listening on port ' + PORT);
-
