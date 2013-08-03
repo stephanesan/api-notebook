@@ -101,7 +101,7 @@ app.configure('development', function(){
 });
 
 app.get('/', function(req, res){
-  res.redirect('/index.html');
+  res.render('index', {user: req.user});
 });
 
 //retrieve all gists
