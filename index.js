@@ -1,16 +1,14 @@
 // Client ID = a7f8014691fcc748aced
 // Client Secret = ea758e7cde897016e56dd816c901d82c82568964
-
+/*jshint node: true*/
 
 var express = require('express')
   , passport = require('passport')
   , util = require('util')
   , GitHubStrategy = require('passport-github').Strategy;
 
-var GITHUB_CLIENT_ID = "a7f8014691fcc748aced"
+var GITHUB_CLIENT_ID = "a7f8014691fcc748aced";
 var GITHUB_CLIENT_SECRET = "ea758e7cde897016e56dd816c901d82c82568964";
-
-var token = '';
 
 var GitHubApi = require("github");
 
@@ -19,7 +17,18 @@ var github = new GitHubApi({
     version: "3.0.0",
     // optional
     timeout: 15000
-});
+  });
+
+
+// Simple route middleware to ensure user is authenticated.
+//   Use this route middleware on any resource that needs to be protected.  If
+//   the request is authenticated (typically via a persistent login session),
+//   the request will proceed.  Otherwise, the user will be redirected to the
+//   login page.
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login');
+}
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -36,7 +45,6 @@ passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
 
-
 // Use the GitHubStrategy within Passport.
 //   Strategies in Passport require a `verify` function, which accept
 //   credentials (in this case, an accessToken, refreshToken, and GitHub
@@ -48,14 +56,12 @@ passport.use(new GitHubStrategy({
     scope: ["gist"]
   },
   function(accessToken, refreshToken, profile, done) {
-
     github.authenticate({
       type: "oauth",
       token: accessToken
     });
     // asynchronous verification, for effect...
     process.nextTick(function () {
-      
       // To keep the example simple, the user's GitHub profile is returned to
       // represent the logged-in user.  In a typical application, you would want
       // to associate the GitHub account with a user record in your database,
@@ -104,7 +110,7 @@ app.post('/gists', ensureAuthenticated, function(req, res) {
       "testgist.txt": {
         "content": "testing creating a gist over api"
       }
-    } 
+    }
   }, function(error, gistData) {
     res.send(gistData);
   });
@@ -118,7 +124,7 @@ app.put('/gists/:id', ensureAuthenticated, function(req, res) {
       "testgist.txt": {
         "content": "testing creating a gist over api"
       }
-    } 
+    }
   }, function(error, gistData) {
     res.send(gistData);
   });
@@ -151,14 +157,14 @@ app.get('/auth/github',
   function(req, res){
     // The request will be redirected to GitHub for authentication, so this
     // function will not be called.
-  });
+});
 
 // GET /auth/github/callback
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/github-callback', 
+app.get('/github-callback',
   passport.authenticate('github', { failureRedirect: '/login' }),
   function(req, res) {
     res.redirect('/');
@@ -169,15 +175,7 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-app.listen(8000);
+var PORT = 8000;
+app.listen(PORT);
+console.log('Localhost server listening on port ' + PORT);
 
-
-// Simple route middleware to ensure user is authenticated.
-//   Use this route middleware on any resource that needs to be protected.  If
-//   the request is authenticated (typically via a persistent login session),
-//   the request will proceed.  Otherwise, the user will be redirected to the
-//   login page.
-function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login')
-}
