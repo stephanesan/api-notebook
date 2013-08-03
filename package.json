@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node-dev index.js"
+    "start": "node-dev app.js"
   },
   "repository": {
     "type": "git",
