@@ -1,6 +1,6 @@
 // Client ID = a7f8014691fcc748aced
 // Client Secret = ea758e7cde897016e56dd816c901d82c82568964
-/*jshint node: true*/
+/*jshint node: true, devel: true*/
 
 var express = require('express')
   , engine = require('ejs-locals')
@@ -192,16 +192,24 @@ app.get('/gists', ensureAuthenticated, function(req, res) {
   TODO actually use POST body
 */
 app.post('/gists', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    "description": "the description for this gist",
-    "public": false,
-    "files": {
-      "testgist.txt": {
-        "content": "testing creating a gist over api"
-      }
+  var public = (typeof req.body.public === 'boolean') ? req.body.public : true;
+  var files = {};
+  files[req.body.gistName] = {
+    content: req.body.gistBody
+  };
+  var gist= {
+    description: req.body.gistDescription,
+    public: public,
+    files: files
+  };
+  github.gists.create(gist, function(error, gistData) {
+    if (error) {
+      console.error('error creating gist', error);
+      res.send(error);
+    } else {
+      res.send(gistData);
     }
-  }, function(error, gistData) {
-    res.send(gistData);
+
   });
 });
 
@@ -219,7 +227,12 @@ app.put('/gists/:id', ensureAuthenticated, function(req, res) {
       }
     }
   }, function(error, gistData) {
-    res.send(gistData);
+    if (error) {
+      console.error('error updating gist', error);
+      res.rend(error);
+    } else {
+      res.send(gistData);
+    }
   });
 });
 
