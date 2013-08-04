@@ -7,24 +7,21 @@
 // passportjs  : http://passportjs.org/
 
 
-var express = require('express')
-  , engine = require('ejs-locals')
-  , passport = require('passport')
-  , util = require('util')
-  , GitHubStrategy = require('passport-github').Strategy;
-
-var PORT = 8000;
-
-var GITHUB_CLIENT_ID = "a7f8014691fcc748aced";
-var GITHUB_CLIENT_SECRET = "ea758e7cde897016e56dd816c901d82c82568964";
+var config = require('./config'),
+    express = require('express'),
+    engine = require('ejs-locals'),
+    passport = require('passport'),
+    path = require('path'),
+    util = require('util'),
+    GitHubStrategy = require('passport-github').Strategy;
 
 var GitHubApi = require("github");
 
 var github = new GitHubApi({
     // required
-    version: "3.0.0",
+    version: config.clients.github.version,
     // optional
-    timeout: 15000
+    timeout: config.clients.github.timeout
   });
 
 // App instance
@@ -64,10 +61,11 @@ passport.deserializeUser(function(obj, done) {
 //   credentials (in this case, an accessToken, refreshToken, and GitHub
 //   profile), and invoke a callback with a user object.
 passport.use(new GitHubStrategy({
-    clientID: GITHUB_CLIENT_ID,
-    clientSecret: GITHUB_CLIENT_SECRET,
-    callbackURL: "http://localhost:8000/github-callback",
-    scope: ["gist"]
+    clientID      : config.clients.github.clientId,
+    clientSecret  : config.clients.github.clientSecret,
+    callbackURL   : "http://" + config.app.host + ":" + config.app.port +
+                    config.clients.github.callbackRoute,
+    scope         : ["gist"]
   },
   function(accessToken, refreshToken, profile, done) {
     github.authenticate({
@@ -102,13 +100,13 @@ app.configure(function() {
   app.use(express.cookieParser());
   app.use(express.bodyParser());
   app.use(express.methodOverride());
-  app.use(express.session({ secret: 'keyboard cat' }));
+  app.use(express.session({ secret: config.app.sessionSecret }));
   // Initialize Passport!  Also use passport.session() middleware, to support
   // persistent login sessions (recommended).
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(app.router);
-  app.use(express.static(__dirname + '/public'));
+  app.use(express.static(path.join(__dirname, config.app.staticDir)));
 });
 
 app.configure('development', function(){
@@ -125,5 +123,5 @@ require('./routes')(app, github);
 // START APP
 // =========
 
-app.listen(PORT);
-console.log('Localhost server listening on port ' + PORT);
+app.listen(config.app.port);
+console.log('Localhost server listening on port ' + config.app.port);
