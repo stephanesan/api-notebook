@@ -193,7 +193,17 @@ app.get('/gists', ensureAuthenticated, function(req, res) {
 });
 
 /*
-  Create a Gist for logged-in user
+  Retrieve a gist with a specific id.
+*/
+app.get('/gists/:id', ensureAuthenticated, function(req, res) {
+  var id = req.params.id;
+  github.gists.get({"id": id}, function(error, gistData) {
+    res.send(gistData);
+  });
+});
+
+/*
+  Create a Gist for logged-in user.
 */
 app.post('/gists', ensureAuthenticated, function(req, res) {
   var body = req.body;
