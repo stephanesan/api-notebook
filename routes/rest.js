@@ -23,6 +23,30 @@ module.exports = function (app, github) {
   }
 
   /*
+    Get a msg object to emit to Github API for POST or PUT call
+    @param {object} body A JSON object with the following required properties:
+      - gistBody
+      - gistDescription
+      - gistName
+      - [public]        optional: default true
+    @return {object}
+  */
+  function gistFromPostBody(body) {
+    var files = {};
+    var public = (typeof body.public === 'boolean') ? body.public : true;
+
+    files[body.gistName] = {
+      content: body.gistBody
+    };
+
+    return {
+      description: body.gistDescription,
+      public: public,
+      files: files
+    };
+  }
+
+  /*
     Retrieve all Gists for logged-in user.
   */
   app.get('/gists', app.ensureAuthenticated, function(req, res) {
@@ -65,20 +89,7 @@ module.exports = function (app, github) {
     Create a Gist for logged-in user.
   */
   app.post('/gists', app.ensureAuthenticated, function(req, res) {
-    var body = req.body;
-    var files = {};
-    var gist = {};
-    var public = (typeof body.public === 'boolean') ? body.public : true;
-
-    files[body.gistName] = {
-      content: body.gistBody
-    };
-    gist = {
-      description: body.gistDescription,
-      public: public,
-      files: files
-    };
-
+    var gist = gistFromPostBody(req.body);
     github.gists.create(gist, function(error, gistData) {
       if (error) {
         console.error('error creating gist', error);
