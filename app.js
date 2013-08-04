@@ -206,22 +206,42 @@ app.get('/account', ensureAuthenticated, function(req, res){
 
 
 /*
-  Retrieve all gists for logged-in user.
+  Retrieve all Gists for logged-in user.
 */
 app.get('/gists', ensureAuthenticated, function(req, res) {
-  github.gists.getAll({}, function(error, gistData) {
-    res.send(gistData);
-  });
+  github.gists.getAll({}, getResultCallback(req, res));
 });
 
 /*
-  Retrieve a gist with a specific id.
+  Retrieve a Gist with a specific id.
 */
 app.get('/gists/:id', ensureAuthenticated, function(req, res) {
-  var id = req.params.id;
-  github.gists.get({"id": id}, function(error, gistData) {
-    res.send(gistData);
-  });
+  var gist = { "id": req.params.id };
+  github.gists.get(gist, getResultCallback(req, res));
+});
+
+/*
+  Delete a Gist with a specific ID.
+  Logged in user must have write access to the Gist.
+  TODO Use passed in ID
+*/
+app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
+  var gist = { "id": req.params.id };
+  github.gists.delete(gist, getResultCallback(req, res));
+});
+
+/*
+  Update a Gist with a given ID.
+  Logged in user must have write access to the Gist.
+  TODO Use passed in ID
+*/
+app.put('/gists/:id', ensureAuthenticated, function(req, res) {
+  var gist = {
+    "id": req.params.id,
+    "description": null,
+    "files": null
+  };
+  github.gists.edit(gist, getResultCallback(req, res));
 });
 
 /*
@@ -250,42 +270,6 @@ app.post('/gists', ensureAuthenticated, function(req, res) {
       res.send(gistData);
     }
 
-  });
-});
-
-/*
-  Update a GIST with a given ID.
-  Logged in user must have write access to the Gist.
-  TODO Use passed in ID
-*/
-app.put('/gists/:id', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    id: req.params.id,
-    "files": {
-      "testgist.txt": {
-        "content": "testing creating a gist over api"
-      }
-    }
-  }, function(error, gistData) {
-    if (error) {
-      console.error('error updating gist', error);
-      res.rend(error);
-    } else {
-      res.send(gistData);
-    }
-  });
-});
-
-/*
-  Delete a GIST with a given ID.
-  Logged in user must have write access to the Gist.
-  TODO Use passed in ID
-*/
-app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
-  github.gists.create({
-    id: req.params.id
-  }, function(error, gistData) {
-    res.send(gistData);
   });
 });
 
