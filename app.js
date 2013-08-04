@@ -28,6 +28,28 @@ var github = new GitHubApi({
   });
 
 
+// =======
+// HELPERS
+// =======
+
+/*
+  Returns a common callback for REST routes
+  @param  {object} res Express response object
+  @return {function} Github API callback
+*/
+function getResultCallback(req, res) {
+  var path = req.route.path;
+  var method = req.route.method;
+  return function renderCallResult(error, gistData) {
+    if (error) {
+      console.error("Error:", error, "Method:", method, "Path:", path);
+      res.send(error);
+    } else {
+      res.send(gistData);
+    }
+  };
+}
+
 // ============
 // AUTH METHODS
 // ============
