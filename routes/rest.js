@@ -24,11 +24,11 @@ module.exports = function (app, github) {
 
   /*
     Get a msg object to emit to Github API for POST or PUT call
-    @param {object} body A JSON object with the following required properties:
+    @param {object} body A JSON object with the following properties:
       - gistBody
-      - gistDescription
+      - [gistDescription] optional
       - gistName
-      - [public]        optional: default true
+      - [public]          optional: default true
     @return {object}
   */
   function gistFromPostBody(body) {
@@ -90,14 +90,6 @@ module.exports = function (app, github) {
   */
   app.post('/gists', app.ensureAuthenticated, function(req, res) {
     var gist = gistFromPostBody(req.body);
-    github.gists.create(gist, function(error, gistData) {
-      if (error) {
-        console.error('error creating gist', error);
-        res.send(error);
-      } else {
-        res.send(gistData);
-      }
-
-    });
+    github.gists.create(gist, getResultCallback(req, res));
   });
 };
