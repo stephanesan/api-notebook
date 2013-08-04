@@ -27,43 +27,22 @@ var github = new GitHubApi({
     timeout: 15000
   });
 
-
-// =======
-// HELPERS
-// =======
-
-/*
-  Returns a common callback for REST routes
-  @param  {object} res Express response object
-  @return {function} Github API callback
-*/
-function getResultCallback(req, res) {
-  var path = req.route.path;
-  var method = req.route.method;
-  return function renderCallResult(error, gistData) {
-    if (error) {
-      console.error("Error:", error, "Method:", method, "Path:", path);
-      res.send(error);
-    } else {
-      res.send(gistData);
-    }
-  };
-}
+// App instance
+var app = express();
 
 // ============
 // AUTH METHODS
 // ============
-
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If
 //   the request is authenticated (typically via a persistent login session),
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
-function ensureAuthenticated(req, res, next) {
+app.ensureAuthenticated = function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
   res.redirect('/login');
-}
+};
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -106,13 +85,9 @@ passport.use(new GitHubStrategy({
   }
 ));
 
-
 // =================
 // APP CONFIGURATION
 // =================
-
-
-var app = express();
 
 // configure Express
 app.configure(function() {
@@ -140,144 +115,15 @@ app.configure('development', function(){
   app.use(express.errorHandler());
 });
 
+// ======
+// ROUTES
+// ======
 
-// ============
-// AUTH ROUTES
-// ============
-
-
-app.get('/login', function(req, res){
-  res.render('login', { user: req.user });
-});
-
-// GET /auth/github
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request.  The first step in GitHub authentication will involve redirecting
-//   the user to github.com.  After authorization, GitHubwill redirect the user
-//   back to this application at /auth/github/callback
-app.get('/auth/github',
-  passport.authenticate('github'),
-  function(req, res){
-    // The request will be redirected to GitHub for authentication, so this
-    // function will not be called.
-});
-
-// GET /auth/github/callback
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request.  If authentication fails, the user will be redirected back to the
-//   login page.  Otherwise, the primary route function function will be called,
-//   which, in this example, will redirect the user to the home page.
-app.get('/github-callback',
-  passport.authenticate('github', { failureRedirect: '/login' }),
-  function(req, res) {
-    res.redirect('/');
-  });
-
-app.get('/logout', function(req, res){
-  req.logout();
-  res.redirect('/');
-});
-
-
-// ===========
-// VIEW ROUTES
-// ===========
-
-
-/*
-  Render index
-*/
-app.get('/', function(req, res){
-  res.render('index', {user: req.user});
-});
-
-
-/*
-  Render user account information.
-*/
-app.get('/account', ensureAuthenticated, function(req, res){
-  res.render('account', { user: req.user });
-});
-
-
-// ===========
-// REST ROUTES
-// ===========
-
-
-/*
-  Retrieve all Gists for logged-in user.
-*/
-app.get('/gists', ensureAuthenticated, function(req, res) {
-  github.gists.getAll({}, getResultCallback(req, res));
-});
-
-/*
-  Retrieve a Gist with a specific id.
-*/
-app.get('/gists/:id', ensureAuthenticated, function(req, res) {
-  var gist = { "id": req.params.id };
-  github.gists.get(gist, getResultCallback(req, res));
-});
-
-/*
-  Delete a Gist with a specific ID.
-  Logged in user must have write access to the Gist.
-  TODO Use passed in ID
-*/
-app.delete('/gists/:id', ensureAuthenticated, function(req, res) {
-  var gist = { "id": req.params.id };
-  github.gists.delete(gist, getResultCallback(req, res));
-});
-
-/*
-  Update a Gist with a given ID.
-  Logged in user must have write access to the Gist.
-  TODO Use passed in ID
-*/
-app.put('/gists/:id', ensureAuthenticated, function(req, res) {
-  var gist = {
-    "id": req.params.id,
-    "description": null,
-    "files": null
-  };
-  github.gists.edit(gist, getResultCallback(req, res));
-});
-
-/*
-  Create a Gist for logged-in user.
-*/
-app.post('/gists', ensureAuthenticated, function(req, res) {
-  var body = req.body;
-  var files = {};
-  var gist = {};
-  var public = (typeof body.public === 'boolean') ? body.public : true;
-
-  files[body.gistName] = {
-    content: body.gistBody
-  };
-  gist = {
-    description: body.gistDescription,
-    public: public,
-    files: files
-  };
-
-  github.gists.create(gist, function(error, gistData) {
-    if (error) {
-      console.error('error creating gist', error);
-      res.send(error);
-    } else {
-      res.send(gistData);
-    }
-
-  });
-});
-
+require('./routes')(app, github);
 
 // =========
 // START APP
 // =========
-
 
 app.listen(PORT);
 console.log('Localhost server listening on port ' + PORT);
