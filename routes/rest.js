@@ -77,11 +77,8 @@ module.exports = function (app, github) {
     TODO Use passed in ID
   */
   app.put('/gists/:id', app.ensureAuthenticated, function(req, res) {
-    var gist = {
-      "id": req.params.id,
-      "description": null,
-      "files": null
-    };
+    var gist = gistFromPostBody(req.body);
+    gist.id = req.params.id;
     github.gists.edit(gist, getResultCallback(req, res));
   });
 
