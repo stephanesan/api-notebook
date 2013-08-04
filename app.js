@@ -2,6 +2,11 @@
 // Client Secret = ea758e7cde897016e56dd816c901d82c82568964
 /*jshint node: true, devel: true*/
 
+// node-github : https://github.com/ajaxorg/node-github/
+//               http://ajaxorg.github.io/node-github/
+// passportjs  : http://passportjs.org/
+
+
 var express = require('express')
   , engine = require('ejs-locals')
   , passport = require('passport')
@@ -179,7 +184,7 @@ app.get('/account', ensureAuthenticated, function(req, res){
 
 
 /*
-  Retrieve all gists for logged-in user
+  Retrieve all gists for logged-in user.
 */
 app.get('/gists', ensureAuthenticated, function(req, res) {
   github.gists.getAll({}, function(error, gistData) {
