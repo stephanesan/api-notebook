@@ -20,14 +20,22 @@ Notebook.prototype.initialize = function () {
 
 Notebook.prototype.getNext = function (model) {
   var index = this.collection.indexOf(model);
-
   return ~index ? this.collection.at(index + 1) : undefined;
 };
 
 Notebook.prototype.getPrev = function (model) {
   var index = this.collection.indexOf(model);
-
   return ~index ? this.collection.at(index - 1) : undefined;
+};
+
+Notebook.prototype.getNextView = function (view) {
+  var model = this.getNext(view.model);
+  return model && model.view;
+};
+
+Notebook.prototype.getPrevView = function (view) {
+  var model = this.getPrev(view.model);
+  return model && model.view;
 };
 
 Notebook.prototype.newCodeView = function (el, options) {
@@ -56,17 +64,19 @@ Notebook.prototype.appendView = function (view, before) {
   this.listenTo(view, 'close', function (view) {
     if (this.el.lastChild === view.el) {
       this.newCodeView();
+    } else {
+      this.getNextView(view).focus().moveCursorToEnd(0);
     }
   });
   // Listen to any attempts at navigating up cells
   this.listenTo(view, 'navigateUp', function (view) {
-    var model = this.getPrev(view.model);
-    model && model.view.focus().moveCursorToEnd();
+    var view = this.getPrevView(view);
+    view && view.focus().moveCursorToEnd();
   });
   // Listen to any attempts at navigating down cells
   this.listenTo(view, 'navigateDown', function (view) {
-    var model = this.getNext(view.model);
-    model && model.view.focus().moveCursorToEnd(0);
+    var view = this.getNextView(view);
+    view && view.focus().moveCursorToEnd(0);
   });
   // Listen to any attempts at moving cells up
   this.listenTo(view, 'moveUp', function (view) {
@@ -93,9 +103,9 @@ Notebook.prototype.appendView = function (view, before) {
   this.listenTo(view, 'remove', function (view) {
     // If it's the last node in the document, append a new code cell to work with
     if (this.el.childNodes.length < 2) { this.newCodeView(view.el); }
-    // Focus in on the previous cell
-    var model = this.getNext(view.model) || this.getPrev(view.model);
-    model && model.view.focus().moveCursorToEnd();
+    // Focus in on the next/previous cell
+    var newView = this.getNextView(view) || this.getPrevView(view);
+    newView && newView.focus().moveCursorToEnd();
     // Need to remove the model from the collection, otherwise we'll have problems
     this.collection.remove(view.model);
   });

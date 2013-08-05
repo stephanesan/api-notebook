@@ -5,17 +5,17 @@ var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'
 });
 
+ResultCell.prototype.clear = function () {
+  this.el.innerHTML = '';
+  this.el.classList.add('result-pending');
+  this.el.classList.remove('result-error');
+  return this;
+};
+
 ResultCell.prototype.setResult = function (result) {
-  var node = document.createTextNode(result);
-  if (this._resultNode) {
-    this.el.replaceChild(node, this._resultNode);
-  } else {
-    this.el.appendChild(node);
-  }
-
-  this._resultNode = node;
-  this.el.classList.remove('result-error', 'result-pending');
-
+  this.clear();
+  this.el.appendChild(document.createTextNode(result));
+  this.el.classList.remove('result-pending');
   return this;
 };
 
