@@ -10,7 +10,9 @@ var NotebookCollection = require('../collections/notebook');
 
 var insertAfter = require('../lib/insert-after');
 
-var Notebook = module.exports = View.extend();
+var Notebook = module.exports = View.extend({
+  className: 'notebook'
+});
 
 Notebook.prototype.initialize = function () {
   this.collection = window.collection = new NotebookCollection();
@@ -92,7 +94,7 @@ Notebook.prototype.appendView = function (view, before) {
     // If it's the last node in the document, append a new code cell to work with
     if (this.el.childNodes.length < 2) { this.newCodeView(view.el); }
     // Focus in on the previous cell
-    var model = this.getPrev(view.model);
+    var model = this.getNext(view.model) || this.getPrev(view.model);
     model && model.view.focus().moveCursorToEnd();
     // Need to remove the model from the collection, otherwise we'll have problems
     this.collection.remove(view.model);
@@ -104,10 +106,12 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'code', function (view, code) {
       var codeView = this.newCodeView(view.el, {
         model: new EntryModel({
-          type: 'text',
+          type: 'code',
           value: code
         })
       });
+
+      view.getValue() || view.remove();
     });
   }
 
@@ -120,6 +124,8 @@ Notebook.prototype.appendView = function (view, before) {
           value: text
         })
       });
+
+      view.getValue() || view.remove();
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {

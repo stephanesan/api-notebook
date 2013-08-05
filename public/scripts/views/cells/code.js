@@ -4,7 +4,9 @@ var ResultCell = require('./result');
 var sandbox    = require('../../lib/sandbox');
 var stripInput = require('../../lib/cm-strip-input');
 
-var CodeCell = module.exports = EditorCell.extend();
+var CodeCell = module.exports = EditorCell.extend({
+  className: 'cell cell-code'
+});
 
 CodeCell.prototype.initialize = function () {
   EditorCell.prototype.initialize.apply(this, arguments);
@@ -23,6 +25,7 @@ CodeCell.prototype.execute = function () {
   }
 
   this.save();
+  this.model.set('result', result); // Keep a reference to the result
   this.trigger('execute', this, err, result);
 };
 
@@ -31,9 +34,6 @@ CodeCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptio
 });
 
 CodeCell.prototype.editorOptions.extraKeys = _.extend({}, CodeCell.prototype.editorOptions.extraKeys, {
-  // When we press enter, it should trigger a new computation. However, it
-  // appears that `extraKeys` are shared between all instances so it's not
-  // as easy as just binding `this` to the function.
   'Enter': function (cm) {
     cm.view.execute();
     cm.view.trigger('close', cm.view);

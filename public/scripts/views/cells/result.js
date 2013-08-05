@@ -5,26 +5,22 @@ var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'
 });
 
-ResultCell.prototype.render = function () {
-  Cell.prototype.render.call(this);
-
-  this._resultNode = document.createTextNode('');
-  this.el.appendChild(this._resultNode);
-
-  return this;
-};
-
 ResultCell.prototype.setResult = function (result) {
   var node = document.createTextNode(result);
-  this._resultNode.parentNode.replaceChild(node, this._resultNode);
-  this._resultNode = node;
+  if (this._resultNode) {
+    this.el.replaceChild(node, this._resultNode);
+  } else {
+    this.el.appendChild(node);
+  }
 
-  this.el.classList.remove('result-pending');
+  this._resultNode = node;
+  this.el.classList.remove('result-error', 'result-pending');
 
   return this;
 };
 
 ResultCell.prototype.setError = function (error) {
-  this.setResult(error.message);
+  this.setResult(error); // Leave the object inspector to take care of rendering
+  this.el.classList.add('result-error');
   return this;
 };

@@ -2,15 +2,16 @@ var _ = require('underscore');
 
 var stripInput = function (prevPosition, cm) {
   var endPosition = { ch: Infinity, line: Infinity };
-  // Grab all the text after the character
-  var text = cm.doc.getRange(prevPosition, endPosition);
+  var text        = cm.doc.getRange(prevPosition, endPosition);
   // Remove everything after the position
   cm.doc.replaceRange('', prevPosition, endPosition);
-  // Trigger a text event which tells the notebook to open a text cell
+  // Trim and/or remove the last line if it is now empty
+  var lastLine = require('trim').right(cm.doc.getLine(cm.doc.lastLine()));
+  lastLine ? cm.doc.setLine(cm.doc.lastLine(), lastLine) : cm.doc.removeLine(cm.doc.lastLine());
   return text;
 };
 
-var handleSetValue = function (string, cm, event, includeChars) {
+var handleSetValue = function (string, cm, event) {
   var index, line;
 
   for (var i = 0; i < event.text.length; i++) {
@@ -27,10 +28,10 @@ var handleSetValue = function (string, cm, event, includeChars) {
   return stripInput({
     ch: (line === event.from.line ? event.from.ch + index : index),
     line: line
-  }, cm).substr(includeChars ? 0 : string.length);
+  }, cm).substr(string.length);
 };
 
-var handleInput = function (string, cm, event, includeChars) {
+var handleInput = function (string, cm, event) {
   if (event.text[0] !== string.charAt(string.length - 1) || event.from.ch === 0) {
     return false;
   }
@@ -43,14 +44,14 @@ var handleInput = function (string, cm, event, includeChars) {
 
   if (prevChars !== string.slice(0, -1)) { return false; }
 
-  return stripInput(prevPosition, cm).substr(includeChars ? 0 : string.length);
+  return stripInput(prevPosition, cm).substr(string.length);
 };
 
-var handlePaste = function (string, cm, event, includeChars) {
+var handlePaste = function (string, cm, event) {
   // Try and find if the first character of the input is part of the string
   var index = string.indexOf(event.text[0].charAt(0));
 
-  if (index < 0) { return handleInput(string, cm, event, includeChars); }
+  if (index < 0) { return handleInput(string, cm, event); }
 
   var prevPosition = _.defaults({
     ch: event.from.ch - index
@@ -62,9 +63,9 @@ var handlePaste = function (string, cm, event, includeChars) {
 
   var prevChars = cm.doc.getRange(prevPosition, nextPosition);
 
-  if (prevChars !== string) { return handleInput(string, cm, event, includeChars); }
+  if (prevChars !== string) { return handleInput(string, cm, event); }
 
-  return stripInput(prevPosition, cm).substr(includeChars ? 0 : string.length);
+  return stripInput(prevPosition, cm).substr(string.length);
 };
 
 // Quickly checks if a certain string has been inserted. If it hasn't it will
@@ -72,15 +73,15 @@ var handlePaste = function (string, cm, event, includeChars) {
 // from the CodeMirror instance and return it instead. Oddly enough, I'm
 // including an `includeChars` flag for the case when a text block has already
 // been closed, but we are trying to close it again.
-module.exports = function (string, cm, event, includeChars) {
+module.exports = function (string, cm, event) {
   // setValue events need to be managed and parsed manually
-  if (event.origin === 'setValue') { return handleSetValue(string, cm, event, includeChars); }
+  if (event.origin === 'setValue') { return handleSetValue(string, cm, event); }
   // Paste events are slightly more complicated since part of the existing text
   // could be in the paste and when joined with the existing input, it could
   // create the target string
-  if (event.origin === 'paste') { return handlePaste(string, cm, event, includeChars); }
+  if (event.origin === 'paste') { return handlePaste(string, cm, event); }
   // Handle input events can be done more efficiently than with paste
-  if (event.origin === '+input') { return handleInput(string, cm, event, includeChars); }
+  if (event.origin === '+input') { return handleInput(string, cm, event); }
   // Finally just return false if it's none of the above
   return false;
 };

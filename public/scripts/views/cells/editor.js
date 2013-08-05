@@ -73,7 +73,6 @@ EditorCell.prototype.clone = function () {
   var clone = new this.constructor(_.extend({}, this.options, {
     model: this.model.clone()
   }));
-  console.log(clone);
   this.trigger('clone', this, clone);
   return clone;
 };
@@ -93,7 +92,7 @@ EditorCell.prototype.setValue = function (text) {
 };
 
 EditorCell.prototype.moveCursorToEnd = function (line) {
-  this.editor.setCursor(line || this.editor.doc.lastLine(), Infinity);
+  this.editor.setCursor(isNaN(line) ? this.editor.doc.lastLine() : line, Infinity);
   return this;
 };
 
