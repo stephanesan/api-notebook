@@ -20,17 +20,17 @@
     margin: 0
 
 .notebook .cell-result
-  border: 1px solid #eee
+  border: 1px solid $color-result-border
   border-left-width: 5px
-  padding: 0.8em
+  padding: 1.05em
   font-size: 0.95em
   font-family: monospace
-  background-color: #f5f5f5
+  background-color: $color-result-bg
   &.result-pending
     display: none
   &.result-error
-    border-color: #dFb5b4
-    background-color: #fcf2f2
+    border-color: $color-error-border
+    background-color: $color-error-bg
 
 .notebook > .cell
   margin: 1em 0
@@ -38,3 +38,9 @@
 .notebook > .cell > .cell-result
   position: relative
   top: -1px // Overlap the codemirror instance
+  color: $color-result-text;
+  &.result-error
+    color: $color-error-text;
+
+.CodeMirror
+  line-height: normal;
