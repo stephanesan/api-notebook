@@ -21,12 +21,12 @@ Notebook.prototype.initialize = function () {
 
 Notebook.prototype.getNext = function (model) {
   var index = this.collection.indexOf(model);
-  return ~index ? this.collection.at(index + 1) : undefined;
+  return index < this.collection.length - 1 ? this.collection.at(index + 1) : undefined;
 };
 
 Notebook.prototype.getPrev = function (model) {
   var index = this.collection.indexOf(model);
-  return ~index ? this.collection.at(index - 1) : undefined;
+  return index > 0 ? this.collection.at(index - 1) : undefined;
 };
 
 Notebook.prototype.getNextView = function (view) {
