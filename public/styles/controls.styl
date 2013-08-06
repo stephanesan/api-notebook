@@ -27,7 +27,6 @@
     color: #fff
 
 .modal
-  display: none
   position: fixed
   z-index: 200
   top: 100px
@@ -74,7 +73,6 @@
     text-align: left
 
 .modal-backdrop
-  display: none
   position: fixed
   top: 0
   right: 0
@@ -83,3 +81,15 @@
   z-index: 199
 
   background: rgba(0,0,0,0.15)
+
+.modal,
+.modal-backdrop
+  opacity: 0
+  visibility: hidden
+  transition: opacity 0.3s ease
+
+.modal-visible
+  .modal,
+  .modal-backdrop
+    opacity: 1
+    visibility: visible
