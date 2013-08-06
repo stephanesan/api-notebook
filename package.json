@@ -22,8 +22,7 @@
     "handlebars-runtime": "~1.0.12",
     "grunt-browserify": "~1.2.1",
     "mocha-phantomjs": "~3.1.0",
-    "grunt-cli": "~0.1.9",
-    "sinon": "~1.7.3"
+    "grunt-cli": "~0.1.9"
   },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
