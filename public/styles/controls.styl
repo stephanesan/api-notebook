@@ -8,17 +8,23 @@
 .col-large
   width: 70%
 
-.btn
-  padding: 5px
-  border: 1px solid #ccc
-  border-radius: 3px
-
-  background: #eee
-
 .modal-toggle
+  position: relative
   float: right
-  margin-top: 4px
-  border-color: #000
+  width: 26px
+  height: @width
+  margin-top: 5px
+  padding: 0
+  border: 2px solid #fff
+  border-radius: 50%
+
+  &:after
+    content: '?'
+    position: absolute
+    top: 3px
+    left: 6px
+    display: block
+    color: #fff
 
 .modal
   display: none
