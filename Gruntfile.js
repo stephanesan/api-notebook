@@ -29,8 +29,7 @@ module.exports = function (grunt) {
             }
           }
         },
-        debug: true,
-        transform: ['hbsfy']
+        debug: true
       }
     },
 

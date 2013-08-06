@@ -1,6 +1,4 @@
 require('./bootstrap');
 
-// Require the main notebook view, which will delegate everything
-new (require('./views/notebook'))({
-  collection: new (require('./collections/notebook'))()
-}).render().appendTo(document.body);
+// Require the application view which runs everything
+(window.app = new (require('./views/app'))()).render().appendTo(document.body);

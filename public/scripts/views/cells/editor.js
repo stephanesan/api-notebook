@@ -1,7 +1,14 @@
 var _    = require('underscore');
-var Cell = require('./base');
+var Cell = require('./cell');
 
 var EditorCell = module.exports = Cell.extend();
+
+EditorCell.prototype.initialize = function () {
+  // Every editor cell needs a model to function
+  this.model = this.model || new this.EditorModel();
+};
+
+EditorCell.prototype.EditorModel = require('../../models/entry');
 
 EditorCell.prototype.editorOptions = {
   tabSize:        2,
@@ -32,14 +39,6 @@ EditorCell.prototype.editorOptions = {
   }
 };
 
-EditorCell.prototype.remove = function () {
-  // Trigger the `remove` event before actually removing the view since we may
-  // need to append a new element afterward, etc. Also, after adding the `.off()`
-  // fix to `view.js` - no events will work anymore after calling remove.
-  this.trigger('remove', this);
-  Cell.prototype.remove.call(this);
-};
-
 EditorCell.prototype.moveUp = function () {
   this.trigger('moveUp', this);
 };
@@ -61,7 +60,7 @@ EditorCell.prototype.render = function () {
   this.editor = CodeMirror(this.el, this.editorOptions);
   // Alias the current view to the editor, since keyMaps are shared between instances
   this.editor.view = this;
-  // Set the values if they already exist
+  // Set the editor value if it already exists
   if (this.model.get('value')) {
     this.setValue(this.model.get('value'));
     this.moveCursorToEnd();
@@ -86,8 +85,8 @@ EditorCell.prototype.getValue = function () {
   return this.editor.getValue();
 };
 
-EditorCell.prototype.setValue = function (text) {
-  this.editor.setValue((text || '').trim());
+EditorCell.prototype.setValue = function (value) {
+  this.editor.setValue((value || '').trim());
   return this;
 };
 

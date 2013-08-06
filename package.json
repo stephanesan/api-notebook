@@ -20,11 +20,16 @@
     "grunt": "~0.4.1",
     "matchdep": "~0.1.2",
     "handlebars-runtime": "~1.0.12",
-    "hbsfy": "~0.1.5",
-    "grunt-browserify": "~1.2.1"
+    "grunt-browserify": "~1.2.1",
+    "mocha-phantomjs": "~3.1.0",
+    "chai": "~1.7.2",
+    "sinon": "~1.7.3",
+    "mocha": "~1.12.0",
+    "grunt-cli": "~0.1.9"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "./node_modules/.bin/grunt build",
+    "test": "npm run build && ./node_modules/.bin/mocha-phantomjs ./test/index.html"
   },
   "repository": {
     "type": "git",

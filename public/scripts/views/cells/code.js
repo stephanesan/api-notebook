@@ -15,6 +15,8 @@ CodeCell.prototype.initialize = function () {
   this._editorCid = this.model.cid;
 };
 
+CodeCell.prototype.EditorModel = require('../../models/code-entry');
+
 CodeCell.prototype.execute = function () {
   var err, result;
 
@@ -55,25 +57,29 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend({}, CodeCell.prototype.edi
 });
 
 CodeCell.prototype.save = function () {
-  this._editorCid = this.model.cid;
-  this.model.set('value', this.getValue());
+  if (this._editorCid === this.model.cid) {
+    this.model.set('value', this.getValue());
+  }
 };
 
 CodeCell.prototype.browseUp = function () {
-  if (this._editorCid === this.model.cid) { this.save(); }
-
   this.trigger('browseUp', this, this._editorCid);
 };
 
 CodeCell.prototype.browseDown = function () {
-  if (this._editorCid === this.model.cid) { this.save(); }
-
   this.trigger('browseDown', this, this._editorCid);
 };
 
-CodeCell.prototype.browseCell = function (model) {
-  this._editorCid = model.cid;
-  this.setValue(model.get('value'));
+CodeCell.prototype.browseToCell = function (newModel) {
+  this.save();
+  this._editorCid = newModel.cid;
+  // Grab the value from the editor if its not our own model, but if it is we
+  // need to grab the value from the model itself. Otherwise there will be pain.
+  if (this._editorCid === this.model.cid) {
+    this.setValue(newModel.get('value'));
+  } else {
+    this.setValue(newModel.view.editor.getValue());
+  }
 };
 
 CodeCell.prototype.render = function () {
@@ -83,7 +89,10 @@ CodeCell.prototype.render = function () {
     var commentBlock = stripInput('/*', cm, data);
     // When the comment block check doesn't return false, it means we want to
     // start a new comment block
-    commentBlock !== false && this.trigger('text', this, commentBlock);
+    if (commentBlock !== false) {
+      this.model.set('value', this.getValue());
+      this.trigger('text', this, commentBlock);
+    }
   }, this));
 
   // Every code cell has an associated result

@@ -1,14 +1,15 @@
-var _ = require('underscore');
+var _    = require('underscore');
+var trim = require('trim');
 
-var stripInput = function (prevPosition, cm) {
+var stripInput = function (prevPosition, cm, string) {
   var endPosition = { ch: Infinity, line: Infinity };
   var text        = cm.doc.getRange(prevPosition, endPosition);
   // Remove everything after the position
   cm.doc.replaceRange('', prevPosition, endPosition);
   // Trim and/or remove the last line if it is now empty
-  var lastLine = require('trim').right(cm.doc.getLine(cm.doc.lastLine()));
+  var lastLine = trim.right(cm.doc.getLine(cm.doc.lastLine()));
   lastLine ? cm.doc.setLine(cm.doc.lastLine(), lastLine) : cm.doc.removeLine(cm.doc.lastLine());
-  return text;
+  return trim.left(text.substr(string.length));
 };
 
 var handleSetValue = function (string, cm, event) {
@@ -28,7 +29,7 @@ var handleSetValue = function (string, cm, event) {
   return stripInput({
     ch: (line === event.from.line ? event.from.ch + index : index),
     line: line
-  }, cm).substr(string.length);
+  }, cm, string);
 };
 
 var handleInput = function (string, cm, event) {
@@ -44,7 +45,7 @@ var handleInput = function (string, cm, event) {
 
   if (prevChars !== string.slice(0, -1)) { return false; }
 
-  return stripInput(prevPosition, cm).substr(string.length);
+  return stripInput(prevPosition, cm, string);
 };
 
 var handlePaste = function (string, cm, event) {
@@ -65,7 +66,7 @@ var handlePaste = function (string, cm, event) {
 
   if (prevChars !== string) { return handleInput(string, cm, event); }
 
-  return stripInput(prevPosition, cm).substr(string.length);
+  return stripInput(prevPosition, cm, string);
 };
 
 // Quickly checks if a certain string has been inserted. If it hasn't it will

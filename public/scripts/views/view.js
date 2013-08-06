@@ -8,16 +8,16 @@ View.prototype.render = function () {
 };
 
 View.prototype.remove = function () {
-  this.off(); // Remove every currently registered event
+  // Trigger the `remove` event before actually removing the view since we may
+  // need to append a new element afterward, etc. Also needs to be called before
+  // `#off()` - no events will work anymore after calling it.
+  this.trigger('remove', this);
+  this.off();
   Backbone.View.prototype.remove.call(this);
+  return this;
 };
 
 View.prototype.appendTo = function (el) {
-  if (typeof el === 'function') {
-    el.call(this, this.el);
-  } else {
-    el.appendChild(this.el);
-  }
-
+  el.appendChild ? el.appendChild(this.el) : el.call(this, this.el);
   return this;
 };

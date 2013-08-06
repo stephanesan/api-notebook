@@ -1,5 +1,5 @@
 var _    = require('underscore');
-var Cell = require('./base');
+var Cell = require('./cell');
 
 var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'

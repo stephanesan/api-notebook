@@ -1,6 +1,7 @@
 var frame = document.createElement('iframe');
 frame.style.display = 'none';
-// Append the iframe to the DOM so we can use it
+
+// The iframe needs to be appended to the document before we can use it
 document.body.appendChild(frame);
 
 // Allow arbitrary running of strings as code
