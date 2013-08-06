@@ -98,15 +98,13 @@ describe('Code Cell', function () {
       });
 
       describe('execute code', function () {
-        it('should render the a result', function () {
+        it('should render the result', function () {
           var spy  = sinon.spy(view.result, 'setResult');
-          var spy2 = sinon.spy();
           var code = '10';
 
           view.on('execute', function (view, err, result) {
             expect(result).to.equal(10);
           });
-          view.on('close', spy2);
 
           editor.setValue(code);
           view.execute();
