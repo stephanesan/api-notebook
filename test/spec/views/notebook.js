@@ -147,15 +147,21 @@ describe('Notebook', function () {
       });
 
       it('should be able to navigate up cells', function () {
+        textCells[0].setValue('multi\nline\ncursor\ntest');
         codeCells[1].trigger('navigateUp', codeCells[1]);
 
         expect(textCells[0].editor.hasFocus()).to.be.ok;
+        expect(textCells[0].editor.getCursor().ch).to.equal(4);
+        expect(textCells[0].editor.getCursor().line).to.equal(3);
       });
 
       it('should be able to navigate down cells', function () {
+        textCells[0].setValue('multi\nline\ncursor\ntest');
         codeCells[0].trigger('navigateDown', codeCells[0]);
 
         expect(textCells[0].editor.hasFocus()).to.be.ok;
+        expect(textCells[0].editor.getCursor().ch).to.equal(5);
+        expect(textCells[0].editor.getCursor().line).to.equal(0);
       });
 
       it('should be able to move cells up', function () {
@@ -176,6 +182,8 @@ describe('Notebook', function () {
       });
 
       it('should be able to clone a cell down', function () {
+        textCells[0].setValue('testing');
+        textCells[0].editor.setCursor(0, 3);
         textCells[0].clone(); // Call the method since it will emit the event
 
         expect(textCells[0].el.nextSibling.className).to.contain('cell-text');
@@ -183,16 +191,36 @@ describe('Notebook', function () {
         expect(view.collection.at(3).view.el.nextSibling).to.be.equal(codeCells[1].el);
         expect(view.collection.at(3).view.el.previousSibling).to.be.equal(textCells[0].el);
         expect(view.collection.at(3).view.editor.hasFocus()).to.be.ok;
+        expect(view.collection.at(3).view.editor.getCursor().ch).to.equal(3);
       });
 
       it('should be able to remove a node', function () {
         expect(view.collection.length).to.equal(4);
 
+        codeCells[1].setValue('multi\nline');
         textCells[0].remove();
 
         expect(view.collection.length).to.equal(3);
         expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
         expect(codeCells[1].editor.hasFocus()).to.be.ok;
+        expect(codeCells[1].editor.getCursor().ch).to.equal(4);
+        expect(codeCells[1].editor.getCursor().line).to.equal(1);
+      });
+
+      it('should be able to switch cell types', function () {
+        expect(view.collection.length).to.equal(4);
+
+        textCells[0].setValue('testing');
+        textCells[0].editor.setCursor(0, 5);
+        textCells[0].trigger('switch', textCells[0]);
+
+        expect(view.collection.length).to.equal(4);
+        expect(textCells[0].el.parentNode).to.not.exist;
+        expect(codeCells[0].el.nextSibling).to.equal(view.collection.at(2).view.el);
+        expect(codeCells[1].el.previousSibling).to.equal(view.collection.at(2).view.el);
+        expect(view.collection.at(2).view.editor.hasFocus()).to.be.ok;
+        expect(view.collection.at(2).view.editor.getCursor().ch).to.equal(5);
+        expect(view.collection.at(2).view.editor.getCursor().line).to.equal(0);
       });
 
       describe('Text Cell', function () {
@@ -229,6 +257,7 @@ describe('Notebook', function () {
 
           expect(view.collection.at(2).view.getValue()).to.equal('testing');
           expect(view.collection.at(2).view.editor.hasFocus()).to.be.ok;
+          expect(view.collection.at(2).view.editor.getCursor().ch).to.equal(7);
         });
       });
 
@@ -265,6 +294,7 @@ describe('Notebook', function () {
 
           expect(view.collection.at(1).view.getValue()).to.equal('testing');
           expect(view.collection.at(1).view.editor.hasFocus()).to.be.ok;
+          expect(view.collection.at(1).view.editor.getCursor().ch).to.equal(7);
         });
 
         it('should create a new view upon code execution', function () {
@@ -274,6 +304,7 @@ describe('Notebook', function () {
 
           expect(view.collection.length).to.equal(5);
           expect(codeCells[1].el.nextSibling).to.equal(view.collection.at(4).view.el);
+          expect(view.collection.at(4).view.editor.hasFocus()).to.be.ok;
         });
 
         it('shouldn\'t create a new view if it\'s not the final cell', function () {
@@ -286,8 +317,8 @@ describe('Notebook', function () {
         });
 
         it('should be able to browse to the cell above', function () {
-          expect(codeCells[1].editor.hasFocus()).to.be.ok;
           codeCells.push(view.appendCodeView());
+          expect(codeCells[2].editor.hasFocus()).to.be.ok;
 
           codeCells[0].setValue('one');
           codeCells[1].setValue('two');
@@ -295,15 +326,19 @@ describe('Notebook', function () {
 
           codeCells[2].browseUp();
           expect(codeCells[2].getValue()).to.equal('two');
+          expect(codeCells[2].editor.hasFocus()).to.be.ok;
+          expect(codeCells[2].editor.getCursor().ch).to.equal(3);
 
           codeCells[2].browseUp();
           expect(codeCells[2].getValue()).to.equal('one');
+          expect(codeCells[2].editor.hasFocus()).to.be.ok;
+          expect(codeCells[2].editor.getCursor().ch).to.equal(3);
         });
 
         it('should be able to browse to the cell below', function () {
+          codeCells.push(view.appendCodeView());
           codeCells[0].focus();
           expect(codeCells[0].editor.hasFocus()).to.be.ok;
-          codeCells.push(view.appendCodeView());
 
           codeCells[0].setValue('one');
           codeCells[1].setValue('two');
@@ -311,9 +346,13 @@ describe('Notebook', function () {
 
           codeCells[0].browseDown();
           expect(codeCells[0].getValue()).to.equal('two');
+          expect(codeCells[0].editor.hasFocus()).to.be.ok;
+          expect(codeCells[0].editor.getCursor().ch).to.equal(3);
 
           codeCells[0].browseDown();
           expect(codeCells[0].getValue()).to.equal('three');
+          expect(codeCells[0].editor.hasFocus()).to.be.ok;
+          expect(codeCells[0].editor.getCursor().ch).to.equal(5);
         });
 
         it('should keep its value when browsing cells', function () {
@@ -327,6 +366,23 @@ describe('Notebook', function () {
 
           codeCells[0].browseUp();
           expect(codeCells[0].getValue()).to.equal('one');
+        });
+
+        it('should provide appropriate keyboard navigation between new content', function () {
+          codeCells[0].setValue('multi\nline\ntest');
+          codeCells[1].setValue('even\nmore\nlines\nhere');
+
+          expect(codeCells[1].editor.hasFocus()).to.be.ok;
+          expect(codeCells[1].editor.getCursor().ch).to.equal(0);
+          expect(codeCells[1].editor.getCursor().line).to.equal(0);
+
+          codeCells[1].browseUp();
+          expect(codeCells[1].editor.getCursor().ch).to.equal(4);
+          expect(codeCells[1].editor.getCursor().line).to.equal(2);
+
+          codeCells[1].browseDown();
+          expect(codeCells[1].editor.getCursor().ch).to.equal(4);
+          expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
       });
     });

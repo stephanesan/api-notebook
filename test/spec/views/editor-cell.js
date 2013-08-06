@@ -134,6 +134,13 @@ describe('Editor Cell', function () {
           fakeKey(editor, DELETE, { metaKey: true });
           expect(spy.calledOnce).to.be.ok;
         });
+
+        it('Switch Cell (`Cmd-Alt-B`)', function () {
+          var spy = sinon.spy();
+          view.on('switch', spy);
+          fakeKey(editor, 'B', { metaKey: true, altKey: true });
+          expect(spy.calledOnce).to.be.ok;
+        });
       });
 
       it('#focus', function () {

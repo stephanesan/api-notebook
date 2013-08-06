@@ -55,17 +55,16 @@ Notebook.prototype.appendTextView = function (el, value) {
 
 Notebook.prototype.appendView = function (view, before) {
   if (view instanceof EditorView) {
-    // Listen to any attempts at navigating up cells
     this.listenTo(view, 'navigateUp', function (view) {
       var view = this.getPrevView(view);
       view && view.focus().moveCursorToEnd();
     });
-    // Listen to any attempts at navigating down cells
+
     this.listenTo(view, 'navigateDown', function (view) {
       var view = this.getNextView(view);
       view && view.focus().moveCursorToEnd(0);
     });
-    // Listen to any attempts at moving cells up
+
     this.listenTo(view, 'moveUp', function (view) {
       if (!view.el.previousSibling) { return; }
 
@@ -73,7 +72,7 @@ Notebook.prototype.appendView = function (view, before) {
       view.focus();
       this.collection.sort();
     });
-    // Listen to any attempts at moving cells down
+
     this.listenTo(view, 'moveDown', function (view) {
       if (!view.el.nextSibling) { return; }
 
@@ -81,11 +80,13 @@ Notebook.prototype.appendView = function (view, before) {
       view.focus();
       this.collection.sort();
     });
+
     // Listen to clone events and append the new views after the current view
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
+      clone.editor.setCursor(view.editor.getCursor());
     });
-    // Listen to removals from the document
+
     this.listenTo(view, 'remove', function (view) {
       // If it's the last node in the document, append a new code cell to work with
       if (this.el.childNodes.length < 2) { this.appendCodeView(view.el); }
@@ -94,6 +95,21 @@ Notebook.prototype.appendView = function (view, before) {
       newView && newView.focus().moveCursorToEnd();
       // Need to remove the model from the collection, otherwise we'll have problems
       this.collection.remove(view.model);
+    });
+
+    // Listen for switch events, which isn't a real switch but recreates the
+    // view using the data it has available. This results in some issues, but
+    // avoids a whole different set of issues that would arrise trying to change
+    // everything on the fly.
+    this.listenTo(view, 'switch', function (view) {
+      var newView;
+      if (view instanceof TextView) {
+        newView = this.appendCodeView(view.el, view.getValue());
+      } else {
+        newView = this.appendTextView(view.el, view.getValue());
+      }
+      view.remove();
+      newView.editor.setCursor(view.editor.getCursor());
     });
   }
 

@@ -35,6 +35,9 @@ EditorCell.prototype.editorOptions = {
     },
     'Cmd-Backspace': function (cm) {
       cm.view.remove();
+    },
+    'Cmd-Alt-B': function (cm) {
+      cm.view.switch();
     }
   }
 };
@@ -55,6 +58,23 @@ EditorCell.prototype.navigateDown = function () {
   this.trigger('navigateDown', this);
 };
 
+EditorCell.prototype.clone = function () {
+  var clone = new this.constructor(_.extend({}, this.options, {
+    model: this.model.clone()
+  }));
+  this.trigger('clone', this, clone);
+  return clone;
+};
+
+EditorCell.prototype.switch = function () {
+  this.trigger('switch', this);
+};
+
+EditorCell.prototype.focus = function () {
+  this.editor.focus();
+  return this;
+};
+
 EditorCell.prototype.render = function () {
   // Initialize the codemirror editor
   this.editor = CodeMirror(this.el, this.editorOptions);
@@ -65,19 +85,6 @@ EditorCell.prototype.render = function () {
     this.setValue(this.model.get('value'));
     this.moveCursorToEnd();
   }
-  return this;
-};
-
-EditorCell.prototype.clone = function () {
-  var clone = new this.constructor(_.extend({}, this.options, {
-    model: this.model.clone()
-  }));
-  this.trigger('clone', this, clone);
-  return clone;
-};
-
-EditorCell.prototype.focus = function () {
-  this.editor.focus();
   return this;
 };
 
