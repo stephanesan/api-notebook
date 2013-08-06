@@ -11,5 +11,9 @@
   ],
   "dependencies": {
     "normalize-css": "git://github.com/necolas/normalize.css.git#~2.1.2"
+  },
+  "devDependencies": {
+    "chai": "~1.7.2",
+    "mocha": "~1.12.0"
   }
 }
