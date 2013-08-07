@@ -9,10 +9,14 @@ var TextCell = module.exports = EditorCell.extend({
 
 TextCell.prototype.EditorModel = require('../../models/text-entry');
 
-TextCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptions, {
-  mode: 'gfm',
-  theme: 'text-cell'
-});
+TextCell.prototype.editorOptions = _.extend(
+  {},
+  EditorCell.prototype.editorOptions,
+  {
+    mode: 'gfm',
+    theme: 'text-cell'
+  }
+);
 
 TextCell.prototype.closeCell = function (code) {
   this.alreadyClosed = true;
@@ -29,7 +33,7 @@ TextCell.prototype.render = function () {
     this.model.set('value', this.getValue());
     // When we detect the closing comment block, set `this.alreadyClosed` -
     // since it doesn't make sense to be able to close it more than once
-    endCommentBlock !== false && this.closeCell(endCommentBlock);
+    if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
   }, this));
 
   return this;

@@ -18,6 +18,10 @@ View.prototype.remove = function () {
 };
 
 View.prototype.appendTo = function (el) {
-  el.appendChild ? el.appendChild(this.el) : el.call(this, this.el);
+  if (typeof el.appendChild === 'function') {
+    el.appendChild(this.el);
+  } else {
+    el.call(this, this.el);
+  }
   return this;
 };

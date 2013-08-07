@@ -8,7 +8,11 @@ var stripInput = function (prevPosition, cm, string) {
   cm.doc.replaceRange('', prevPosition, endPosition);
   // Trim and/or remove the last line if it is now empty
   var lastLine = trim.right(cm.doc.getLine(cm.doc.lastLine()));
-  lastLine ? cm.doc.setLine(cm.doc.lastLine(), lastLine) : cm.doc.removeLine(cm.doc.lastLine());
+  if (lastLine) {
+    cm.doc.setLine(cm.doc.lastLine(), lastLine);
+  } else {
+    cm.doc.removeLine(cm.doc.lastLine());
+  }
   return trim.left(text.substr(string.length));
 };
 
@@ -33,7 +37,7 @@ var handleSetValue = function (string, cm, event) {
 };
 
 var handleInput = function (string, cm, event) {
-  if (event.text[0] !== string.charAt(string.length - 1) || event.from.ch === 0) {
+  if (event.text[0] !== string[string.length - 1] || event.from.ch === 0) {
     return false;
   }
 

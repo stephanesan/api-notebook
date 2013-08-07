@@ -22,11 +22,13 @@
     "handlebars-runtime": "~1.0.12",
     "grunt-browserify": "~1.2.1",
     "mocha-phantomjs": "~3.1.0",
-    "grunt-cli": "~0.1.9"
+    "grunt-cli": "~0.1.9",
+    "jshint": "~2.1.9"
   },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
-    "test": "npm run build && ./node_modules/.bin/mocha-phantomjs ./test/index.html"
+    "lint": "./node_modules/.bin/jshint public/scripts",
+    "test": "npm run lint && npm run build && ./node_modules/.bin/mocha-phantomjs ./test/index.html"
   },
   "repository": {
     "type": "git",

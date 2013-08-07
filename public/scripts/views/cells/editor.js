@@ -29,7 +29,7 @@ EditorCell.prototype.editorOptions = {
     'Cmd-Alt-Down': function (cm) {
       cm.view.moveDown();
     },
-    // Need to consider this shortcut (`Cmd-Alt-C`) since it's already taken for me
+    // Need to consider `Cmd-Alt-C` since it's already taken for me
     'Ctrl-Alt-C': function (cm) {
       cm.view.clone();
     },
@@ -77,8 +77,9 @@ EditorCell.prototype.focus = function () {
 
 EditorCell.prototype.render = function () {
   // Initialize the codemirror editor
-  this.editor = CodeMirror(this.el, this.editorOptions);
-  // Alias the current view to the editor, since keyMaps are shared between instances
+  this.editor = new CodeMirror(this.el, this.editorOptions);
+  // Alias the current view to the editor, since keyMaps are shared between
+  // all instances of CodeMirror
   this.editor.view = this;
   // Set the editor value if it already exists
   if (this.model.get('value')) {
@@ -98,7 +99,10 @@ EditorCell.prototype.setValue = function (value) {
 };
 
 EditorCell.prototype.moveCursorToEnd = function (line) {
-  this.editor.setCursor(isNaN(line) ? this.editor.doc.lastLine() : line, Infinity);
+  this.editor.setCursor(
+    isNaN(line) ? this.editor.doc.lastLine() : line,
+    Infinity
+  );
   return this;
 };
 

@@ -21,7 +21,8 @@ Notebook.prototype.initialize = function () {
 
 Notebook.prototype.getNext = function (model) {
   var index = this.collection.indexOf(model);
-  return index < this.collection.length - 1 ? this.collection.at(index + 1) : undefined;
+  return index < this.collection.length - 1 ?
+    this.collection.at(index + 1) : undefined;
 };
 
 Notebook.prototype.getPrev = function (model) {
@@ -56,13 +57,13 @@ Notebook.prototype.appendTextView = function (el, value) {
 Notebook.prototype.appendView = function (view, before) {
   if (view instanceof EditorView) {
     this.listenTo(view, 'navigateUp', function (view) {
-      var view = this.getPrevView(view);
-      view && view.focus().moveCursorToEnd();
+      var prevView = this.getPrevView(view);
+      if (prevView) { prevView.focus().moveCursorToEnd(); }
     });
 
     this.listenTo(view, 'navigateDown', function (view) {
-      var view = this.getNextView(view);
-      view && view.focus().moveCursorToEnd(0);
+      var nextView = this.getNextView(view);
+      if (nextView) { nextView.focus().moveCursorToEnd(0); }
     });
 
     this.listenTo(view, 'moveUp', function (view) {
@@ -88,12 +89,12 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'remove', function (view) {
-      // If it's the last node in the document, append a new code cell to work with
+      // If it's the last node in the document, append a new code cell
       if (this.el.childNodes.length < 2) { this.appendCodeView(view.el); }
       // Focus in on the next/previous cell
       var newView = this.getNextView(view) || this.getPrevView(view);
-      newView && newView.focus().moveCursorToEnd();
-      // Need to remove the model from the collection, otherwise we'll have problems
+      if (newView) { newView.focus().moveCursorToEnd(); }
+      // Need to remove the model from the collection
       this.collection.remove(view.model);
     });
 
@@ -118,7 +119,7 @@ Notebook.prototype.appendView = function (view, before) {
     // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
       this.appendCodeView(view.el, code);
-      view.getValue() || view.remove();
+      if (!view.getValue()) { view.remove(); }
     });
   }
 
@@ -136,7 +137,7 @@ Notebook.prototype.appendView = function (view, before) {
 
     this.listenTo(view, 'text', function (view, text) {
       this.appendTextView(view.el, text);
-      view.getValue() || view.remove();
+      if (!view.getValue()) { view.remove(); }
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {
@@ -177,7 +178,7 @@ Notebook.prototype.appendView = function (view, before) {
   this.collection.push(view.model);
   // Sort the collection every time a node is added in a different position to
   // just being appended at the end
-  before && this.collection.sort();
+  if (before) { this.collection.sort(); }
 
   return this;
 };

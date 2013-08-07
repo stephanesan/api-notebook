@@ -6,5 +6,6 @@ document.body.appendChild(frame);
 
 // Allow arbitrary running of strings as code
 exports.execute = function (code) {
+  /* jshint evil:true */
   return frame.contentWindow.eval(code);
 };

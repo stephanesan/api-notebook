@@ -31,29 +31,37 @@ CodeCell.prototype.execute = function () {
   this.trigger('execute', this, err, result);
 };
 
-CodeCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptions, {
-  mode: 'javascript'
-});
+CodeCell.prototype.editorOptions = _.extend(
+  {},
+  EditorCell.prototype.editorOptions,
+  {
+    mode: 'javascript'
+  }
+);
 
-CodeCell.prototype.editorOptions.extraKeys = _.extend({}, CodeCell.prototype.editorOptions.extraKeys, {
-  'Enter': function (cm) {
-    cm.view.execute();
-  },
-  'Up': function (cm) {
-    if (cm.doc.getCursor().line === 0) {
-      return cm.view.browseUp();
-    }
-    CodeMirror.commands.goLineUp(cm);
-  },
-  'Down': function (cm) {
-    if (cm.doc.getCursor().line === cm.doc.lastLine()) {
-      return cm.view.browseDown();
-    }
-    CodeMirror.commands.goLineDown(cm);
-  },
-  // Alias shift enter to the normal enter behaviour
-  'Shift-Enter': CodeMirror.keyMap.basic.Enter
-});
+CodeCell.prototype.editorOptions.extraKeys = _.extend(
+  {},
+  CodeCell.prototype.editorOptions.extraKeys,
+  {
+    'Enter': function (cm) {
+      cm.view.execute();
+    },
+    'Up': function (cm) {
+      if (cm.doc.getCursor().line === 0) {
+        return cm.view.browseUp();
+      }
+      CodeMirror.commands.goLineUp(cm);
+    },
+    'Down': function (cm) {
+      if (cm.doc.getCursor().line === cm.doc.lastLine()) {
+        return cm.view.browseDown();
+      }
+      CodeMirror.commands.goLineDown(cm);
+    },
+    // Alias shift enter to the normal enter behaviour
+    'Shift-Enter': CodeMirror.keyMap.basic.Enter
+  }
+);
 
 CodeCell.prototype.save = function () {
   if (this._editorCid === this.model.cid) {
