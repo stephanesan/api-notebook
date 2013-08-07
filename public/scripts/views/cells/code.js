@@ -17,7 +17,7 @@ CodeCell.prototype.initialize = function () {
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
-CodeCell.prototype.execute = function () {
+CodeCell.prototype.execute = function (newView) {
   var err, result;
 
   try {
@@ -28,7 +28,7 @@ CodeCell.prototype.execute = function () {
 
   this.save();
   this.model.set('result', result); // Keep a reference to the result
-  this.trigger('execute', this, err, result);
+  this.trigger('execute', this, err, result, newView !== false);
 };
 
 CodeCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptions, {
@@ -89,11 +89,9 @@ CodeCell.prototype.render = function () {
     // When the comment block check doesn't return false, it means we want to
     // start a new comment block
     if (commentBlock !== false) {
-      this.model.set('value', this.getValue());
       this.trigger('text', this, commentBlock);
+      this.execute(false);
     }
-    // Execute the code cell on closing
-    this.execute();
   }, this));
 
   // Every code cell has an associated result

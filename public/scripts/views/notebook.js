@@ -117,8 +117,7 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof TextView) {
     // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
-      var codeView = this.appendCodeView(view.el, code);
-      // If there is no longer any value in the cell, remove it
+      this.appendCodeView(view.el, code);
       view.getValue() || view.remove();
     });
   }
@@ -127,7 +126,9 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof CodeView) {
     // Listen to execution events from the child views, which may or may not
     // require new working cells to be appended to the console
-    this.listenTo(view, 'execute', function (view) {
+    this.listenTo(view, 'execute', function (view, err, result, newView) {
+      if (!newView) { return; }
+
       if (this.el.lastChild === view.el) {
         this.appendCodeView();
       } else {
@@ -136,8 +137,7 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'text', function (view, text) {
-      var textView = this.appendTextView(view.el, text);
-      // If there is no longer any value in the cell, remove it
+      this.appendTextView(view.el, text);
       view.getValue() || view.remove();
     });
 
