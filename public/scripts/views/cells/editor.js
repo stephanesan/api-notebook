@@ -3,6 +3,10 @@ var Cell = require('./cell');
 
 var EditorCell = module.exports = Cell.extend();
 
+EditorCell.prototype.events = {
+  'keydown': function (e) { e.stopPropagation(); }
+};
+
 EditorCell.prototype.initialize = function () {
   // Every editor cell needs a model to function
   this.model = this.model || new this.EditorModel();

@@ -47,10 +47,15 @@ App.prototype.initialize = function () {
 
   // Listen to keyboard presses
   this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
+    var ESC           = 27;
     var QUESTION_MARK = 191;
 
     if (e.which === QUESTION_MARK && e.shiftKey) {
-      this.toggleShortcuts();
+      return this.toggleShortcuts();
+    }
+
+    if (e.which === ESC) {
+      return this.hideShortcuts();
     }
   }, this));
 };
