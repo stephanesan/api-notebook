@@ -13,9 +13,6 @@
   "maxerr"        : 100,      // Maximum errors before stopping.
   "maxlen"        : 80,
   "predef"        : [         // Extra globals.
-    "require",
-    "module",
-    "exports",
     "CodeMirror"
   ],
 
@@ -82,6 +79,7 @@
 
   // Turn on:
   "browser"       : true,     // Standard browser globals e.g. `window`, `document`.
+  "node"          : true,     // Enable globals available when code is running inside of the NodeJS runtime environment.
 
   // Turn off:
   "couch"         : false,    // Enable globals exposed by CouchDB.
@@ -89,7 +87,6 @@
   "dojo"          : false,    // Enable globals exposed by Dojo Toolkit.
   "jquery"        : false,    // Enable globals exposed by jQuery JavaScript library.
   "mootools"      : false,    // Enable globals exposed by MooTools JavaScript framework.
-  "node"          : false,     // Enable globals available when code is running inside of the NodeJS runtime environment.
   "nonstandard"   : false,    // Define non-standard but widely adopted globals such as escape and unescape.
   "prototypejs"   : false,    // Enable globals exposed by Prototype JavaScript framework.
   "rhino"         : false,    // Enable globals available when your code is running inside of the Rhino runtime environment.
