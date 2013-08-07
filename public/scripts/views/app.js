@@ -5,10 +5,13 @@ var View     = require('./hbs');
 var Notebook = require('./notebook');
 
 // Alias `App` to `window` for testing purposes
-var App = module.exports = window.App = View.extend({
+var App = module.exports = View.extend({
   className: 'application',
   template: require('../../templates/application.hbs')
 });
+
+// Access a sandbox instance from tests
+App.Sandbox = require('../lib/sandbox');
 
 // Alias all the available views
 App.View = {

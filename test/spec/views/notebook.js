@@ -223,6 +223,21 @@ describe('Notebook', function () {
         expect(view.collection.at(2).view.editor.getCursor().line).to.equal(0);
       });
 
+      it('should be able to reference previous results', function () {
+        var spy = sinon.spy(function (view, err, result) {
+          expect(result).to.equal(99);
+        });
+
+        codeCells[0].setValue(99);
+        codeCells[0].execute();
+
+        codeCells[1].setValue('$1');
+        codeCells[1].on('execute', spy);
+        codeCells[1].execute();
+
+        expect(spy).to.have.been.called;
+      });
+
       describe('Text Cell', function () {
         it('should replace itself when initializing a code cell', function () {
           expect(view.collection.length).to.equal(4);

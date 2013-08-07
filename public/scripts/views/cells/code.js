@@ -1,7 +1,6 @@
 var _          = require('underscore');
 var EditorCell = require('./editor');
 var ResultCell = require('./result');
-var sandbox    = require('../../lib/sandbox');
 var stripInput = require('../../lib/cm-strip-input');
 
 var CodeCell = module.exports = EditorCell.extend({
@@ -13,6 +12,7 @@ CodeCell.prototype.initialize = function () {
   // Need a way of keeping the internal editor cell reference, since we can move
   // up and down between other statements.
   this._editorCid = this.model.cid;
+  this.sandbox    = this.options.sandbox;
 };
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
@@ -21,7 +21,8 @@ CodeCell.prototype.execute = function () {
   var err, result;
 
   try {
-    this.result.setResult(result = sandbox.execute(this.getValue()));
+    var context = this.model.collection.serializeForEval();
+    this.result.setResult(result = this.sandbox.execute(this.getValue(), context));
   } catch (e) {
     this.result.setError(err = e);
   }
@@ -91,6 +92,9 @@ CodeCell.prototype.browseToCell = function (newModel) {
 
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
+
+  var _id = this.model._uniqueCellId;
+  this.el.appendChild(Backbone.$('<div class="label">' + _id + '</div>')[0]);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var commentBlock = stripInput('/*', cm, data);

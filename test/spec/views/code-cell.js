@@ -98,6 +98,14 @@ describe('Code Cell', function () {
       });
 
       describe('execute code', function () {
+        beforeEach(function () {
+          // Need to set a collection for the test to work properly
+          var collection = new App.Collection.Notebook();
+          view.model.view = view;
+          view.sandbox    = new App.Sandbox();
+          collection.add(view.model);
+        });
+
         it('should render the result', function () {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = '10';

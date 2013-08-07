@@ -1,11 +1,25 @@
-var frame = document.createElement('iframe');
-frame.style.display = 'none';
+var Sandbox = module.exports = function () {
+  this.createFrame();
+};
 
-// The iframe needs to be appended to the document before we can use it
-document.body.appendChild(frame);
+Sandbox.prototype.createFrame = function () {
+  this.frame = document.createElement('iframe');
+  this.frame.style.display = 'none';
+  document.body.appendChild(this.frame);
+};
 
-// Allow arbitrary running of strings as code
-exports.execute = function (code) {
-  /* jshint evil:true */
-  return frame.contentWindow.eval(code);
+Sandbox.prototype.execute = function (code, context) {
+  try {
+    if (typeof context === 'object') {
+      this.frame.contentWindow.console = this.frame.console || {};
+      this.frame.contentWindow.console._notebookAPI = context;
+      code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
+    }
+
+    return this.frame.contentWindow.eval(code);
+  } catch (error) {
+    throw error;
+  } finally {
+    delete this.frame.contentWindow.console._notebookAPI;
+  }
 };
