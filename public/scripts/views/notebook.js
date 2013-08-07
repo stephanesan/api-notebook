@@ -126,9 +126,7 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof CodeView) {
     // Listen to execution events from the child views, which may or may not
     // require new working cells to be appended to the console
-    this.listenTo(view, 'execute', function (view, err, result, newView) {
-      if (!newView) { return; }
-
+    this.listenTo(view, 'execute', function (view) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView();
       } else {

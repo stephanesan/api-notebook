@@ -17,7 +17,7 @@ CodeCell.prototype.initialize = function () {
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
-CodeCell.prototype.execute = function (newView) {
+CodeCell.prototype.execute = function () {
   var err, result;
 
   try {
@@ -28,7 +28,7 @@ CodeCell.prototype.execute = function (newView) {
 
   this.save();
   this.model.set('result', result); // Keep a reference to the result
-  this.trigger('execute', this, err, result, newView !== false);
+  this.trigger('execute', this, err, result);
 };
 
 CodeCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptions, {
@@ -90,7 +90,7 @@ CodeCell.prototype.render = function () {
     // start a new comment block
     if (commentBlock !== false) {
       this.trigger('text', this, commentBlock);
-      this.execute(false);
+      this.execute();
     }
   }, this));
 
