@@ -131,13 +131,17 @@ describe('Code Cell', function () {
       });
 
       describe('comment block', function () {
-        it('should open a text cell at the beginning of a block comment', function () {
-          var spy = sinon.spy(function (view, text) {
+        it('should open a text cell and execute the current content', function () {
+          var textSpy = sinon.spy(function (view, text) {
             expect(text).to.equal('testing');
           });
-          view.on('text', spy);
+          var executeSpy = sinon.spy();
+
+          view.on('text', textSpy);
+          view.on('execute', executeSpy);
           editor.setValue('abc /* testing');
-          expect(spy.calledOnce).to.be.ok;
+          expect(textSpy.calledOnce).to.be.ok;
+          expect(executeSpy.calledOnce).to.be.ok;
           expect(editor.getValue()).to.equal('abc');
           expect(view.model.get('value')).to.equal('abc');
         });

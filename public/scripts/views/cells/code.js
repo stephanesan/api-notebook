@@ -38,7 +38,6 @@ CodeCell.prototype.editorOptions = _.extend({}, EditorCell.prototype.editorOptio
 CodeCell.prototype.editorOptions.extraKeys = _.extend({}, CodeCell.prototype.editorOptions.extraKeys, {
   'Enter': function (cm) {
     cm.view.execute();
-    cm.view.trigger('close', cm.view);
   },
   'Up': function (cm) {
     if (cm.doc.getCursor().line === 0) {
@@ -93,6 +92,8 @@ CodeCell.prototype.render = function () {
       this.model.set('value', this.getValue());
       this.trigger('text', this, commentBlock);
     }
+    // Execute the code cell on closing
+    this.execute();
   }, this));
 
   // Every code cell has an associated result
