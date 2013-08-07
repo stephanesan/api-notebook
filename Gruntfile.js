@@ -35,12 +35,15 @@ module.exports = function (grunt) {
 
     // Using less to compile the CSS output
     stylus: {
-      build: {
+      compile: {
         files: {
           'build/styles/main.css': 'public/styles/index.styl'
         },
         options: {
-          'include css': true
+          'include css': true,
+          import: [
+            'includes/colors.styl'
+          ]
         }
       }
     },
