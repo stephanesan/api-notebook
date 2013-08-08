@@ -5,7 +5,7 @@
  * @param {object} app Express application instance.
  */
 module.exports = function (app) {
-  var config = require('../config');
+  var CONFIG = require('config');
   var passport = require('passport');
 
   /**
@@ -30,7 +30,7 @@ module.exports = function (app) {
    * Use passport.authenticate() as route middleware to authenticate the
    * request.  The first step in GitHub authentication will involve redirecting
    * the user to github.com.  After authorization, GitHubwill redirect the user
-   * back to this application at config.clients.github.callbackRoute.
+   * back to this application at CONFIG.clients.github.callbackRoute.
    */
   app.get('/auth/github',
     passport.authenticate('github'),
@@ -40,13 +40,13 @@ module.exports = function (app) {
   });
 
   /**
-   * GET config.clients.github.callbackRoute
+   * GET CONFIG.clients.github.callbackRoute
    * Use passport.authenticate() as route middleware to authenticate the
    * request.  If authentication fails, the user will be redirected back to the
    * login page.  Otherwise, the primary route function function will be called,
    * which, in this example, will redirect the user to the home page.
    */
-  app.get(config.clients.github.callbackRoute,
+  app.get(CONFIG.clients.github.callbackRoute,
     passport.authenticate('github', { failureRedirect: '/login' }),
     function(req, res) {
       res.redirect('/');
