@@ -399,6 +399,17 @@ describe('Notebook', function () {
           expect(codeCells[1].editor.getCursor().ch).to.equal(4);
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
+
+        it('should be able to reference previous results', function () {
+          codeCells[0].setValue('8342');
+          codeCells[1].setValue('$1');
+
+          codeCells[0].execute();
+          codeCells[1].execute();
+
+          expect(codeCells[0].model.get('result')).to.equal(8342);
+          expect(codeCells[1].model.get('result')).to.equal(8342);
+        });
       });
     });
   });
