@@ -63,18 +63,6 @@ var stringifyElement = function (element) {
   return div.innerHTML;
 };
 
-var renderPreview = function (prefix, inspect) {
-  var html = '';
-  html += '<div class="preview">';
-  if (prefix) {
-    html += '<span class="prefix">' + _.escape(prefix) + '</span>: ';
-  }
-  html += _.escape(stringify(inspect));
-  html += '</div>';
-
-  return Backbone.$(html)[0];
-};
-
 var stringify = function (object) {
   var type = getType(object);
   // These types will need custom stringification
@@ -91,26 +79,19 @@ var InspectorView = module.exports = View.extend({
 });
 
 InspectorView.prototype.initialize = function (options) {
-  this.prefix  = options.prefix;
-  this.inspect = options.inspect;
-  // Keep a copy of the recursion chain
-  this.chain   = _.isArray(options.chain)   ? options.chain.slice()   : [];
-  this.parents = _.isArray(options.parents) ? options.parents.slice() : [];
-  this.parent  = this.parents[this.parents.length - 1];
-  // Check if this is a recursive view
-  var indexOf = this.chain.indexOf(this.inspect);
-  this.recursive = indexOf > -1;
-  // If it is, set a cloned cell property to use
-  if (this.recursive) { this.duplicate = this.parents[indexOf]; }
-  // Push this into the chain
-  this.chain.push(this.inspect);
-  this.parents.push(this);
+  _.extend(this, _.pick(
+    options, ['prefix', 'parent', 'parentView', 'inspect', 'special']
+  ));
+
+  if (this.parentView) {
+    this.listenTo(this.parentView, 'close', this.close);
+  }
 };
 
 InspectorView.prototype.events = {
   'click .preview': function (e) {
     e.stopPropagation();
-    this.toggleDisplay();
+    this.toggle();
   }
 };
 
@@ -118,37 +99,44 @@ InspectorView.prototype.clone = function () {
   return new this.constructor(this.options);
 };
 
-InspectorView.prototype.toggleDisplay = function () {
-  if (this.el.classList.contains('open')) {
-    this.el.classList.remove('open');
-    this.trigger('close', this);
-  } else {
-    this.el.classList.add('open');
-    this.trigger('open', this);
-  }
+InspectorView.prototype.open = function () {
+  this.trigger('open', this);
+  this.el.classList.add('open');
 };
 
-InspectorView.prototype.renderChild = function (prefix, object, onDemand) {
+InspectorView.prototype.close = function () {
+  this.trigger('close', this);
+  this.el.classList.remove('open');
+};
+
+InspectorView.prototype.toggle = function () {
+  this[this.el.classList.contains('open') ? 'close' : 'open']();
+};
+
+InspectorView.prototype.renderChild = function (prefix, object, special) {
   var inspector = new InspectorView({
-    prefix:  prefix,
-    inspect: object,
-    chain:   this.chain,
-    parents: this.parents
+    // Don't want to escape the `[[Prototype]]` property
+    prefix:     prefix,
+    parent:     this.inspect,
+    special:    special,
+    parentView: this,
+    inspect:    object
   });
   this.children.push(inspector);
-  inspector.render(onDemand).appendTo(this.childrenEl);
+  inspector.render('parent' in this).appendTo(this.childrenEl);
   return this;
 };
 
 InspectorView.prototype.renderOnDemand = function () {
-  if (!this.parent) { return this; }
+  if (!this.parentView) { return this; }
 
-  this.listenTo(this.parent, 'open', function (parent) {
+  this.listenTo(this.parentView, 'open', function (parent) {
     this.renderPreview();
     this.renderChildren();
   });
 
-  this.listenTo(this.parent, 'close', function (parent) {
+  this.listenTo(this.parentView, 'close', function (parent) {
+    this.children     = [];
     this.el.innerHTML = '';
   });
 
@@ -166,7 +154,21 @@ InspectorView.prototype.renderChildren = function () {
 
   // Replace `Object.getOwnPropertyNames` for cross-browser support
   _.each(Object.getOwnPropertyNames(this.inspect), function (prop) {
-    this.renderChild(stringifyString(prop), this.inspect[prop]);
+    var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
+
+    if (_.isFunction(descriptor.get) || _.isFunction(descriptor.set)) {
+      if (_.isFunction(descriptor.get)) {
+        this.renderChild('get ' + prop, descriptor.get, true);
+      }
+
+      if (_.isFunction(descriptor.set)) {
+        this.renderChild('set ' + prop, descriptor.set, true);
+      }
+    } else {
+      var isSpecial = !descriptor.writable || !descriptor.configurable ||
+                       !descriptor.enumerable;
+      this.renderChild(prop, descriptor.value, isSpecial);
+    }
   }, this);
 
   // Hidden prototype - super handy when debugging
@@ -177,7 +179,18 @@ InspectorView.prototype.renderChildren = function () {
 };
 
 InspectorView.prototype.renderPreview = function () {
-  var el = this.previewEl = renderPreview(this.prefix, this.inspect);
+  var html = '';
+
+  html += '<div class="preview">';
+  if (_.isString(this.prefix)) {
+    html += '<span class="property' + (this.special ? ' special' : '') + '">';
+    html += _.escape(this.prefix);
+    html += '</span>: ';
+  }
+  html += _.escape(stringify(this.inspect));
+  html += '</div>';
+
+  var el = this.previewEl = Backbone.$(html)[0];
   this.el.appendChild(el);
 
   return this;
@@ -185,7 +198,7 @@ InspectorView.prototype.renderPreview = function () {
 
 InspectorView.prototype.render = function (onDemand) {
   View.prototype.render.call(this);
-  if (onDemand || this.recursive) {
+  if (onDemand) {
     this.renderOnDemand();
   } else {
     this.renderPreview();
