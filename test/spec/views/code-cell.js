@@ -107,7 +107,9 @@ describe('Code Cell', function () {
           var collection = new App.Collection.Notebook();
           view.model.view = view;
           view.sandbox    = new App.Sandbox();
-          collection.add(view.model);
+          view.model.collection = {
+            serializeForEval: sinon.stub().returns({})
+          };
         });
 
         it('should render the result', function () {

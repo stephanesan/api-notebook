@@ -3,7 +3,7 @@ var Sandbox = module.exports = function () {
 };
 
 Sandbox.prototype.createFrame = function () {
-  this.frame  = document.createElement('iframe');
+  this.frame = document.createElement('iframe');
   this.frame.style.display = 'none';
   document.body.appendChild(this.frame);
   this.window = this.frame.contentWindow;
