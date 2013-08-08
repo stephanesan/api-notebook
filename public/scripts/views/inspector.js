@@ -2,88 +2,13 @@ var _        = require('underscore');
 var View     = require('./view');
 var Backbone = require('backbone');
 
-var getType = function (object) {
-  // Typeof check catches the basics
-  if (typeof object === 'string')    { return 'String'; }
-  if (typeof object === 'number')    { return 'Number'; }
-  if (typeof object === 'boolean')   { return 'Boolean'; }
-  if (typeof object === 'function')  { return 'Function'; }
-  if (typeof object === 'undefined') { return 'Undefined'; }
-  // Specific object types
-  if (_.isNull(object))    { return 'Null'; }
-  if (_.isArray(object))   { return 'Array'; }
-  if (_.isDate(object))    { return 'Date'; }
-  if (_.isRegExp(object))  { return 'RegExp'; }
-  if (_.isElement(object)) { return 'Element'; }
-  // Finally, return as a plain object
-  return 'Object';
-};
-
-var shouldExpand = function (object) {
-  return {
-    'String':    false,
-    'Number':    false,
-    'Boolean':   false,
-    'Undefined': false,
-    'Null':      false,
-    'Array':     true,
-    'Function':  true,
-    'Date':      true,
-    'RegExp':    true,
-    'Element':   true,
-    'Object':    true
-  }[getType(object)];
-};
-
-var stringifyString = function (string) {
-  return '"' + string.replace(/"/g, '\\"') + '"';
-};
-
-var stringifyByExpansion = function (object) {
-  // If the object should be expanded to be viewed, just show the type
-  if (shouldExpand(object)) { return getType(object); }
-  if (_.isString(object))   { return stringifyString(object); }
-  return '' + object;
-};
-
-var stringifyArray = function (array) {
-  return '[' + _.map(array, _.bind(function (value) {
-    return stringifyByExpansion(value);
-  }, this)).join(', ') + ']';
-};
-
-var stringifyObject = function (object) {
-  var objectString = _.map(object, function (value, key) {
-    return stringifyString(key) + ': ' + stringifyByExpansion(value);
-  }).join(', ');
-
-  return '{' + (objectString ? ' ' + objectString + ' ' : '') + '}';
-};
-
-var stringifyElement = function (element) {
-  var div = document.createElement('div');
-  div.appendChild(element.cloneNode(true));
-  return div.innerHTML;
-};
-
-var stringify = function (object) {
-  var type = getType(object);
-  // These types will need custom stringification
-  if (type === 'Array')   { return stringifyArray(object); }
-  if (type === 'Object')  { return stringifyObject(object); }
-  if (type === 'String')  { return stringifyString(object); }
-  if (type === 'Element') { return stringifyElement(object); }
-  // Every other type can safely be typecasted to the expected output
-  return '' + object;
-};
-
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
 });
 
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
-    options, ['prefix', 'parent', 'parentView', 'inspect', 'special']
+    options, ['prefix', 'parentView', 'inspect', 'special', 'context']
   ));
 
   if (this.parentView) {
@@ -96,10 +21,6 @@ InspectorView.prototype.events = {
     e.stopPropagation();
     this.toggle();
   }
-};
-
-InspectorView.prototype.clone = function () {
-  return new this.constructor(this.options);
 };
 
 InspectorView.prototype.open = function () {
@@ -116,17 +37,94 @@ InspectorView.prototype.toggle = function () {
   this[this.el.classList.contains('open') ? 'close' : 'open']();
 };
 
+InspectorView.prototype.shouldExpand = function (object) {
+  return {
+    'String':    false,
+    'Number':    false,
+    'Boolean':   false,
+    'Undefined': false,
+    'Null':      false,
+    'Array':     true,
+    'Function':  true,
+    'Date':      true,
+    'RegExp':    true,
+    'Element':   true,
+    'Object':    true,
+    'Error':     true
+  }[this.getType(object)];
+};
+
+InspectorView.prototype.getType = function (object) {
+  // Typeof check catches the basics
+  if (typeof object === 'string')    { return 'String'; }
+  if (typeof object === 'number')    { return 'Number'; }
+  if (typeof object === 'boolean')   { return 'Boolean'; }
+  if (typeof object === 'function')  { return 'Function'; }
+  if (typeof object === 'undefined') { return 'Undefined'; }
+  // Specific object types
+  if (_.isNull(object))    { return 'Null'; }
+  if (_.isArray(object))   { return 'Array'; }
+  if (_.isDate(object))    { return 'Date'; }
+  if (_.isRegExp(object))  { return 'RegExp'; }
+  if (_.isElement(object)) { return 'Element'; }
+  // Need to check certain properties against the sandbox window
+  if (object instanceof this.context.Error) { return 'Error'; }
+  // Finally, return as a plain object
+  return 'Object';
+};
+
+InspectorView.prototype.stringifyString = function (string) {
+  return '"' + string.replace(/"/g, '\\"') + '"';
+};
+
+InspectorView.prototype.stringifyByExpansion = function (object) {
+  // If the object should be expanded to be viewed, just show the type
+  if (this.shouldExpand(object)) { return this.getType(object); }
+  if (_.isString(object))   { return this.stringifyString(object); }
+  return '' + object;
+};
+
+InspectorView.prototype.stringifyArray = function (array) {
+  return '[' + _.map(array, function (value) {
+    return this.stringifyByExpansion(value);
+  }, this).join(', ') + ']';
+};
+
+InspectorView.prototype.stringifyObject = function (object) {
+  var objectString = _.map(object, function (value, key) {
+    return this.stringifyString(key) + ': ' + this.stringifyByExpansion(value);
+  }, this).join(', ');
+
+  return '{' + (objectString ? ' ' + objectString + ' ' : '') + '}';
+};
+
+InspectorView.prototype.stringifyElement = function (element) {
+  var div = document.createElement('div');
+  div.appendChild(element.cloneNode(true));
+  return div.innerHTML;
+};
+
+InspectorView.prototype.stringify = function (object) {
+  var type = this.getType(object);
+  // These types will need custom stringification
+  if (type === 'Array')   { return this.stringifyArray(object); }
+  if (type === 'Object')  { return this.stringifyObject(object); }
+  if (type === 'String')  { return this.stringifyString(object); }
+  if (type === 'Element') { return this.stringifyElement(object); }
+  // Every other type can safely be typecasted to the expected output
+  return '' + object;
+};
+
 InspectorView.prototype.renderChild = function (prefix, object, special) {
   var inspector = new InspectorView({
-    // Don't want to escape the `[[Prototype]]` property
     prefix:     prefix,
-    parent:     this.inspect,
     special:    special,
     parentView: this,
-    inspect:    object
+    inspect:    object,
+    context:    this.context
   });
   this.children.push(inspector);
-  inspector.render('parent' in this).appendTo(this.childrenEl);
+  inspector.render('parentView' in this).appendTo(this.childrenEl);
   return this;
 };
 
@@ -147,7 +145,7 @@ InspectorView.prototype.renderOnDemand = function () {
 };
 
 InspectorView.prototype.renderChildren = function () {
-  if (!shouldExpand(this.inspect)) { return this; }
+  if (!this.shouldExpand(this.inspect)) { return this; }
 
   var el = this.childrenEl = Backbone.$('<div class="children"></div>')[0];
   this.el.appendChild(el);
@@ -191,7 +189,7 @@ InspectorView.prototype.renderPreview = function () {
     html += '</span>: ';
   }
   html += '<span class="object">';
-  html += _.escape(stringify(this.inspect));
+  html += _.escape(this.stringify(this.inspect));
   html += '</span>';
   html += '</div>';
 

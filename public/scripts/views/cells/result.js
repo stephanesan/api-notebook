@@ -13,16 +13,16 @@ ResultCell.prototype.reset = function () {
   return this;
 };
 
-ResultCell.prototype.setResult = function (result) {
+ResultCell.prototype.setResult = function (result, context) {
   this.reset();
-  this.inspector = new Inspector({ inspect: result });
+  this.inspector = new Inspector({ inspect: result, context: context });
   this.inspector.render().appendTo(this.el);
   this.el.classList.remove('result-pending');
   return this;
 };
 
-ResultCell.prototype.setError = function (error) {
-  this.setResult(error); // Leave the object inspector to take care of rendering
+ResultCell.prototype.setError = function (error, context) {
+  this.setResult(error, context);
   this.el.classList.add('result-error');
   return this;
 };

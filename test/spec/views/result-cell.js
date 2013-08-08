@@ -23,7 +23,7 @@ describe('Result Cell', function () {
 
     describe('#setResult', function () {
       it('should set the result', function () {
-        view.setResult('Testing');
+        view.setResult('Testing', window);
 
         expect(view.el.className).to.not.contain('result-error');
         expect(view.el.className).to.not.contain('result-pending');
@@ -34,7 +34,7 @@ describe('Result Cell', function () {
 
     describe('#setError', function () {
       it('should set the error', function () {
-        view.setError(new Error('Testing'));
+        view.setError(new Error('Testing'), window);
 
         expect(view.el.className).to.contain('result-error');
         expect(view.el.className).to.not.contain('result-pending');

@@ -24,9 +24,9 @@ CodeCell.prototype.execute = function () {
 
   try {
     result = this.sandbox.execute(this.getValue(), context);
-    this.result.setResult(result);
+    this.result.setResult(result, this.sandbox.window);
   } catch (e) {
-    this.result.setError(err = e);
+    this.result.setError(err = e, this.sandbox.window);
   }
 
   this.save();

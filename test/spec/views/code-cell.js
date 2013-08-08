@@ -36,8 +36,9 @@ describe('Code Cell', function () {
       beforeEach(function () {
         view   = view.render().appendTo(fixture);
         editor = view.editor;
-        // Need to set a collection for testing purposes
+        // Need to set certain properties for testing
         view.model.view = view;
+        view.sandbox    = new App.Sandbox();
         (new App.Collection.Notebook()).add(view.model);
       });
 
