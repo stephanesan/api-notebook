@@ -36,6 +36,9 @@ describe('Code Cell', function () {
       beforeEach(function () {
         view   = view.render().appendTo(fixture);
         editor = view.editor;
+        // Need to set a collection for testing purposes
+        view.model.view = view;
+        (new App.Collection.Notebook()).add(view.model);
       });
 
       afterEach(function () {
@@ -147,6 +150,7 @@ describe('Code Cell', function () {
 
           view.on('text', textSpy);
           view.on('execute', executeSpy);
+
           editor.setValue('abc /* testing');
           expect(textSpy.calledOnce).to.be.ok;
           expect(executeSpy.calledOnce).to.be.ok;

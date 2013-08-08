@@ -16,6 +16,7 @@ Sandbox.prototype.execute = function (code, context) {
       code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
     }
 
+    /* jshint evil: true */
     return this.frame.contentWindow.eval(code);
   } catch (error) {
     throw error;

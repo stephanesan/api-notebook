@@ -27,8 +27,13 @@ TextCell.prototype.closeCell = function (code) {
 
 TextCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
-  this.el.appendChild(Backbone.$('<div class="comment comment-open">/*</div>')[0]);
-  this.el.appendChild(Backbone.$('<div class="comment comment-close">*/</div>')[0]);
+
+  this.el.appendChild(
+    Backbone.$('<div class="comment comment-open">/*</div>')[0]
+  );
+  this.el.appendChild(
+    Backbone.$('<div class="comment comment-close">*/</div>')[0]
+  );
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var endCommentBlock = stripInput('*/', cm, data);

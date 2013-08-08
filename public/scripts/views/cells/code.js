@@ -1,4 +1,5 @@
 var _          = require('underscore');
+var Backbone   = require('backbone');
 var EditorCell = require('./editor');
 var ResultCell = require('./result');
 var stripInput = require('../../lib/cm-strip-input');
@@ -18,11 +19,12 @@ CodeCell.prototype.initialize = function () {
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
 CodeCell.prototype.execute = function () {
+  var context = this.model.collection.serializeForEval();
   var err, result;
 
   try {
-    var context = this.model.collection.serializeForEval();
-    this.result.setResult(result = this.sandbox.execute(this.getValue(), context));
+    result = this.sandbox.execute(this.getValue(), context);
+    this.result.setResult(result);
   } catch (e) {
     this.result.setError(err = e);
   }

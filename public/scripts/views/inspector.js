@@ -35,14 +35,15 @@ var shouldExpand = function (object) {
   }[getType(object)];
 };
 
+var stringifyString = function (string) {
+  return '"' + string.replace(/"/g, '\\"') + '"';
+};
+
 var stringifyByExpansion = function (object) {
   // If the object should be expanded to be viewed, just show the type
   if (shouldExpand(object)) { return getType(object); }
-  return stringify(object);
-};
-
-var stringifyString = function (string) {
-  return '"' + string.replace(/"/g, '\\"') + '"';
+  if (_.isString(object))   { return stringifyString(object); }
+  return '' + object;
 };
 
 var stringifyArray = function (array) {
@@ -52,9 +53,11 @@ var stringifyArray = function (array) {
 };
 
 var stringifyObject = function (object) {
-  return '{ ' + _.map(object, function (value, key) {
+  var objectString = _.map(object, function (value, key) {
     return stringifyString(key) + ': ' + stringifyByExpansion(value);
-  }).join(', ') + ' }';
+  }).join(', ');
+
+  return '{' + (objectString ? ' ' + objectString + ' ' : '') + '}';
 };
 
 var stringifyElement = function (element) {
@@ -172,8 +175,8 @@ InspectorView.prototype.renderChildren = function () {
   }, this);
 
   // Hidden prototype - super handy when debugging
-  var __proto__ = Object.getPrototypeOf(this.inspect);
-  this.renderChild('[[Prototype]]', __proto__, true);
+  var prototype = Object.getPrototypeOf(this.inspect);
+  this.renderChild('[[Prototype]]', prototype, true);
 
   return this;
 };
@@ -187,7 +190,9 @@ InspectorView.prototype.renderPreview = function () {
     html += _.escape(this.prefix);
     html += '</span>: ';
   }
+  html += '<span class="object">';
   html += _.escape(stringify(this.inspect));
+  html += '</span>';
   html += '</div>';
 
   var el = this.previewEl = Backbone.$(html)[0];
