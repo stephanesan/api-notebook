@@ -18,6 +18,7 @@ App.View = {
   View:       require('./view'),
   Hbs:        require('./hbs'),
   Notebook:   require('./notebook'),
+  Inspector:  require('./inspector'),
   Cell:       require('./cells/cell'),
   CodeCell:   require('./cells/code'),
   TextCell:   require('./cells/text'),
