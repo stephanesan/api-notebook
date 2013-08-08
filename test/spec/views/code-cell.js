@@ -103,10 +103,10 @@ describe('Code Cell', function () {
 
       describe('execute code', function () {
         beforeEach(function () {
-          // Need to set a collection for the test to work properly
           var collection = new App.Collection.Notebook();
           view.model.view = view;
           view.sandbox    = new App.Sandbox();
+          // Stub the serialization function for testing
           view.model.collection = {
             serializeForEval: sinon.stub().returns({})
           };
