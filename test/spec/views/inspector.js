@@ -9,15 +9,18 @@ describe('Object Inspector', function () {
   });
 
   describe('functionality', function () {
-    var inputOutput = function (input, output) {
-      var inspector = new Inspector({ inspect: input, context: window });
-      inspector.render();
-      var el = inspector.previewEl.getElementsByClassName('object')[0];
+    var matchPreview = function (inspector, output) {
+      var el = inspector.el.childNodes[0].getElementsByClassName('object')[0];
       if (output instanceof RegExp) {
         expect(el.textContent).to.match(output);
       } else {
         expect(el.textContent).to.equal(output);
       }
+    };
+
+    var inputOutput = function (input, output) {
+      var inspector = new Inspector({ inspect: input, context: window });
+      matchPreview(inspector.render(), output);
     };
 
     it('should inspect string', function () {
@@ -73,6 +76,61 @@ describe('Object Inspector', function () {
 
     it('should inspect errors', function () {
       inputOutput(new Error('Test Error'), 'Error: Test Error');
+    });
+
+    describe('rendering properties', function () {
+      var inputOutputChildren = function (input, properties) {
+        var inspector = new Inspector({ inspect: input, context: window });
+        inspector.render();
+
+        var props = inspector.children;
+
+        prop:
+        for (var prop in properties) {
+          for (var i = 0; i < props.length; i++) {
+            if (props[i].prefix === prop) {
+              matchPreview(props[i], properties[prop]);
+              continue prop;
+            }
+          }
+          throw new Error('Prototype property not found.');
+        }
+      };
+
+      it('should inspect object properties', function () {
+        inputOutputChildren({ test: true }, {
+          'test': 'true'
+        });
+      });
+    });
+
+    describe('rendering prototypes', function () {
+      var inputOutputPrototype = function (input, prototype) {
+        var inspector = new Inspector({ inspect: input, context: window });
+        inspector.render();
+
+        var proto = inspector.children[inspector.children.length - 1];
+        proto.trigger('open');
+
+        prop:
+        for (var prop in prototype) {
+          for (var i = 0; i < proto.children.length; i++) {
+            if (proto.children[i].prefix === prop) {
+              matchPreview(proto.children[i], prototype[prop]);
+              continue prop;
+            }
+          }
+          throw new Error('Prototype property not found.');
+        }
+      };
+
+      it('should inspect object prototypes', function () {
+        inputOutputPrototype({}, {
+          'valueOf':        '' + {}.valueOf,
+          'toString':       '' + {}.toString,
+          'hasOwnProperty': '' + {}.hasOwnProperty,
+        });
+      });
     });
   });
 });
