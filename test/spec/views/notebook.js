@@ -239,32 +239,27 @@ describe('Notebook', function () {
       });
 
       describe('Text Cell', function () {
-        it('should replace itself when initializing a code cell', function () {
+        it('should remove itself when initializing a code cell', function () {
           expect(view.collection.length).to.equal(4);
 
           textCells[0].trigger('code', textCells[0]);
 
-          expect(view.collection.length).to.equal(4);
+          expect(view.collection.length).to.equal(3);
           expect(textCells[0].el.parentNode).to.not.exist;
           expect(codeCells[0].el.nextSibling.className).to.contain('cell-code');
-          expect(view.collection.at(2)).to.be.an.instanceof(App.Model.CodeEntry);
-          expect(view.collection.at(2).view.el.previousSibling).to.equal(codeCells[0].el);
-          expect(view.collection.at(2).view.el.nextSibling).to.equal(codeCells[1].el);
-          expect(view.collection.at(2).view.editor.hasFocus()).to.be.ok;
+          expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
+          expect(codeCells[1].editor.hasFocus()).to.be.ok;
         });
 
-        it('shouldn\'t replace itself when it has content', function () {
+        it('shouldn\'t remove itself when it has content', function () {
           expect(view.collection.length).to.equal(4);
 
           textCells[0].setValue('testing');
           textCells[0].trigger('code', textCells[0]);
 
-          expect(view.collection.length).to.equal(5);
-          expect(textCells[0].el.nextSibling.className).to.contain('cell-code');
-          expect(view.collection.at(3)).to.be.an.instanceof(App.Model.CodeEntry);
-          expect(view.collection.at(3).view.el.nextSibling).to.equal(codeCells[1].el);
-          expect(view.collection.at(3).view.el.previousSibling).to.equal(textCells[0].el);
-          expect(view.collection.at(3).view.editor.hasFocus()).to.be.ok;
+          expect(view.collection.length).to.equal(4);
+          expect(textCells[0].el.nextSibling).to.equal(codeCells[1].el);
+          expect(codeCells[1].editor.hasFocus()).to.be.ok;
         });
 
         it('should initialize the new cell with content when available', function () {

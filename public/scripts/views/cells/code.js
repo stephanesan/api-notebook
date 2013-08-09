@@ -104,7 +104,7 @@ CodeCell.prototype.render = function () {
     // start a new comment block
     if (commentBlock !== false) {
       this.trigger('text', this, commentBlock);
-      this.execute();
+      if (this.getValue()) { this.execute(); }
     }
   }, this));
 

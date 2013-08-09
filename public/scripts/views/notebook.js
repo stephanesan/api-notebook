@@ -108,7 +108,12 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof TextView) {
     // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
-      this.appendCodeView(view.el, code);
+      if (this.el.lastChild === view.el) {
+        this.appendCodeView(view.el, code);
+      } else {
+        if (code) { this.appendCodeView(view.el, code); }
+        this.getNextView(view).focus().moveCursorToEnd(0);
+      }
       if (!view.getValue()) { view.remove(); }
     });
   }
