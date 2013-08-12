@@ -102,6 +102,13 @@ describe('Object Inspector', function () {
           'test': 'true'
         });
       });
+
+      it('should render the `window`', function () {
+        inputOutputChildren(window, {
+          'window': /\{.*\}/,
+          'document': /\{.*\}/
+        });
+      });
     });
 
     describe('rendering prototypes', function () {

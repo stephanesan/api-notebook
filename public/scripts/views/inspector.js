@@ -91,7 +91,11 @@ InspectorView.prototype.stringifyArray = function (array) {
 };
 
 InspectorView.prototype.stringifyObject = function (object) {
-  var objectString = _.map(object, function (value, key) {
+  // Using the `keys` function to grab all the keys and then iterate, otherwise
+  // when stringifying something like the window, it tries to use numeric
+  // indexes like an array because of the `length` property.
+  var objectString = _.map(_.keys(object), function (key) {
+    var value = object[key];
     return this.stringifyString(key) + ': ' + this.stringifyByExpansion(value);
   }, this).join(', ');
 
