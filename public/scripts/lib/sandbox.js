@@ -12,7 +12,7 @@ Sandbox.prototype.createFrame = function () {
 Sandbox.prototype.execute = function (code, context) {
   try {
     if (typeof context === 'object') {
-      this.window.console = this.frame.console || {};
+      this.window.console = this.window.console || {};
       this.window.console._notebookAPI = context;
       code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
     }
@@ -24,4 +24,10 @@ Sandbox.prototype.execute = function (code, context) {
   } finally {
     delete this.window.console._notebookAPI;
   }
+};
+
+Sandbox.prototype.remove = function () {
+  this.frame.parentNode.removeChild(this.frame);
+  delete this.frame;
+  delete this.window;
 };

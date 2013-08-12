@@ -20,6 +20,11 @@ Notebook.prototype.initialize = function () {
   this._uniqueId  = 0;
 };
 
+Notebook.prototype.remove = function () {
+  this.sandbox.remove();
+  View.prototype.remove.call(this);
+};
+
 Notebook.prototype.getNextView = function (view) {
   var model = this.collection.getNext(view.model);
   return model && model.view;
