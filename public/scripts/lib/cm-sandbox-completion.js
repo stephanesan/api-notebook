@@ -3,21 +3,20 @@ var _ = require('underscore');
 var Pos = CodeMirror.Pos;
 
 // Reserved word list (http://mdn.io/reserved)
-var keywords = ['break', 'case', 'catch', 'continue', 'debugger', 'default',
-                'delete', 'do', 'else', 'false', 'finally', 'for', 'function',
-                'if', 'in', 'instanceof', 'new', 'null', 'return', 'switch',
-                'throw', 'true', 'try', 'typeof', 'var', 'void', 'while',
-                'with'];
+var keywords = _.object(('break case catch continue debugger default delete ' +
+               'do else false finally for function if in instanceof new null ' +
+               'return switch throw true try typeof var void while ' +
+               'with').split(' '), true);
 
-var varsToArray = function (scope) {
-  var array = [];
+var varsToObject = function (scope) {
+  var obj = {};
 
   while (scope) {
-    if (typeof scope.name === 'string') { array.push(scope.name); }
-    scope = scope.next();
+    if (typeof scope.name === 'string') { obj[scope.name] = true; }
+    scope = scope.next;
   }
 
-  return array;
+  return obj;
 };
 
 var isWhitespaceToken = function (token) {
@@ -29,7 +28,8 @@ var getToken = function (cm, cur) {
 };
 
 var shouldDisplay = function (string) {
-  return string.indexOf(this.string) === 0;
+  var tokenStr = this.string;
+  return string.length > tokenStr.length && string.indexOf(tokenStr) === 0;
 };
 
 var getPropertyNames = function (obj) {
@@ -43,14 +43,22 @@ var getPropertyNames = function (obj) {
     obj = Object.getPrototypeOf(obj);
   }
 
-  return _.keys(props);
+  return props;
 };
 
 var completeVariable = function (cm, token, sandbox) {
-  return getPropertyNames(sandbox)
-    .concat(keywords)
-    .concat(varsToArray(token.localVars))
-    .concat(varsToArray(token.globalVars));
+  var vars = varsToObject(token.state.localVars);
+  var prev = token.state.context;
+  // Extend the variables object with each context level
+  while (prev) {
+    _.extend(vars, varsToObject(prev.vars));
+    prev = prev.prev;
+  }
+  // Extend with every other variable and keyword
+  _.extend(vars, varsToObject(token.state.globalVars));
+  _.extend(vars, getPropertyNames(sandbox), keywords);
+  // Return as an array for autocompletion
+  return _.keys(vars);
 };
 
 var getPropertyContext = function (cm, token) {
@@ -100,8 +108,8 @@ var getPropertyContext = function (cm, token) {
       prev = getToken(cm, Pos(cur.line, prev.start));
       // Sets whether the variable is actually a constructor function
       if (prev.type === 'keyword' && prev.string === 'new') {
-        tprop.type        = 'function';
-        tprop.constructor = true;
+        tprop.type          = 'function';
+        tprop.isConstructor = true;
       }
     }
   }
@@ -139,8 +147,9 @@ var getPropertyObject = function (cm, token, sandbox) {
         base = Number.prototype;
         break;
       case 'function':
-        if (tprop.constructor) {
-          base = base[tprop.string] && base[tprop.string].prototype;
+        base = base[tprop.string];
+        if (tprop.isConstructor) {
+          base = base.prototype;
         }
         break;
       default:
@@ -157,7 +166,7 @@ var completeProperty = function (cm, token, sandbox) {
 
   if (!_.isObject(obj)) { return; }
 
-  return getPropertyNames(obj);
+  return _.keys(getPropertyNames(obj));
 };
 
 module.exports = function (cm, options) {
@@ -187,10 +196,9 @@ module.exports = function (cm, options) {
     case 'property':
       completions = completeProperty(cm, token, context);
       break;
-    default:
-      completions = [];
-      break;
   }
+
+  if (!completions) { return; }
 
   return {
     list: _.filter(completions, shouldDisplay, token),

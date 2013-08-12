@@ -161,6 +161,129 @@ describe('Code Cell', function () {
           expect(view.model.get('value')).to.equal('abc');
         });
       });
+
+      describe('auto completion', function () {
+        var testAutocomplete = function (value) {
+          var spy;
+          // Listens to the `update` event emitted by `show-hint`
+          view.listenTo(view.editor, 'startCompletion', function (cm) {
+            spy = sinon.spy(cm.state.completionActive, 'showHints');
+          });
+          view.setValue(value);
+          view.moveCursorToEnd();
+          // Trigger a fake change event to cause autocompletion to occur
+          CodeMirror.signal(view.editor, 'change', view.editor, {
+            origin: '+input',
+            to:     view.editor.getCursor(),
+            from:   view.editor.getCursor(),
+            text:  [ value ]
+          });
+          // Return the first call to show hints
+          return spy.getCall(0).args[0].list;
+        };
+
+        it('should autocomplete variables', function () {
+          var suggestions = testAutocomplete('doc');
+
+          expect(suggestions).to.contain('document');
+        });
+
+        it('should autocomplete keywords', function () {
+          var suggestions = testAutocomplete('sw');
+
+          expect(suggestions).to.contain('switch');
+        });
+
+        it('should autocomplete statically', function () {
+          var suggestions = testAutocomplete('var testing = "test";\ntes');
+
+          expect(suggestions).to.contain('testing');
+        });
+
+        it('should autocomplete from outer scope statically', function () {
+          var suggestions = testAutocomplete(
+            'var testing = "test";\nfunction () {\n  tes'
+          );
+
+          expect(suggestions).to.contain('testing');
+        });
+
+        it('should autocomplete from the global scope statically', function () {
+          var suggestions = testAutocomplete(
+            'var testing = "test";\nfunction () {\n  var test = "again";\n' +
+            '  function () {\n    tes'
+          );
+
+          expect(suggestions).to.contain('test');
+          expect(suggestions).to.contain('testing');
+        });
+
+        it('should autocomplete from the sandbox', function () {
+          view.sandbox.execute('var testing = "test";');
+
+          var suggestions = testAutocomplete('test');
+
+          expect(suggestions).to.contain('testing');
+        });
+
+        describe('properties', function () {
+          it('should autocomplete object properties', function () {
+            var suggestions = testAutocomplete('document.getElementBy');
+
+            expect(suggestions).to.contain('getElementById');
+          });
+
+          it('should autocomplete numbers', function () {
+            var suggestions = testAutocomplete('123..to');
+
+            expect(suggestions).to.contain('toFixed');
+          });
+
+          it('should autocomplete strings', function () {
+            var suggestions = testAutocomplete('"test".sub');
+
+            expect(suggestions).to.contain('substr');
+          });
+
+          it('should autocomplete regular expressions', function () {
+            var suggestions = testAutocomplete('(/./).te');
+
+            expect(suggestions).to.contain('test');
+          });
+
+          it('should autocomplete booleans', function () {
+            var suggestions = testAutocomplete('true.to');
+
+            expect(suggestions).to.contain('toString');
+          });
+
+          it('should autocomplete functions', function () {
+            var suggestions = testAutocomplete('Date.n');
+
+            expect(suggestions).to.contain('now');
+          });
+
+          it('should attempt to autocomplete constructor properties', function () {
+            var suggestions = testAutocomplete('new Date().get');
+
+            expect(suggestions).to.contain('getMonth');
+            expect(suggestions).to.contain('getYear');
+          });
+
+          it('constructor should work without parens', function () {
+            var suggestions = testAutocomplete('(new Date).get');
+
+            expect(suggestions).to.contain('getMonth');
+            expect(suggestions).to.contain('getYear');
+          });
+
+          it('should work with parens around the value', function () {
+            var suggestions = testAutocomplete('(123).to');
+
+            expect(suggestions).to.contain('toFixed');
+          });
+        });
+      });
     });
   });
 });
