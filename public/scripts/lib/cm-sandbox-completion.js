@@ -78,14 +78,18 @@ var getPropertyContext = function (cm, token) {
     context.push(tprop);
   }
 
-  if (tprop.type === 'function') {
+  // Using the new keyword doesn't actually require parens to invoke, so we need
+  // to do a quick special case check here
+  if (tprop.type === 'function' || tprop.type === 'variable') {
     prev = getToken(cm, Pos(cur.line, tprop.start));
 
     if (isWhitespaceToken(prev)) {
       prev = getToken(cm, Pos(cur.line, prev.start));
-      // Sets whether the property is a constructor, which will result in
-      // richer autocompletion results
-      tprop.constructor = (prev.type === 'keyword' && prev.string === 'new');
+      // Sets whether the variable is actually a constructor function
+      if (prev.type === 'keyword' && prev.string === 'new') {
+        tprop.type        = 'function';
+        tprop.constructor = true;
+      }
     }
   }
 
