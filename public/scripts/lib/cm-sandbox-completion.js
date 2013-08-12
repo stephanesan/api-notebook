@@ -32,10 +32,23 @@ var shouldDisplay = function (string) {
   return string.indexOf(this.string) === 0;
 };
 
-var completeVariable = function (cm, token, sandbox) {
-  var variables = Object.getOwnPropertyNames(sandbox).concat(keywords);
+var getPropertyNames = function (obj) {
+  var props = {};
 
-  return variables
+  while (obj) {
+    _.each(Object.getOwnPropertyNames(obj), function (prop) {
+      props[prop] = true;
+    });
+    // Check up the prototype chain for more variables
+    obj = Object.getPrototypeOf(obj);
+  }
+
+  return _.keys(props);
+};
+
+var completeVariable = function (cm, token, sandbox) {
+  return getPropertyNames(sandbox)
+    .concat(keywords)
     .concat(varsToArray(token.localVars))
     .concat(varsToArray(token.globalVars));
 };
@@ -141,19 +154,10 @@ var getPropertyObject = function (cm, token, sandbox) {
 
 var completeProperty = function (cm, token, sandbox) {
   var obj = getPropertyObject(cm, token, sandbox);
-  var props;
 
   if (!_.isObject(obj)) { return; }
 
-  props = [];
-
-  while (obj) {
-    props.push.apply(props, Object.getOwnPropertyNames(obj));
-    // Check up the prototype chain for other variables
-    obj = Object.getPrototypeOf(obj);
-  }
-
-  return _.uniq(props);
+  return getPropertyNames(obj);
 };
 
 module.exports = function (cm, options) {
