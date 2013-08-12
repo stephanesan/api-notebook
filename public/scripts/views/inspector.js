@@ -106,7 +106,8 @@ InspectorView.prototype.stringifyElement = function (element) {
 
 InspectorView.prototype.stringify = function (object) {
   var type = this.getType(object);
-  // These types will need custom stringification
+  // TIL that DOMExceptions don't allow calling `toString`
+  if (type === 'Error')   { return Error.prototype.toString.call(object); }
   if (type === 'Array')   { return this.stringifyArray(object); }
   if (type === 'Object')  { return this.stringifyObject(object); }
   if (type === 'String')  { return this.stringifyString(object); }
