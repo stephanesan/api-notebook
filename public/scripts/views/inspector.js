@@ -38,20 +38,7 @@ InspectorView.prototype.toggle = function () {
 };
 
 InspectorView.prototype.shouldExpand = function (object) {
-  return {
-    'String':    false,
-    'Number':    false,
-    'Boolean':   false,
-    'Undefined': false,
-    'Null':      false,
-    'Array':     true,
-    'Function':  true,
-    'Date':      true,
-    'RegExp':    true,
-    'Element':   true,
-    'Object':    true,
-    'Error':     true
-  }[this.getType(object)];
+  return _.isObject(object);
 };
 
 InspectorView.prototype.getType = function (object) {
@@ -110,7 +97,7 @@ InspectorView.prototype.stringifyElement = function (element) {
 
 InspectorView.prototype.stringify = function (object) {
   var type = this.getType(object);
-  // TIL that DOMExceptions don't allow calling `toString`
+  // TIL DOMExceptions don't allow calling `toString` or string type coersion
   if (type === 'Error')   { return Error.prototype.toString.call(object); }
   if (type === 'Array')   { return this.stringifyArray(object); }
   if (type === 'Object')  { return this.stringifyObject(object); }
@@ -129,36 +116,34 @@ InspectorView.prototype.renderChild = function (prefix, object, special) {
     context:    this.context
   });
   this.children.push(inspector);
-  inspector.render('parentView' in this).appendTo(this.childrenEl);
+  inspector.render().appendTo(this.childrenEl);
   return this;
 };
 
-InspectorView.prototype.renderOnDemand = function () {
-  if (!this.parentView) { return this; }
-
-  this.listenTo(this.parentView, 'open', function (parent) {
-    this.renderPreview();
+InspectorView.prototype.renderChildrenOnDemand = function () {
+  this.listenTo(this, 'open', function (parent) {
     this.renderChildren();
   });
 
-  this.listenTo(this.parentView, 'close', function (parent) {
-    this.children     = [];
-    this.el.innerHTML = '';
+  this.listenTo(this, 'close', function (parent) {
+    _.each(this.children, function (child) {
+      child.remove();
+    });
+    // Remove any old references to child views
+    this.children = [];
+    this.el.removeChild(this.childrenEl);
+    delete this.childrenEl;
   });
 
   return this;
 };
 
 InspectorView.prototype.renderChildren = function () {
-  if (!this.shouldExpand(this.inspect)) { return this; }
-
   var el = this.childrenEl = Backbone.$('<div class="children"></div>')[0];
   this.el.appendChild(el);
-  this.el.classList.add('can-expand');
 
   this.children = [];
 
-  // Replace `Object.getOwnPropertyNames` for cross-browser support
   _.each(Object.getOwnPropertyNames(this.inspect), function (prop) {
     var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
 
@@ -200,17 +185,17 @@ InspectorView.prototype.renderPreview = function () {
 
   var el = this.previewEl = Backbone.$(html)[0];
   this.el.appendChild(el);
+  // If it should be expanded, add a class to show it can be
+  if (this.shouldExpand(this.inspect)) {
+    this.el.classList.add('can-expand');
+  }
 
   return this;
 };
 
 InspectorView.prototype.render = function (onDemand) {
   View.prototype.render.call(this);
-  if (onDemand) {
-    this.renderOnDemand();
-  } else {
-    this.renderPreview();
-    this.renderChildren();
-  }
+  this.renderPreview();
+  this.renderChildrenOnDemand();
   return this;
 };

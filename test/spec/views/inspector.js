@@ -82,6 +82,7 @@ describe('Object Inspector', function () {
       var inputOutputChildren = function (input, properties) {
         var inspector = new Inspector({ inspect: input, context: window });
         inspector.render();
+        inspector.trigger('open');
 
         var props = inspector.children;
 
@@ -115,6 +116,7 @@ describe('Object Inspector', function () {
       var inputOutputPrototype = function (input, prototype) {
         var inspector = new Inspector({ inspect: input, context: window });
         inspector.render();
+        inspector.trigger('open');
 
         var proto = inspector.children[inspector.children.length - 1];
         proto.trigger('open');
