@@ -162,7 +162,7 @@ describe('Code Cell', function () {
         });
       });
 
-      describe('auto completion', function () {
+      describe('autocompletion', function () {
         var testAutocomplete = function (value) {
           var spy;
           // Listens to the `update` event emitted by `show-hint`
@@ -263,11 +263,22 @@ describe('Code Cell', function () {
             expect(suggestions).to.contain('now');
           });
 
-          it('should attempt to autocomplete constructor properties', function () {
+          it('should autocomplete constructor properties', function () {
             var suggestions = testAutocomplete('new Date().get');
 
-            expect(suggestions).to.contain('getMonth');
             expect(suggestions).to.contain('getYear');
+          });
+
+          it('should autocomplete object constructor properties', function () {
+            var suggestions = testAutocomplete('new window.Date().get');
+
+            expect(suggestions).to.contain('getYear');
+          });
+
+          it('should autocomplete normal object properties with new', function () {
+            var suggestions = testAutocomplete('new window.Dat');
+
+            expect(suggestions).to.contain('Date');
           });
 
           it('constructor should work without parens', function () {

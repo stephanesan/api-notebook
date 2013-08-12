@@ -65,7 +65,7 @@ var getPropertyContext = function (cm, token) {
   var cur     = cm.getCursor();
   var tprop   = token;
   var context = [];
-  var level, prev;
+  var level, prev, subContext;
 
   while (tprop.type === 'property') {
     tprop = getToken(cm, Pos(cur.line, tprop.start));
@@ -86,13 +86,22 @@ var getPropertyContext = function (cm, token) {
       tprop = getToken(cm, Pos(cur.line, tprop.start));
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
-      if (tprop.type !== 'variable') {
+      if (tprop.type === 'variable' || tprop.type === 'property') {
+        tprop.isFunction = true;
+      } else {
         if (!isWhitespaceToken(tprop)) { return []; }
         // Set `tprop` to be the token inside the parens and start working from
         // that instead
-        tprop = getToken(cm, Pos(cur.line, prev.start));
-      } else {
-        tprop.type = 'function';
+        tprop      = getToken(cm, Pos(cur.line, prev.start));
+        subContext = getPropertyContext(cm, tprop);
+        // The subcontext has a new keyword, but a function was not found, set
+        // the last property to be a constructor and function
+        if (subContext.hasNew) {
+          if (tprop.type === 'variable' || tprop.type === 'property') {
+            tprop.isFunction    = true;
+            tprop.isConstructor = true;
+          }
+        }
       }
     }
 
@@ -101,15 +110,21 @@ var getPropertyContext = function (cm, token) {
 
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here
-  if (tprop.type === 'function' || tprop.type === 'variable') {
+  if (tprop.type === 'variable') {
     prev = getToken(cm, Pos(cur.line, tprop.start));
 
     if (isWhitespaceToken(prev)) {
       prev = getToken(cm, Pos(cur.line, prev.start));
       // Sets whether the variable is actually a constructor function
       if (prev.type === 'keyword' && prev.string === 'new') {
-        tprop.type          = 'function';
-        tprop.isConstructor = true;
+        context.hasNew = true;
+        // Try to set a function to be a constructor function
+        _.some(context, function (tprop) {
+          if (!tprop.isFunction) { return; }
+          // Remove the `hasNew` flag and set the function to be a constructor
+          delete context.hasNew;
+          return (tprop.isConstructor = true);
+        });
       }
     }
   }
@@ -146,15 +161,19 @@ var getPropertyObject = function (cm, token, sandbox) {
       case 'number':
         base = Number.prototype;
         break;
-      case 'function':
-        base = base[tprop.string];
-        if (tprop.isConstructor) {
-          base = base.prototype;
-        }
-        break;
       default:
         base = null;
         break;
+    }
+    // If the property is a function, we can't do introspection yet so set to
+    // null. However, we can provide basic completion if it's a constructor
+    // function based on the prototype object.
+    if (tprop.isFunction) {
+      if (tprop.isConstructor) {
+        base = base.prototype;
+      } else {
+        base = null;
+      }
     }
   }
 
