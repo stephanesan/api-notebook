@@ -7,7 +7,7 @@
 // passportjs  : http://passportjs.org/
 
 
-var config = require('./config'),
+var CONFIG = require('config'),
     express = require('express'),
     engine = require('ejs-locals'),
     passport = require('passport'),
@@ -19,10 +19,15 @@ var GitHubApi = require("github");
 
 var github = new GitHubApi({
     // required
-    version: config.clients.github.version,
+    version: CONFIG.clients.github.version,
     // optional
-    timeout: config.clients.github.timeout
+    timeout: CONFIG.clients.github.timeout
   });
+
+// Some things should never change.
+CONFIG.makeImmutable(CONFIG.app, 'host');
+CONFIG.makeImmutable(CONFIG.app, 'port');
+CONFIG.makeImmutable(CONFIG.app, 'staticDir');
 
 // App instance
 var app = express();
@@ -61,10 +66,10 @@ passport.deserializeUser(function(obj, done) {
 //   credentials (in this case, an accessToken, refreshToken, and GitHub
 //   profile), and invoke a callback with a user object.
 passport.use(new GitHubStrategy({
-    clientID      : config.clients.github.clientId,
-    clientSecret  : config.clients.github.clientSecret,
-    callbackURL   : "http://" + config.app.host + ":" + config.app.port +
-                    config.clients.github.callbackRoute,
+    clientID      : CONFIG.clients.github.clientId,
+    clientSecret  : CONFIG.clients.github.clientSecret,
+    callbackURL   : "http://" + CONFIG.app.host + ":" + CONFIG.app.port +
+                    CONFIG.clients.github.callbackRoute,
     scope         : ["gist"]
   },
   function(accessToken, refreshToken, profile, done) {
@@ -100,13 +105,13 @@ app.configure(function() {
   app.use(express.cookieParser());
   app.use(express.bodyParser());
   app.use(express.methodOverride());
-  app.use(express.session({ secret: config.app.sessionSecret }));
+  app.use(express.session({ secret: CONFIG.app.sessionSecret }));
   // Initialize Passport!  Also use passport.session() middleware, to support
   // persistent login sessions (recommended).
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(app.router);
-  app.use(express.static(path.join(__dirname, config.app.staticDir)));
+  app.use(express.static(path.join(__dirname, CONFIG.app.staticDir)));
 });
 
 app.configure('development', function(){
@@ -123,5 +128,5 @@ require('./routes')(app, github);
 // START APP
 // =========
 
-app.listen(config.app.port);
-console.log('Localhost server listening on port ' + config.app.port);
+app.listen(CONFIG.app.port);
+console.log('Localhost server listening on port ' + CONFIG.app.port);
