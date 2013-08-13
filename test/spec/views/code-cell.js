@@ -103,7 +103,6 @@ describe('Code Cell', function () {
 
       describe('execute code', function () {
         beforeEach(function () {
-          var collection = new App.Collection.Notebook();
           view.model.view = view;
           view.sandbox    = new App.Sandbox();
           // Stub the serialization function for testing
