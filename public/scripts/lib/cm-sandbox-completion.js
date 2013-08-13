@@ -28,8 +28,7 @@ var getToken = function (cm, cur) {
 };
 
 var shouldDisplay = function (string) {
-  var tokenStr = this.string;
-  return string.length > tokenStr.length && string.indexOf(tokenStr) === 0;
+  return string.indexOf(this.string) === 0;
 };
 
 var getPropertyNames = function (obj) {
