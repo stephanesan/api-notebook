@@ -26,7 +26,7 @@ var github = new GitHubApi({
 
 // Some things should never change.
 CONFIG.makeImmutable(CONFIG.app, 'host');
-CONFIG.makeImmutable(CONFIG.app, 'post');
+CONFIG.makeImmutable(CONFIG.app, 'port');
 CONFIG.makeImmutable(CONFIG.app, 'staticDir');
 
 // App instance
