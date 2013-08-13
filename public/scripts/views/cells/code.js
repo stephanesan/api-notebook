@@ -3,6 +3,7 @@ var Backbone   = require('backbone');
 var EditorCell = require('./editor');
 var ResultCell = require('./result');
 var stripInput = require('../../lib/cm-strip-input');
+var completion = require('../../lib/cm-sandbox-completion');
 
 var CodeCell = module.exports = EditorCell.extend({
   className: 'cell cell-code'
@@ -92,6 +93,12 @@ CodeCell.prototype.browseToCell = function (newModel) {
   }
 };
 
+CodeCell.prototype.autocomplete = function () {
+  CodeMirror.showHint(this.editor, completion, {
+    completeSingle: false
+  });
+};
+
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
@@ -105,6 +112,13 @@ CodeCell.prototype.render = function () {
     if (commentBlock !== false) {
       this.trigger('text', this, commentBlock);
       if (this.getValue()) { this.execute(); }
+    }
+  }, this));
+
+  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
+    // Trigger autocompletion on user events `+input` and `+delete`
+    if (data.origin && data.origin.charAt(0) === '+') {
+      this.autocomplete();
     }
   }, this));
 
