@@ -81,7 +81,8 @@ var getPropertyContext = function (cm, token) {
           case ')': level++; break;
           case '(': level--; break;
         }
-      } while (level > 0);
+      // While still in parens *and not at the beginning of the line*
+      } while (level > 0 && tprop.start);
 
       tprop = getToken(cm, Pos(cur.line, tprop.start));
       // Do a simple additional check to see if we are trying to use a type
