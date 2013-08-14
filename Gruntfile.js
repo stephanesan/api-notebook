@@ -65,18 +65,9 @@ module.exports = function (grunt) {
           livereload: true
         }
       }
-    },
-
-    connect: {
-      build: {
-        options: {
-          port: port,
-          base: 'build'
-        }
-      }
     }
   });
 
   grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
-  grunt.registerTask('default', ['build', 'connect', 'watch']);
+  grunt.registerTask('default', ['build', 'watch']);
 };

@@ -30,7 +30,8 @@ App.View = {
 App.Model = {
   Entry:     require('../models/entry'),
   CodeEntry: require('../models/code-entry'),
-  TextEntry: require('../models/text-entry')
+  TextEntry: require('../models/text-entry'),
+  Notebook:  require('../models/notebook')
 };
 
 // Alias all the available collections

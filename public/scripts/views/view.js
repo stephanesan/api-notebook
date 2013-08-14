@@ -12,7 +12,6 @@ View.prototype.remove = function () {
   // need to append a new element afterward, etc. Also needs to be called before
   // `#off()` - no events will work anymore after calling it.
   this.trigger('remove', this);
-  this.off();
   Backbone.View.prototype.remove.call(this);
   return this;
 };

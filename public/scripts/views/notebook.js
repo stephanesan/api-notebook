@@ -5,6 +5,7 @@ var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
 var EditorView         = require('./cells/editor');
 var EntryModel         = require('../models/entry');
+var NotebookModel      = require('../models/notebook');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
