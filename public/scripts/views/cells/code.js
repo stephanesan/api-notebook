@@ -99,8 +99,8 @@ CodeCell.prototype.autocomplete = function () {
   });
 };
 
-CodeCell.prototype.render = function () {
-  EditorCell.prototype.render.call(this);
+CodeCell.prototype.render = function (options) {
+  EditorCell.prototype.render.call(this, options);
 
   var _id = this.model._uniqueCellId;
   this.el.appendChild(Backbone.$('<div class="label">$' + _id + '</div>')[0]);

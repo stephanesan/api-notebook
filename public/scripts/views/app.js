@@ -43,7 +43,9 @@ App.Collection = {
 App.prototype.events = {
   'click .modal-toggle':   'toggleShortcuts',
   'click .modal-backdrop': 'hideShortcuts',
-  'click .execute-notes':  'runNotebook'
+  'click .notebook-exec':  'runNotebook',
+  'click .notebook-fork':  'forkNotebook',
+  'click .notebook-auth':  'authNotebook'
 };
 
 App.prototype.initialize = function (options) {
@@ -53,15 +55,7 @@ App.prototype.initialize = function (options) {
       ':id': 'application'
     },
     application: _.bind(function (id) {
-      // Remove any old notebook that might be hanging around
-      this.notebook && this.notebook.remove();
-
-      this.notebook = new App.View.Notebook({
-        gistId: id,
-        user:   this.user
-      });
-
-      this.notebook.render().appendTo(this.el);
+      this.setGist(new App.Model.Gist({ id: id }, { user: this.user }));
     }, this)
   }))();
 
@@ -85,13 +79,21 @@ App.prototype.initialize = function (options) {
     }
   }, this));
 
+  // Attempt to fetch a user instance. This technique is sort of jank and would
+  // be implemented much better using localStorage or similar.
   this.user = new App.Model.User();
   this.user.fetch();
 
-  // If the user model changes, refresh the route
-  this.listenTo(this.user, 'change', function () {
-    Backbone.history.loadUrl();
-  });
+  this.listenTo(this.user, 'changeUser', this.changeUser);
+};
+
+App.prototype.changeUser = function () {
+  var isNew   = this.user.isNew();
+  var isOwner = this.notebook.isOwner();
+
+  this.el.classList[isOwner ? 'add' : 'remove']('user-is-owner');
+  this.el.classList[!isNew  ? 'add' : 'remove']('user-is-authenticated');
+  this.el.classList[isNew   ? 'add' : 'remove']('user-not-authenticated');
 };
 
 App.prototype.showShortcuts = function () {
@@ -110,8 +112,57 @@ App.prototype.toggleShortcuts = function () {
   }
 };
 
-App.prototype.runNotebook = function () {
-  if (this.notebook) { this.notebook.execute(); }
+App.prototype.setGist = function (gist) {
+  // Remove any old notebook that might be hanging around
+  if (this.notebook) {
+    this.notebook.remove();
+    this.stopListening(this.notebook.gist);
+  }
 
+  this.notebook = new App.View.Notebook({
+    gist: gist,
+    user: this.user
+  });
+
+  this.changeUser();
+  this.notebook.render().appendTo(this.el);
+  this.listenTo(gist, 'sync', this.changeUser);
+
+  return this;
+};
+
+App.prototype.appendTo = function () {
+  View.prototype.appendTo.apply(this, arguments);
+  Backbone.history.loadUrl();
+};
+
+App.prototype.runNotebook = function () {
+  this.notebook.execute();
+  return this;
+};
+
+App.prototype.authNotebook = function () {
+  // Assign a global variable since it's the only way for the popup to access
+  // back to this scope
+  window.authenticate = _.bind(function (err, user) {
+    this.user.save(user);
+    // Clean up after itself
+    delete window.authenticate;
+  }, this);
+
+  var width  = 500;
+  var height = 350;
+  var left   = (window.screen.availWidth - width) / 2;
+
+  window.open(
+    '/auth/github', '',
+    'left=' + left + ',top=100,width=' + width + ',height=' + height
+  );
+};
+
+App.prototype.forkNotebook = function () {
+  this.notebook.fork(_.bind(function (err, newGist) {
+    this.setGist(newGist);
+  }, this));
   return this;
 };

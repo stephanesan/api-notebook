@@ -37,9 +37,7 @@ TextCell.prototype.render = function () {
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var endCommentBlock = stripInput('*/', cm, data);
-    // Set the value to the model every time a change happens
-    this.model.set('value', this.getValue());
-    // When we detect the closing comment block, set `this.alreadyClosed` -
+    // When we detect the closing comment block, set `this.alreadyClosed`
     // since it doesn't make sense to be able to close it more than once
     if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
   }, this));

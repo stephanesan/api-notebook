@@ -1,6 +1,5 @@
 var _    = require('underscore');
 var Cell = require('./cell');
-var trim = require('trim');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -85,19 +84,42 @@ EditorCell.prototype.save = function () {
   return this;
 };
 
-EditorCell.prototype.render = function (editorOptions) {
+EditorCell.prototype.renderEditor = function () {
+  var oldDocument, editorEl;
+  // If an editor already exists, rerender the editor keeping the same options
+  if (this.editor) {
+    oldDocument = this.editor.getDoc();
+    editorEl    = this.editor.getWrapperElement();
+    // Not sure if this is the best way
+    delete editorEl.doc;
+    delete oldDocument.cm;
+    editorEl.parentNode.removeChild(editorEl);
+  }
   // Initialize the codemirror editor
-  this.editor = new CodeMirror(this.el, _.extend(
-    {}, this.editorOptions, editorOptions
-  ));
+  this.editor = new CodeMirror(_.bind(function (el) {
+    this.el.insertBefore(el, this.el.firstChild);
+  }, this), _.extend({}, this.editorOptions, {
+    readOnly: this.notebook.isOwner() ? false : 'nocursor'
+  }));
+  // Move the state of the editor
+  if (oldDocument) { this.editor.swapDoc(oldDocument); }
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
+  return this;
+};
+
+EditorCell.prototype.render = function () {
+  this.renderEditor();
   // Set the editor value if it already exists
   if (this.model.get('value')) {
     this.setValue(this.model.get('value'));
     this.moveCursorToEnd();
   }
+
+  // Set the value of the model every time a change happens
+  this.listenTo(this.editor, 'change', _.bind(this.save, this));
+
   return this;
 };
 
@@ -106,8 +128,8 @@ EditorCell.prototype.getValue = function () {
 };
 
 EditorCell.prototype.setValue = function (value) {
-  if (!_.isUndefined(value)) {
-    this.editor.setValue(trim('' + value));
+  if (_.isString(value)) {
+    this.editor.setValue(value);
   }
   return this;
 };
@@ -126,8 +148,5 @@ EditorCell.prototype.appendTo = function (el) {
   // need to refresh the CodeMirror UI so it becomes visible
   this.editor.refresh();
   this.editor.focus();
-  // Any time the cell is blurred, try saving the content
-  this.listenTo(this.editor, 'blur', _.bind(this.save, this));
-
   return this;
 };

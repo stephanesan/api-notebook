@@ -12,7 +12,8 @@
     "jshint": "~2.1",
     "passport": "~0.1",
     "passport-github": "~0.1",
-    "request": "~2.26.0"
+    "request": "~2.26.0",
+    "marked": "~0.2.9"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",

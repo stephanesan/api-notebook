@@ -15,16 +15,27 @@ var Notebook = module.exports = View.extend({
   className: 'notebook'
 });
 
+var saveGist = _.debounce(function () {
+  this.gist.setNotebook(this.collection.serializeForGist());
+  this.gist.save(null, { patch: true });
+}, 500);
+
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this._uniqueId  = 0;
   this.user       = options.user;
+  this._prevUser  = this.user.id;
   // Every notebook has a unique gist and collection
-  this.gist       = new App.Model.Gist(
-    { id: options.gistId },
-    { user: this.user }
-  );
+  this.gist       = options.gist;
   this.collection = this.gist.notebook;
+
+  this.listenToOnce(this.gist, 'sync', function (model) {
+    Backbone.history.navigate(model.id);
+  });
+
+  // If the user changes at any point in the applications state, we may now
+  // be granted the ability to edit, fork.. or we may have lost the ability
+  this.listenTo(this.user, 'changeUser', this.changeUser);
 };
 
 Notebook.prototype.remove = function () {
@@ -32,23 +43,54 @@ Notebook.prototype.remove = function () {
   View.prototype.remove.call(this);
 };
 
-Notebook.prototype.loadFromGist = function (gistId) {
-  this.listenToOnce(this.gist, 'sync', function (model) {
-    Backbone.history.navigate(model.id);
+Notebook.prototype.fork = function (cb) {
+  return this.gist.fork(cb);
+};
+
+Notebook.prototype.save = function () {
+  console.log('save');
+  if (!this.rendering) { saveGist.call(this); }
+  return this;
+};
+
+Notebook.prototype.isOwner = function () {
+  return this.gist.isOwner();
+};
+
+Notebook.prototype.changeUser = function () {
+  this.stopListening(this.collection, 'remove sort change');
+
+  if (this.isOwner()) {
+    this.listenTo(this.collection, 'remove sort change', this.save);
+  }
+
+  this.collection.each(function (model) {
+    model.view.renderEditor();
   });
+};
+
+Notebook.prototype.render = function () {
+  this.rendering = true;
+  View.prototype.render.call(this);
 
   // Reset the state
-  if (!this.gist.id) {
+  if (this.gist.isNew()) {
+    this.changeUser();
+    // Navigate back to a clean state
     Backbone.history.navigate('');
     // Append an initial starting view
-    return this.render().appendCodeView();
+    this.appendCodeView();
+    this.rendering = false;
+    return this;
   }
 
   this.gist.fetch({
     success: _.bind(function () {
-      var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
+      // Check here since the gist has probably changed ownership now
+      this.changeUser();
+      this.el.innerHTML = '';
 
-      this.render();
+      var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
 
       _.each(cells, function (cell) {
         var appendView = 'appendCodeView';
@@ -56,21 +98,12 @@ Notebook.prototype.loadFromGist = function (gistId) {
         this[appendView](null, cell.value);
       }, this);
 
+      this.rendering = false;
       if (!this.el.childNodes.length) { this.appendCodeView(); }
-
-      if (this.gist.get('user').id === this.user.get('id')) {
-        this.listenTo(
-          this.collection,
-          'remove sort change',
-          _.debounce(function () {
-            this.gist.setNotebook(this.collection.serializeForGist());
-            this.gist.save(null, { patch: true });
-          }, 600)
-        );
-      }
     }, this),
 
     error: _.bind(function () {
+      this.rendering = false;
       // No gist exists or unauthorized, etc.
       Backbone.history.navigate('', { trigger: true });
     }, this)
@@ -242,13 +275,14 @@ Notebook.prototype.appendView = function (view, before) {
     view.model._uniqueCellId = this._uniqueId++;
   }
 
+  // Some references may be needed
+  view.notebook   = this;
+  view.sandbox    = this.sandbox;
+  view.model.view = view;
   // Append the view to the end of the console
   view.render().appendTo(_.bind(function (el) {
     return before ? insertAfter(el, before) : this.el.appendChild(el);
   }, this));
-  // Some references may be needed
-  view.sandbox    = this.sandbox;
-  view.model.view = view;
   // Add the model to the collection
   this.collection.push(view.model);
   // Sort the collection every time a node is added in a different position to
@@ -260,7 +294,10 @@ Notebook.prototype.appendView = function (view, before) {
 
 Notebook.prototype.appendTo = function (el) {
   View.prototype.appendTo.call(this, el);
-  // Refresh the UI from a gist ID
-  this.loadFromGist(this.gistId);
+
+  this.collection.each(function (model) {
+    model.view.editor.refresh();
+  });
+
   return this;
 };
