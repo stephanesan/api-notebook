@@ -10,10 +10,8 @@
 
 .modal-toggle
   position: relative
-  float: right
   width: 26px
   height: @width
-  margin-top: 5px
   padding: 0
   border: 2px solid #fff
   border-radius: 50%
@@ -93,3 +91,31 @@
   .modal-backdrop
     opacity: 1
     visibility: visible
+
+.notebook-exec
+  position: relative
+  width: 26px
+  height: @width
+  border: 2px solid #fff
+  border-radius: 50%
+  background: transparent
+  text-indent: -999em
+
+  &:after
+    content: ''
+    position: absolute
+    top: 6px
+    left: 8px
+    display: inline-block
+    width: 0
+    height: 0
+    border: 5px solid transparent
+    border-left: 9px solid #fff
+
+.btn-text
+  margin-right: 10px
+  padding: 0
+  border: 0
+  background: transparent
+  color: #fff
+  font-size: 12px

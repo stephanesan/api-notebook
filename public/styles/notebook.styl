@@ -4,6 +4,7 @@
   padding: 1em 2em
   border: 1px solid #ccc
   border-top: 0
+  border-radius: 0 0 5px 5px
   background: #fff
 
 .notebook-header
@@ -15,8 +16,35 @@
   border-radius: 5px 5px 0 0
   background: #333
   color: #fff
+
   h1
-    margin: 0
+    display: inline-block
+    margin: 0 10px 0 0
+    vertical-align: middle
+
+.notebook-header-primary
+  float: left
+
+.notebook-header-secondary
+  float: right
+  margin-top: 5px
+
+  button
+    vertical-align: middle
+
+.banner {
+  width: 48em
+  margin: 0 auto
+  padding: 1em 2em
+  border: 1px solid #ccc
+  border-color: darken($yellow, 20%) #ccc
+  background: $yellow
+  cursor: pointer
+}
+
+.notebook-auth {
+  margin: 0
+}
 
 .notebook .cell-result
   border: 1px solid $color-result-border

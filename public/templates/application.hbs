@@ -54,14 +54,21 @@
   </div>
 </div>
 
-<header class="notebook-header">
-  <button class="notebook-fork">Fork</button>
-  <button class="notebook-exec">Run All</button>
-  <button class="notebook-auth">Authenticate using Github</button>
-  <button class="ir modal-toggle">Keyboard Shortcuts</button>
-  <h1>JSNotebook</h1>
+<header class="notebook-header clearfix">
+  <div class="notebook-header-primary">
+    <h1>JSNotebook</h1>
+    <button class="notebook-exec">Run All</button>
+  </div>
+
+  <div class="notebook-header-secondary">
+    <button class="btn-text notebook-fork">Fork</button>
+    <button class="btn-text notebook-auth">Authenticate using Github</button>
+    <button class="ir modal-toggle">Keyboard Shortcuts</button>
+  </div>
 </header>
 
-<p class="notebook-auth">The application requires you authenticate with Github before you can save the notebook.</p>
+<div class="banner">
+  <p class="notebook-auth">The application requires you authenticate with Github before you can save the notebook.</p>
+</div>
 
 <div class="modal-backdrop"></div>
