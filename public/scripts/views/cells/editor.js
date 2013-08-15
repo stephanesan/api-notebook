@@ -90,7 +90,8 @@ EditorCell.prototype.renderEditor = function () {
   if (this.editor) {
     oldDocument = this.editor.getDoc();
     editorEl    = this.editor.getWrapperElement();
-    // Not sure if this is the best way
+    // Not sure if this is the best way to remove the document from an active
+    // CodeMirror editor instance.
     delete editorEl.doc;
     delete oldDocument.cm;
     editorEl.parentNode.removeChild(editorEl);

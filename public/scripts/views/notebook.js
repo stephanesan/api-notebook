@@ -16,6 +16,8 @@ var Notebook = module.exports = View.extend({
 });
 
 var saveGist = _.debounce(function () {
+  if (!this.user.id || !this.isOwner()) { return; }
+
   this.gist.setNotebook(this.collection.serializeForGist());
   this.gist.save(null, { patch: true });
 }, 500);
@@ -35,7 +37,8 @@ Notebook.prototype.initialize = function (options) {
 
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
-  this.listenTo(this.user, 'changeUser', this.changeUser);
+  this.listenTo(this.user,       'changeUser',         this.changeUser);
+  this.listenTo(this.collection, 'remove sort change', this.save);
 };
 
 Notebook.prototype.remove = function () {
@@ -48,7 +51,6 @@ Notebook.prototype.fork = function (cb) {
 };
 
 Notebook.prototype.save = function () {
-  console.log('save');
   if (!this.rendering) { saveGist.call(this); }
   return this;
 };
@@ -58,12 +60,6 @@ Notebook.prototype.isOwner = function () {
 };
 
 Notebook.prototype.changeUser = function () {
-  this.stopListening(this.collection, 'remove sort change');
-
-  if (this.isOwner()) {
-    this.listenTo(this.collection, 'remove sort change', this.save);
-  }
-
   this.collection.each(function (model) {
     model.view.renderEditor();
   });
