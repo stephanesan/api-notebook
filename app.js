@@ -10,7 +10,7 @@ var SESSION_SECRET = 'keyboard cat';
 app.configure(function() {
   app.use(express.logger());
   app.use(express.cookieParser());
-  app.use(express.bodyParser());
+  // app.use(express.bodyParser());
   app.use(express.session({ secret: SESSION_SECRET }));
 
   app.use(passport.initialize());

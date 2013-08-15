@@ -31,7 +31,8 @@ App.Model = {
   Entry:     require('../models/entry'),
   CodeEntry: require('../models/code-entry'),
   TextEntry: require('../models/text-entry'),
-  Notebook:  require('../models/notebook')
+  Gist:      require('../models/gist'),
+  User:      require('../models/user')
 };
 
 // Alias all the available collections
@@ -41,13 +42,33 @@ App.Collection = {
 
 App.prototype.events = {
   'click .modal-toggle':   'toggleShortcuts',
-  'click .modal-backdrop': 'hideShortcuts'
+  'click .modal-backdrop': 'hideShortcuts',
+  'click .execute-notes':  'runNotebook'
 };
 
-App.prototype.initialize = function () {
-  // Creates a new working notebook and appends it to the current application
-  this.notebook = new App.View.Notebook({
-    collection: new App.Collection.Notebook()
+App.prototype.initialize = function (options) {
+  new (Backbone.Router.extend({
+    routes: {
+      '':    'application',
+      ':id': 'application'
+    },
+    application: _.bind(function (id) {
+      // Remove any old notebook that might be hanging around
+      this.notebook && this.notebook.remove();
+
+      this.notebook = new App.View.Notebook({
+        gistId: id,
+        user:   this.user
+      });
+
+      this.notebook.render().appendTo(this.el);
+    }, this)
+  }))();
+
+  Backbone.history.start({
+    root:      '/',
+    pushState: false,
+    silent:    true
   });
 
   // Listen to keyboard presses
@@ -63,12 +84,14 @@ App.prototype.initialize = function () {
       return this.hideShortcuts();
     }
   }, this));
-};
 
-App.prototype.render = function () {
-  View.prototype.render.call(this);
-  this.notebook.render();
-  return this;
+  this.user = new App.Model.User();
+  this.user.fetch();
+
+  // If the user model changes, refresh the route
+  this.listenTo(this.user, 'change', function () {
+    Backbone.history.loadUrl();
+  });
 };
 
 App.prototype.showShortcuts = function () {
@@ -87,7 +110,8 @@ App.prototype.toggleShortcuts = function () {
   }
 };
 
-App.prototype.appendTo = function () {
-  View.prototype.appendTo.apply(this, arguments);
-  this.notebook.appendTo(this.el);
+App.prototype.runNotebook = function () {
+  if (this.notebook) { this.notebook.execute(); }
+
+  return this;
 };

@@ -80,9 +80,16 @@ EditorCell.prototype.focus = function () {
   return this;
 };
 
-EditorCell.prototype.render = function () {
+EditorCell.prototype.save = function () {
+  this.model.set('value', this.getValue());
+  return this;
+};
+
+EditorCell.prototype.render = function (editorOptions) {
   // Initialize the codemirror editor
-  this.editor = new CodeMirror(this.el, this.editorOptions);
+  this.editor = new CodeMirror(this.el, _.extend(
+    {}, this.editorOptions, editorOptions
+  ));
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
@@ -119,5 +126,8 @@ EditorCell.prototype.appendTo = function (el) {
   // need to refresh the CodeMirror UI so it becomes visible
   this.editor.refresh();
   this.editor.focus();
+  // Any time the cell is blurred, try saving the content
+  this.listenTo(this.editor, 'blur', _.bind(this.save, this));
+
   return this;
 };

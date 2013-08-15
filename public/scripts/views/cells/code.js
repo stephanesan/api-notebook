@@ -71,6 +71,7 @@ CodeCell.prototype.save = function () {
   if (this._editorCid === this.model.cid) {
     this.model.set('value', this.getValue());
   }
+  return this;
 };
 
 CodeCell.prototype.browseUp = function () {
@@ -82,7 +83,6 @@ CodeCell.prototype.browseDown = function () {
 };
 
 CodeCell.prototype.browseToCell = function (newModel) {
-  this.save();
   this._editorCid = newModel.cid;
   // Grab the value from the editor if its not our own model, but if it is we
   // need to grab the value from the model itself. Otherwise there will be pain.
@@ -103,7 +103,7 @@ CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
   var _id = this.model._uniqueCellId;
-  this.el.appendChild(Backbone.$('<div class="label">' + _id + '</div>')[0]);
+  this.el.appendChild(Backbone.$('<div class="label">$' + _id + '</div>')[0]);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var commentBlock = stripInput('/*', cm, data);

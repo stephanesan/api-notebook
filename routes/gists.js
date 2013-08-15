@@ -5,15 +5,15 @@ var request    = require('request');
 var ensureAuth = require('../lib/ensure-authenticated');
 
 _.each({
-  '/':     ['get', 'post'],
-  '/:id' : ['get', 'patch', 'delete']
+  '/':          ['get', 'post'],
+  '/:id' :      ['get', 'patch', 'delete'],
+  '/:id/forks': ['post']
 }, function (methods, route) {
   _.each(methods, function (method) {
     app[method](route, ensureAuth, function (req, res) {
       req.pipe(request({
         url: 'https://api.github.com' + req.originalUrl,
-        method: method,
-        qs: _.extend({}, req.query, {
+        qs:  _.extend(req.query, {
           'access_token': req.user.accessToken
         })
       })).pipe(res);

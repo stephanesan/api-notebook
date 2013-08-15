@@ -34,3 +34,47 @@ Notebook.prototype.serializeForEval = function () {
   });
   return object;
 };
+
+Notebook.prototype.serializeForGist = function () {
+  return this.map(function (model) {
+    if (model.get('type') === 'text') { return model.get('value'); }
+    // Indent any code cells using a single tab
+    return '\t' + (model.get('value') || '').split('\n').join('\n\t');
+  }).join('\n\n');
+};
+
+Notebook.prototype.deserializeFromGist = function (gist) {
+  var type   = 'text';
+  var value  = '';
+  var models = [];
+
+  var resetParse = function (newType) {
+    if (type === newType) { return; }
+
+    if (value) {
+      models.push({
+        type:  type,
+        value: value
+      });
+    }
+
+    type  = newType;
+    value = '';
+  };
+
+  _.each(gist.split('\n'), function (line) {
+    // When we encounter a tab character, switch modes to `code`.
+    if (line.charAt(0) === '\t') {
+      resetParse('code');
+      return value += line.substr(1);
+    }
+
+    resetParse('text');
+    value += line;
+  });
+
+  // Reset after the loop as well
+  resetParse();
+
+  return models;
+};

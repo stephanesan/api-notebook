@@ -5,7 +5,7 @@ var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
 var EditorView         = require('./cells/editor');
 var EntryModel         = require('../models/entry');
-var NotebookModel      = require('../models/notebook');
+var GistModel          = require('../models/gist');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
@@ -15,15 +15,82 @@ var Notebook = module.exports = View.extend({
   className: 'notebook'
 });
 
-Notebook.prototype.initialize = function () {
+Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
-  this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
+  this.user       = options.user;
+  // Every notebook has a unique gist and collection
+  this.gist       = new App.Model.Gist(
+    { id: options.gistId },
+    { user: this.user }
+  );
+  this.collection = this.gist.notebook;
 };
 
 Notebook.prototype.remove = function () {
   this.sandbox.remove();
   View.prototype.remove.call(this);
+};
+
+Notebook.prototype.loadFromGist = function (gistId) {
+  this.listenToOnce(this.gist, 'sync', function (model) {
+    Backbone.history.navigate(model.id);
+  });
+
+  // Reset the state
+  if (!this.gist.id) {
+    Backbone.history.navigate('');
+    // Append an initial starting view
+    return this.render().appendCodeView();
+  }
+
+  this.gist.fetch({
+    success: _.bind(function () {
+      var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
+
+      this.render();
+
+      _.each(cells, function (cell) {
+        var appendView = 'appendCodeView';
+        if (cell.type === 'text') { appendView = 'appendTextView'; }
+        this[appendView](null, cell.value);
+      }, this);
+
+      if (!this.el.childNodes.length) { this.appendCodeView(); }
+
+      if (this.gist.get('user').id === this.user.get('id')) {
+        this.listenTo(
+          this.collection,
+          'remove sort change',
+          _.debounce(function () {
+            this.gist.setNotebook(this.collection.serializeForGist());
+            this.gist.save(null, { patch: true });
+          }, 600)
+        );
+      }
+    }, this),
+
+    error: _.bind(function () {
+      // No gist exists or unauthorized, etc.
+      Backbone.history.navigate('', { trigger: true });
+    }, this)
+  });
+
+  return this;
+};
+
+Notebook.prototype.execute = function () {
+  var view = this.collection.at(0).view;
+  this.execution = true;
+
+  while (view) {
+    view.focus();
+    if (view.model.get('type') === 'code') { view.execute(); }
+    view = this.getNextView(view);
+  }
+
+  this.execution = false;
+  return this;
 };
 
 Notebook.prototype.getNextView = function (view) {
@@ -39,14 +106,14 @@ Notebook.prototype.getPrevView = function (view) {
 Notebook.prototype.appendCodeView = function (el, value) {
   var view = new CodeView();
   this.appendView(view, el);
-  view.setValue(value);
+  view.setValue(value).moveCursorToEnd();
   return view;
 };
 
 Notebook.prototype.appendTextView = function (el, value) {
   var view = new TextView();
   this.appendView(view, el);
-  view.setValue(value);
+  view.setValue(value).moveCursorToEnd();
   return view;
 };
 
@@ -129,6 +196,10 @@ Notebook.prototype.appendView = function (view, before) {
     // Listen to execution events from the child views, which may or may not
     // require new working cells to be appended to the console
     this.listenTo(view, 'execute', function (view) {
+      // Need a flag here so we don't cause an infinite loop when running the
+      // notebook
+      if (this.execution) { return; }
+
       if (this.el.lastChild === view.el) {
         this.appendCodeView();
       } else {
@@ -189,7 +260,7 @@ Notebook.prototype.appendView = function (view, before) {
 
 Notebook.prototype.appendTo = function (el) {
   View.prototype.appendTo.call(this, el);
-  // Append an initial starting view
-  this.appendCodeView();
+  // Refresh the UI from a gist ID
+  this.loadFromGist(this.gistId);
   return this;
 };
