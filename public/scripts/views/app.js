@@ -82,15 +82,15 @@ App.prototype.initialize = function (options) {
     }
   }, this));
 
-  // Attempt to fetch a user instance. This technique is sort of jank and would
-  // be implemented much better using localStorage or similar.
+  // Attempt to fetch the user session. This technique is sort of jank and could
+  // be implemented better using localStorage or something similar.
   this.user = new App.Model.Session();
   this.user.fetch();
 
-  this.listenTo(this.user, 'changeUser', this.changeUser);
+  this.listenTo(this.user, 'changeUser', this.updateUser);
 };
 
-App.prototype.changeUser = function () {
+App.prototype.updateUser = function () {
   var isNew   = this.user.isNew();
   var isOwner = this.notebook.isOwner();
 
@@ -127,9 +127,9 @@ App.prototype.setGist = function (gist) {
     user: this.user
   });
 
-  this.changeUser();
+  this.updateUser();
   this.notebook.render().appendTo(this.el);
-  this.listenTo(gist, 'sync', this.changeUser);
+  this.listenTo(gist, 'sync', this.updateUser);
 
   return this;
 };

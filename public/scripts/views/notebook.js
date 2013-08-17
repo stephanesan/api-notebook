@@ -37,7 +37,7 @@ Notebook.prototype.initialize = function (options) {
 
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
-  this.listenTo(this.user,       'changeUser',         this.changeUser);
+  this.listenTo(this.user,       'changeUser',         this.updateUser);
   this.listenTo(this.collection, 'remove sort change', this.save);
 };
 
@@ -59,19 +59,20 @@ Notebook.prototype.isOwner = function () {
   return this.gist.isOwner();
 };
 
-Notebook.prototype.changeUser = function () {
+Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
     model.view.renderEditor();
   });
 };
 
 Notebook.prototype.render = function () {
+  // Use a `rendering` flag to avoid resaving, etc. when rendering a gist
   this.rendering = true;
   View.prototype.render.call(this);
 
   // Reset the state
   if (this.gist.isNew()) {
-    this.changeUser();
+    this.updateUser();
     // Navigate back to a clean state
     Backbone.history.navigate('');
     // Append an initial starting view
@@ -83,7 +84,7 @@ Notebook.prototype.render = function () {
   this.gist.fetch({
     success: _.bind(function () {
       // Check here since the gist has probably changed ownership now
-      this.changeUser();
+      this.updateUser();
       this.el.innerHTML = '';
 
       var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
@@ -98,9 +99,9 @@ Notebook.prototype.render = function () {
       if (!this.el.childNodes.length) { this.appendCodeView(); }
     }, this),
 
+    // No gist exists or unauthorized, etc.
     error: _.bind(function () {
       this.rendering = false;
-      // No gist exists or unauthorized, etc.
       Backbone.history.navigate('', { trigger: true });
     }, this)
   });
