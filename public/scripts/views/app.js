@@ -1,13 +1,14 @@
 var _        = require('underscore');
+var fs       = require('fs');
 var Backbone = require('backbone');
+var DOMify   = require('domify');
 
-var View     = require('./hbs');
+var View     = require('./view');
 var Notebook = require('./notebook');
 
 // Alias `App` to `window` for testing purposes
 var App = module.exports = View.extend({
-  className: 'application',
-  template: require('../../templates/application.hbs')
+  className: 'application'
 });
 
 // Access a sandbox instance from tests
@@ -16,7 +17,6 @@ App.Sandbox = require('../lib/sandbox');
 // Alias all the available views
 App.View = {
   View:       require('./view'),
-  Hbs:        require('./hbs'),
   Notebook:   require('./notebook'),
   Inspector:  require('./inspector'),
   Cell:       require('./cells/cell'),
@@ -130,6 +130,16 @@ App.prototype.setGist = function (gist) {
   this.changeUser();
   this.notebook.render().appendTo(this.el);
   this.listenTo(gist, 'sync', this.changeUser);
+
+  return this;
+};
+
+App.prototype.render = function () {
+  View.prototype.render.call(this);
+
+  this.el.appendChild(DOMify(
+    fs.readFileSync(__dirname + '/../../templates/application.html')
+  ));
 
   return this;
 };
