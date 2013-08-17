@@ -1,6 +1,8 @@
-var _        = require('underscore');
-var View     = require('./view');
-var Backbone = require('backbone');
+var _          = require('underscore');
+var View       = require('./view');
+var Backbone   = require('backbone');
+var DOMify     = require('domify');
+var stackTrace = require('stacktrace-js');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -8,7 +10,7 @@ var InspectorView = module.exports = View.extend({
 
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
-    options, ['prefix', 'parentView', 'inspect', 'special', 'context']
+    options, ['prefix', 'parentView', 'inspect', 'error', 'special', 'context']
   ));
 
   if (this.parentView) {
@@ -17,7 +19,7 @@ InspectorView.prototype.initialize = function (options) {
 };
 
 InspectorView.prototype.events = {
-  'click .preview': function (e) {
+  'click .preview, .arrow': function (e) {
     e.stopPropagation();
     this.toggle();
   }
@@ -89,6 +91,13 @@ InspectorView.prototype.stringifyObject = function (object) {
   return '{' + (objectString ? ' ' + objectString + ' ' : '') + '}';
 };
 
+InspectorView.prototype.stringifyError = function (error) {
+  // If we are in error mode, we should render a stack trace
+  if (this.error) { return stackTrace({ e: error }).join('\n'); }
+  // TIL DOMExceptions don't allow calling `toString` or string type coersion
+  return Error.prototype.toString.call(error);
+};
+
 InspectorView.prototype.stringifyElement = function (element) {
   var div = document.createElement('div');
   div.appendChild(element.cloneNode(true));
@@ -97,8 +106,7 @@ InspectorView.prototype.stringifyElement = function (element) {
 
 InspectorView.prototype.stringify = function (object) {
   var type = this.getType(object);
-  // TIL DOMExceptions don't allow calling `toString` or string type coersion
-  if (type === 'Error')   { return Error.prototype.toString.call(object); }
+  if (type === 'Error')   { return this.stringifyError(object); }
   if (type === 'Array')   { return this.stringifyArray(object); }
   if (type === 'Object')  { return this.stringifyObject(object); }
   if (type === 'String')  { return this.stringifyString(object); }
@@ -139,7 +147,7 @@ InspectorView.prototype.renderChildrenOnDemand = function () {
 };
 
 InspectorView.prototype.renderChildren = function () {
-  var el = this.childrenEl = Backbone.$('<div class="children"></div>')[0];
+  var el = this.childrenEl = DOMify('<div class="children"></div>');
   this.el.appendChild(el);
 
   this.children = [];
@@ -171,8 +179,10 @@ InspectorView.prototype.renderChildren = function () {
 
 InspectorView.prototype.renderPreview = function () {
   var html = '';
+  var type = this.getType(this.inspect);
 
-  html += '<div class="preview">';
+  html += '<div class="arrow"></div>';
+  html += '<div class="preview ' + type.toLowerCase() + '">';
   if (_.isString(this.prefix)) {
     html += '<span class="property' + (this.special ? ' special' : '') + '">';
     html += _.escape(this.prefix);
@@ -183,10 +193,12 @@ InspectorView.prototype.renderPreview = function () {
   html += '</span>';
   html += '</div>';
 
-  var el = this.previewEl = Backbone.$(html)[0];
+  var el = this.previewEl = DOMify(html);
   this.el.appendChild(el);
-  // If it should be expanded, add a class to show it can be
-  if (this.shouldExpand(this.inspect)) {
+  // If it should be expanded, add a class to show it can be. In no case should
+  // we expand an error to show more though, since it should be displaying a
+  // stack trace
+  if (!this.error && this.shouldExpand(this.inspect)) {
     this.el.classList.add('can-expand');
   }
 
