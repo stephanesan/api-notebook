@@ -244,6 +244,17 @@ describe('Notebook', function () {
         expect(spy).to.have.been.called;
       });
 
+      it('should execute all cells sequentially', function (done) {
+        codeCells[0].setValue('3874');
+        codeCells[1].setValue('$1');
+
+        view.execute(function () {
+          expect(codeCells[0].model.get('result')).to.equal(3874);
+          expect(codeCells[1].model.get('result')).to.equal(3874);
+          done();
+        });
+      });
+
       describe('Text Cell', function () {
         it('should remove itself when initializing a code cell', function () {
           expect(view.collection.length).to.equal(4);

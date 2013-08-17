@@ -109,17 +109,31 @@ Notebook.prototype.render = function () {
   return this;
 };
 
-Notebook.prototype.execute = function () {
-  var view = this.collection.at(0).view;
+Notebook.prototype.execute = function (cb) {
+  var that = this;
   this.execution = true;
 
-  while (view) {
-    view.focus();
-    if (view.model.get('type') === 'code') { view.execute(); }
-    view = this.getNextView(view);
-  }
+  // This chaining is a little awkward, but it allows the execution to work with
+  // asynchronous callbacks
+  (function execution (view) {
+    // If no view is passed through, we must have hit the last view
+    if (!view) {
+      this.execution = false;
+      return cb && cb();
+    }
 
-  this.execution = false;
+    view.on('execute', function (view, err, result) {
+      execution(that.getNextView(view));
+    });
+
+    view.focus();
+    if (view.model.get('type') === 'code') {
+      view.execute();
+    } else {
+      execution(that.getNextView(view));
+    }
+  })(this.collection.at(0).view);
+
   return this;
 };
 
