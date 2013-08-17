@@ -8,10 +8,15 @@ describe('Notebook', function () {
   });
 
   describe('Cell instance', function () {
-    var view;
+    var view, user;
 
     beforeEach(function () {
-      view = new Notebook();
+      user = new App.Model.Session();
+
+      view = new Notebook({
+        user: user,
+        gist: new App.Model.Gist({}, { user: user })
+      });
     });
 
     it('should have a class', function () {
@@ -228,7 +233,8 @@ describe('Notebook', function () {
           expect(result).to.equal(99);
         });
 
-        codeCells[0].setValue(99);
+        codeCells[0].setValue('99');
+        codeCells[0].on('execute', spy);
         codeCells[0].execute();
 
         codeCells[1].setValue('$1');

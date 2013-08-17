@@ -18,8 +18,26 @@ describe('App', function () {
   });
 
   describe('App instance', function () {
+    var view;
+
+    beforeEach(function () {
+      // Stop attempting to do ajax requests
+      Backbone.$.ajax = sinon.spy();
+      // Create an app instance for testing, but stub opening a new window
+      view = new App();
+      view.authNotebook = sinon.spy(window, 'open');
+    });
+
+    afterEach(function () {
+      window.open.restore();
+    });
+
     it('should have a class name of `application`', function () {
-      expect((new App).el.className).to.equal('application');
+      expect(view.el.className).to.equal('application');
+    });
+
+    it('should create a user session', function () {
+      expect(view.user).to.exist;
     });
   });
 });

@@ -32,7 +32,7 @@ App.Model = {
   CodeEntry: require('../models/code-entry'),
   TextEntry: require('../models/text-entry'),
   Gist:      require('../models/gist'),
-  User:      require('../models/user')
+  Session:   require('../models/session')
 };
 
 // Alias all the available collections
@@ -59,11 +59,14 @@ App.prototype.initialize = function (options) {
     }, this)
   }))();
 
-  Backbone.history.start({
-    root:      '/',
-    pushState: false,
-    silent:    true
-  });
+  // Attempt to start Backbone history, but it can't be started more than once
+  try {
+    Backbone.history.start({
+      root:      '/',
+      pushState: false,
+      silent:    true
+    });
+  } catch (e) {}
 
   // Listen to keyboard presses
   this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
@@ -81,7 +84,7 @@ App.prototype.initialize = function (options) {
 
   // Attempt to fetch a user instance. This technique is sort of jank and would
   // be implemented much better using localStorage or similar.
-  this.user = new App.Model.User();
+  this.user = new App.Model.Session();
   this.user.fetch();
 
   this.listenTo(this.user, 'changeUser', this.changeUser);

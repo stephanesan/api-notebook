@@ -85,25 +85,23 @@ EditorCell.prototype.save = function () {
 };
 
 EditorCell.prototype.renderEditor = function () {
-  var oldDocument, editorEl;
+  var doc, editorEl;
   // If an editor already exists, rerender the editor keeping the same options
   if (this.editor) {
-    oldDocument = this.editor.getDoc();
-    editorEl    = this.editor.getWrapperElement();
-    // Not sure if this is the best way to remove the document from an active
-    // CodeMirror editor instance.
-    delete editorEl.doc;
-    delete oldDocument.cm;
+    doc      = this.editor.doc.copy(true);
+    // Remove the old CodeMirror instance from the DOM
+    editorEl = this.editor.getWrapperElement();
     editorEl.parentNode.removeChild(editorEl);
   }
   // Initialize the codemirror editor
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({}, this.editorOptions, {
-    readOnly: this.notebook.isOwner() ? false : 'nocursor'
+    // Set to readonly if there is a notebook and we aren't the notebooks owner
+    readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
   }));
   // Move the state of the editor
-  if (oldDocument) { this.editor.swapDoc(oldDocument); }
+  if (doc) { this.editor.swapDoc(doc); }
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
