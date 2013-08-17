@@ -121,11 +121,11 @@ InspectorView.prototype.renderChild = function (prefix, object, special) {
 };
 
 InspectorView.prototype.renderChildrenOnDemand = function () {
-  this.listenTo(this, 'open', function (parent) {
-    this.renderChildren();
-  });
+  if (!this.shouldExpand(this.inspect)) { return this; }
 
-  this.listenTo(this, 'close', function (parent) {
+  this.listenTo(this, 'open', this.renderChildren);
+
+  this.listenTo(this, 'close', function () {
     _.each(this.children, function (child) {
       child.remove();
     });
