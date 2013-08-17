@@ -53,8 +53,8 @@ describe('Object Inspector', function () {
 
     it('should inspect functions', function () {
       inputOutput(
-        function () { return 'test' },
-        'function () { return \'test\' }'
+        function () { return 'test'; },
+        'function () { return \'test\'; }'
       );
     });
 

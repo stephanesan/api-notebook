@@ -1,7 +1,7 @@
 var _          = require('underscore');
 var View       = require('./view');
 var Backbone   = require('backbone');
-var DOMify     = require('domify');
+var domify     = require('domify');
 var stackTrace = require('stacktrace-js');
 
 var InspectorView = module.exports = View.extend({
@@ -147,7 +147,7 @@ InspectorView.prototype.renderChildrenOnDemand = function () {
 };
 
 InspectorView.prototype.renderChildren = function () {
-  var el = this.childrenEl = DOMify('<div class="children"></div>');
+  var el = this.childrenEl = domify('<div class="children"></div>');
   this.el.appendChild(el);
 
   this.children = [];
@@ -193,7 +193,7 @@ InspectorView.prototype.renderPreview = function () {
   html += '</span>';
   html += '</div>';
 
-  var el = this.previewEl = DOMify(html);
+  var el = this.previewEl = domify(html);
   this.el.appendChild(el);
   // If it should be expanded, add a class to show it can be. In no case should
   // we expand an error to show more though, since it should be displaying a

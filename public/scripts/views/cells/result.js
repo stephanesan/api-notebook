@@ -22,14 +22,14 @@ ResultCell.prototype._renderInspector = function (options) {
 };
 
 ResultCell.prototype.setResult = function (result, context) {
-  this._renderInspector({ inspect: result, context: context })
+  this._renderInspector({ inspect: result, context: context });
   return this;
 };
 
 ResultCell.prototype.setError = function (error, context) {
   // Pass through an additional error flag which will cause the inspector
   // to go into an error rendering mode
-  this._renderInspector({ inspect: error, context: context, error: true })
+  this._renderInspector({ inspect: error, context: context, error: true });
   this.el.classList.add('result-error');
   return this;
 };
