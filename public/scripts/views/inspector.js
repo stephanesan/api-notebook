@@ -127,7 +127,7 @@ InspectorView.prototype.renderPreview = function () {
     html += _.escape(this.prefix);
     html += '</span>: ';
   }
-  html += '<span class="object">';
+  html += '<span class="inspect">';
   html += _.escape(this.stringifyPreview());
   html += '</span>';
   html += '</div>';

@@ -10,7 +10,7 @@ describe('Object Inspector', function () {
 
   describe('functionality', function () {
     var matchPreview = function (inspector, output) {
-      var el = inspector.el.childNodes[1].getElementsByClassName('object')[0];
+      var el = inspector.el.childNodes[1].getElementsByClassName('inspect')[0];
       if (output instanceof RegExp) {
         expect(el.textContent).to.match(output);
       } else {
