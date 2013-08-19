@@ -6,7 +6,7 @@ var passport = require('./lib/passport');
 var PORT           = process.env.PORT || 8000;
 var SESSION_SECRET = 'keyboard cat';
 
-app.configure(function() {
+app.configure(function () {
   app.use(express.logger());
   app.use(express.cookieParser());
   app.use(express.session({ secret: SESSION_SECRET }));
@@ -17,7 +17,7 @@ app.configure(function() {
   app.use(express.static(path.join(__dirname, 'build')));
 });
 
-app.configure('development', function(){
+app.configure('development', function () {
   app.use(express.errorHandler());
 });
 
