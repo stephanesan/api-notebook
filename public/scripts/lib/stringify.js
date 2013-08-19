@@ -44,11 +44,16 @@ var stringifyError = function (error) {
 
 module.exports = function (object) {
   switch (type(object)) {
-    case 'error':   return stringifyError(object);
-    case 'array':   return stringifyArray(object);
-    case 'object':  return stringifyObject(object);
-    case 'string':  return stringifyString(object);
-    case 'element': return stringifyElement(object);
+  case 'error':
+    return stringifyError(object);
+  case 'array':
+    return stringifyArray(object);
+  case 'object':
+    return stringifyObject(object);
+  case 'string':
+    return stringifyString(object);
+  case 'element':
+    return stringifyElement(object);
   }
 
   // Every other type can safely be typecasted to the expected output
