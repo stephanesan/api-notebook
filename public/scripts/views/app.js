@@ -6,7 +6,6 @@ var DOMify   = require('domify');
 var View     = require('./view');
 var Notebook = require('./notebook');
 
-// Alias `App` to `window` for testing purposes
 var App = module.exports = View.extend({
   className: 'application'
 });

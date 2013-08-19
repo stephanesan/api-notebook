@@ -1,5 +1,6 @@
-var _    = require('underscore');
-var View = require('./view');
+var _        = require('underscore');
+var View     = require('./view');
+var Backbone = require('backbone');
 
 var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
