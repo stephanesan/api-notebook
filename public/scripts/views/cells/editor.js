@@ -1,6 +1,7 @@
-var _    = require('underscore');
-var Cell = require('./cell');
-var trim = require('trim');
+var _        = require('underscore');
+var trim     = require('trim');
+var Cell     = require('./cell');
+var Controls = require('./controls');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -109,6 +110,12 @@ EditorCell.prototype.render = function () {
     this.setValue(this.model.get('value'));
     this.moveCursorToEnd();
   }
+
+  // Initialize and render the UI controls
+  this.controls = new Controls();
+  this.controls.view = this;
+  this.controls.render();
+
   return this;
 };
 
@@ -137,5 +144,7 @@ EditorCell.prototype.appendTo = function (el) {
   // need to refresh the CodeMirror UI so it becomes visible
   this.editor.refresh();
   this.editor.focus();
+  // Append controls
+  this.controls.appendTo(this.el);
   return this;
 };
