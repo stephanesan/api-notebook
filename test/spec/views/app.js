@@ -20,18 +20,20 @@ describe('App', function () {
   });
 
   describe('App instance', function () {
-    var view;
+    var view, oldAjax;
 
     beforeEach(function () {
-      // Stop attempting to do ajax requests
-      Backbone.$.ajax = sinon.spy();
+      // Stop attempting to do ajax requests and open windows
+      oldAjax = Backbone.$.ajax;
+      sinon.spy(window, 'open');
+      Backbone.$.ajax = function () {};
       // Create an app instance for testing, but stub opening a new window
       view = new App();
-      view.authNotebook = sinon.spy(window, 'open');
     });
 
     afterEach(function () {
       view.remove();
+      Backbone.$.ajax = oldAjax;
       window.open.restore();
     });
 
