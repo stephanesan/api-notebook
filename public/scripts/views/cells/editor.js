@@ -1,5 +1,7 @@
-var _    = require('underscore');
-var Cell = require('./cell');
+var _        = require('underscore');
+var trim     = require('trim');
+var Cell     = require('./cell');
+var Controls = require('./controls');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -149,6 +151,12 @@ EditorCell.prototype.renderEditor = function () {
     this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
+
+  // Initialize and render the UI controls
+  this.controls = new Controls();
+  this.controls.view = this;
+  this.controls.render();
+
   // If it was previously focused, let's focus the editor again
   if (hasFocus) { this.editor.focus(); }
   // Bind the editor events at the end in case of any focus issues when
@@ -193,5 +201,9 @@ EditorCell.prototype.appendTo = function (el) {
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
   if (this.editor) { this.editor.refresh(); }
+
+  // Append controls
+  this.controls.appendTo(this.el);
+
   return this;
 };
