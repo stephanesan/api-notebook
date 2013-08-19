@@ -101,6 +101,10 @@ InspectorView.prototype.stringifyElement = function (element) {
   return div.innerHTML;
 };
 
+InspectorView.prototype.stringifyPreview = function () {
+  return this.stringify(this.inspect);
+};
+
 InspectorView.prototype.stringify = function (object) {
   var type = this.getType(object);
   if (type === 'Error')   { return this.stringifyError(object); }
@@ -112,7 +116,7 @@ InspectorView.prototype.stringify = function (object) {
   return '' + object;
 };
 
-InspectorView.prototype.renderChild = function (prefix, object, special) {
+InspectorView.prototype._renderChild = function (prefix, object, special) {
   var inspector = new InspectorView({
     prefix:     prefix,
     special:    special,
@@ -128,16 +132,21 @@ InspectorView.prototype.renderChild = function (prefix, object, special) {
 InspectorView.prototype.renderChildren = function () {
   this._renderChildrenEl();
 
+  // If it should be expanded, add a class to show it can be. In no case should
+  // we expand an error to show more though, since it should be displaying a
+  // stack trace
+  if (this.shouldExpand()) {
+    this.el.classList.add('can-expand');
+  }
+
   this.listenTo(this, 'open', this._renderChildren);
 
   this.listenTo(this, 'close', function (parent) {
     _.each(this.children, function (child) {
       child.remove();
     });
-    // Remove any old references to child views
+
     this.children = [];
-    this.el.removeChild(this.childrenEl);
-    delete this.childrenEl;
   });
 
   return this;
@@ -156,22 +165,22 @@ InspectorView.prototype._renderChildren = function () {
 
     if (_.isFunction(descriptor.get) || _.isFunction(descriptor.set)) {
       if (_.isFunction(descriptor.get)) {
-        this.renderChild('get ' + prop, descriptor.get, true);
+        this._renderChild('get ' + prop, descriptor.get, true);
       }
 
       if (_.isFunction(descriptor.set)) {
-        this.renderChild('set ' + prop, descriptor.set, true);
+        this._renderChild('set ' + prop, descriptor.set, true);
       }
     } else {
       var isSpecial = !descriptor.writable || !descriptor.configurable ||
                        !descriptor.enumerable;
-      this.renderChild(prop, descriptor.value, isSpecial);
+      this._renderChild(prop, descriptor.value, isSpecial);
     }
   }, this);
 
   // Hidden prototype - super handy when debugging
   var prototype = Object.getPrototypeOf(this.inspect);
-  this.renderChild('[[Prototype]]', prototype, true);
+  this._renderChild('[[Prototype]]', prototype, true);
 
   return this;
 };
@@ -188,18 +197,12 @@ InspectorView.prototype.renderPreview = function () {
     html += '</span>: ';
   }
   html += '<span class="object">';
-  html += _.escape(this.stringify(this.inspect));
+  html += _.escape(this.stringifyPreview());
   html += '</span>';
   html += '</div>';
 
   var el = this.previewEl = domify(html);
   this.el.appendChild(el);
-  // If it should be expanded, add a class to show it can be. In no case should
-  // we expand an error to show more though, since it should be displaying a
-  // stack trace
-  if (this.shouldExpand()) {
-    this.el.classList.add('can-expand');
-  }
 
   return this;
 };

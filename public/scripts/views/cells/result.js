@@ -1,6 +1,7 @@
-var _         = require('underscore');
-var Cell      = require('./cell');
-var Inspector = require('../inspector');
+var _              = require('underscore');
+var Cell           = require('./cell');
+var Inspector      = require('../inspector');
+var ErrorInspector = require('../error-inspector');
 
 var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'
@@ -13,7 +14,7 @@ ResultCell.prototype._reset = function () {
   return this;
 };
 
-ResultCell.prototype._renderInspector = function (options) {
+ResultCell.prototype._renderInspector = function (Inspector, options) {
   this._reset();
   this.inspector = new Inspector(options);
   this.inspector.render().appendTo(this.el);
@@ -22,14 +23,12 @@ ResultCell.prototype._renderInspector = function (options) {
 };
 
 ResultCell.prototype.setResult = function (result, context) {
-  this._renderInspector({ inspect: result, context: context });
+  this._renderInspector(Inspector, { inspect: result, context: context });
   return this;
 };
 
 ResultCell.prototype.setError = function (error, context) {
-  // Pass through an additional error flag which will cause the inspector
-  // to go into an error rendering mode
-  this._renderInspector({ inspect: error, context: context, error: true });
+  this._renderInspector(ErrorInspector, { inspect: error, context: context });
   this.el.classList.add('result-error');
   return this;
 };
