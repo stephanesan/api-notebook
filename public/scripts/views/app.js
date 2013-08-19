@@ -59,14 +59,11 @@ App.prototype.initialize = function (options) {
     }, this)
   }))();
 
-  // Attempt to start Backbone history, but it can't be started more than once
-  try {
-    Backbone.history.start({
-      root:      '/',
-      pushState: false,
-      silent:    true
-    });
-  } catch (e) {}
+  Backbone.history.start({
+    root:      '/',
+    pushState: false,
+    silent:    true
+  });
 
   // Listen to keyboard presses
   this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
@@ -88,6 +85,11 @@ App.prototype.initialize = function (options) {
   this.user.fetch();
 
   this.listenTo(this.user, 'changeUser', this.updateUser);
+};
+
+App.prototype.remove = function () {
+  View.prototype.remove.call(this);
+  Backbone.history.remove();
 };
 
 App.prototype.updateUser = function () {
