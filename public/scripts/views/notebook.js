@@ -43,7 +43,7 @@ Notebook.prototype.initialize = function (options) {
 
 Notebook.prototype.remove = function () {
   this.sandbox.remove();
-  View.prototype.remove.call(this);
+  return View.prototype.remove.call(this);
 };
 
 Notebook.prototype.fork = function (cb) {

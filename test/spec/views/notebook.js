@@ -424,24 +424,96 @@ describe('Notebook', function () {
         });
       });
     });
-  });
 
-  describe('Gist integration', function () {
-    // var textCells;
-    // var codeCells;
+    describe('Gist integration', function () {
+      it('should rerender the notebook cells when the user changes', function () {
+        view.render().appendTo(fixture);
 
-    // beforeEach(function () {
-    //   view = view.render().appendTo(fixture);
-    //   textCells = [];
-    //   codeCells = [];
-    //   // Append some initial testing cells
-    //   codeCells.push(view.appendCodeView());
-    //   textCells.push(view.appendTextView());
-    //   codeCells.push(view.appendCodeView());
-    // });
+        var cell = view.appendCodeView();
+        expect(cell.editor.options.readOnly).to.be.false;
 
-    // afterEach(function () {
-    //   view.remove();
-    // });
+        // Set different user and gist owners
+        view.gist.set('id', 456);
+        view.user.set('id', 123);
+        expect(cell.editor.options.readOnly).to.equal('nocursor');
+
+        view.remove();
+      });
+
+      it('should navigate to gist url on sync', function () {
+        var spy    = sinon.spy(Backbone.history, 'navigate');
+        var server = sinon.fakeServer.create();
+        server.respondWith(
+          'GET',
+          'https://api.github.com/gists/123456',
+          [200, { "Content-Type": "application/json" }, '{"id":"123456"}']
+        );
+
+
+        view.gist.set('id', '123456');
+        view.render().appendTo(fixture);
+
+        server.respond();
+        server.restore();
+
+        expect(spy).to.have.been.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal('123456');
+        view.remove();
+        Backbone.history.navigate.restore();
+      });
+
+      it('should navigate back to root on fetch failure', function () {
+        var spy    = sinon.spy(Backbone.history, 'navigate');
+        var server = sinon.fakeServer.create();
+        server.respondWith(
+          'GET',
+          'https://api.github.com/gists/123456',
+          [404, { "Content-Type": "application/json" }, '']
+        );
+
+
+        view.gist.set('id', '123456');
+        view.render().appendTo(fixture);
+
+        server.respond();
+        server.restore();
+
+        // Seems to be a bug causing `onload` to be triggered twice in the tests
+        expect(spy).to.have.been.called;
+        expect(spy.getCall(0).args[0]).to.equal('');
+        view.remove();
+        Backbone.history.navigate.restore();
+      });
+
+      it('should sync with the server on changes (debounced)', function () {
+        var spy   = sinon.spy();
+        var cell  = view.appendCodeView();
+        var clock = sinon.useFakeTimers();
+
+        // Don't even attempt to save in the tests here, it should be covered in
+        // the gists test suite.
+        view.gist.save = spy;
+
+        view.user = { id: 123 };
+        cell.setValue('test');
+        cell.trigger('change', cell);
+
+        clock.tick(500);
+        expect(spy).to.have.been.calledOnce;
+
+        cell.setValue('test again');
+        cell.trigger('change', cell);
+
+        clock.tick(100);
+        cell.setValue('test more');
+        cell.trigger('change', cell);
+
+        clock.tick(500);
+        expect(spy).to.have.been.calledTwice;
+
+        clock.restore();
+        view.gist.save = App.Model.Gist.prototype.save;
+      });
+    });
   });
 });
