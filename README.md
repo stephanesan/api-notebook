@@ -27,6 +27,8 @@ export GITHUB_CLIENT_ID=""
 export GITHUB_CLIENT_SECRET=""
 ```
 
+[Register a new application on Github](https://github.com/settings/applications/new), then export the keys in your `.bash_profile`.
+
 ## Deployment
 
 To deploy to Heroku, just run the deploy script in the Makefile. You will probably have to set your the environment variables on Heroku, as well as update the git endpoint in the Makefile.
