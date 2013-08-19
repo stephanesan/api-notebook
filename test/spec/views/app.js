@@ -31,6 +31,7 @@ describe('App', function () {
     });
 
     afterEach(function () {
+      view.remove();
       window.open.restore();
     });
 

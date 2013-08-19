@@ -44,33 +44,34 @@ Notebook.prototype.serializeForGist = function () {
 };
 
 Notebook.prototype.deserializeFromGist = function (gist) {
-  var type   = 'text';
-  var value  = '';
   var models = [];
+  var type, value;
 
   var resetParse = function (newType) {
     if (type === newType) { return; }
 
-    if (value) {
+    if (value && value.length) {
+      if (value[0] === '') { value.shift(); }
+
       models.push({
         type:  type,
-        value: value
+        value: value.join('\n')
       });
     }
 
     type  = newType;
-    value = '';
+    value = [];
   };
 
   _.each(gist.split('\n'), function (line) {
     // When we encounter a tab character, switch modes to `code`.
     if (line.charAt(0) === '\t') {
       resetParse('code');
-      return value += line.substr(1);
+      return value.push(line.substr(1));
     }
 
     resetParse('text');
-    value += line;
+    value.push(line);
   });
 
   // Reset after the loop as well

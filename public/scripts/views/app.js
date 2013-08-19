@@ -87,8 +87,8 @@ App.prototype.initialize = function (options) {
 };
 
 App.prototype.remove = function () {
+  Backbone.history.stop();
   View.prototype.remove.call(this);
-  Backbone.history.remove();
 };
 
 App.prototype.updateUser = function () {
