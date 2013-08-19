@@ -1,20 +1,20 @@
 var Backbone = require('backbone');
 
-var User = module.exports = Backbone.Model.extend({
+var Session = module.exports = Backbone.Model.extend({
   url: '/session'
 });
 
-User.prototype.initialize = function () {
-  this._prevUserId = this.id;
+Session.prototype.initialize = function () {
+  this._prevSessionId = this.id;
 
   this.listenTo(this, 'change', function () {
-    if (this.id === this._prevUserId) { return; }
+    if (this.id === this._prevSessionId) { return; }
 
     this.trigger('changeUser', this);
   });
 };
 
-User.prototype.sync = function (method) {
+Session.prototype.sync = function (method) {
   // Disables syncing since its not required
   if (method !== 'read') { return; }
 

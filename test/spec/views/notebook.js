@@ -425,4 +425,23 @@ describe('Notebook', function () {
       });
     });
   });
+
+  describe('Gist integration', function () {
+    // var textCells;
+    // var codeCells;
+
+    // beforeEach(function () {
+    //   view = view.render().appendTo(fixture);
+    //   textCells = [];
+    //   codeCells = [];
+    //   // Append some initial testing cells
+    //   codeCells.push(view.appendCodeView());
+    //   textCells.push(view.appendTextView());
+    //   codeCells.push(view.appendCodeView());
+    // });
+
+    // afterEach(function () {
+    //   view.remove();
+    // });
+  });
 });

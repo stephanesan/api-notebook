@@ -7,7 +7,7 @@ describe('Notebook Collection', function () {
     expect(Collection).to.be.a('function');
   });
 
-  describe('instances', function () {
+  describe('notebook instance', function () {
     var collection;
 
     beforeEach(function () {
@@ -40,6 +40,16 @@ describe('Notebook Collection', function () {
         expect(models[0].value).to.equal('test\ncode');
         expect(models[1].type).to.equal('text');
         expect(models[1].value).to.equal('test\ntext');
+      });
+
+      it('should deserialize mutliple code blocks', function () {
+        var models = collection.deserializeFromGist('\ttest\n\n\tcode');
+
+        expect(models.length).to.equal(2);
+        expect(models[0].type).to.equal('code');
+        expect(models[0].value).to.equal('test');
+        expect(models[1].type).to.equal('code');
+        expect(models[1].value).to.equal('code');
       });
     });
 

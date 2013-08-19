@@ -44,38 +44,34 @@ Notebook.prototype.serializeForGist = function () {
 };
 
 Notebook.prototype.deserializeFromGist = function (gist) {
-  var models = [];
-  var type, value;
+  var collection = [];
 
-  var resetParse = function (newType) {
-    if (type === newType) { return; }
-
-    if (value && value.length) {
-      if (value[0] === '') { value.shift(); }
-
-      models.push({
-        type:  type,
-        value: value.join('\n')
+  // Split either the gist or a single tab character to force a starting code
+  // cell.
+  _.each((gist || '\t').split('\n\n'), function (section) {
+    // When we encounter a tab character, switch modes to `code`.
+    if (section.charAt(0) === '\t') {
+      return collection.push({
+        type: 'code',
+        value: _.map(section.split('\n'), function (line) {
+          return line.substr(1);
+        }).join('\n')
       });
     }
 
-    type  = newType;
-    value = [];
-  };
+    // If we hit anything else, it must be a text cell. However, text cells
+    // could be contain multiple line returns anywhere within the contents.
+    var prevModel = collection[collection.length - 1];
 
-  _.each(gist.split('\n'), function (line) {
-    // When we encounter a tab character, switch modes to `code`.
-    if (line.charAt(0) === '\t') {
-      resetParse('code');
-      return value.push(line.substr(1));
+    if (prevModel && prevModel.type === 'text') {
+      return prevModel.value += '\n\n' + section;
     }
 
-    resetParse('text');
-    value.push(line);
-  });
+    return collection.push({
+      type: 'text',
+      value: section
+    });
+  }, []);
 
-  // Reset after the loop as well
-  resetParse();
-
-  return models;
+  return collection;
 };

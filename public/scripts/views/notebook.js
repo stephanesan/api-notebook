@@ -27,7 +27,6 @@ Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this._uniqueId  = 0;
   this.user       = options.user;
-  this._prevUser  = this.user.id;
   // Every notebook has a unique gist and collection
   this.gist       = options.gist;
   this.collection = this.gist.notebook;
