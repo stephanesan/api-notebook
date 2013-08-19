@@ -10,10 +10,8 @@
 
 .modal-toggle
   position: relative
-  float: right
   width: 26px
   height: @width
-  margin-top: 5px
   padding: 0
   border: 2px solid #fff
   border-radius: 50%
@@ -34,10 +32,10 @@
   position: fixed
   z-index: 200
   top: 100px
-  left: 50%
 
-  width: 48em
-  margin-left: -24em
+  width: 90%
+  max-width: 52em
+  margin-left: -1px
   border: 1px solid #aaa
   border-radius: 5px
 
@@ -85,6 +83,7 @@
   z-index: 199
 
   background: rgba(0,0,0,0.15)
+  cursor: pointer
 
 .modal,
 .modal-backdrop
@@ -97,3 +96,33 @@
   .modal-backdrop
     opacity: 1
     visibility: visible
+
+.notebook-exec
+  position: relative
+  width: 26px
+  height: @width
+  border: 2px solid #fff
+  border-radius: 50%
+  background: transparent
+  text-indent: -999em
+
+  &:after
+    content: ''
+    position: absolute
+    top: 6px
+    left: 8px
+    display: inline-block
+    width: 0
+    height: 0
+    border: 5px solid transparent
+    border-left: 9px solid #fff
+
+.btn-text
+  padding: 0
+  border: 0
+  background: transparent
+  color: #fff
+  font-size: 12px
+
+.btn-text:hover
+  text-decoration: underline
