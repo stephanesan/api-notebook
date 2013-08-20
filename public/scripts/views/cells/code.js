@@ -99,11 +99,8 @@ CodeCell.prototype.autocomplete = function () {
   });
 };
 
-CodeCell.prototype.render = function (options) {
-  EditorCell.prototype.render.call(this, options);
-
-  var _id = this.model._uniqueCellId;
-  this.el.appendChild(Backbone.$('<div class="label">$' + _id + '</div>')[0]);
+CodeCell.prototype.bindEditor = function () {
+  EditorCell.prototype.bindEditor.call(this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var commentBlock = stripInput('/*', cm, data);
@@ -121,6 +118,15 @@ CodeCell.prototype.render = function (options) {
       this.autocomplete();
     }
   }, this));
+
+  return this;
+};
+
+CodeCell.prototype.render = function () {
+  EditorCell.prototype.render.call(this);
+
+  var _id = this.model._uniqueCellId;
+  this.el.appendChild(Backbone.$('<div class="label">$' + _id + '</div>')[0]);
 
   // Every code cell has an associated result
   this.result = new ResultCell();

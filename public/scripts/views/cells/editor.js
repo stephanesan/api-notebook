@@ -84,10 +84,31 @@ EditorCell.prototype.save = function () {
   return this;
 };
 
+EditorCell.prototype.bindEditor = function () {
+  this.listenTo(this.editor, 'focus', _.bind(function () {
+    this.el.classList.add('active');
+  }, this));
+
+  this.listenTo(this.editor, 'blur', _.bind(function () {
+    this.el.classList.remove('active');
+  }, this));
+
+  // Set the value of the model every time a change happens
+  this.listenTo(this.editor, 'change', _.bind(this.save, this));
+
+  return this;
+};
+
+EditorCell.prototype.unbindEditor = function () {
+  this.stopListening(this.editor);
+  return this;
+};
+
 EditorCell.prototype.renderEditor = function () {
   var doc, editorEl;
   // If an editor already exists, rerender the editor keeping the same options
   if (this.editor) {
+    this.unbindEditor();
     doc      = this.editor.doc.copy(true);
     // Remove the old CodeMirror instance from the DOM
     editorEl = this.editor.getWrapperElement();
@@ -97,11 +118,12 @@ EditorCell.prototype.renderEditor = function () {
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({}, this.editorOptions, {
-    // Set to readonly if there is a notebook and we aren't the notebooks owner
+    // Set to readonly if there is a notebook and we aren't the notebook owner
     readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
   }));
   // Move the state of the editor
   if (doc) { this.editor.swapDoc(doc); }
+  this.bindEditor();
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
@@ -110,14 +132,12 @@ EditorCell.prototype.renderEditor = function () {
 
 EditorCell.prototype.render = function () {
   this.renderEditor();
+
   // Set the editor value if it already exists
   if (this.model.get('value')) {
     this.setValue(this.model.get('value'));
     this.moveCursorToEnd();
   }
-
-  // Set the value of the model every time a change happens
-  this.listenTo(this.editor, 'change', _.bind(this.save, this));
 
   return this;
 };

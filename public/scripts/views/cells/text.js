@@ -25,6 +25,19 @@ TextCell.prototype.closeCell = function (code) {
   this.el.classList.add('text-closed');
 };
 
+TextCell.prototype.bindEditor = function () {
+  EditorCell.prototype.bindEditor.call(this);
+
+  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
+    var endCommentBlock = stripInput('*/', cm, data);
+    // When we detect the closing comment block, set `this.alreadyClosed`
+    // since it doesn't make sense to be able to close it more than once
+    if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
+  }, this));
+
+  return this;
+};
+
 TextCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
@@ -34,13 +47,6 @@ TextCell.prototype.render = function () {
   this.el.appendChild(
     Backbone.$('<div class="comment comment-close">*/</div>')[0]
   );
-
-  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
-    var endCommentBlock = stripInput('*/', cm, data);
-    // When we detect the closing comment block, set `this.alreadyClosed`
-    // since it doesn't make sense to be able to close it more than once
-    if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
-  }, this));
 
   return this;
 };
