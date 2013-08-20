@@ -76,6 +76,10 @@ EditorCell.prototype.switch = function () {
   this.trigger('switch', this);
 };
 
+EditorCell.prototype.appendNew = function () {
+  this.trigger('appendNew', this);
+};
+
 EditorCell.prototype.focus = function () {
   this.editor.focus();
   return this;
@@ -113,9 +117,7 @@ EditorCell.prototype.render = function () {
 
   // TODO Move to cell (editor gets re-instantiated)
   // Initialize and render the UI controls
-  this.controls = new Controls();
-  // TODO Move to initialize:
-  this.controls.editorView = this;
+  this.controls = new Controls({ editorView: this });
   this.controls.render();
 
   return this;

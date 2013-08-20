@@ -21,8 +21,9 @@ var ControlsView = module.exports = View.extend({
  *
  * @param {EditorCell} EditorCell  Instance of editorCell to control.
  */
-ControlsView.prototype.initialize = function () {
+ControlsView.prototype.initialize = function (options) {
   this.model = this.model || new ControlsModel();
+  this.editorView = options.editorView;
 };
 
 ControlsView.prototype.render = function () {
@@ -44,18 +45,14 @@ ControlsView.prototype.render = function () {
  * @param {object} event  The normalized event object.
  */
 ControlsView.prototype.onClick = function (event) {
-  console.log(event);
+  // Prevent clicks outside an action item.
   if (event.target === this.el) {
-    return;
+    return false;
   }
-  // TODO Handle new-case
   var action = event.target.className.replace(/action-/, '');
   var editorView = this.editorView;
   var viewFn = editorView[action];
-  if (!viewFn) {
-    return console.warn("No editorView action: " + action, editorView);
-  } else {
+  if (typeof viewFn === 'function') {
     viewFn.call(editorView);
   }
-
 };
