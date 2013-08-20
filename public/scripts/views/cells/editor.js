@@ -111,9 +111,11 @@ EditorCell.prototype.render = function () {
     this.moveCursorToEnd();
   }
 
+  // TODO Move to cell (editor gets re-instantiated)
   // Initialize and render the UI controls
   this.controls = new Controls();
-  this.controls.view = this;
+  // TODO Move to initialize:
+  this.controls.editorView = this;
   this.controls.render();
 
   return this;

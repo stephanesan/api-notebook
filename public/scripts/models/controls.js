@@ -1,22 +1,36 @@
 var Backbone = require('backbone');
 
 var Controls = module.exports = Backbone.Model.extend({
-  actions: [{
-      name: "toggle-mode",
+  actions: [
+    {
+      name: "moveUp",
+      label: "Move Cell Up",
+      icon: "hdd"
+    },
+    {
+      name: "moveDown",
+      label: "Move Cell Down",
+      icon: "hdd"
+    },
+    {
+      name: "switch",
       label: "Switch Mode",
       icon: "file"
-    }, {
-      name: "add-cell",
-      label: "Add Cell",
-      icon: "plus"
-    }, {
-      name: "copy-cell",
+    },
+    {
+      name: "clone",
       label: "Copy Cell",
       icon: "hdd"
-    }, {
-      name: "delete-cell",
+    },
+    {
+      name: "remove",
       label: "Delete Cell",
       icon: "trash"
-    }]
-  }
-);
+    },
+    {
+      name: "new",
+      label: "Add Cell",
+      icon: "plus"
+    }
+  ]
+});
