@@ -19,7 +19,7 @@ CodeCell.prototype.initialize = function () {
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
-CodeCell.prototype.execute = function () {
+CodeCell.prototype.execute = function (cb) {
   var context = this.model.collection.serializeForEval();
 
   this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
@@ -32,9 +32,11 @@ CodeCell.prototype.execute = function () {
 
     this.model.set('result', result); // Keep a reference to the result
     this.trigger('execute', this, err, result);
+
+    cb && cb(err, result);
   }, this));
 
-  this.save();
+  return this;
 };
 
 CodeCell.prototype.editorOptions = _.extend(
@@ -71,7 +73,7 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend(
 
 CodeCell.prototype.save = function () {
   if (this._editorCid === this.model.cid) {
-    this.model.set('value', this.getValue());
+    this.model.set('value', this.editor.getValue());
   }
   return this;
 };

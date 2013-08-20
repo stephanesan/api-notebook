@@ -80,7 +80,9 @@ EditorCell.prototype.focus = function () {
 };
 
 EditorCell.prototype.save = function () {
-  this.model.set('value', this.getValue());
+  if (this.editor) {
+    this.model.set('value', this.editor.getValue());
+  }
   return this;
 };
 
@@ -104,16 +106,24 @@ EditorCell.prototype.unbindEditor = function () {
   return this;
 };
 
-EditorCell.prototype.renderEditor = function () {
+EditorCell.prototype.removeEditor = function (copyDoc) {
   var doc, editorEl;
-  // If an editor already exists, rerender the editor keeping the same options
+
   if (this.editor) {
     this.unbindEditor();
-    doc      = this.editor.doc.copy(true);
+    if (copyDoc) { doc = this.editor.doc.copy(true); }
     // Remove the old CodeMirror instance from the DOM
     editorEl = this.editor.getWrapperElement();
     editorEl.parentNode.removeChild(editorEl);
+    delete this.editor;
   }
+
+  return doc;
+};
+
+EditorCell.prototype.renderEditor = function () {
+  var doc = this.removeEditor(true);
+  // If an editor already exists, rerender the editor keeping the same options
   // Initialize the codemirror editor
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
@@ -121,39 +131,40 @@ EditorCell.prototype.renderEditor = function () {
     // Set to readonly if there is a notebook and we aren't the notebook owner
     readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
   }));
+  this.bindEditor();
   // Move the state of the editor
   if (doc) { this.editor.swapDoc(doc); }
-  this.bindEditor();
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
+  // Set the editor value if it already exists
+  if (this.getValue()) {
+    this.editor.setValue(this.getValue());
+    this.moveCursorToEnd();
+  }
   return this;
 };
 
 EditorCell.prototype.render = function () {
+  Cell.prototype.render.call(this);
   this.renderEditor();
-
-  // Set the editor value if it already exists
-  if (this.model.get('value')) {
-    this.setValue(this.model.get('value'));
-    this.moveCursorToEnd();
-  }
-
   return this;
 };
 
 EditorCell.prototype.getValue = function () {
-  return this.editor.getValue();
+  return this.model.get('value');
 };
 
 EditorCell.prototype.setValue = function (value) {
-  if (_.isString(value)) {
+  if (this.editor && _.isString(value)) {
     this.editor.setValue(value);
   }
   return this;
 };
 
 EditorCell.prototype.moveCursorToEnd = function (line) {
+  if (!this.editor) { return this; }
+
   this.editor.setCursor(
     isNaN(line) ? this.editor.doc.lastLine() : line,
     Infinity
@@ -165,7 +176,7 @@ EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
-  this.editor.refresh();
-  this.editor.focus();
+  this.focus();
+  if (this.editor) { this.editor.refresh(); }
   return this;
 };

@@ -118,17 +118,16 @@ Notebook.prototype.execute = function (cb) {
   (function execution (view) {
     // If no view is passed through, we must have hit the last view
     if (!view) {
-      this.execution = false;
+      that.execution = false;
       return cb && cb();
     }
 
-    view.on('execute', function (view, err, result) {
-      execution(that.getNextView(view));
-    });
+    view.focus().moveCursorToEnd();
 
-    view.focus();
     if (view.model.get('type') === 'code') {
-      view.execute();
+      view.execute(function (err, result) {
+        execution(that.getNextView(view));
+      });
     } else {
       execution(that.getNextView(view));
     }
@@ -225,13 +224,14 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof TextView) {
     // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
+      if (code) { this.appendCodeView(view.el, code); }
+
+      // Either add a new code view or focus the next view
       if (this.el.lastChild === view.el) {
         this.appendCodeView(view.el, code);
-      } else {
-        if (code) { this.appendCodeView(view.el, code); }
-        this.getNextView(view).focus().moveCursorToEnd(0);
       }
-      if (!view.getValue()) { view.remove(); }
+
+      this.getNextView(view).focus().moveCursorToEnd(0);
     });
   }
 
@@ -253,7 +253,6 @@ Notebook.prototype.appendView = function (view, before) {
 
     this.listenTo(view, 'text', function (view, text) {
       this.appendTextView(view.el, text);
-      if (!view.getValue()) { view.remove(); }
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {
