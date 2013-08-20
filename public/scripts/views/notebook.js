@@ -76,7 +76,6 @@ Notebook.prototype.render = function () {
   var doneRendering = _.bind(function () {
     this.rendering = false;
     this.el.classList.remove('loading');
-    this.collection.last().view.focus();
   }, this);
 
   var renderFromGist = _.bind(function () {
@@ -108,6 +107,8 @@ Notebook.prototype.render = function () {
 
       renderFromGist();
       doneRendering();
+      // Since the render was asynchronous, we'll need to focus the final cell.
+      this.collection.last().view.focus();
     }, this),
 
     // No gist exists or unauthorized, etc.
@@ -322,6 +323,10 @@ Notebook.prototype.appendTo = function (el) {
   this.collection.each(function (model) {
     if (model.view.editor) { model.view.editor.refresh(); }
   });
+
+  // Focus the final cell on appending, since focusing before its in the DOM
+  // causes a few issues with phantom cursors.
+  if (this.collection.last()) { this.collection.last().view.focus(); }
 
   return this;
 };
