@@ -70,16 +70,31 @@ Notebook.prototype.updateUser = function () {
 Notebook.prototype.render = function () {
   // Use a `rendering` flag to avoid resaving, etc. when rendering a gist
   this.rendering = true;
+  this.el.classList.add('loading');
   View.prototype.render.call(this);
+
+  var doneRendering = _.bind(function () {
+    this.rendering = false;
+    this.el.classList.remove('loading');
+    if (!this.el.childNodes.length) { this.appendCodeView(); }
+  }, this);
+
+  var renderFromGist = _.bind(function () {
+    var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
+
+    _.each(cells, function (cell) {
+      var appendView = 'appendCodeView';
+      if (cell.type === 'text') { appendView = 'appendTextView'; }
+      this[appendView](null, cell.value);
+    }, this);
+  }, this);
 
   // Reset the state
   if (this.gist.isNew()) {
     this.updateUser();
-    // Navigate back to a clean state
+    renderFromGist();
+    doneRendering();
     Backbone.history.navigate('');
-    // Append an initial starting view
-    this.appendCodeView();
-    this.rendering = false;
     return this;
   }
 
@@ -89,21 +104,13 @@ Notebook.prototype.render = function () {
       this.updateUser();
       this.el.innerHTML = '';
 
-      var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
-
-      _.each(cells, function (cell) {
-        var appendView = 'appendCodeView';
-        if (cell.type === 'text') { appendView = 'appendTextView'; }
-        this[appendView](null, cell.value);
-      }, this);
-
-      this.rendering = false;
-      if (!this.el.childNodes.length) { this.appendCodeView(); }
+      renderFromGist();
+      doneRendering();
     }, this),
 
     // No gist exists or unauthorized, etc.
     error: _.bind(function () {
-      this.rendering = false;
+      doneRendering();
       Backbone.history.navigate('', { trigger: true });
     }, this)
   });

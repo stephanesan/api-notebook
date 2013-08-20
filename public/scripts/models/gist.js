@@ -40,6 +40,14 @@ Gist.prototype.isOwner = function () {
 Gist.prototype.fork = function (cb) {
   if (!this.id) { return false; }
 
+  // If the user is not authenticated, just fork in memory until they do
+  // authenticate, at which point we can worry about everything else.
+  if (this.user.isNew()) {
+    return cb(null, new Gist(_.extend({}, this.attributes, {
+      id: undefined
+    }), { user: this.user }));
+  }
+
   var url = this.authUrl(
     _.result(this, 'urlRoot') + '/' + encodeURIComponent(this.id) + '/forks'
   );

@@ -1,7 +1,5 @@
 .application
   &.user-is-owner .notebook-fork,
-  &.user-not-authenticated .notebook-fork
-    display: none
-
-  &.user-is-authenticated .notebook-auth
+  &.user-is-authenticated .notebook-auth,
+  &.user-not-owner > .notebook-header .notebook-auth
     display: none

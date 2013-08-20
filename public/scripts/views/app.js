@@ -96,9 +96,10 @@ App.prototype.updateUser = function () {
   var isNew   = this.user.isNew();
   var isOwner = this.notebook.isOwner();
 
-  this.el.classList[isOwner ? 'add' : 'remove']('user-is-owner');
-  this.el.classList[!isNew  ? 'add' : 'remove']('user-is-authenticated');
-  this.el.classList[isNew   ? 'add' : 'remove']('user-not-authenticated');
+  this.el.classList[isOwner  ? 'add' : 'remove']('user-is-owner');
+  this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
+  this.el.classList[isNew    ? 'add' : 'remove']('user-not-authenticated');
+  this.el.classList[!isNew   ? 'add' : 'remove']('user-is-authenticated');
 };
 
 App.prototype.showShortcuts = function () {
