@@ -1,4 +1,6 @@
 var _           = require('underscore');
+var marked      = require('marked');
+var domify      = require('domify');
 var Backbone    = require('backbone');
 var EditorCell  = require('./editor');
 var stripInput  = require('../../lib/cm-strip-input');
@@ -37,18 +39,47 @@ TextCell.prototype.bindEditor = function () {
     if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
   }, this));
 
+  this.listenTo(this.editor, 'blur', _.bind(function () {
+    var editorElement    = this.editor.getWrapperElement();
+    var markdownElement  = domify('<div class="markdown-render"></div>');
+    var $markdownElement = Backbone.$(markdownElement);
+
+    marked(this.getValue(), {
+      gfm: true,
+      // highlight: function () {},
+      tables: true,
+      breaks: true,
+      pedantic: false,
+      sanitize: true,
+      smartLists: true,
+      smartypants: false,
+      langPrefix: 'lang-'
+    }, _.bind(function (err, html) {
+      editorElement.style.display = 'none';
+      markdownElement.appendChild(domify(html));
+      this.el.insertBefore(markdownElement, this.el.firstChild);
+    }, this));
+
+    // Any clicks on the markdown element should refocus the text editor
+    this.listenTo($markdownElement, 'click', _.bind(function (e) {
+      this.stopListening($markdownElement);
+      this.el.removeChild(markdownElement);
+
+      // TODO: Improve interactions here, should calculate where exactly I
+      // clicked and put the cursor in the same position in the editor.
+      editorElement.style.display = 'block';
+      this.focus();
+    }, this));
+  }, this));
+
   return this;
 };
 
 TextCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
-  this.el.appendChild(
-    Backbone.$('<div class="comment comment-open">/*</div>')[0]
-  );
-  this.el.appendChild(
-    Backbone.$('<div class="comment comment-close">*/</div>')[0]
-  );
+  this.el.appendChild(domify('<div class="comment comment-open">/*</div>'));
+  this.el.appendChild(domify('<div class="comment comment-close">*/</div>'));
 
   return this;
 };

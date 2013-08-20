@@ -16,7 +16,9 @@
     "jshint": "~2.1",
     "lodash": "~1.3",
     "passport": "~0.1",
-    "passport-github": "~0.1"
+    "passport-github": "~0.1",
+    "marked": "~0.2.9",
+    "domify": "~1.0.0"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",
