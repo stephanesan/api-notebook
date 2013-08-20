@@ -20,10 +20,14 @@
 
   &:after
     content: '?'
-    position: absolute
-    top: 3px
-    left: 6px
     display: block
+    position: absolute
+    top: 0
+    left: 0
+    width: @width - @border[0] * 2
+    height: @width
+    text-align: center
+    line-height: @height
     color: #fff
 
 .modal
