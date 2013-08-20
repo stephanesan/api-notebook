@@ -25,15 +25,8 @@ TextCell.prototype.closeCell = function (code) {
   this.el.classList.add('text-closed');
 };
 
-TextCell.prototype.render = function () {
-  EditorCell.prototype.render.call(this);
-
-  this.el.appendChild(
-    Backbone.$('<div class="comment comment-open">/*</div>')[0]
-  );
-  this.el.appendChild(
-    Backbone.$('<div class="comment comment-close">*/</div>')[0]
-  );
+TextCell.prototype.bindEditor = function () {
+  EditorCell.prototype.bindEditor.call(this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var endCommentBlock = stripInput('*/', cm, data);
@@ -43,6 +36,19 @@ TextCell.prototype.render = function () {
     // since it doesn't make sense to be able to close it more than once
     if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
   }, this));
+
+  return this;
+};
+
+TextCell.prototype.render = function () {
+  EditorCell.prototype.render.call(this);
+
+  this.el.appendChild(
+    Backbone.$('<div class="comment comment-open">/*</div>')[0]
+  );
+  this.el.appendChild(
+    Backbone.$('<div class="comment comment-close">*/</div>')[0]
+  );
 
   return this;
 };

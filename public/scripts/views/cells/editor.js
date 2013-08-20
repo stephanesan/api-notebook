@@ -80,9 +80,27 @@ EditorCell.prototype.focus = function () {
   return this;
 };
 
+EditorCell.prototype.bindEditor = function () {
+  this.listenTo(this.editor, 'focus', _.bind(function () {
+    this.el.classList.add('active');
+  }, this));
+
+  this.listenTo(this.editor, 'blur', _.bind(function () {
+    this.el.classList.remove('active');
+  }, this));
+
+  return this;
+};
+
+EditorCell.prototype.unbindEditor = function () {
+  this.stopListening(this.editor);
+  return this;
+};
+
 EditorCell.prototype.render = function () {
   // Initialize the codemirror editor
   this.editor = new CodeMirror(this.el, this.editorOptions);
+  this.bindEditor();
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
