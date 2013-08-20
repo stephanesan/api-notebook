@@ -29,7 +29,7 @@ ControlsView.prototype.render = function () {
   var actionElStr;
   var self = this;
   this.model.actions.forEach(function (action) {
-    console.log(action);
+    // TODO move action to a data-attrib
     actionElStr = '<button class="action-' + action.name +
       '"><i class="icon-' + action.icon + ' icon-white"></i> ' + action.label +
       '</button>';
@@ -37,7 +37,6 @@ ControlsView.prototype.render = function () {
     self.el.appendChild(Backbone.$(actionElStr)[0]);
   });
 };
-
 
 /**
  * Event handler for clicks on control buttons. Pass thru for clicks on the
