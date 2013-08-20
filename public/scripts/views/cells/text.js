@@ -11,7 +11,11 @@ var TextCell = module.exports = EditorCell.extend({
 });
 
 TextCell.prototype.events = _.extend({}, EditorCell.prototype.events, {
-  'click': 'focus'
+  'click': function () {
+    if (!this.hasFocus) {
+      this.focus();
+    }
+  }
 });
 
 TextCell.prototype.EditorModel = require('../../models/text-entry');
@@ -38,10 +42,7 @@ TextCell.prototype.bindEditor = function () {
     if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
   }, this));
 
-  // This whole functionality needs a rewrite once we merge with the server-side
-  // code since I imagine there won't be any need for an editor if we don't own
-  // the notebook and can't edit it.
-  this.listenTo(this.editor, 'blur', _.bind(function () {
+  this.listenTo(this.editor, 'blur', _.bind(function (cm) {
     this.hasFocus = false;
     this.renderEditor();
   }, this));
@@ -106,13 +107,12 @@ TextCell.prototype.renderMarkdown = function () {
 TextCell.prototype.removeMarkdown = function () {
   if (this.markdownElement) {
     this.markdownElement.parentNode.removeChild(this.markdownElement);
-
-    _.each(this.el.getElementsByClassName('comment'), function (el) {
-      el.style.display = 'block';
-    });
-
     delete this.markdownElement;
   }
+
+  _.each(this.el.getElementsByClassName('comment'), function (el) {
+    el.style.display = 'block';
+  });
 
   return this;
 };

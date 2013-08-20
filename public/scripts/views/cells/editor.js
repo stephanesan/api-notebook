@@ -107,14 +107,16 @@ EditorCell.prototype.unbindEditor = function () {
 };
 
 EditorCell.prototype.removeEditor = function (copyDoc) {
-  var doc, editorEl;
+  var editorEl, doc;
 
   if (this.editor) {
     this.unbindEditor();
     if (copyDoc) { doc = this.editor.doc.copy(true); }
     // Remove the old CodeMirror instance from the DOM
     editorEl = this.editor.getWrapperElement();
-    editorEl.parentNode.removeChild(editorEl);
+    if (editorEl && editorEl.parentNode) {
+      editorEl.parentNode.removeChild(editorEl);
+    }
     delete this.editor;
   }
 
@@ -131,7 +133,6 @@ EditorCell.prototype.renderEditor = function () {
     // Set to readonly if there is a notebook and we aren't the notebook owner
     readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
   }));
-  this.bindEditor();
   // Move the state of the editor
   if (doc) { this.editor.swapDoc(doc); }
   // Alias the current view to the editor, since keyMaps are shared between
@@ -139,9 +140,12 @@ EditorCell.prototype.renderEditor = function () {
   this.editor.view = this;
   // Set the editor value if it already exists
   if (this.getValue()) {
-    this.editor.setValue(this.getValue());
+    this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
+  // Bind the editor events at the end in case of any focus issues when
+  // changing docs, etc.
+  this.bindEditor();
   return this;
 };
 
@@ -156,8 +160,12 @@ EditorCell.prototype.getValue = function () {
 };
 
 EditorCell.prototype.setValue = function (value) {
-  if (this.editor && _.isString(value)) {
-    this.editor.setValue(value);
+  if (_.isString(value)) {
+    if (this.editor) {
+      this.editor.setValue(value);
+    } else {
+      this.model.set('value', value);
+    }
   }
   return this;
 };
