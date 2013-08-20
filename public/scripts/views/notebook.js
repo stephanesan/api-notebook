@@ -76,7 +76,7 @@ Notebook.prototype.render = function () {
   var doneRendering = _.bind(function () {
     this.rendering = false;
     this.el.classList.remove('loading');
-    if (!this.el.childNodes.length) { this.appendCodeView(); }
+    this.collection.last().view.focus();
   }, this);
 
   var renderFromGist = _.bind(function () {
@@ -87,6 +87,8 @@ Notebook.prototype.render = function () {
       if (cell.type === 'text') { appendView = 'appendTextView'; }
       this[appendView](null, cell.value);
     }, this);
+
+    if (!this.el.childNodes.length) { this.appendCodeView(); }
   }, this);
 
   // Reset the state
@@ -201,6 +203,7 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
       clone.editor.setCursor(view.editor.getCursor());
+      clone.focus();
     });
 
     this.listenTo(view, 'remove', function (view) {
@@ -226,6 +229,7 @@ Notebook.prototype.appendView = function (view, before) {
       }
       view.remove();
       newView.editor.setCursor(view.editor.getCursor());
+      newView.focus();
     });
   }
 
@@ -240,7 +244,7 @@ Notebook.prototype.appendView = function (view, before) {
         this.appendCodeView(view.el, code);
       }
 
-      this.getNextView(view).focus().moveCursorToEnd(0);
+      this.getNextView(view).moveCursorToEnd(0).focus();
     });
   }
 
@@ -254,14 +258,14 @@ Notebook.prototype.appendView = function (view, before) {
       if (this.execution) { return; }
 
       if (this.el.lastChild === view.el) {
-        this.appendCodeView();
+        this.appendCodeView().focus();
       } else {
-        this.getNextView(view).focus().moveCursorToEnd(0);
+        this.getNextView(view).moveCursorToEnd(0).focus();
       }
     });
 
     this.listenTo(view, 'text', function (view, text) {
-      this.appendTextView(view.el, text);
+      this.appendTextView(view.el, text).focus();
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {
@@ -314,8 +318,9 @@ Notebook.prototype.appendView = function (view, before) {
 Notebook.prototype.appendTo = function (el) {
   View.prototype.appendTo.call(this, el);
 
+  // Any editor cells will need refreshing to display properly
   this.collection.each(function (model) {
-    model.view.editor.refresh();
+    if (model.view.editor) { model.view.editor.refresh(); }
   });
 
   return this;

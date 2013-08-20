@@ -56,8 +56,7 @@ TextCell.prototype.focus = function () {
 
   this.hasFocus = true;
   this.renderEditor();
-  this.editor.focus();
-  return this;
+  return EditorCell.prototype.focus.call(this);
 };
 
 TextCell.prototype.setValue = function (value) {

@@ -184,7 +184,6 @@ EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
-  this.focus();
   if (this.editor) { this.editor.refresh(); }
   return this;
 };
