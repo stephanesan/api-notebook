@@ -21,18 +21,20 @@ CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
 CodeCell.prototype.execute = function () {
   var context = this.model.collection.serializeForEval();
-  var err, result;
 
-  try {
-    result = this.sandbox.execute(this.getValue(), context);
-    this.result.setResult(result, this.sandbox.window);
-  } catch (e) {
-    this.result.setError(err = e, this.sandbox.window);
-  }
+  this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
+    // Set the error or result to the inspector
+    if (err) {
+      this.result.setError(err, this.sandbox.window);
+    } else {
+      this.result.setResult(result, this.sandbox.window);
+    }
+
+    this.model.set('result', result); // Keep a reference to the result
+    this.trigger('execute', this, err, result);
+  }, this));
 
   this.save();
-  this.model.set('result', result); // Keep a reference to the result
-  this.trigger('execute', this, err, result);
 };
 
 CodeCell.prototype.editorOptions = _.extend(

@@ -10,7 +10,7 @@ describe('Object Inspector', function () {
 
   describe('functionality', function () {
     var matchPreview = function (inspector, output) {
-      var el = inspector.el.childNodes[0].getElementsByClassName('object')[0];
+      var el = inspector.el.childNodes[1].getElementsByClassName('inspect')[0];
       if (output instanceof RegExp) {
         expect(el.textContent).to.match(output);
       } else {
@@ -18,7 +18,7 @@ describe('Object Inspector', function () {
       }
     };
 
-    var inputOutput = function (input, output) {
+    var inputOutput = function (input, output, done) {
       var inspector = new Inspector({ inspect: input, context: window });
       matchPreview(inspector.render(), output);
     };
@@ -53,8 +53,8 @@ describe('Object Inspector', function () {
 
     it('should inspect functions', function () {
       inputOutput(
-        function () { return 'test' },
-        'function () { return \'test\' }'
+        function () { return 'test'; },
+        'function () { return \'test\'; }'
       );
     });
 

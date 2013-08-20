@@ -57,7 +57,7 @@ describe('Code Cell', function () {
 
         it('Execute Code (`Enter`)', function () {
           var spy = sinon.spy();
-          view.on('execute', spy);
+          view.execute = spy;
           fakeKey(editor, ENTER);
           expect(spy.calledOnce).to.be.ok;
         });
@@ -111,35 +111,37 @@ describe('Code Cell', function () {
           };
         });
 
-        it('should render the result', function () {
+        it('should render the result', function (done) {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = '10';
 
           view.on('execute', function (view, err, result) {
             expect(result).to.equal(10);
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            expect(view.model.get('result')).to.equal(10);
+            done();
           });
 
           editor.setValue(code);
           view.execute();
-          expect(spy.calledOnce).to.be.ok;
-          expect(view.model.get('value')).to.equal(code);
-          expect(view.model.get('result')).to.equal(10);
         });
 
-        it('should render an error', function () {
+        it('should render an error', function (done) {
           var spy  = sinon.spy(view.result, 'setError');
           var code = 'throw new Error(\'Testing\');';
 
           view.on('execute', function (view, err, result) {
             expect(err.message).to.equal('Testing');
             expect(result).to.not.exist;
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            expect(view.model.get('result')).to.not.exist;
+            done();
           });
 
           editor.setValue(code);
           view.execute();
-          expect(spy.calledOnce).to.be.ok;
-          expect(view.model.get('value')).to.equal(code);
-          expect(view.model.get('result')).to.not.exist;
         });
       });
 
@@ -148,10 +150,9 @@ describe('Code Cell', function () {
           var textSpy = sinon.spy(function (view, text) {
             expect(text).to.equal('testing');
           });
-          var executeSpy = sinon.spy();
+          var executeSpy = sinon.spy(view, 'execute');
 
           view.on('text', textSpy);
-          view.on('execute', executeSpy);
 
           editor.setValue('abc /* testing');
           expect(textSpy.calledOnce).to.be.ok;
@@ -217,12 +218,13 @@ describe('Code Cell', function () {
           expect(suggestions).to.contain('testing');
         });
 
-        it('should autocomplete from the sandbox', function () {
-          view.sandbox.execute('var testing = "test";');
+        it('should autocomplete from the sandbox', function (done) {
+          view.sandbox.execute('var testing = "test";', window, function () {
+            var suggestions = testAutocomplete('test');
 
-          var suggestions = testAutocomplete('test');
-
-          expect(suggestions).to.contain('testing');
+            expect(suggestions).to.contain('testing');
+            done();
+          });
         });
 
         describe('properties', function () {

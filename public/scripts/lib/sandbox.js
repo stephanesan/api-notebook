@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var Sandbox = module.exports = function () {
   this.createFrame();
 };
@@ -9,21 +11,28 @@ Sandbox.prototype.createFrame = function () {
   this.window = this.frame.contentWindow;
 };
 
-Sandbox.prototype.execute = function (code, context) {
-  try {
-    if (typeof context === 'object') {
-      this.window.console = this.window.console || {};
-      this.window.console._notebookAPI = context;
-      code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
-    }
+Sandbox.prototype.execute = function (code, context, cb) {
+  // Using an asynchronous callback to clear the any possible stack trace
+  // that would include implementation logic
+  (global.requestAnimationFrame || global.setTimeout)(_.bind(function () {
+    var result, err;
 
-    /* jshint evil: true */
-    return this.window.eval(code);
-  } catch (error) {
-    throw error;
-  } finally {
-    delete this.window.console._notebookAPI;
-  }
+    try {
+      if (typeof context === 'object') {
+        this.window.console = this.window.console || {};
+        this.window.console._notebookAPI = context;
+        code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
+      }
+
+      /* jshint evil: true */
+      result = this.window.eval(code);
+    } catch (error) {
+      err = error;
+    } finally {
+      delete this.window.console._notebookAPI;
+      cb(err, result);
+    }
+  }, this), 0);
 };
 
 Sandbox.prototype.remove = function () {

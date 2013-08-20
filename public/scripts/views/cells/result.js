@@ -1,28 +1,34 @@
-var _         = require('underscore');
-var Cell      = require('./cell');
-var Inspector = require('../inspector');
+var _              = require('underscore');
+var Cell           = require('./cell');
+var Inspector      = require('../inspector');
+var ErrorInspector = require('../error-inspector');
 
 var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'
 });
 
-ResultCell.prototype.reset = function () {
+ResultCell.prototype._reset = function () {
   if (this.inspector) { this.inspector.remove(); }
   this.el.classList.add('result-pending');
   this.el.classList.remove('result-error');
   return this;
 };
 
-ResultCell.prototype.setResult = function (result, context) {
-  this.reset();
-  this.inspector = new Inspector({ inspect: result, context: context });
+ResultCell.prototype._renderInspector = function (Inspector, options) {
+  this._reset();
+  this.inspector = new Inspector(options);
   this.inspector.render().appendTo(this.el);
   this.el.classList.remove('result-pending');
   return this;
 };
 
+ResultCell.prototype.setResult = function (result, context) {
+  this._renderInspector(Inspector, { inspect: result, context: context });
+  return this;
+};
+
 ResultCell.prototype.setError = function (error, context) {
-  this.setResult(error, context);
+  this._renderInspector(ErrorInspector, { inspect: error, context: context });
   this.el.classList.add('result-error');
   return this;
 };

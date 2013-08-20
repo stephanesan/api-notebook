@@ -1,13 +1,28 @@
+.inspector
+  padding: 0.55em 1.4em
+  > .children > .inspector
+    padding: 0
+
 .inspector > .preview
   line-height: 1.4
-  overflow: hidden
-  white-space: nowrap
-  text-overflow: ellipsis
+  white-space: pre-wrap
   > .property
     color: #555
     font-weight: bold
   > .special
     opacity: 0.9
+
+.inspector > .children > .inspector > .preview
+  height: 1.4em
+  overflow: hidden
+  text-overflow: ellipsis
+
+.inspector > .preview.array,
+.inspector > .preview.object
+// Any children inspectors should also hide the full source output
+  overflow: hidden
+  white-space: nowrap
+  text-overflow: ellipsis
 
 .inspector > .children
   display: none
@@ -16,12 +31,16 @@
 .inspector.open > .children
   display: block
 
+.inspector.can-expand > .arrow,
 .inspector.can-expand > .preview
   cursor: pointer
 
-.inspector.can-expand:before
-  content: ""
+.inspector > .arrow
+  display: none
+
+.inspector.can-expand > .arrow
   float: left
+  display: block
   margin-top: 3px
   margin-left: -10px
   border: 5px solid transparent
@@ -29,7 +48,7 @@
   border-left-color: #666
   border-right-width: 0
 
-.inspector.can-expand.open:before
+.inspector.can-expand.open > .arrow
   margin-top: 5px
   margin-left: -12px
   border-width: 5px
