@@ -33,11 +33,14 @@ var shouldDisplay = function (string) {
 
 var getPropertyNames = function (obj) {
   var props = {};
+  var addProp;
+
+  addProp = function (prop) {
+    props[prop] = true;
+  };
 
   while (obj) {
-    _.each(Object.getOwnPropertyNames(obj), function (prop) {
-      props[prop] = true;
-    });
+    _.each(Object.getOwnPropertyNames(obj), addProp);
     // Check up the prototype chain for more variables
     obj = Object.getPrototypeOf(obj);
   }
@@ -67,23 +70,27 @@ var getPropertyContext = function (cm, token) {
   var level, prev, subContext;
 
   while (tprop.type === 'property') {
-    tprop = getToken(cm, Pos(cur.line, tprop.start));
+    tprop = getToken(cm, new Pos(cur.line, tprop.start));
     if (tprop.string !== '.') { return []; }
-    tprop = getToken(cm, Pos(cur.line, tprop.start));
+    tprop = getToken(cm, new Pos(cur.line, tprop.start));
 
     if (tprop.string === ')') {
       level = 1;
       prev  = tprop; // Keep track in case this isn't a function after all
       do {
-        tprop = getToken(cm, Pos(cur.line, tprop.start));
+        tprop = getToken(cm, new Pos(cur.line, tprop.start));
         switch (tprop.string) {
-          case ')': level++; break;
-          case '(': level--; break;
+        case ')':
+          level++;
+          break;
+        case '(':
+          level--;
+          break;
         }
       // While still in parens *and not at the beginning of the line*
       } while (level > 0 && tprop.start);
 
-      tprop = getToken(cm, Pos(cur.line, tprop.start));
+      tprop = getToken(cm, new Pos(cur.line, tprop.start));
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
@@ -92,7 +99,7 @@ var getPropertyContext = function (cm, token) {
         if (!isWhitespaceToken(tprop)) { return []; }
         // Set `tprop` to be the token inside the parens and start working from
         // that instead
-        tprop      = getToken(cm, Pos(cur.line, prev.start));
+        tprop      = getToken(cm, new Pos(cur.line, prev.start));
         subContext = getPropertyContext(cm, tprop);
         // The subcontext has a new keyword, but a function was not found, set
         // the last property to be a constructor and function
@@ -111,10 +118,10 @@ var getPropertyContext = function (cm, token) {
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here
   if (tprop.type === 'variable') {
-    prev = getToken(cm, Pos(cur.line, tprop.start));
+    prev = getToken(cm, new Pos(cur.line, tprop.start));
 
     if (isWhitespaceToken(prev)) {
-      prev = getToken(cm, Pos(cur.line, prev.start));
+      prev = getToken(cm, new Pos(cur.line, prev.start));
       // Sets whether the variable is actually a constructor function
       if (prev.type === 'keyword' && prev.string === 'new') {
         context.hasNew = true;
@@ -139,31 +146,31 @@ var getPropertyObject = function (cm, token, sandbox) {
 
   while (base && (tprop = context.pop())) {
     switch (tprop.type) {
-      case 'variable':
-        base = sandbox[tprop.string];
-        break;
-      case 'property':
-        base = base[tprop.string];
-        break;
-      case 'string':
-        base = String.prototype;
-        break;
-      case 'string-2': // RegExp
-        base = RegExp.prototype;
-        break;
-      case 'atom':
-        if (tprop.string === 'true' || trop.string === 'false') {
-          base = Boolean.prototype
-        } else {
-          base = null;
-        }
-        break;
-      case 'number':
-        base = Number.prototype;
-        break;
-      default:
+    case 'variable':
+      base = sandbox[tprop.string];
+      break;
+    case 'property':
+      base = base[tprop.string];
+      break;
+    case 'string':
+      base = String.prototype;
+      break;
+    case 'string-2': // RegExp
+      base = RegExp.prototype;
+      break;
+    case 'atom':
+      if (tprop.string === 'true' || tprop.string === 'false') {
+        base = Boolean.prototype;
+      } else {
         base = null;
-        break;
+      }
+      break;
+    case 'number':
+      base = Number.prototype;
+      break;
+    default:
+      base = null;
+      break;
     }
     // If the property is a function, we can't do introspection yet so set to
     // null. However, we can provide basic completion if it's a constructor
@@ -208,20 +215,20 @@ module.exports = function (cm, options) {
 
   var completions;
   switch (token.type) {
-    case 'keyword':
-    case 'variable':
-      completions = completeVariable(cm, token, context);
-      break;
-    case 'property':
-      completions = completeProperty(cm, token, context);
-      break;
+  case 'keyword':
+  case 'variable':
+    completions = completeVariable(cm, token, context);
+    break;
+  case 'property':
+    completions = completeProperty(cm, token, context);
+    break;
   }
 
   if (!completions) { return; }
 
   return {
     list: _.filter(completions, shouldDisplay, token),
-    to:   Pos(cur.line, token.end),
-    from: Pos(cur.line, token.start)
+    to:   new Pos(cur.line, token.end),
+    from: new Pos(cur.line, token.start)
   };
 };

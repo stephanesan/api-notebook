@@ -15,14 +15,15 @@ App.Sandbox = require('../lib/sandbox');
 
 // Alias all the available views
 App.View = {
-  View:       require('./view'),
-  Notebook:   require('./notebook'),
-  Inspector:  require('./inspector'),
-  Cell:       require('./cells/cell'),
-  CodeCell:   require('./cells/code'),
-  TextCell:   require('./cells/text'),
-  EditorCell: require('./cells/editor'),
-  ResultCell: require('./cells/result')
+  View:           require('./view'),
+  Notebook:       require('./notebook'),
+  Inspector:      require('./inspector'),
+  ErrorInspector: require('./error-inspector'),
+  Cell:           require('./cells/cell'),
+  CodeCell:       require('./cells/code'),
+  TextCell:       require('./cells/text'),
+  EditorCell:     require('./cells/editor'),
+  ResultCell:     require('./cells/result')
 };
 
 // Alias all the available models
