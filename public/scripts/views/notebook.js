@@ -5,6 +5,7 @@ var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
 var EditorView         = require('./cells/editor');
 var EntryModel         = require('../models/entry');
+var Controls           = require('./cells/controls');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
@@ -16,6 +17,7 @@ var Notebook = module.exports = View.extend({
 
 Notebook.prototype.initialize = function () {
   this.sandbox    = new Sandbox();
+  this.controls   = new Controls().render();
   this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
 };
@@ -115,6 +117,14 @@ Notebook.prototype.appendView = function (view, before) {
    */
   this.listenTo(view, 'appendNew', function (view) {
     this.appendCodeView(view.el);
+  });
+
+  /**
+   * Event listener for 'focus' event.
+   * Appends the UIControls to the focused cell.
+   */
+  this.listenTo(view, 'focus', function (view) {
+    this.controls.appendToView(view);
   });
 
   // Listening to different events for `text` cells

@@ -21,6 +21,7 @@ App.View = {
   Inspector:  require('./inspector'),
   Cell:       require('./cells/cell'),
   CodeCell:   require('./cells/code'),
+  Controls:   require('./cells/controls'),
   TextCell:   require('./cells/text'),
   EditorCell: require('./cells/editor'),
   ResultCell: require('./cells/result')
