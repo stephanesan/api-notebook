@@ -63,6 +63,8 @@ Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
     model.view.renderEditor();
   });
+  // If the user has changed, attempt to save the current notebook
+  this.save();
 };
 
 Notebook.prototype.render = function () {
