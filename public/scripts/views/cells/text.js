@@ -29,7 +29,7 @@ TextCell.prototype.closeCell = function (code) {
 
 TextCell.prototype.bindEditor = function () {
   var markdownElement = this.el.insertBefore(
-    domify('<div class="markdown-render"></div>'), this.el.firstChild
+    domify('<div class="markdown"></div>'), this.el.firstChild
   );
 
   EditorCell.prototype.bindEditor.call(this);
