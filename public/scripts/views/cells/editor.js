@@ -1,7 +1,6 @@
 var _        = require('underscore');
 var trim     = require('trim');
 var Cell     = require('./cell');
-var Controls = require('./controls');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -95,6 +94,7 @@ EditorCell.prototype.save = function () {
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
+    this.trigger('focus', this);
   }, this));
 
   this.listenTo(this.editor, 'blur', _.bind(function () {
@@ -155,11 +155,6 @@ EditorCell.prototype.renderEditor = function () {
     this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
-
-  // TODO Move to cell (editor gets re-instantiated)
-  // Initialize and render the UI controls
-  this.controls = new Controls({ editorView: this });
-  this.controls.render();
 
   // If it was previously focused, let's focus the editor again
   if (hasFocus) { this.editor.focus(); }

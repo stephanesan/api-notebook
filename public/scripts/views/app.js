@@ -23,7 +23,8 @@ App.View = {
   CodeCell:       require('./cells/code'),
   TextCell:       require('./cells/text'),
   EditorCell:     require('./cells/editor'),
-  ResultCell:     require('./cells/result')
+  ResultCell:     require('./cells/result'),
+  Controls:       require('./cells/controls'),
 };
 
 // Alias all the available models

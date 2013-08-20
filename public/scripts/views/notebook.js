@@ -7,6 +7,7 @@ var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
 var EditorView         = require('./cells/editor');
 var EntryModel         = require('../models/entry');
+var Controls           = require('./cells/controls');
 var GistModel          = require('../models/gist');
 var NotebookCollection = require('../collections/notebook');
 
@@ -29,6 +30,8 @@ var saveGist = _.debounce(function () {
 
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
+  this.controls   = new Controls().render();
+  this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
   this.user       = options.user;
   // Every notebook has a unique gist and collection
@@ -248,6 +251,14 @@ Notebook.prototype.appendView = function (view, before) {
    */
   this.listenTo(view, 'appendNew', function (view) {
     this.appendCodeView(view.el);
+  });
+
+  /**
+   * Event listener for 'focus' event.
+   * Appends the UIControls to the focused cell.
+   */
+  this.listenTo(view, 'focus', function (view) {
+    this.controls.appendToView(view);
   });
 
   // Listening to different events for `text` cells

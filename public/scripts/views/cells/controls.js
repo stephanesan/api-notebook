@@ -21,9 +21,22 @@ var ControlsView = module.exports = View.extend({
  *
  * @param {EditorCell} EditorCell  Instance of editorCell to control.
  */
-ControlsView.prototype.initialize = function (options) {
+ControlsView.prototype.initialize = function () {
   this.model = this.model || new ControlsModel();
-  this.editorView = options.editorView;
+};
+
+ControlsView.prototype.appendToView = function (view) {
+  if (this.editorView) {
+    this.remove();
+  }
+  this.editorView = view;
+  this.delegateEvents(ControlsView.prototype.events);
+  this.appendTo(view.el);
+};
+
+ControlsView.prototype.remove = function () {
+  this.editorView = null;
+  View.prototype.remove.call(this);
 };
 
 ControlsView.prototype.render = function () {
@@ -37,6 +50,7 @@ ControlsView.prototype.render = function () {
     // Parse HTML to DOM element and append to this view.
     self.el.appendChild(Backbone.$(actionElStr)[0]);
   });
+  return this;
 };
 
 /**
