@@ -242,6 +242,14 @@ Notebook.prototype.appendView = function (view, before) {
     });
   }
 
+  /**
+   * Event listener for 'appendNew' event.
+   * Appends a new CodeCell after the passed in CellView.
+   */
+  this.listenTo(view, 'appendNew', function (view) {
+    this.appendCodeView(view.el);
+  });
+
   // Listening to different events for `text` cells
   if (view instanceof TextView) {
     // Listen to a code event which tells us to make a new code cell

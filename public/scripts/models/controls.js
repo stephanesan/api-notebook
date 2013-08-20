@@ -28,7 +28,7 @@ var Controls = module.exports = Backbone.Model.extend({
       icon: "trash"
     },
     {
-      name: "new",
+      name: "appendNew",
       label: "Add Cell",
       icon: "plus"
     }
