@@ -33,7 +33,6 @@ describe('Gist Model', function () {
 
       it('should fetch an existing notebook', function (done) {
         var spy = sinon.spy(function () {
-          console.log('success');
           expect(model.get('id')).to.equal('c5172f5b2ce786b86314');
           done();
         });

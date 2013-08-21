@@ -98,7 +98,12 @@ CodeCell.prototype.browseToCell = function (newModel) {
 };
 
 CodeCell.prototype.autocomplete = function () {
+  // Extends the context object our inline result references for autocompletion
+  var context = Object.create(this.sandbox.window);
+  _.extend(context, this.model.collection.serializeForEval());
+
   CodeMirror.showHint(this.editor, completion, {
+    context: context,
     completeSingle: false
   });
 };
