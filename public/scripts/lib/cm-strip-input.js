@@ -37,7 +37,7 @@ var handleSetValue = function (string, cm, event) {
 };
 
 var handleInput = function (string, cm, event) {
-  if (event.text[0] !== string[string.length - 1] || event.from.ch === 0) {
+  if (event.text[0] !== string[string.length - 1] || event.to.ch < 1) {
     return false;
   }
 
@@ -56,7 +56,7 @@ var handlePaste = function (string, cm, event) {
   // Try and find if the first character of the input is part of the string
   var index = string.indexOf(event.text[0].charAt(0));
 
-  if (index < 0) { return handleInput(string, cm, event); }
+  if (index < 0) { return handleSetValue(string, cm, event); }
 
   var prevPosition = _.defaults({
     ch: event.from.ch - index
@@ -68,7 +68,7 @@ var handlePaste = function (string, cm, event) {
 
   var prevChars = cm.doc.getRange(prevPosition, nextPosition);
 
-  if (prevChars !== string) { return handleInput(string, cm, event); }
+  if (prevChars !== string) { return handleSetValue(string, cm, event); }
 
   return stripInput(prevPosition, cm, string);
 };

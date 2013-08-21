@@ -9,23 +9,20 @@
     "codemirror": "~3.15.0",
     "config": "~0.4",
     "trim": "0.0.1",
-    "ejs": "~0.8",
-    "ejs-locals": "~1.0",
     "express": "~3.3",
-    "github": "~0.1",
     "jshint": "~2.1",
-    "lodash": "~1.3",
     "passport": "~0.1",
     "passport-github": "~0.1",
-    "stacktrace-js": "~0.5.0",
+    "request": "~2.26.0",
     "marked": "~0.2.9",
+    "brfs": "0.0.7",
+    "stacktrace-js": "~0.5.0",
     "domify": "~1.0.0"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-stylus": "~0.7.0",
-    "grunt-contrib-connect": "~0.3.0",
     "grunt-contrib-watch": "~0.5.1",
     "grunt": "~0.4.1",
     "matchdep": "~0.1.2",
@@ -37,11 +34,16 @@
     "hbsfy": "~0.1.5",
     "node-dev": "~2.0"
   },
+  "engines": {
+    "node": "0.10.13",
+    "npm": "1.3.2"
+  },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
-    "lint": "./node_modules/.bin/jshint public/scripts config routes app.js",
+    "lint": "./node_modules/.bin/jshint public/scripts routes app.js",
     "test": "npm run lint && npm run build && ./node_modules/.bin/mocha-phantomjs ./test/index.html",
-    "start": "node-dev app.js"
+    "predeploy": "npm run build",
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",

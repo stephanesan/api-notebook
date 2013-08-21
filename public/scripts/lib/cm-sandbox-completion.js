@@ -198,7 +198,7 @@ var completeProperty = function (cm, token, sandbox) {
 module.exports = function (cm, options) {
   var cur     = cm.getCursor();
   var token   = getToken(cm, cur);
-  var context = cm.view && cm.view.sandbox && cm.view.sandbox.window || window;
+  var context = options.context || global;
 
   token.state = CodeMirror.innerMode(cm.getMode(), token.state).state;
 

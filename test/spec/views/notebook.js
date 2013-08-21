@@ -8,10 +8,15 @@ describe('Notebook', function () {
   });
 
   describe('Cell instance', function () {
-    var view;
+    var view, user;
 
     beforeEach(function () {
-      view = new Notebook();
+      user = new App.Model.Session();
+
+      view = new Notebook({
+        user: user,
+        gist: new App.Model.Gist({}, { user: user })
+      });
     });
 
     it('should have a class', function () {
@@ -183,6 +188,7 @@ describe('Notebook', function () {
 
       it('should be able to clone a cell down', function () {
         textCells[0].setValue('testing');
+        textCells[0].focus();
         textCells[0].editor.setCursor(0, 3);
         textCells[0].clone(); // Call the method since it will emit the event
 
@@ -211,6 +217,7 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         textCells[0].setValue('testing');
+        textCells[0].focus();
         textCells[0].editor.setCursor(0, 5);
         textCells[0].trigger('switch', textCells[0]);
 
@@ -238,8 +245,19 @@ describe('Notebook', function () {
           codeCells[1].execute();
         });
 
-        codeCells[0].setValue(99);
+        codeCells[0].setValue('99');
         codeCells[0].execute();
+      });
+
+      it('should execute all cells sequentially', function (done) {
+        codeCells[0].setValue('3874');
+        codeCells[1].setValue('$1');
+
+        view.execute(function () {
+          expect(codeCells[0].model.get('result')).to.equal(3874);
+          expect(codeCells[1].model.get('result')).to.equal(3874);
+          done();
+        });
       });
 
       describe('Text Cell', function () {
@@ -332,6 +350,7 @@ describe('Notebook', function () {
 
         it('should be able to browse to the cell above', function () {
           codeCells.push(view.appendCodeView());
+          codeCells[2].focus();
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
 
           codeCells[0].setValue('one');
@@ -339,12 +358,12 @@ describe('Notebook', function () {
           codeCells[2].setValue('three');
 
           codeCells[2].browseUp();
-          expect(codeCells[2].getValue()).to.equal('two');
+          expect(codeCells[2].editor.getValue()).to.equal('two');
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
           expect(codeCells[2].editor.getCursor().ch).to.equal(3);
 
           codeCells[2].browseUp();
-          expect(codeCells[2].getValue()).to.equal('one');
+          expect(codeCells[2].editor.getValue()).to.equal('one');
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
           expect(codeCells[2].editor.getCursor().ch).to.equal(3);
         });
@@ -359,32 +378,34 @@ describe('Notebook', function () {
           codeCells[2].setValue('three');
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('two');
+          expect(codeCells[0].editor.getValue()).to.equal('two');
           expect(codeCells[0].editor.hasFocus()).to.be.ok;
           expect(codeCells[0].editor.getCursor().ch).to.equal(3);
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('three');
+          expect(codeCells[0].editor.getValue()).to.equal('three');
           expect(codeCells[0].editor.hasFocus()).to.be.ok;
           expect(codeCells[0].editor.getCursor().ch).to.equal(5);
         });
 
         it('should keep its value when browsing cells', function () {
+          codeCells[1].focus();
           expect(codeCells[1].editor.hasFocus()).to.be.ok;
 
           codeCells[0].setValue('one');
           codeCells[1].setValue('two');
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('two');
+          expect(codeCells[0].editor.getValue()).to.equal('two');
 
           codeCells[0].browseUp();
-          expect(codeCells[0].getValue()).to.equal('one');
+          expect(codeCells[0].editor.getValue()).to.equal('one');
         });
 
         it('should provide appropriate keyboard navigation between new content', function () {
           codeCells[0].setValue('multi\nline\ntest');
           codeCells[1].setValue('even\nmore\nlines\nhere');
+          codeCells[1].focus();
 
           expect(codeCells[1].editor.hasFocus()).to.be.ok;
           expect(codeCells[1].editor.getCursor().ch).to.equal(0);
@@ -398,6 +419,97 @@ describe('Notebook', function () {
           expect(codeCells[1].editor.getCursor().ch).to.equal(4);
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
+      });
+    });
+
+    describe('Gist integration', function () {
+      it('should rerender the notebook cells when the user changes', function () {
+        view.render().appendTo(fixture);
+
+        var cell = view.appendCodeView();
+        expect(cell.editor.options.readOnly).to.be.false;
+
+        // Set different user and gist owners
+        view.gist.set('id', 456);
+        view.user.set('id', 123);
+        expect(cell.editor.options.readOnly).to.equal('nocursor');
+
+        view.remove();
+      });
+
+      it('should navigate to gist url on sync', function () {
+        var spy    = sinon.spy(Backbone.history, 'navigate');
+        var server = sinon.fakeServer.create();
+        server.respondWith(
+          'GET',
+          'https://api.github.com/gists/123456',
+          [200, { "Content-Type": "application/json" }, '{"id":"123456"}']
+        );
+
+
+        view.gist.set('id', '123456');
+        view.render().appendTo(fixture);
+
+        server.respond();
+        server.restore();
+
+        expect(spy).to.have.been.calledOnce;
+        expect(spy.getCall(0).args[0]).to.equal('123456');
+        view.remove();
+        Backbone.history.navigate.restore();
+      });
+
+      it('should navigate back to root on fetch failure', function () {
+        var spy    = sinon.spy(Backbone.history, 'navigate');
+        var server = sinon.fakeServer.create();
+        server.respondWith(
+          'GET',
+          'https://api.github.com/gists/123456',
+          [404, { "Content-Type": "application/json" }, '']
+        );
+
+
+        view.gist.set('id', '123456');
+        view.render().appendTo(fixture);
+
+        server.respond();
+        server.restore();
+
+        // Seems to be a bug causing `onload` to be triggered twice in the tests
+        expect(spy).to.have.been.called;
+        expect(spy.getCall(0).args[0]).to.equal('');
+        view.remove();
+        Backbone.history.navigate.restore();
+      });
+
+      it('should sync with the server on changes (debounced)', function () {
+        var spy   = sinon.spy();
+        var cell  = view.appendCodeView();
+        var clock = sinon.useFakeTimers();
+
+        // Don't even attempt to save in the tests here, it should be covered in
+        // the gists test suite.
+        view.gist.save = spy;
+
+        view.user = { id: 123 };
+        cell.setValue('test');
+        cell.trigger('change', cell);
+
+        clock.tick(500);
+        expect(spy).to.have.been.calledOnce;
+
+        cell.setValue('test again');
+        cell.trigger('change', cell);
+
+        clock.tick(100);
+        cell.setValue('test more');
+        cell.trigger('change', cell);
+
+        clock.tick(500);
+        expect(spy).to.have.been.calledTwice;
+
+        clock.restore();
+        view.gist.save = App.Model.Gist.prototype.save;
       });
     });
   });

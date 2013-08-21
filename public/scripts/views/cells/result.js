@@ -1,4 +1,5 @@
 var _              = require('underscore');
+var domify         = require('domify');
 var Cell           = require('./cell');
 var Inspector      = require('../inspector');
 var ErrorInspector = require('../error-inspector');
@@ -30,5 +31,15 @@ ResultCell.prototype.setResult = function (result, context) {
 ResultCell.prototype.setError = function (error, context) {
   this._renderInspector(ErrorInspector, { inspect: error, context: context });
   this.el.classList.add('result-error');
+  return this;
+};
+
+ResultCell.prototype.render = function () {
+  Cell.prototype.render.call(this);
+
+  this.el.appendChild(domify(
+    '<div class="result-label">$' + this.model._uniqueCellId + ' = </div>'
+  ));
+
   return this;
 };

@@ -58,23 +58,6 @@ describe('Editor Cell', function () {
       });
     });
 
-    describe('#appendTo', function () {
-      var editor;
-
-      beforeEach(function () {
-        view   = view.render().appendTo(fixture);
-        editor = view.editor;
-      });
-
-      afterEach(function () {
-        view.remove();
-      });
-
-      it('should focus the editor', function () {
-        expect(editor.hasFocus()).to.be.ok;
-      });
-    });
-
     describe('Editor', function () {
       var editor;
 

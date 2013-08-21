@@ -4,6 +4,7 @@
   padding: 1em 2em
   border: 1px solid #ccc
   border-top: 0
+  border-radius: 0 0 5px 5px
   background: #fff
 
 .notebook-header
@@ -15,13 +16,39 @@
   border-radius: 5px 5px 0 0
   background: #333
   color: #fff
+
   h1
-    margin: 0
+    display: inline-block
+    margin: 0 10px 0 0
+    vertical-align: middle
+
+.notebook-header-primary
+  float: left
+
+.notebook-header-secondary
+  float: right
+  margin-top: 5px
+
+  button
+    vertical-align: middle
+
+.banner
+  width: 48em
+  margin: 0 auto
+  padding: 1em 2em
+  border: 1px solid #ccc
+  border-color: darken($yellow, 20%) #ccc
+  background: $yellow
+  cursor: pointer
+
+.banner p
+  margin: 0
 
 .notebook .cell-result
   border: 1px solid $color-result-border
   border-left-width: 5px
   font-size: 0.95em
+  line-height: 1.45
   font-family: monospace
   background-color: $color-result-bg
   &.result-pending
@@ -29,10 +56,17 @@
   &.result-error
     border-color: $color-error-border
     background-color: $color-error-bg
+  > .result-label
+    float: left
+    padding: 0.55em 0 0.55em 0.6em
+  > .inspector
+    padding: 0.55em 0 0.55em 1.5em
+    overflow: hidden
 
 .notebook > .cell
   margin: 1em 0
   position: relative
+  min-height: 1em
 
 .notebook > .cell > .cell-result
   position: relative
@@ -41,7 +75,6 @@
   &.result-error
     color: $color-error-text
 
-.cell-code .label,
 .cell-text .comment
   position: absolute
   top: 50%
@@ -52,14 +85,3 @@
 .cell-text .comment-close
   left: auto
   right: -1.5em
-
-.cell-code .label
-  left: auto
-  right: 100%
-  margin-top: -0.6em
-  margin-right: 0.5em
-  color: #aaa
-  padding: 0 0.5em
-  font-size: 0.9em
-  border-radius: 2px
-  background-color: #f4f4f4

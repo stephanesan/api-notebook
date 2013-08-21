@@ -1,11 +1,6 @@
-/**
- * Define all routes in the app.
- * @param {object} app Express application instance.
- * @param {object} github GitHub API client instance.
- */
-module.exports = function(app, github) {
-  require('./auth')(app);
-  require('./rest')(app, github);
-  require('./views')(app);
-};
+var express = require('express');
+var app     = module.exports = express();
 
+app.use('/auth',  require('./auth'));
+// app.use('/gists', require('./gists'));
+app.use('/session', require('./session'));

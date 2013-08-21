@@ -62,18 +62,18 @@ InspectorView.prototype._renderChild = function (prefix, object, special) {
 };
 
 InspectorView.prototype.renderChildren = function () {
+  if (!this.shouldExpand(this.inspect)) { return this; }
+
   this._renderChildrenEl();
 
   // If it should be expanded, add a class to show it can be. In no case should
   // we expand an error to show more though, since it should be displaying a
   // stack trace
-  if (this.shouldExpand()) {
-    this.el.classList.add('can-expand');
-  }
+  this.el.classList.add('can-expand');
 
   this.listenTo(this, 'open', this._renderChildren);
 
-  this.listenTo(this, 'close', function (parent) {
+  this.listenTo(this, 'close', function () {
     _.each(this.children, function (child) {
       child.remove();
     });

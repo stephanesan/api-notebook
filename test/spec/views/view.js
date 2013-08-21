@@ -15,17 +15,6 @@ describe('View', function () {
     });
 
     describe('#remove', function () {
-      it('should remove all event listeners', function () {
-        view.on('test', function () {});
-
-        expect(view._events).to.be.an('object');
-        expect(view._events.test).to.exist;
-
-        view.remove();
-
-        expect(view._events.test).to.not.exist;
-      });
-
       it('should emit an event', function () {
         var spy = sinon.spy();
 

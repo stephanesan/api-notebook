@@ -1,6 +1,5 @@
 var _    = require('underscore');
 var Cell = require('./cell');
-var trim = require('trim');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -80,6 +79,13 @@ EditorCell.prototype.focus = function () {
   return this;
 };
 
+EditorCell.prototype.save = function () {
+  if (this.editor) {
+    this.model.set('value', this.editor.getValue());
+  }
+  return this;
+};
+
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
@@ -89,6 +95,9 @@ EditorCell.prototype.bindEditor = function () {
     this.el.classList.remove('active');
   }, this));
 
+  // Set the value of the model every time a change happens
+  this.listenTo(this.editor, 'change', _.bind(this.save, this));
+
   return this;
 };
 
@@ -97,33 +106,81 @@ EditorCell.prototype.unbindEditor = function () {
   return this;
 };
 
-EditorCell.prototype.render = function () {
+EditorCell.prototype.removeEditor = function (copyDoc) {
+  var editor = this.editor;
+  var editorEl, doc;
+
+  if (editor) {
+    this.unbindEditor();
+    delete this.editor;
+    if (copyDoc) { doc = editor.doc.copy(true); }
+    // Remove the old CodeMirror instance from the DOM
+    editorEl = editor.getWrapperElement();
+    if (editorEl && editorEl.parentNode) {
+      editorEl.parentNode.removeChild(editorEl);
+    }
+  }
+
+  return doc;
+};
+
+EditorCell.prototype.renderEditor = function () {
+  var doc, hasFocus;
+
+  if (this.editor) {
+    hasFocus = this.editor.hasFocus();
+    doc      = this.removeEditor(true);
+  }
+  // If an editor already exists, rerender the editor keeping the same options
   // Initialize the codemirror editor
-  this.editor = new CodeMirror(this.el, this.editorOptions);
-  this.bindEditor();
+  this.editor = new CodeMirror(_.bind(function (el) {
+    this.el.insertBefore(el, this.el.firstChild);
+  }, this), _.extend({}, this.editorOptions, {
+    // Set to readonly if there is a notebook and we aren't the notebook owner
+    readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
+  }));
+  // Move the state of the editor
+  if (doc) { this.editor.swapDoc(doc); }
   // Alias the current view to the editor, since keyMaps are shared between
   // all instances of CodeMirror
   this.editor.view = this;
   // Set the editor value if it already exists
-  if (this.model.get('value')) {
-    this.setValue(this.model.get('value'));
+  if (this.getValue()) {
+    this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
+  // If it was previously focused, let's focus the editor again
+  if (hasFocus) { this.editor.focus(); }
+  // Bind the editor events at the end in case of any focus issues when
+  // changing docs, etc.
+  this.bindEditor();
+  return this;
+};
+
+EditorCell.prototype.render = function () {
+  Cell.prototype.render.call(this);
+  this.renderEditor();
   return this;
 };
 
 EditorCell.prototype.getValue = function () {
-  return this.editor.getValue();
+  return this.model.get('value');
 };
 
 EditorCell.prototype.setValue = function (value) {
-  if (!_.isUndefined(value)) {
-    this.editor.setValue(trim('' + value));
+  if (_.isString(value)) {
+    if (this.editor) {
+      this.editor.setValue(value);
+    } else {
+      this.model.set('value', value);
+    }
   }
   return this;
 };
 
 EditorCell.prototype.moveCursorToEnd = function (line) {
+  if (!this.editor) { return this; }
+
   this.editor.setCursor(
     isNaN(line) ? this.editor.doc.lastLine() : line,
     Infinity
@@ -135,7 +192,6 @@ EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
-  this.editor.refresh();
-  this.editor.focus();
+  if (this.editor) { this.editor.refresh(); }
   return this;
 };

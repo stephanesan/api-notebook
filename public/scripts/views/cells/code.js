@@ -19,7 +19,7 @@ CodeCell.prototype.initialize = function () {
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
-CodeCell.prototype.execute = function () {
+CodeCell.prototype.execute = function (cb) {
   var context = this.model.collection.serializeForEval();
 
   this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
@@ -32,9 +32,11 @@ CodeCell.prototype.execute = function () {
 
     this.model.set('result', result); // Keep a reference to the result
     this.trigger('execute', this, err, result);
+
+    if (cb) { cb(err, result); }
   }, this));
 
-  this.save();
+  return this;
 };
 
 CodeCell.prototype.editorOptions = _.extend(
@@ -71,8 +73,9 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend(
 
 CodeCell.prototype.save = function () {
   if (this._editorCid === this.model.cid) {
-    this.model.set('value', this.getValue());
+    this.model.set('value', this.editor.getValue());
   }
+  return this;
 };
 
 CodeCell.prototype.browseUp = function () {
@@ -84,7 +87,6 @@ CodeCell.prototype.browseDown = function () {
 };
 
 CodeCell.prototype.browseToCell = function (newModel) {
-  this.save();
   this._editorCid = newModel.cid;
   // Grab the value from the editor if its not our own model, but if it is we
   // need to grab the value from the model itself. Otherwise there will be pain.
@@ -96,7 +98,12 @@ CodeCell.prototype.browseToCell = function (newModel) {
 };
 
 CodeCell.prototype.autocomplete = function () {
+  // Extends the context object our inline result references for autocompletion
+  var context = Object.create(this.sandbox.window);
+  _.extend(context, this.model.collection.serializeForEval());
+
   CodeMirror.showHint(this.editor, completion, {
+    context: context,
     completeSingle: false
   });
 };
@@ -106,18 +113,17 @@ CodeCell.prototype.bindEditor = function () {
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var commentBlock = stripInput('/*', cm, data);
+
     // When the comment block check doesn't return false, it means we want to
     // start a new comment block
     if (commentBlock !== false) {
-      this.trigger('text', this, commentBlock);
       if (this.getValue()) { this.execute(); }
+      return this.trigger('text', this, commentBlock);
     }
-  }, this));
 
-  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     // Trigger autocompletion on user events `+input` and `+delete`
     if (data.origin && data.origin.charAt(0) === '+') {
-      this.autocomplete();
+      return this.autocomplete();
     }
   }, this));
 
@@ -127,11 +133,8 @@ CodeCell.prototype.bindEditor = function () {
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
-  var _id = this.model._uniqueCellId;
-  this.el.appendChild(Backbone.$('<div class="label">' + _id + '</div>')[0]);
-
   // Every code cell has an associated result
-  this.result = new ResultCell();
+  this.result = new ResultCell({ model: this.model });
   this.result.render().appendTo(this.el);
 
   return this;

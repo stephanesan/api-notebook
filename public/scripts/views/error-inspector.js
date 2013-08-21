@@ -16,17 +16,20 @@ ErrorInspector.prototype.initialize = function () {
   delete this.inspect;
 };
 
+ErrorInspector.prototype.shouldExpand = function () {
+  return !!this.stackTrace.length;
+};
+
 ErrorInspector.prototype.stringifyPreview = function () {
   return this._preview;
 };
 
 ErrorInspector.prototype.renderChildren = function () {
+  if (!this.shouldExpand()) { return this; }
+
   this._renderChildrenEl();
 
-  // If we have a stack trace, allow the children to be expanded
-  if (this.stackTrace.length) {
-    this.el.classList.add('can-expand');
-  }
+  this.el.classList.add('can-expand');
 
   _.each(this.stackTrace, function (trace) {
     this.childrenEl.appendChild(
