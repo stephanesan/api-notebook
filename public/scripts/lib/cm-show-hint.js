@@ -234,13 +234,12 @@
       clearTimeout(closeOnBlur);
     };
     this.onKeydown = function (cm, e) {
-      // Unfortunately handling keydown gets a little messy since certain
-      // buttons could be used to navigate the menu, accept the ghost text, etc.
-      // and at the same time we need to intercept before keys like Enter are
-      // pressed (triggering code execution with the autocompletion result).
-      var keyName = CodeMirror.keyName(e, !e.shiftKey);
+      if (CodeMirror.isModifierKey(e)) { return; }
+
+      var keyName = CodeMirror.keyName(e, e.shiftKey);
       if (that        && keyName in that.keyMap)        { return; }
       if (that.widget && keyName in that.widget.keyMap) { return; }
+
       that.remove();
     };
 
