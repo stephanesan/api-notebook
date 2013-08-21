@@ -133,11 +133,8 @@ CodeCell.prototype.bindEditor = function () {
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 
-  var _id = this.model._uniqueCellId;
-  this.el.appendChild(Backbone.$('<div class="label">$' + _id + '</div>')[0]);
-
   // Every code cell has an associated result
-  this.result = new ResultCell();
+  this.result = new ResultCell({ model: this.model });
   this.result.render().appendTo(this.el);
 
   return this;

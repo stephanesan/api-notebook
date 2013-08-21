@@ -48,6 +48,7 @@
   border: 1px solid $color-result-border
   border-left-width: 5px
   font-size: 0.95em
+  line-height: 1.45
   font-family: monospace
   background-color: $color-result-bg
   &.result-pending
@@ -55,6 +56,12 @@
   &.result-error
     border-color: $color-error-border
     background-color: $color-error-bg
+  > .result-label
+    float: left
+    padding: 0.55em 0 0.55em 0.6em
+  > .inspector
+    padding: 0.55em 0 0.55em 1.5em
+    overflow: hidden
 
 .notebook > .cell
   margin: 1em 0
@@ -68,7 +75,6 @@
   &.result-error
     color: $color-error-text
 
-.cell-code .label,
 .cell-text .comment
   position: absolute
   top: 50%
@@ -79,14 +85,3 @@
 .cell-text .comment-close
   left: auto
   right: -1.5em
-
-.cell-code .label
-  left: auto
-  right: 100%
-  margin-top: -0.6em
-  margin-right: 0.5em
-  color: #aaa
-  padding: 0 0.5em
-  font-size: 0.9em
-  border-radius: 2px
-  background-color: #f4f4f4

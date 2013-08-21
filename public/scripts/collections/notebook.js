@@ -28,7 +28,7 @@ Notebook.prototype.getPrev = function (model) {
  */
 Notebook.prototype.serializeForEval = function () {
   var object = {};
-  this.forEach(function (model) {
+  this.each(function (model) {
     if (_.isUndefined(model._uniqueCellId)) { return; }
     object['$' + model._uniqueCellId] = model.get('result');
   });
