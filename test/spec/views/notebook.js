@@ -1,7 +1,8 @@
-/* global describe, it */
+/* global App, afterEach, beforeEach, CustomEvent, describe, expect, it */
 
 describe('Notebook', function () {
   var Notebook = App.View.Notebook;
+  var fixture   = document.getElementById('fixture');
 
   it('should exist', function () {
     expect(Notebook).to.be.a('function');
