@@ -125,7 +125,12 @@ EditorCell.prototype.removeEditor = function (copyDoc) {
 };
 
 EditorCell.prototype.renderEditor = function () {
-  var doc = this.removeEditor(true);
+  var doc, hasFocus;
+
+  if (this.editor) {
+    hasFocus = this.editor.hasFocus();
+    doc      = this.removeEditor(true);
+  }
   // If an editor already exists, rerender the editor keeping the same options
   // Initialize the codemirror editor
   this.editor = new CodeMirror(_.bind(function (el) {
@@ -144,6 +149,8 @@ EditorCell.prototype.renderEditor = function () {
     this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
+  // If it was previously focused, let's focus the editor again
+  if (hasFocus) { this.editor.focus(); }
   // Bind the editor events at the end in case of any focus issues when
   // changing docs, etc.
   this.bindEditor();

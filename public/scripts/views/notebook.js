@@ -1,4 +1,5 @@
 var _        = require('underscore');
+var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
@@ -19,7 +20,10 @@ var Notebook = module.exports = View.extend({
 var saveGist = _.debounce(function () {
   if (!this.user.id || !this.isOwner()) { return; }
 
-  this.gist.setNotebook(this.collection.serializeForGist());
+  var gist = this.collection.serializeForGist();
+
+  if (!trim.right(gist)) { return; }
+  this.gist.setNotebook(gist);
   this.gist.save(null, { patch: true });
 }, 500);
 
@@ -88,6 +92,9 @@ Notebook.prototype.render = function () {
     }, this);
 
     if (!this.el.childNodes.length) { this.appendCodeView(); }
+
+    // Since the render was asynchronous, we'll need to focus the final cell
+    this.collection.last().view.focus();
   }, this);
 
   // Reset the state
@@ -107,8 +114,6 @@ Notebook.prototype.render = function () {
 
       renderFromGist();
       doneRendering();
-      // Since the render was asynchronous, we'll need to focus the final cell.
-      this.collection.last().view.focus();
     }, this),
 
     // No gist exists or unauthorized, etc.
