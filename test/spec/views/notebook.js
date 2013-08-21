@@ -420,6 +420,53 @@ describe('Notebook', function () {
           expect(codeCells[1].editor.getCursor().ch).to.equal(4);
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
+
+        it('should be able to reference previous results', function () {
+          codeCells[0].setValue('8342');
+          codeCells[1].setValue('$1');
+
+          codeCells[0].execute();
+          codeCells[1].execute();
+
+          expect(codeCells[0].model.get('result')).to.equal(8342);
+          expect(codeCells[1].model.get('result')).to.equal(8342);
+        });
+
+        describe('Overlay Menu', function () {
+          it('should exist as one instance', function () {
+            expect(view.controls).to.be.an('object');
+          });
+
+          it('should have a reference to the active view', function () {
+            codeCells[0].focus();
+            expect(view.controls.editorView).to.equal(codeCells[0]);
+            codeCells[1].focus();
+            expect(view.controls.editorView).to.equal(codeCells[1]);
+            textCells[0].focus();
+            expect(view.controls.editorView).to.equal(textCells[0]);
+          });
+
+          it('should be appended to the active view', function () {
+            codeCells[0].focus();
+            var controls = codeCells[0].el.getElementsByClassName(
+              'cell-controls')[0];
+            expect(controls).to.equal(view.controls.el);
+            expect(controls.style.opacity).to.equal(1);
+          });
+
+          it.skip('should be able to move cells up', function () {
+            var controls = view.controls;
+            var moveUp = controls.el.getElementsByClassName('action-moveUp')[0];
+            var clickEvent = new CustomEvent("click", true, true);
+            moveUp.dispatchEvent(clickEvent);
+            // TODO actually figure out the state we should be in
+            // expect(codeCells[1].editor.hasFocus()).to.be.ok;
+            // expect(codeCells[1].el.nextSibling).to.equal(textCells[0].el);
+            // expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
+            // expect(textCells[0].el.nextSibling).to.not.exist;
+          });
+
+        });
       });
     });
 
