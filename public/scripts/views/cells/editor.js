@@ -107,17 +107,18 @@ EditorCell.prototype.unbindEditor = function () {
 };
 
 EditorCell.prototype.removeEditor = function (copyDoc) {
+  var editor = this.editor;
   var editorEl, doc;
 
-  if (this.editor) {
+  if (editor) {
     this.unbindEditor();
-    if (copyDoc) { doc = this.editor.doc.copy(true); }
+    delete this.editor;
+    if (copyDoc) { doc = editor.doc.copy(true); }
     // Remove the old CodeMirror instance from the DOM
-    editorEl = this.editor.getWrapperElement();
+    editorEl = editor.getWrapperElement();
     if (editorEl && editorEl.parentNode) {
       editorEl.parentNode.removeChild(editorEl);
     }
-    delete this.editor;
   }
 
   return doc;
