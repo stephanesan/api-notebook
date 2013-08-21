@@ -108,18 +108,17 @@ CodeCell.prototype.bindEditor = function () {
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var commentBlock = stripInput('/*', cm, data);
+
     // When the comment block check doesn't return false, it means we want to
     // start a new comment block
     if (commentBlock !== false) {
-      this.trigger('text', this, commentBlock);
       if (this.getValue()) { this.execute(); }
+      return this.trigger('text', this, commentBlock);
     }
-  }, this));
 
-  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     // Trigger autocompletion on user events `+input` and `+delete`
     if (data.origin && data.origin.charAt(0) === '+') {
-      this.autocomplete();
+      return this.autocomplete();
     }
   }, this));
 

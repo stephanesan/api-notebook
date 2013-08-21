@@ -29,17 +29,14 @@ TextCell.prototype.editorOptions = _.extend(
   }
 );
 
-TextCell.prototype.closeCell = function (code) {
-  this.trigger('code', this, code);
-  this.el.classList.add('text-closed');
-};
-
 TextCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     var endCommentBlock = stripInput('*/', cm, data);
-    if (endCommentBlock !== false) { this.closeCell(endCommentBlock); }
+    if (endCommentBlock !== false) {
+      return this.trigger('code', this, endCommentBlock);
+    }
   }, this));
 
   this.listenTo(this.editor, 'blur', _.bind(function (cm) {

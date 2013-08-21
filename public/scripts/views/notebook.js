@@ -238,14 +238,15 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof TextView) {
     // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
-      if (code) { this.appendCodeView(view.el, code); }
-
-      // Either add a new code view or focus the next view
-      if (this.el.lastChild === view.el) {
+      // Either add a new code view (if we have code or it's the last view),
+      // or focus the next view.
+      if (code || this.el.lastChild === view.el) {
         this.appendCodeView(view.el, code);
       }
 
       this.getNextView(view).moveCursorToEnd(0).focus();
+
+      if (!view.getValue()) { view.remove(); }
     });
   }
 
@@ -267,6 +268,8 @@ Notebook.prototype.appendView = function (view, before) {
 
     this.listenTo(view, 'text', function (view, text) {
       this.appendTextView(view.el, text).focus();
+
+      if (!view.getValue()) { view.remove(); }
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {

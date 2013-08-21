@@ -37,7 +37,7 @@ var handleSetValue = function (string, cm, event) {
 };
 
 var handleInput = function (string, cm, event) {
-  if (event.text[0] !== string[string.length - 1] || event.to.ch < 2) {
+  if (event.text[0] !== string[string.length - 1] || event.to.ch < 1) {
     return false;
   }
 
