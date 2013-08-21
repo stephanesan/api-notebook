@@ -208,8 +208,10 @@ Notebook.prototype.appendView = function (view, before) {
     // Listen to clone events and append the new views after the current view
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
-      clone.editor.setCursor(view.editor.getCursor());
+      // Need to work around the editor being removed and added with text cells
+      var cursor = view.editor.getCursor();
       clone.focus();
+      clone.editor.setCursor(cursor);
     });
 
     this.listenTo(view, 'remove', function (view) {
@@ -233,9 +235,10 @@ Notebook.prototype.appendView = function (view, before) {
       } else {
         newView = this.appendTextView(view.el, view.getValue());
       }
+      var cursor = view.editor.getCursor();
       view.remove();
-      newView.editor.setCursor(view.editor.getCursor());
       newView.focus();
+      newView.editor.setCursor(cursor);
     });
   }
 

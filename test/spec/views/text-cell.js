@@ -24,7 +24,7 @@ describe('Text Cell', function () {
       var editor;
 
       beforeEach(function () {
-        view   = view.render().appendTo(fixture);
+        view   = view.render().appendTo(fixture).focus();
         editor = view.editor;
       });
 

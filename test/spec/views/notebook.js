@@ -188,6 +188,7 @@ describe('Notebook', function () {
 
       it('should be able to clone a cell down', function () {
         textCells[0].setValue('testing');
+        textCells[0].focus();
         textCells[0].editor.setCursor(0, 3);
         textCells[0].clone(); // Call the method since it will emit the event
 
@@ -216,6 +217,7 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         textCells[0].setValue('testing');
+        textCells[0].focus();
         textCells[0].editor.setCursor(0, 5);
         textCells[0].trigger('switch', textCells[0]);
 
@@ -244,7 +246,6 @@ describe('Notebook', function () {
         });
 
         codeCells[0].setValue('99');
-        codeCells[0].on('execute', spy);
         codeCells[0].execute();
       });
 
@@ -349,6 +350,7 @@ describe('Notebook', function () {
 
         it('should be able to browse to the cell above', function () {
           codeCells.push(view.appendCodeView());
+          codeCells[2].focus();
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
 
           codeCells[0].setValue('one');
@@ -356,12 +358,12 @@ describe('Notebook', function () {
           codeCells[2].setValue('three');
 
           codeCells[2].browseUp();
-          expect(codeCells[2].getValue()).to.equal('two');
+          expect(codeCells[2].editor.getValue()).to.equal('two');
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
           expect(codeCells[2].editor.getCursor().ch).to.equal(3);
 
           codeCells[2].browseUp();
-          expect(codeCells[2].getValue()).to.equal('one');
+          expect(codeCells[2].editor.getValue()).to.equal('one');
           expect(codeCells[2].editor.hasFocus()).to.be.ok;
           expect(codeCells[2].editor.getCursor().ch).to.equal(3);
         });
@@ -376,32 +378,34 @@ describe('Notebook', function () {
           codeCells[2].setValue('three');
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('two');
+          expect(codeCells[0].editor.getValue()).to.equal('two');
           expect(codeCells[0].editor.hasFocus()).to.be.ok;
           expect(codeCells[0].editor.getCursor().ch).to.equal(3);
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('three');
+          expect(codeCells[0].editor.getValue()).to.equal('three');
           expect(codeCells[0].editor.hasFocus()).to.be.ok;
           expect(codeCells[0].editor.getCursor().ch).to.equal(5);
         });
 
         it('should keep its value when browsing cells', function () {
+          codeCells[1].focus();
           expect(codeCells[1].editor.hasFocus()).to.be.ok;
 
           codeCells[0].setValue('one');
           codeCells[1].setValue('two');
 
           codeCells[0].browseDown();
-          expect(codeCells[0].getValue()).to.equal('two');
+          expect(codeCells[0].editor.getValue()).to.equal('two');
 
           codeCells[0].browseUp();
-          expect(codeCells[0].getValue()).to.equal('one');
+          expect(codeCells[0].editor.getValue()).to.equal('one');
         });
 
         it('should provide appropriate keyboard navigation between new content', function () {
           codeCells[0].setValue('multi\nline\ntest');
           codeCells[1].setValue('even\nmore\nlines\nhere');
+          codeCells[1].focus();
 
           expect(codeCells[1].editor.hasFocus()).to.be.ok;
           expect(codeCells[1].editor.getCursor().ch).to.equal(0);

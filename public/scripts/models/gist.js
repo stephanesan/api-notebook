@@ -42,7 +42,7 @@ Gist.prototype.fork = function (cb) {
 
   // If the user is not authenticated, just fork in memory until they do
   // authenticate, at which point we can worry about everything else.
-  if (this.user.isNew()) {
+  if (this.user && this.user.isNew()) {
     return cb(null, new Gist(_.extend({}, this.attributes, {
       id: undefined
     }), { user: this.user }));
@@ -61,7 +61,7 @@ Gist.prototype.fork = function (cb) {
     error: function (error) {
       cb(error);
     }
-  })
+  });
 };
 
 Gist.prototype.setNotebook = function (notebook) {

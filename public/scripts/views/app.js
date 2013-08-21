@@ -1,7 +1,7 @@
 var _        = require('underscore');
 var fs       = require('fs');
 var Backbone = require('backbone');
-var DOMify   = require('domify');
+var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
@@ -49,7 +49,7 @@ App.prototype.events = {
 };
 
 App.prototype.initialize = function (options) {
-  new (Backbone.Router.extend({
+  var appRouter = new (Backbone.Router.extend({
     routes: {
       '':    'application',
       ':id': 'application'
@@ -140,7 +140,7 @@ App.prototype.setGist = function (gist) {
 App.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this.el.appendChild(DOMify(
+  this.el.appendChild(domify(
     fs.readFileSync(__dirname + '/../../templates/application.html')
   ));
 

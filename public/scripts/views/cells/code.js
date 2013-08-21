@@ -33,7 +33,7 @@ CodeCell.prototype.execute = function (cb) {
     this.model.set('result', result); // Keep a reference to the result
     this.trigger('execute', this, err, result);
 
-    cb && cb(err, result);
+    if (cb) { cb(err, result); }
   }, this));
 
   return this;
