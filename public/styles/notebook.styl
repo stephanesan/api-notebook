@@ -45,7 +45,9 @@
   margin: 0
 
 .notebook .cell-result
-  border: 1px solid $color-result-border
+  border-width: 1px 0 0 0
+  border-style: solid
+  border-color: $color-result-border
   border-left-width: 5px
   font-size: 0.95em
   line-height: 1.45
@@ -58,12 +60,14 @@
     background-color: $color-error-bg
   > .result-label
     float: left
-    padding: 0.55em 0 0.55em 0.6em
+    padding: .55em 0 .55em .45em
+    color: $color-result-label
   > .inspector
     padding: 0.55em 0 0.55em 1.5em
     overflow: hidden
 
 .notebook > .cell
+  border: 1px solid $color-cell-border
   margin: 1em 0
   position: relative
   min-height: 1em
