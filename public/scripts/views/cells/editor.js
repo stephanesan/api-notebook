@@ -201,8 +201,5 @@ EditorCell.prototype.appendTo = function (el) {
   // need to refresh the CodeMirror UI so it becomes visible
   if (this.editor) { this.editor.refresh(); }
 
-  // Append controls
-  this.controls.appendTo(this.el);
-
   return this;
 };
