@@ -1,4 +1,5 @@
 var _        = require('underscore');
+var trim     = require('trim');
 var Backbone = require('backbone');
 
 var Notebook = module.exports = Backbone.Collection.extend({
@@ -38,40 +39,44 @@ Notebook.prototype.serializeForEval = function () {
 Notebook.prototype.serializeForGist = function () {
   return this.map(function (model) {
     if (model.get('type') === 'text') { return model.get('value'); }
-    // Indent any code cells using a single tab
-    return '\t' + (model.get('value') || '').split('\n').join('\n\t');
+    // Wrap code cells as a JavaScript code block for Markdown
+    return '```javascript\n' + (model.get('value') || '') + '\n```';
   }).join('\n\n');
 };
 
 Notebook.prototype.deserializeFromGist = function (gist) {
+  var type       = 'text';
+  var value      = [];
   var collection = [];
 
-  // Split either the gist or a single tab character to force a starting code
-  // cell.
-  _.each((gist || '\t').split('\n\n'), function (section) {
-    // When we encounter a tab character, switch modes to `code`.
-    if (section.charAt(0) === '\t') {
-      return collection.push({
-        type: 'code',
-        value: _.map(section.split('\n'), function (line) {
-          return line.substr(1);
-        }).join('\n')
-      });
-    }
+  var resetParser = function (newType) {
+    if (value[0] === '') { value.shift(); }
+    if (!value.length) { return type = newType; }
 
-    // If we hit anything else, it must be a text cell. However, text cells
-    // could be contain multiple line returns anywhere within the contents.
-    var prevModel = collection[collection.length - 1];
+    value = value.join('\n');
 
-    if (prevModel && prevModel.type === 'text') {
-      return prevModel.value += '\n\n' + section;
-    }
-
-    return collection.push({
-      type: 'text',
-      value: section
+    collection.push({
+      type:  type,
+      value: value
     });
-  }, []);
+
+    type  = newType;
+    value = [];
+  };
+
+  _.each((gist || '').split('\n'), function (line) {
+    if (line === '```javascript') {
+      return resetParser('code');
+    }
+
+    if (type === 'code' && line === '```') {
+      return resetParser('text');
+    }
+
+    value.push(line);
+  });
+
+  resetParser();
 
   return collection;
 };
