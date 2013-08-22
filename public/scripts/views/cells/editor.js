@@ -8,6 +8,7 @@ EditorCell.prototype.events = {
 };
 
 EditorCell.prototype.initialize = function () {
+  Cell.prototype.initialize.apply(this, arguments);
   // Every editor cell needs a model to function
   this.model = this.model || new this.EditorModel();
 };
@@ -86,6 +87,10 @@ EditorCell.prototype.save = function () {
   return this;
 };
 
+EditorCell.prototype.refresh = function () {
+  this.editor.refresh();
+};
+
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
@@ -95,7 +100,7 @@ EditorCell.prototype.bindEditor = function () {
     this.el.classList.remove('active');
   }, this));
 
-  // Set the value of the model every time a change happens
+  // Save the value of the model every time a change happens
   this.listenTo(this.editor, 'change', _.bind(this.save, this));
 
   return this;
@@ -136,6 +141,8 @@ EditorCell.prototype.renderEditor = function () {
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({}, this.editorOptions, {
+    // Add the current view to the editor options
+    view:     this,
     // Set to readonly if there is a notebook and we aren't the notebook owner
     readOnly: !this.notebook || this.notebook.isOwner() ? false : 'nocursor'
   }));
@@ -192,6 +199,6 @@ EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
-  if (this.editor) { this.editor.refresh(); }
+  if (this.editor) { this.refresh(); }
   return this;
 };
