@@ -50,7 +50,10 @@ Notebook.prototype.deserializeFromGist = function (gist) {
   var collection = [];
 
   var resetParser = function (newType) {
-    if (value[0] === '') { value.shift(); }
+    // Text cells need to cater for the first line being empty since we are
+    // joining the sections together with two newlines.
+    if (type === 'text' && value[0] === '') { value.shift(); }
+
     if (!value.length) { return type = newType; }
 
     value = value.join('\n');

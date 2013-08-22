@@ -57,6 +57,16 @@ describe('Notebook Collection', function () {
         expect(models[1].type).to.equal('code');
         expect(models[1].value).to.equal('code');
       });
+
+      it('should deserialize empty code cells', function () {
+        var models = collection.deserializeFromGist(
+          '```javascript\n\n```'
+        );
+
+        expect(models.length).to.equal(1);
+        expect(models[0].type).to.equal('code');
+        expect(models[0].value).to.equal('');
+      });
     });
 
     describe('serializing to gist text', function () {
@@ -80,6 +90,17 @@ describe('Notebook Collection', function () {
         var text = collection.serializeForGist();
 
         expect(text).to.equal('```javascript\ncode\nhere\n```');
+      });
+
+      it('should serialize empty code cells', function () {
+        collection.push({
+          type:  'code',
+          value: ''
+        });
+
+        var text = collection.serializeForGist();
+
+        expect(text).to.equal('```javascript\n\n```');
       });
 
       it('should serialize code and text', function () {
