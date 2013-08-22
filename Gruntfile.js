@@ -1,4 +1,5 @@
 module.exports = function (grunt) {
+  var dev  = true;
   var port = process.env.PORT || 3000;
 
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
@@ -18,19 +19,31 @@ module.exports = function (grunt) {
 
     // Running browserify as the build/dependency management system
     browserify: {
-      'build/scripts/bundle.js': ['public/scripts/index.js'],
-      options: {
-        shim: {
-          'backbone.native': {
-            path: __dirname + '/vendor/backbone.native.js',
-            exports: 'Backbone',
-            depends: {
-              'backbone': 'Backbone'
+      application: {
+        src: ['public/scripts/index.js'],
+        dest: 'build/scripts/bundle.js',
+        options: {
+          shim: {
+            'backbone.native': {
+              path: __dirname + '/vendor/backbone.native.js',
+              exports: 'Backbone',
+              depends: {
+                'backbone': 'Backbone'
+              }
             }
-          }
-        },
-        debug: true,
-        transform: ['brfs']
+          },
+          debug: dev,
+          transform: dev ? ['brfs'] : ['brfs', 'uglifyify']
+        }
+      },
+      embed: {
+        src: ['public/scripts/embed.js'],
+        dest: 'build/scripts/embed.js',
+        options: {
+          // debug: dev, // Currently broken when used with `standalone`
+          transform: dev ? [] : ['uglifyify'],
+          standalone: 'Notebook'
+        }
       }
     },
 
@@ -68,6 +81,10 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
-  grunt.registerTask('default', ['build', 'watch']);
+
+  grunt.registerTask('production', function () { dev = false; });
+
+  grunt.registerTask('compile', ['clean', 'copy', 'browserify', 'stylus'])
+  grunt.registerTask('build',   ['production', 'compile']);
+  grunt.registerTask('default', ['compile', 'watch']);
 };

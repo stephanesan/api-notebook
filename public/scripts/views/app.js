@@ -79,8 +79,6 @@ App.prototype.initialize = function (options) {
     }
   }, this));
 
-  // Attempt to fetch the user session. This technique is sort of jank and could
-  // be implemented better using localStorage or something similar.
   this.user = new App.Model.Session();
   this.user.fetch();
 
