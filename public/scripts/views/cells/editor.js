@@ -99,6 +99,7 @@ EditorCell.prototype.bindEditor = function () {
 
   this.listenTo(this.editor, 'blur', _.bind(function () {
     this.el.classList.remove('active');
+    this.trigger('blur', this);
   }, this));
 
   // Set the value of the model every time a change happens
