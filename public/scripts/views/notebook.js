@@ -166,6 +166,14 @@ Notebook.prototype.getPrevView = function (view) {
   return model && model.view;
 };
 
+Notebook.prototype.refreshFromView = function (view) {
+  do {
+    view.refresh();
+  } while (view = this.getNextView(view));
+
+  return this;
+};
+
 Notebook.prototype.appendCodeView = function (el, value) {
   var view = new CodeView();
   this.appendView(view, el);
@@ -198,6 +206,7 @@ Notebook.prototype.appendView = function (view, before) {
       view.el.parentNode.insertBefore(view.el, view.el.previousSibling);
       view.focus();
       this.collection.sort();
+      this.refreshFromView(view);
     });
 
     this.listenTo(view, 'moveDown', function (view) {
@@ -206,6 +215,7 @@ Notebook.prototype.appendView = function (view, before) {
       insertAfter(view.el, view.el.nextSibling);
       view.focus();
       this.collection.sort();
+      this.refreshFromView(this.getPrevView(view));
     });
 
     // Listen to clone events and append the new views after the current view
@@ -215,6 +225,7 @@ Notebook.prototype.appendView = function (view, before) {
       var cursor = view.editor.getCursor();
       clone.focus();
       clone.editor.setCursor(cursor);
+      this.refreshFromView(clone);
     });
 
     this.listenTo(view, 'remove', function (view) {
@@ -225,6 +236,7 @@ Notebook.prototype.appendView = function (view, before) {
       if (newView) { newView.focus().moveCursorToEnd(); }
       // Need to remove the model from the collection
       this.collection.remove(view.model);
+      this.refreshFromView(newView);
     });
 
     // Listen for switch events, which isn't a real switch but recreates the
@@ -240,8 +252,7 @@ Notebook.prototype.appendView = function (view, before) {
       }
       var cursor = view.editor.getCursor();
       view.remove();
-      newView.focus();
-      newView.editor.setCursor(cursor);
+      newView.focus().editor.setCursor(cursor);
     });
   }
 
@@ -284,28 +295,24 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {
-      var model = this.collection.get(currentCid);
+      var model = this.collection.getPrevCode(this.collection.get(currentCid));
 
-      while (model = this.collection.getPrev(model)) {
-        if (model.get('type') === 'code') {
-          view.browseToCell(model);
-          view.moveCursorToEnd();
-          break;
-        }
+      if (model) {
+        view.browseToCell(model);
+        view.moveCursorToEnd();
       }
     });
 
     this.listenTo(view, 'browseDown', function (view, currentCid) {
-      var model = this.collection.get(currentCid);
+      var model = this.collection.getNextCode(this.collection.get(currentCid));
 
-      while (model = this.collection.getNext(model)) {
-        if (model.get('type') === 'code') {
-          view.browseToCell(model);
-          view.moveCursorToEnd(0);
-          break;
-        }
+      if (model) {
+        view.browseToCell(model);
+        view.moveCursorToEnd(0);
       }
     });
+
+    this.listenTo(view, 'linesChanged', this.refreshFromView);
   }
 
   if (view.model.get('type') === 'code') {
@@ -317,12 +324,12 @@ Notebook.prototype.appendView = function (view, before) {
   view.notebook   = this;
   view.sandbox    = this.sandbox;
   view.model.view = view;
+  // Add the model to the collection
+  this.collection.push(view.model);
   // Append the view to the end of the console
   view.render().appendTo(_.bind(function (el) {
     return before ? insertAfter(el, before) : this.el.appendChild(el);
   }, this));
-  // Add the model to the collection
-  this.collection.push(view.model);
   // Sort the collection every time a node is added in a different position to
   // just being appended at the end
   if (before) { this.collection.sort(); }

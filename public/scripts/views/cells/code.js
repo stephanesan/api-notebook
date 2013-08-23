@@ -43,13 +43,16 @@ CodeCell.prototype.editorOptions = _.extend(
   {},
   EditorCell.prototype.editorOptions,
   {
-    mode: 'javascript'
+    mode: 'javascript',
+    lineNumberFormatter: function (line) {
+      return String((this.view.startLine || 1) + line - 1);
+    }
   }
 );
 
 CodeCell.prototype.editorOptions.extraKeys = _.extend(
   {},
-  CodeCell.prototype.editorOptions.extraKeys,
+  EditorCell.prototype.editorOptions.extraKeys,
   {
     'Enter': function (cm) {
       cm.view.execute();
@@ -78,6 +81,27 @@ CodeCell.prototype.save = function () {
   return this;
 };
 
+CodeCell.prototype.refresh = function () {
+  // Set the start and last line variables
+  var prevCodeView = this.getPrevCodeView();
+  this.startLine = _.result(prevCodeView, 'lastLine') + 1 || 1;
+  this.lastLine  = this.startLine + this.editor.lastLine();
+  // Call refresh on the editor
+  EditorCell.prototype.refresh.call(this);
+};
+
+CodeCell.prototype.getNextCodeView = function () {
+  if (this.model.collection) {
+    return _.result(this.model.collection.getNextCode(this.model), 'view');
+  }
+};
+
+CodeCell.prototype.getPrevCodeView = function () {
+  if (this.model.collection) {
+    return _.result(this.model.collection.getPrevCode(this.model), 'view');
+  }
+};
+
 CodeCell.prototype.browseUp = function () {
   this.trigger('browseUp', this, this._editorCid);
 };
@@ -88,13 +112,7 @@ CodeCell.prototype.browseDown = function () {
 
 CodeCell.prototype.browseToCell = function (newModel) {
   this._editorCid = newModel.cid;
-  // Grab the value from the editor if its not our own model, but if it is we
-  // need to grab the value from the model itself. Otherwise there will be pain.
-  if (this._editorCid === this.model.cid) {
-    this.setValue(newModel.get('value'));
-  } else {
-    this.setValue(newModel.view.editor.getValue());
-  }
+  this.setValue(newModel.get('value'));
 };
 
 CodeCell.prototype.autocomplete = function () {
@@ -112,6 +130,14 @@ CodeCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
+    this.lastLine = this.startLine + cm.lastLine();
+
+    // When the presented data looks line a new line has been added, emit an
+    // event the notebook can listen to.
+    if (data.text.length > 1 || data.from.line !== data.to.line) {
+      this.trigger('linesChanged', this);
+    }
+
     var commentBlock = stripInput('/*', cm, data);
 
     // When the comment block check doesn't return false, it means we want to
