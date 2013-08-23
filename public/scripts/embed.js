@@ -43,6 +43,34 @@ var each = function (obj, fn, context) {
 };
 
 /**
+ * Getting all the data atrributes of an element. Works on all browsers.
+ *
+ * @param  {Element} el
+ * @return {Object}
+ */
+var getDataAttributes = function (el) {
+  var obj  = {};
+
+  if (el.dataset) {
+    return extend(obj, el.dataset);
+  }
+
+  var attrs = el.attributes;
+  for (var i = 0, l = attrs.length; i < l; i++) {
+    var attr = attrs.item(i);
+    if (attr.nodeName.substr(0, 5) === 'data-') {
+      var name = attr.nodeName.substr(5).replace(/\-(\w)/, function (_, $0) {
+        return $0.toUpperCase();
+      });
+
+      obj[name] = attr.nodeValue;
+    }
+  }
+
+  return obj;
+};
+
+/**
  * Copy of all the default options for a new Notebook instance.
  *
  * @type {Object}
@@ -238,3 +266,31 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   this.frame.contentWindow.postMessage(args, '*');
   return this;
 };
+
+/**
+ * Attempts to automatically create the initial notebook by scanning for the
+ * correct script tag and using the data from it to generate the notebook.
+ *
+ * @param  {Array} scripts [description]
+ * @return {[type]}         [description]
+ */
+(function (scripts) {
+  var script;
+
+  for (var i = 0, l = scripts.length; i < l; i++) {
+    script = scripts[i];
+    // Allows the script to be loaded asyncronously if we provide this attribute
+    if (script.getAttribute('data-notebook') != null) { break; }
+  }
+
+  var data = getDataAttributes(script);
+
+  if (!data.selector) { return; }
+
+  var el = document.querySelector(data.selector);
+  // Remove the selector and pass the rest of the options to the notebook
+  delete data.selector;
+  // TODO: Discuss replacing this implementation with something more
+  // cross-browser. Probably just stick with element ids.
+  return new Notebook(el, data);
+})(document.getElementsByTagName('script'));
