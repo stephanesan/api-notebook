@@ -4,7 +4,10 @@ var View = require('../view');
 
 var BtnCellControls = module.exports = View.extend({
   className: 'btn btn-show-cell-controls',
-  tagName: 'span',
+  tagName: 'button',
+  attributes: {
+    type: 'button'
+  },
   events: {
     'click': 'onClick'
   }
@@ -21,6 +24,8 @@ BtnCellControls.prototype.render = function () {
 
 BtnCellControls.prototype.onClick = function (event) {
   if (this.parent) {
+    event.stopPropagation();
+    event.cancelBubble = true; // IE
     this.parent.trigger('show-cell-controls', this.parent);
   }
 };

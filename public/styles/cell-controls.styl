@@ -23,6 +23,17 @@
   border: 10px solid transparent
   border-right-color: #333
 
+@media only screen and (max-width: 70em)
+  .cell-controls
+    right: 35px
+
+  .cell-controls:before
+    left: auto
+    right: -20px
+
+    border-left-color: #333
+    border-right-color: transparent
+
 .cell-controls button
   display: block
   width: 12.5em
@@ -50,16 +61,24 @@
   font-size: .75em
   color: $color-cell-controls-keycode
 
-.cell .btn-show-cell-controls
+.btn-show-cell-controls
+  z-index: 200
+  position: absolute
+  top: -1px
+  right: -1px
+
+  width: 27px
+  height: @width
+  margin-bottom: -1px;
+  padding: 0 0 2px;
+  border: 1px solid #ccc;
+
+  background: transparent
   color: #aaa
   cursor: pointer
-  float: right
-  font-size: 2.5em
-  height: 100%
-  margin-right: -2px
-  margin-top: -15px
-  padding: 0 4px
-  position: relative
+  font-size: 1.5em
+  line-height: 0
   text-align: center
-  width: 25px
 
+.cell-text.active .btn-show-cell-controls
+  color: #fff
