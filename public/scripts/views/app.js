@@ -51,12 +51,15 @@ App.prototype.events = {
 };
 
 App.prototype.initialize = function (options) {
-  var appRouter = new (Backbone.Router.extend({
+  this.router = new (Backbone.Router.extend({
     routes: {
-      '':    'application',
-      ':id': 'application'
+      '':    'newNotebook',
+      ':id': 'loadNotebook'
     },
-    application: _.bind(function (id) {
+    newNotebook: _.bind(function (id) {
+      this.setGist(new App.Model.Gist({}, { user: this.user }));
+    }, this),
+    loadNotebook: _.bind(function (id) {
       this.setGist(new App.Model.Gist({ id: id }, { user: this.user }));
     }, this)
   }))();
@@ -68,7 +71,7 @@ App.prototype.initialize = function (options) {
   });
 
   // Listen to keyboard presses
-  this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
+  this.listenTo(Backbone.$(document), 'keydown', function (e) {
     var ESC           = 27;
     var QUESTION_MARK = 191;
 
@@ -79,7 +82,7 @@ App.prototype.initialize = function (options) {
     if (e.which === ESC) {
       return this.hideShortcuts();
     }
-  }, this));
+  }, this);
 
   this.user = new App.Model.Session();
   this.user.fetch();
@@ -143,6 +146,18 @@ App.prototype.setGist = function (gist) {
   return this;
 };
 
+App.prototype.setDefaultContent = function (content) {
+  this.router.off('route:newNotebook', this._prevNewNotebook);
+
+  if (this.notebook.gist.isNew()) {
+    this.notebook.setContent(content);
+  }
+
+  this.router.on('route:newNotebook', this._prevNewNotebook = function () {
+    this.notebook.setContent(content);
+  }, this);
+};
+
 App.prototype.setupEmbeddableWidget = function () {
   if (!global.parent || global === global.parent) { return this; }
 
@@ -159,6 +174,13 @@ App.prototype.setupEmbeddableWidget = function () {
     base.setAttribute('target', '_parent');
     (doc.head || doc.getElementsByTagName('head')[0]).appendChild(base);
   });
+
+  // Allow passing on default content to the application. This will set the
+  // markdown content to use in the case that there is no gist id or loading
+  // the gist id fails.
+  postMessage.on('content', function (content) {
+    this.setDefaultContent(content);
+  }, this);
 
   // Send a message to the parent frame and let it know we are ready to accept
   // messages and data.

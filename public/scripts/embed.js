@@ -111,6 +111,10 @@ Notebook.prototype.makeFrame = function (el) {
   // When the app is ready to receive events, send relevant info
   this.on('ready', function () {
     this.trigger('referrer', global.location.href);
+
+    if (typeof this.options.content === 'string') {
+      this.trigger('content', this.options.content);
+    }
   });
 
   // When a new height comes through, update the iframe height
