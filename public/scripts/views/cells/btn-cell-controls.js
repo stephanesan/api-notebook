@@ -4,7 +4,10 @@ var View = require('../view');
 
 var BtnCellControls = module.exports = View.extend({
   className: 'btn btn-show-cell-controls',
-  tagName: 'span',
+  tagName: 'button',
+  attributes: {
+    type: 'button'
+  },
   events: {
     'click': 'onClick'
   }
