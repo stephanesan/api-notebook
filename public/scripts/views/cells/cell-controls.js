@@ -5,9 +5,9 @@
     "Switch to Code" deopending on current mode.
 */
 
-var Backbone      = require('backbone');
-var View          = require('../view');
-var ControlsModel = require('../../models/controls');
+var Backbone          = require('backbone');
+var View              = require('../view');
+var CellControlsModel = require('../../models/cell-controls');
 
 var ControlsView = module.exports = View.extend({
   className: 'cell-controls',
@@ -22,7 +22,7 @@ var ControlsView = module.exports = View.extend({
  * @param {EditorCell} EditorCell  Instance of editorCell to control.
  */
 ControlsView.prototype.initialize = function () {
-  this.model = this.model || new ControlsModel();
+  this.model = this.model || new CellControlsModel();
 };
 
 /**

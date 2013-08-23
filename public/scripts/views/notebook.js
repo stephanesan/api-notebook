@@ -7,7 +7,7 @@ var CodeView           = require('./cells/code');
 var TextView           = require('./cells/text');
 var EditorView         = require('./cells/editor');
 var EntryModel         = require('../models/entry');
-var Controls           = require('./cells/controls');
+var CellControls       = require('./cells/cell-controls');
 var GistModel          = require('../models/gist');
 var NotebookCollection = require('../collections/notebook');
 
@@ -30,7 +30,7 @@ var saveGist = _.debounce(function () {
 
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
-  this.controls   = new Controls().render();
+  this.controls   = new CellControls().render();
   this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
   this.user       = options.user;

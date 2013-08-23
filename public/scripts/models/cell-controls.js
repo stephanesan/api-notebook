@@ -13,7 +13,7 @@ function join () {
   return args.join('-');
 }
 
-var Controls = module.exports = Backbone.Model.extend({
+var CellControls = module.exports = Backbone.Model.extend({
   actions: [
     {
       name: 'moveUp',

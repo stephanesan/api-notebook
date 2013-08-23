@@ -24,7 +24,7 @@ App.View = {
   TextCell:       require('./cells/text'),
   EditorCell:     require('./cells/editor'),
   ResultCell:     require('./cells/result'),
-  Controls:       require('./cells/controls'),
+  CellControls:   require('./cells/cell-controls'),
 };
 
 // Alias all the available models
