@@ -73,8 +73,8 @@ ControlsView.prototype.render = function () {
  * @param {object} event  The normalized event object.
  */
 ControlsView.prototype.onClick = function (event) {
-  // Prevent clicks outside an action item.
-  if (event.target === this.el) {
+  // Prevent clicks outside an action item; and orphaned clicks.
+  if (event.target === this.el || !this.editorView) {
     return false;
   }
   var action = event.target.className.replace(/action-/, '');
