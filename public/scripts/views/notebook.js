@@ -211,13 +211,10 @@ Notebook.prototype.appendView = function (view, before) {
     // Listen to clone events and append the new views after the current view
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
-      if (view.editor && clone.editor) {
-        // Need to work around the editor being removed and added with text
-        // cells
-        var cursor = view.editor.getCursor();
-        clone.editor.setCursor(cursor);
-      }
+      // Need to work around the editor being removed and added with text cells
+      var cursor = view.editor && view.editor.getCursor();
       clone.focus();
+      clone.editor.setCursor(cursor);
     });
 
     this.listenTo(view, 'remove', function (view) {
