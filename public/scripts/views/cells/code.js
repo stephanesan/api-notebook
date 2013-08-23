@@ -1,9 +1,10 @@
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var EditorCell = require('./editor');
-var ResultCell = require('./result');
-var stripInput = require('../../lib/cm-strip-input');
-var completion = require('../../lib/cm-sandbox-completion');
+var _               = require('underscore');
+var Backbone        = require('backbone');
+var EditorCell      = require('./editor');
+var ResultCell      = require('./result');
+var stripInput      = require('../../lib/cm-strip-input');
+var completion      = require('../../lib/cm-sandbox-completion');
+var BtnCellControls = require('./btn-cell-controls');
 
 var CodeCell = module.exports = EditorCell.extend({
   className: 'cell cell-code'
@@ -132,6 +133,10 @@ CodeCell.prototype.bindEditor = function () {
 
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
+
+  // Every code- and text cell has a controls-menu button
+  this.btnCellControls = new BtnCellControls({ parent: this });
+  this.btnCellControls.render().prependTo(this.el);
 
   // Every code cell has an associated result
   this.result = new ResultCell({ model: this.model });

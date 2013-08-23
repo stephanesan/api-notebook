@@ -26,13 +26,26 @@ ControlsView.prototype.initialize = function () {
   this.model = this.model || new ControlsModel();
 };
 
-ControlsView.prototype.appendToView = function (view) {
+
+/**
+ * Toggles the control to be appended or removed from a view. If the control
+ * is already appended to the passed in view, it is simply removed from the
+ * view; otherwise the control is appended to the view.
+ *
+ * @param {View} view  The view to append to or remove from.
+ */
+ControlsView.prototype.toggleView = function (view) {
+  var toggleOn = (this.editorView !== view);
+
   if (this.editorView) {
     this.remove();
   }
-  this.editorView = view;
-  this.delegateEvents(ControlsView.prototype.events);
-  this.appendTo(view.el);
+
+  if (toggleOn) {
+    this.editorView = view;
+    this.delegateEvents(ControlsView.prototype.events);
+    this.appendTo(view.el);
+  }
 };
 
 ControlsView.prototype.remove = function () {
@@ -70,4 +83,6 @@ ControlsView.prototype.onClick = function (event) {
   if (typeof viewFn === 'function') {
     viewFn.call(editorView);
   }
+
+  this.remove();
 };

@@ -258,7 +258,7 @@ Notebook.prototype.appendView = function (view, before) {
    * Appends the UIControls to the focused cell.
    */
   this.listenTo(view, 'show-cell-controls', function (view) {
-    this.controls.appendToView(view);
+    this.controls.toggleView(view);
   });
 
   // Listening to different events for `text` cells

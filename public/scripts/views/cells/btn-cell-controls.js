@@ -15,7 +15,7 @@ BtnCellControls.prototype.initialize = function (options) {
 };
 
 BtnCellControls.prototype.render = function () {
-  this.el.innerText = '+';
+  this.el.innerHTML = '≡'; // U+2261
   return this;
 };
 
