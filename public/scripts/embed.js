@@ -26,9 +26,9 @@ var extend = function (obj /*, ...source */) {
 /**
  * Simple function to loop over properties in an object or array.
  *
- * @param  {Object} obj
+ * @param  {Object}   obj
  * @param  {Function} fn
- * @param  {*} [context]
+ * @param  {*}        [context]
  */
 var each = function (obj, fn, context) {
   if (Object.prototype.toString.call(obj) === '[object Object]') {
@@ -71,7 +71,7 @@ var styles = {
  *
  * @param  {Element|Function} el Pass an element or a function that accepts an
  *                               element as the only argument.
- * @param  {Object} options
+ * @param  {Object}   options
  * @return {Notebook}
  */
 var Notebook = module.exports = function (el, options) {
@@ -93,9 +93,14 @@ var Notebook = module.exports = function (el, options) {
  */
 Notebook.prototype.makeFrame = function (el) {
   var that = this;
+  var src  = process.env.NOTEBOOK_URL;
+
+  if (this.options.id) {
+    src += ('/' === src[src.length - 1] ? '' : '/') + '#' + this.options.id;
+  }
 
   var frame = this.frame = document.createElement('iframe');
-  frame.src = process.env.NOTEBOOK_URL;
+  frame.src = src;
 
   if (typeof el.appendChild === 'function') {
     el.appendChild(frame);
@@ -129,7 +134,7 @@ Notebook.prototype.makeFrame = function (el) {
 /**
  * Sets the inline styles of the frame.
  *
- * @param  {Object} style
+ * @param  {Object}   style
  * @return {Notebook}
  */
 Notebook.prototype.styleFrame = function (style) {
@@ -159,6 +164,13 @@ Notebook.prototype.remove = function () {
   return this.removeFrame();
 };
 
+/**
+ * Listen to events triggered by the frame.
+ *
+ * @param  {String}   name
+ * @param  {Function} fn
+ * @return {Notebook}
+ */
 Notebook.prototype.on = function (name, fn) {
   this._events = this._events || {};
   var events = (this._events[name] = this._events[name] || []);
@@ -167,6 +179,13 @@ Notebook.prototype.on = function (name, fn) {
   return this;
 };
 
+/**
+ * Remove an event listener from the frame.
+ *
+ * @param  {String}   name
+ * @param  {Function} [fn]
+ * @return {Notebook}
+ */
 Notebook.prototype.off = function (name, fn) {
   if (!this._events || !this._events[name]) { return this; }
 
@@ -188,6 +207,14 @@ Notebook.prototype.off = function (name, fn) {
   return this;
 };
 
+/**
+ * Trigger an event on the frame. Read: Sends an event to the frames postMessage
+ * handler.
+ *
+ * @param  {String}   name
+ * @param  {*}        ...  Any additional data you wish the send with the event
+ * @return {Notebook}
+ */
 Notebook.prototype.trigger = function (name /*, ..args */) {
   var that = this;
   var args;
