@@ -2,6 +2,9 @@ var _        = require('underscore');
 var trim     = require('trim');
 var Backbone = require('backbone');
 
+var OPEN_CODE_BLOCK  = '```javascript';
+var CLOSE_CODE_BLOCK = '```';
+
 var Notebook = module.exports = Backbone.Collection.extend({
   model: require('../models/entry'),
   comparator: function (model) {
@@ -40,7 +43,7 @@ Notebook.prototype.serializeForGist = function () {
   return this.map(function (model) {
     if (model.get('type') === 'text') { return model.get('value'); }
     // Wrap code cells as a JavaScript code block for Markdown
-    return '```javascript\n' + (model.get('value') || '') + '\n```';
+    return [OPEN_CODE_BLOCK, model.get('value'), CLOSE_CODE_BLOCK].join('\n');
   }).join('\n\n');
 };
 
@@ -68,11 +71,11 @@ Notebook.prototype.deserializeFromGist = function (gist) {
   };
 
   _.each((gist || '').split('\n'), function (line) {
-    if (line === '```javascript') {
+    if (line === OPEN_CODE_BLOCK) {
       return resetParser('code');
     }
 
-    if (type === 'code' && line === '```') {
+    if (type === 'code' && line === CLOSE_CODE_BLOCK) {
       return resetParser('text');
     }
 
