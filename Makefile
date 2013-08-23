@@ -1,7 +1,7 @@
 HEROKU_ENDPOINT := $(shell git config --get remote.heroku.url)
 
 deploy: check-endpoint
-	@grunt build
+	@NODE_ENV="production" grunt build
 	@rm -rf deploy
 	@mkdir deploy
 	@cp -r lib          deploy/lib

@@ -1,7 +1,7 @@
-module.exports = function (grunt) {
-  var dev  = true;
-  var port = process.env.PORT || 3000;
+var dev  = process.env.NODE_ENV !== 'production';
+var port = process.env.PORT || 3000;
 
+module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
   grunt.initConfig({
@@ -81,10 +81,6 @@ module.exports = function (grunt) {
     }
   });
 
-
-  grunt.registerTask('production', function () { dev = false; });
-
-  grunt.registerTask('compile', ['clean', 'copy', 'browserify', 'stylus'])
-  grunt.registerTask('build',   ['production', 'compile']);
+  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus'])
   grunt.registerTask('default', ['compile', 'watch']);
 };
