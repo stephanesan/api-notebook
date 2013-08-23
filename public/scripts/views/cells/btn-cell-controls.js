@@ -24,6 +24,8 @@ BtnCellControls.prototype.render = function () {
 
 BtnCellControls.prototype.onClick = function (event) {
   if (this.parent) {
+    event.stopPropagation();
+    event.cancelBubble = true; // IE
     this.parent.trigger('show-cell-controls', this.parent);
   }
 };
