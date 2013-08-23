@@ -1,12 +1,8 @@
 /*
   TODO:
-<<<<<<< HEAD
   - Rename to cell-controls
-=======
->>>>>>> fd5779c8fa3098642d4b50edf0b007eb15db1bd0
   - Switch mode button should change label to "Swith to Text" /
     "Switch to Code" deopending on current mode.
-  - Cancel hover event to make multi-cells work
 */
 
 var Backbone      = require('backbone');
@@ -60,9 +56,8 @@ ControlsView.prototype.render = function () {
   var self = this;
   this.model.actions.forEach(function (action) {
     // TODO move action to a data-attrib
-    actionElStr = '<button class="action-' + action.name +
-      '"><i class="icon-' + action.icon + ' icon-white"></i> ' + action.label +
-      '</button>';
+    actionElStr = '<button class="action-' + action.name + '">' +
+    action.label + '<span>' + action.keyCode + '</span></button>';
     // Parse HTML to DOM element and append to this view.
     self.el.appendChild(Backbone.$(actionElStr)[0]);
   });

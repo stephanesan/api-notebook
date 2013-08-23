@@ -1,14 +1,17 @@
 .cell-controls
   position: absolute
-  top: -85px
-  right: -145px
+  top: -89px
+  right: -172px
   border: 1px solid #eee
   border-radius: 5px
 
+  font-size: .75em
   background: #333
   color: #fff
+  padding: 3px 0px
   transition: 0.3s ease opacity
   z-index: 1000
+  white-space: nowrap
 
 .cell-controls:before
   content: ''
@@ -22,22 +25,30 @@
 
 .cell-controls button
   display: block
-  width: 120px
-  height: 30px
+  width: 12.5em
+  height: 2.5em
   margin: 2px 5px
   border: 0
 
   background: transparent
   color: #fff
-  font-size: 12px
   line-height: 22px
+  padding: 0 7px
   text-align: left
+
+  &:hover
+    outline: 1px solid $color-cell-controls-button-outline
 
 .cell-controls button i
   position: relative
   top: -1px
 
   margin-right: 3px
+
+.cell-controls span
+  float: right
+  font-size: .75em
+  color: $color-cell-controls-keycode
 
 .cell .btn-show-cell-controls
   color: #aaa
