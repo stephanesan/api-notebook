@@ -238,12 +238,11 @@ Notebook.prototype.appendView = function (view, before) {
       } else {
         newView = this.appendTextView(view.el, view.getValue());
       }
-      if (view.editor && newView.editor) {
-        var cursor = view.editor.getCursor();
-        newView.editor.setCursor(cursor);
-      }
+
+      var cursor = view.editor && view.editor.getCursor();
       view.remove();
       newView.focus();
+      newView.editor.setCursor(cursor);
     });
   }
 
