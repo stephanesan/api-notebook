@@ -8,6 +8,10 @@ var Events = require('backbone').Events;
  * @return {Messages}
  */
 var Messages = module.exports = function (frame) {
+  if (!('postMessage' in frame)) {
+    throw new Error('Need an instance of another frame to communicate.');
+  }
+
   this.frame = frame;
 
   global.addEventListener('message', _.bind(function (e) {
