@@ -81,6 +81,6 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus'])
-  grunt.registerTask('default', ['compile', 'watch']);
+  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
+  grunt.registerTask('default', ['build', 'watch']);
 };
