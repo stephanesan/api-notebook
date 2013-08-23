@@ -132,6 +132,12 @@ CodeCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     this.lastLine = this.startLine + cm.lastLine();
 
+    // When the presented data looks line a new line has been added, emit an
+    // event the notebook can listen to.
+    if (data.text.length > 1 || data.from.line !== data.to.line) {
+      this.trigger('linesChanged', this);
+    }
+
     var commentBlock = stripInput('/*', cm, data);
 
     // When the comment block check doesn't return false, it means we want to

@@ -249,8 +249,7 @@ Notebook.prototype.appendView = function (view, before) {
       }
       var cursor = view.editor.getCursor();
       view.remove();
-      newView.focus();
-      newView.editor.setCursor(cursor);
+      newView.focus().editor.setCursor(cursor);
     });
   }
 
@@ -264,7 +263,7 @@ Notebook.prototype.appendView = function (view, before) {
         this.appendCodeView(view.el, code);
       }
 
-      this.refreshFromView(this.getNextView(view).moveCursorToEnd(0).focus());
+      this.getNextView(view).moveCursorToEnd(0).focus();
 
       if (!view.getValue()) { view.remove(); }
     });
@@ -287,7 +286,7 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'text', function (view, text) {
-      this.refreshFromView(this.appendTextView(view.el, text).focus());
+      this.appendTextView(view.el, text).focus();
 
       if (!view.getValue()) { view.remove(); }
     });
@@ -309,6 +308,8 @@ Notebook.prototype.appendView = function (view, before) {
         view.moveCursorToEnd(0);
       }
     });
+
+    this.listenTo(view, 'linesChanged', this.refreshFromView);
   }
 
   if (view.model.get('type') === 'code') {
