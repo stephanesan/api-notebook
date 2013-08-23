@@ -1,6 +1,9 @@
 /*
   TODO:
+<<<<<<< HEAD
   - Rename to cell-controls
+=======
+>>>>>>> fd5779c8fa3098642d4b50edf0b007eb15db1bd0
   - Switch mode button should change label to "Swith to Text" /
     "Switch to Code" deopending on current mode.
   - Cancel hover event to make multi-cells work
@@ -25,7 +28,6 @@ var ControlsView = module.exports = View.extend({
 ControlsView.prototype.initialize = function () {
   this.model = this.model || new ControlsModel();
 };
-
 
 /**
  * Toggles the control to be appended or removed from a view. If the control
@@ -77,9 +79,11 @@ ControlsView.prototype.onClick = function (event) {
   if (event.target === this.el || !this.editorView) {
     return false;
   }
+
   var action = event.target.className.replace(/action-/, '');
   var editorView = this.editorView;
   var viewFn = editorView[action];
+
   if (typeof viewFn === 'function') {
     viewFn.call(editorView);
   }
