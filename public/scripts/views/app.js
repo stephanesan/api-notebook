@@ -5,13 +5,15 @@ var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
+var messages = require('../lib/messages');
 
 var App = module.exports = View.extend({
   className: 'application'
 });
 
 // Access a sandbox instance from tests
-App.Sandbox = require('../lib/sandbox');
+App.Sandbox     = require('../lib/sandbox');
+App.PostMessage = require('../lib/post-message');
 
 // Alias all the available views
 App.View = {
@@ -49,12 +51,15 @@ App.prototype.events = {
 };
 
 App.prototype.initialize = function (options) {
-  var appRouter = new (Backbone.Router.extend({
+  this.router = new (Backbone.Router.extend({
     routes: {
-      '':    'application',
-      ':id': 'application'
+      '':    'newNotebook',
+      ':id': 'loadNotebook'
     },
-    application: _.bind(function (id) {
+    newNotebook: _.bind(function (id) {
+      this.setGist(new App.Model.Gist({}, { user: this.user }));
+    }, this),
+    loadNotebook: _.bind(function (id) {
       this.setGist(new App.Model.Gist({ id: id }, { user: this.user }));
     }, this)
   }))();
@@ -66,7 +71,7 @@ App.prototype.initialize = function (options) {
   });
 
   // Listen to keyboard presses
-  this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
+  this.listenTo(Backbone.$(document), 'keydown', function (e) {
     var ESC           = 27;
     var QUESTION_MARK = 191;
 
@@ -77,18 +82,19 @@ App.prototype.initialize = function (options) {
     if (e.which === ESC) {
       return this.hideShortcuts();
     }
-  }, this));
+  }, this);
 
-  // Attempt to fetch the user session. This technique is sort of jank and could
-  // be implemented better using localStorage or something similar.
   this.user = new App.Model.Session();
   this.user.fetch();
 
   this.listenTo(this.user, 'changeUser', this.updateUser);
+
+  this.setupEmbeddableWidget();
 };
 
 App.prototype.remove = function () {
   Backbone.history.stop();
+  window.onresize = null;
   View.prototype.remove.call(this);
 };
 
@@ -100,6 +106,9 @@ App.prototype.updateUser = function () {
   this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
   this.el.classList[isNew    ? 'add' : 'remove']('user-not-authenticated');
   this.el.classList[!isNew   ? 'add' : 'remove']('user-is-authenticated');
+
+  // Adding and removing some of these classes cause the container to resize.
+  messages.trigger('resize');
 };
 
 App.prototype.showShortcuts = function () {
@@ -137,6 +146,53 @@ App.prototype.setGist = function (gist) {
   return this;
 };
 
+App.prototype.setDefaultContent = function (content) {
+  this.router.off('route:newNotebook', this._prevNewNotebook);
+
+  if (this.notebook.gist.isNew()) {
+    this.notebook.setContent(content);
+  }
+
+  this.router.on('route:newNotebook', this._prevNewNotebook = function () {
+    this.notebook.setContent(content);
+  }, this);
+};
+
+App.prototype.setupEmbeddableWidget = function () {
+  if (!global.parent || global === global.parent) { return this; }
+
+  var doc         = global.document;
+  var base        = doc.getElementsByTagName('base')[0];
+  var postMessage = new App.PostMessage(global.parent);
+
+  // Set the base url for opening links from the iframe in the parent frame.
+  postMessage.on('referrer', function (href) {
+    if (base) { base.parentNode.removeChild(base); }
+
+    base = doc.createElement('base');
+    base.setAttribute('href', href);
+    base.setAttribute('target', '_parent');
+    (doc.head || doc.getElementsByTagName('head')[0]).appendChild(base);
+  });
+
+  // Allow passing on default content to the application. This will set the
+  // markdown content to use in the case that there is no gist id or loading
+  // the gist id fails.
+  postMessage.on('content', function (content) {
+    this.setDefaultContent(content);
+  }, this);
+
+  // Send a message to the parent frame and let it know we are ready to accept
+  // messages and data.
+  postMessage.trigger('ready');
+
+  // Listen to any resize triggers from the messages object and send the parent
+  // frame our updated iframe size.
+  messages.on('resize', function () {
+    postMessage.trigger('height', doc.documentElement.scrollHeight);
+  });
+};
+
 App.prototype.render = function () {
   View.prototype.render.call(this);
 
@@ -150,6 +206,12 @@ App.prototype.render = function () {
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   Backbone.history.loadUrl();
+
+  this.onResize = window.onresize = _.throttle(function () {
+    messages.trigger('resize');
+  }, 50);
+
+  this.onResize();
 };
 
 App.prototype.runNotebook = function () {

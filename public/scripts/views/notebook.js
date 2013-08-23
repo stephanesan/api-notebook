@@ -71,6 +71,24 @@ Notebook.prototype.updateUser = function () {
   this.save();
 };
 
+Notebook.prototype.setContent = function (content) {
+  var cells = this.collection.deserializeFromGist(content);
+
+  // Empty all the current content to reset with new contents
+  this.el.innerHTML = '';
+  _.each(cells, function (cell) {
+    var appendView = 'appendCodeView';
+    if (cell.type === 'text') { appendView = 'appendTextView'; }
+    this[appendView](null, cell.value);
+  }, this);
+
+  if (!this.el.childNodes.length) { this.appendCodeView(); }
+
+  this.collection.last().view.focus();
+
+  return this;
+};
+
 Notebook.prototype.render = function () {
   // Use a `rendering` flag to avoid resaving, etc. when rendering a gist
   this.rendering = true;
@@ -82,25 +100,10 @@ Notebook.prototype.render = function () {
     this.el.classList.remove('loading');
   }, this);
 
-  var renderFromGist = _.bind(function () {
-    var cells = this.collection.deserializeFromGist(this.gist.getNotebook());
-
-    _.each(cells, function (cell) {
-      var appendView = 'appendCodeView';
-      if (cell.type === 'text') { appendView = 'appendTextView'; }
-      this[appendView](null, cell.value);
-    }, this);
-
-    if (!this.el.childNodes.length) { this.appendCodeView(); }
-
-    // Since the render was asynchronous, we'll need to focus the final cell
-    this.collection.last().view.focus();
-  }, this);
-
   // Reset the state
   if (this.gist.isNew()) {
     this.updateUser();
-    renderFromGist();
+    this.setContent('');
     doneRendering();
     Backbone.history.navigate('');
     return this;
@@ -108,11 +111,8 @@ Notebook.prototype.render = function () {
 
   this.gist.fetch({
     success: _.bind(function () {
-      // Check here since the gist has probably changed ownership now
       this.updateUser();
-      this.el.innerHTML = '';
-
-      renderFromGist();
+      this.setContent(this.gist.getNotebook());
       doneRendering();
     }, this),
 

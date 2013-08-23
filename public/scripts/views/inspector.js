@@ -4,6 +4,7 @@ var Backbone  = require('backbone');
 var type      = require('../lib/type');
 var domify    = require('domify');
 var stringify = require('../lib/stringify');
+var messages  = require('../lib/messages');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -29,11 +30,13 @@ InspectorView.prototype.events = {
 InspectorView.prototype.open = function () {
   this.trigger('open', this);
   this.el.classList.add('open');
+  messages.trigger('resize');
 };
 
 InspectorView.prototype.close = function () {
   this.trigger('close', this);
   this.el.classList.remove('open');
+  messages.trigger('resize');
 };
 
 InspectorView.prototype.toggle = function () {
