@@ -1,6 +1,7 @@
 var _        = require('underscore');
 var trim     = require('trim');
 var Cell     = require('./cell');
+var BtnCellControls = require('./btn-cell-controls');
 
 var EditorCell = module.exports = Cell.extend();
 
@@ -168,6 +169,11 @@ EditorCell.prototype.renderEditor = function () {
 EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
+
+  // Every editor-cell has a controls-menu button
+  this.btnCellControls = new BtnCellControls({ parent: this });
+  this.btnCellControls.render().prependTo(this.el);
+
   return this;
 };
 
