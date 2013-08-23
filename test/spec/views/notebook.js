@@ -425,11 +425,16 @@ describe('Notebook', function () {
           codeCells[0].setValue('8342');
           codeCells[1].setValue('$1');
 
-          codeCells[0].execute();
-          codeCells[1].execute();
+          codeCells[0].execute(function (err0, result0) {
+            expect(err0).to.not.exist;
+            expect(codeCells[0].model.get('result')).to.equal(8342);
 
-          expect(codeCells[0].model.get('result')).to.equal(8342);
-          expect(codeCells[1].model.get('result')).to.equal(8342);
+            codeCells[1].execute(function (err1, result1) {
+              expect(err1).to.not.exist;
+              expect(codeCells[1].model.get('result')).to.equal(8342);
+            });
+          });
+
         });
 
         describe('Overlay Menu', function () {
