@@ -47,6 +47,13 @@ TextCell.prototype.bindEditor = function () {
   return this;
 };
 
+TextCell.prototype.refresh = function () {
+  if (this.editor) {
+    EditorCell.prototype.refresh.call(this);
+  }
+  return this;
+};
+
 TextCell.prototype.focus = function () {
   // Don't actually allow focusing on the editor if the user is not authorized
   if (this.notebook && !this.notebook.isOwner()) { return this; }
