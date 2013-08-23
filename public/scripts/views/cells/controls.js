@@ -1,5 +1,6 @@
 /*
   TODO:
+  - Rename to cell-controls
   - Switch mode button should change label to "Swith to Text" /
     "Switch to Code" deopending on current mode.
   - Cancel hover event to make multi-cells work
