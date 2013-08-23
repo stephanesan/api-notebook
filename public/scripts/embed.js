@@ -110,7 +110,6 @@ Notebook.prototype.makeFrame = function (el) {
 
   // When a new height comes through, update the iframe height
   this.on('height', function (height) {
-    console.log(height);
     this.frame.style.height = height + 'px';
   });
 

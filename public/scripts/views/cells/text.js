@@ -4,6 +4,7 @@ var domify      = require('domify');
 var Backbone    = require('backbone');
 var EditorCell  = require('./editor');
 var stripInput  = require('../../lib/cm-strip-input');
+var messages    = require('../../lib/messages');
 var insertAfter = require('../../lib/insert-after');
 
 var TextCell = module.exports = EditorCell.extend({
@@ -103,6 +104,8 @@ TextCell.prototype.renderMarkdown = function () {
 
     this.markdownElement.appendChild(html);
   }, this));
+
+  messages.trigger('resize');
 
   return this;
 };

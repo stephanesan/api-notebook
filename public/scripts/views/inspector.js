@@ -30,11 +30,13 @@ InspectorView.prototype.events = {
 InspectorView.prototype.open = function () {
   this.trigger('open', this);
   this.el.classList.add('open');
+  messages.trigger('resize');
 };
 
 InspectorView.prototype.close = function () {
   this.trigger('close', this);
   this.el.classList.remove('open');
+  messages.trigger('resize');
 };
 
 InspectorView.prototype.toggle = function () {
@@ -144,10 +146,4 @@ InspectorView.prototype.render = function (onDemand) {
   this.renderPreview();
   this.renderChildren();
   return this;
-};
-
-InspectorView.prototype.appendTo = function () {
-  View.prototype.appendTo.apply(this, arguments);
-
-  messages.trigger('resize');
 };

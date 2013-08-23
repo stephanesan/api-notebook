@@ -104,7 +104,7 @@ App.prototype.updateUser = function () {
   this.el.classList[isNew    ? 'add' : 'remove']('user-not-authenticated');
   this.el.classList[!isNew   ? 'add' : 'remove']('user-is-authenticated');
 
-  // Adding some of these classes cause the container to resize.
+  // Adding and removing some of these classes cause the container to resize.
   messages.trigger('resize');
 };
 
@@ -166,9 +166,9 @@ App.prototype.setupEmbeddableWidget = function () {
 
   // Listen to any resize triggers from the messages object and send the parent
   // frame our updated iframe size.
-  messages.on('resize', _.debounce(function () {
+  messages.on('resize', function () {
     postMessage.trigger('height', doc.documentElement.scrollHeight);
-  }, 50));
+  });
 };
 
 App.prototype.render = function () {
@@ -185,9 +185,9 @@ App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   Backbone.history.loadUrl();
 
-  this.onResize = window.onresize = function () {
+  this.onResize = window.onresize = _.throttle(function () {
     messages.trigger('resize');
-  };
+  }, 50);
 
   this.onResize();
 };

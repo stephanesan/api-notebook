@@ -1,6 +1,8 @@
 var _    = require('underscore');
 var Cell = require('./cell');
 
+var messages = require('../../lib/messages');
+
 var EditorCell = module.exports = Cell.extend();
 
 EditorCell.prototype.events = {
@@ -47,6 +49,11 @@ EditorCell.prototype.editorOptions = {
   }
 };
 
+EditorCell.prototype.remove = function () {
+  Cell.prototype.remove.call(this);
+  messages.trigger('resize');
+};
+
 EditorCell.prototype.moveUp = function () {
   this.trigger('moveUp', this);
 };
@@ -76,7 +83,9 @@ EditorCell.prototype.switch = function () {
 };
 
 EditorCell.prototype.focus = function () {
-  this.editor.focus();
+  // Make focusing the editor async since it triggers other events such as
+  // scrolling into view which interferes with iframe resizing events.
+  setTimeout(_.bind(this.editor.focus, this.editor), 0);
   return this;
 };
 
@@ -101,7 +110,16 @@ EditorCell.prototype.bindEditor = function () {
   }, this));
 
   // Save the value of the model every time a change happens
-  this.listenTo(this.editor, 'change', _.bind(this.save, this));
+  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
+    this.save();
+
+    // When the presented data looks line a new line has been added, emit an
+    // event the notebook can listen to.
+    if (data.text.length > 1 || data.from.line !== data.to.line) {
+      messages.trigger('resize');
+      this.trigger('linesChanged', this);
+    }
+  }, this));
 
   return this;
 };
@@ -199,6 +217,13 @@ EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
-  if (this.editor) { this.refresh(); }
+  if (this.editor) {
+    this.refresh();
+    // Since the CodeMirror refresh appears to be async, push the resize event
+    // into the following event loop.
+    setTimeout(function () {
+      messages.trigger('resize');
+    }, 0);
+  }
   return this;
 };
