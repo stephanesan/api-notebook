@@ -33,7 +33,7 @@ module.exports = function (grunt) {
             }
           },
           debug: dev,
-          transform: dev ? ['brfs'] : ['brfs', 'uglifyify']
+          transform: dev ? ['envify', 'brfs'] : ['envify', 'brfs', 'uglifyify']
         }
       },
       embed: {
@@ -41,7 +41,7 @@ module.exports = function (grunt) {
         dest: 'build/scripts/embed.js',
         options: {
           // debug: dev, // Currently broken when used with `standalone`
-          transform: dev ? [] : ['uglifyify'],
+          transform: dev ? ['envify'] : ['envify', 'uglifyify'],
           standalone: 'Notebook'
         }
       }

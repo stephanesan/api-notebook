@@ -4,6 +4,7 @@ var Backbone  = require('backbone');
 var type      = require('../lib/type');
 var domify    = require('domify');
 var stringify = require('../lib/stringify');
+var messages  = require('../lib/messages');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -143,4 +144,10 @@ InspectorView.prototype.render = function (onDemand) {
   this.renderPreview();
   this.renderChildren();
   return this;
+};
+
+InspectorView.prototype.appendTo = function () {
+  View.prototype.appendTo.apply(this, arguments);
+
+  messages.trigger('resize');
 };

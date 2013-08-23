@@ -11,6 +11,7 @@ var GistModel          = require('../models/gist');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
+var messages    = require('../lib/messages');
 var insertAfter = require('../lib/insert-after');
 
 var Notebook = module.exports = View.extend({
@@ -69,6 +70,8 @@ Notebook.prototype.updateUser = function () {
   });
   // If the user has changed, attempt to save the current notebook
   this.save();
+
+  messages.trigger('resize');
 };
 
 Notebook.prototype.render = function () {

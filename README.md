@@ -23,6 +23,7 @@ browser after authentication. Test API using e.g.
 ## Environment Variables
 
 ```
+export NOTEBOOK_URL="" # Set this before building the scripts
 export GITHUB_CLIENT_ID=""
 export GITHUB_CLIENT_SECRET=""
 ```

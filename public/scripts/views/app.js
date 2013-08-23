@@ -5,13 +5,15 @@ var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
+var messages = require('../lib/messages');
 
 var App = module.exports = View.extend({
   className: 'application'
 });
 
 // Access a sandbox instance from tests
-App.Sandbox = require('../lib/sandbox');
+App.Sandbox     = require('../lib/sandbox');
+App.PostMessage = require('../lib/post-message');
 
 // Alias all the available views
 App.View = {
@@ -83,10 +85,13 @@ App.prototype.initialize = function (options) {
   this.user.fetch();
 
   this.listenTo(this.user, 'changeUser', this.updateUser);
+
+  this.setupEmbeddableWidget();
 };
 
 App.prototype.remove = function () {
   Backbone.history.stop();
+  window.onresize = null;
   View.prototype.remove.call(this);
 };
 
@@ -98,6 +103,9 @@ App.prototype.updateUser = function () {
   this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
   this.el.classList[isNew    ? 'add' : 'remove']('user-not-authenticated');
   this.el.classList[!isNew   ? 'add' : 'remove']('user-is-authenticated');
+
+  // Adding some of these classes cause the container to resize.
+  messages.trigger('resize');
 };
 
 App.prototype.showShortcuts = function () {
@@ -135,6 +143,34 @@ App.prototype.setGist = function (gist) {
   return this;
 };
 
+App.prototype.setupEmbeddableWidget = function () {
+  if (!global.parent || global === global.parent) { return this; }
+
+  var doc         = global.document;
+  var base        = doc.getElementsByTagName('base')[0];
+  var postMessage = new App.PostMessage(global.parent);
+
+  // Set the base url for opening links from the iframe in the parent frame.
+  postMessage.on('referrer', function (href) {
+    if (base) { base.parentNode.removeChild(base); }
+
+    base = doc.createElement('base');
+    base.setAttribute('href', href);
+    base.setAttribute('target', '_parent');
+    (doc.head || doc.getElementsByTagName('head')[0]).appendChild(base);
+  });
+
+  // Send a message to the parent frame and let it know we are ready to accept
+  // messages and data.
+  postMessage.trigger('ready');
+
+  // Listen to any resize triggers from the messages object and send the parent
+  // frame our updated iframe size.
+  messages.on('resize', _.debounce(function () {
+    postMessage.trigger('height', doc.documentElement.scrollHeight);
+  }, 50));
+};
+
 App.prototype.render = function () {
   View.prototype.render.call(this);
 
@@ -148,6 +184,12 @@ App.prototype.render = function () {
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   Backbone.history.loadUrl();
+
+  this.onResize = window.onresize = function () {
+    messages.trigger('resize');
+  };
+
+  this.onResize();
 };
 
 App.prototype.runNotebook = function () {
