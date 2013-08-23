@@ -24,7 +24,9 @@ describe('Notebook Collection', function () {
       });
 
       it('should deserialize code', function () {
-        var models = collection.deserializeFromGist('\ttest\n\tcode');
+        var models = collection.deserializeFromGist(
+          '```javascript\ntest\ncode\n```'
+        );
 
         expect(models.length).to.equal(1);
         expect(models[0].type).to.equal('code');
@@ -33,7 +35,9 @@ describe('Notebook Collection', function () {
 
 
       it('should deserialize code and text', function () {
-        var models = collection.deserializeFromGist('\ttest\n\tcode\n\ntest\ntext');
+        var models = collection.deserializeFromGist(
+          '```javascript\ntest\ncode\n```\n\ntest\ntext'
+        );
 
         expect(models.length).to.equal(2);
         expect(models[0].type).to.equal('code');
@@ -43,13 +47,25 @@ describe('Notebook Collection', function () {
       });
 
       it('should deserialize mutliple code blocks', function () {
-        var models = collection.deserializeFromGist('\ttest\n\n\tcode');
+        var models = collection.deserializeFromGist(
+          '```javascript\ntest\n```\n\n```javascript\ncode\n```'
+        );
 
         expect(models.length).to.equal(2);
         expect(models[0].type).to.equal('code');
         expect(models[0].value).to.equal('test');
         expect(models[1].type).to.equal('code');
         expect(models[1].value).to.equal('code');
+      });
+
+      it('should deserialize empty code cells', function () {
+        var models = collection.deserializeFromGist(
+          '```javascript\n\n```'
+        );
+
+        expect(models.length).to.equal(1);
+        expect(models[0].type).to.equal('code');
+        expect(models[0].value).to.equal('');
       });
     });
 
@@ -73,7 +89,18 @@ describe('Notebook Collection', function () {
 
         var text = collection.serializeForGist();
 
-        expect(text).to.equal('\tcode\n\there');
+        expect(text).to.equal('```javascript\ncode\nhere\n```');
+      });
+
+      it('should serialize empty code cells', function () {
+        collection.push({
+          type:  'code',
+          value: ''
+        });
+
+        var text = collection.serializeForGist();
+
+        expect(text).to.equal('```javascript\n\n```');
       });
 
       it('should serialize code and text', function () {
@@ -88,7 +115,7 @@ describe('Notebook Collection', function () {
 
         var text = collection.serializeForGist();
 
-        expect(text).to.equal('\tcode\n\there\n\ntext\nhere');
+        expect(text).to.equal('```javascript\ncode\nhere\n```\n\ntext\nhere');
       });
     });
   });

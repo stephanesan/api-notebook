@@ -62,7 +62,7 @@
         hints.style.width = (winWidth - 5) + 'px';
         overlapX -= (box.right - box.left) - winWidth;
       }
-      hint.style.left = (left = pos.left - overlapX) + 'px';
+      hints.style.left = (left = pos.left - overlapX) + 'px';
     }
 
     if (overlapY > 0) {
@@ -95,9 +95,9 @@
 
     var startScroll = cm.getScrollInfo();
     cm.on('scroll', this.onScroll = function () {
+      var curScroll = cm.getScrollInfo();
       var newTop    = top + startScroll.top - curScroll.top;
       var editor    = cm.getWrapperElement().getBoundingClientRect();
-      var curScroll = cm.getScrollInfo();
       var point     = newTop - (window.pageYOffset ||
         (document.documentElement || document.body).scrollTop);
 
@@ -112,7 +112,7 @@
 
     CodeMirror.on(hints, 'click', function (e) {
       var el = e.target || e.srcElement;
-      if (el.hintId == null) { return; }
+      if (isNaN(el.hintId)) { return; }
 
       that.setActive(el.hintId);
       that.accept();
