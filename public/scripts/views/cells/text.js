@@ -105,8 +105,6 @@ TextCell.prototype.renderMarkdown = function () {
     this.markdownElement.appendChild(html);
   }, this));
 
-  messages.trigger('resize');
-
   return this;
 };
 
@@ -131,6 +129,8 @@ TextCell.prototype.renderEditor = function () {
     this.removeEditor();
     this.renderMarkdown();
   }
+
+  setTimeout(function () { messages.trigger('resize'); }, 0);
 
   return this;
 };
