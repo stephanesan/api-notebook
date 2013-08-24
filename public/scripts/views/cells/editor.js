@@ -1,5 +1,7 @@
-var _    = require('underscore');
-var Cell = require('./cell');
+var _        = require('underscore');
+var trim     = require('trim');
+var Cell     = require('./cell');
+var BtnCellControls = require('./btn-cell-controls');
 
 var messages = require('../../lib/messages');
 
@@ -82,6 +84,10 @@ EditorCell.prototype.switch = function () {
   this.trigger('switch', this);
 };
 
+EditorCell.prototype.appendNew = function () {
+  this.trigger('appendNew', this);
+};
+
 EditorCell.prototype.focus = function () {
   // Make focusing the editor async since it triggers other events such as
   // scrolling into view which interferes with iframe resizing events.
@@ -103,10 +109,12 @@ EditorCell.prototype.refresh = function () {
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
+    this.trigger('focus', this);
   }, this));
 
   this.listenTo(this.editor, 'blur', _.bind(function () {
     this.el.classList.remove('active');
+    this.trigger('blur', this);
   }, this));
 
   // Save the value of the model every time a change happens
@@ -174,6 +182,7 @@ EditorCell.prototype.renderEditor = function () {
     this.setValue(this.getValue());
     this.moveCursorToEnd();
   }
+
   // If it was previously focused, let's focus the editor again
   if (hasFocus) { this.editor.focus(); }
   // Bind the editor events at the end in case of any focus issues when
@@ -185,6 +194,11 @@ EditorCell.prototype.renderEditor = function () {
 EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
+
+  // Every editor-cell has a controls-menu button
+  this.btnCellControls = new BtnCellControls({ parent: this });
+  this.btnCellControls.render().prependTo(this.el);
+
   return this;
 };
 
