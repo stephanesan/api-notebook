@@ -438,39 +438,41 @@ describe('Notebook', function () {
         });
 
         describe('Overlay Menu', function () {
+          var getButton = function (cell) {
+            return cell.el.getElementsByClassName('btn-show-cell-controls')[0];
+          };
+
+          var getMenu = function (cell) {
+            return cell.el.getElementsByClassName('cell-controls')[0];
+          };
+
+          var simulateClick = function (element) {
+            var clickEvent = new CustomEvent("click", true, true);
+            element.dispatchEvent(clickEvent);
+          };
+
           it('should exist as one instance', function () {
             expect(view.controls).to.be.an('object');
           });
 
-          it('should have a reference to the active view', function () {
-            codeCells[0].focus();
-            expect(view.controls.editorView).to.equal(codeCells[0]);
-            codeCells[1].focus();
-            expect(view.controls.editorView).to.equal(codeCells[1]);
-            textCells[0].focus();
-            expect(view.controls.editorView).to.equal(textCells[0]);
+          it('should be appended to a cell when button is clicked', function() {
+            var btn, menu;
+
+            btn = getButton(codeCells[0]);
+            expect(btn).to.be.ok;
+
+            simulateClick(btn);
+            menu = getMenu(codeCells[0]);
+
+            expect(menu).to.be.ok;
           });
 
-          it('should be appended to the active view', function () {
-            codeCells[0].focus();
-            var controls = codeCells[0].el.getElementsByClassName(
-              'cell-controls')[0];
-            expect(controls).to.equal(view.controls.el);
-            expect(controls.style.opacity).to.equal(1);
-          });
-
-          it.skip('should be able to move cells up', function () {
-            var controls = view.controls;
-            var moveUp = controls.el.getElementsByClassName('action-moveUp')[0];
-            var clickEvent = new CustomEvent("click", true, true);
-            moveUp.dispatchEvent(clickEvent);
-            // TODO actually figure out the state we should be in
-            // expect(codeCells[1].editor.hasFocus()).to.be.ok;
-            // expect(codeCells[1].el.nextSibling).to.equal(textCells[0].el);
-            // expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
-            // expect(textCells[0].el.nextSibling).to.not.exist;
-          });
-
+          // TODO: add tests to menu functions
+          it.skip('should be able to move cells up');
+          it.skip('should be able to move cells down');
+          it.skip('should be able to move switch cell mode');
+          it.skip('should be able to clone the cell');
+          it.skip('should be able to delete the cell');
         });
       });
     });
