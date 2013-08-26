@@ -8,7 +8,7 @@ var Events = require('backbone').Events;
  * @return {Messages}
  */
 var Messages = module.exports = function (frame) {
-  if (!frame || !('addEventListener' in frame)) {
+  if (!('postMessage' in frame)) {
     throw new Error('Need an instance of another frame to communicate.');
   }
 
@@ -17,6 +17,7 @@ var Messages = module.exports = function (frame) {
   global.addEventListener('message', _.bind(function (e) {
     if (e.source !== frame) { return; }
     // Messages being passed by the parent window should always be in an array
+    this.origin      = e.origin;
     this._frameEvent = e;
     this.trigger.apply(this, e.data);
   }, this), false);
@@ -30,6 +31,10 @@ Messages.prototype.trigger = function (name /*, ...args */) {
     return Events.trigger.apply(this, arguments);
   }
 
-  this.frame.postMessage(Array.prototype.slice.call(arguments, 0), '*');
+  this.frame.postMessage(
+    Array.prototype.slice.call(arguments, 0),
+    this.origin || '*'
+  );
+
   return this;
 };

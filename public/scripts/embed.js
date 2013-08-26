@@ -1,5 +1,8 @@
 var css = require('css-component');
 
+// Set the location to load the notebook from
+var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
+
 /**
  * Extend any object with the properties from other objects, overriding of left
  * to right.
@@ -121,7 +124,7 @@ var Notebook = module.exports = function (el, options) {
  */
 Notebook.prototype.makeFrame = function (el) {
   var that = this;
-  var src  = process.env.NOTEBOOK_URL;
+  var src  = NOTEBOOK_URL;
 
   if (this.options.id) {
     src += ('/' === src[src.length - 1] ? '' : '/') + '#' + this.options.id;
@@ -263,7 +266,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   }
 
   args = Array.prototype.slice.call(arguments, 0);
-  this.frame.contentWindow.postMessage(args, '*');
+  this.frame.contentWindow.postMessage(args, NOTEBOOK_URL);
   return this;
 };
 

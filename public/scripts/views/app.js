@@ -233,7 +233,7 @@ App.prototype.authNotebook = function () {
   var left   = (window.screen.availWidth - width) / 2;
 
   window.open(
-    '/auth/github', '',
+    process.env.NOTEBOOK_URL + '/auth/github', '',
     'left=' + left + ',top=100,width=' + width + ',height=' + height
   );
 };
