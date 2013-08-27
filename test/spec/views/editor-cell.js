@@ -126,15 +126,16 @@ describe('Editor Cell', function () {
         });
       });
 
-      it('#focus', function () {
+      it('#focus', function (done) {
         var el = document.createElement('input');
         fixture.appendChild(el);
         el.focus();
         fixture.removeChild(el);
 
         expect(editor.hasFocus()).to.not.be.ok;
+
+        view.on('focus', function () { done(); });
         view.focus();
-        expect(editor.hasFocus()).to.be.ok;
       });
 
       it('#setValue', function () {
