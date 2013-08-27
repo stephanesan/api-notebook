@@ -1,7 +1,8 @@
 /* global App, expect, beforeEach, describe, it */
 
 describe('View', function () {
-  var View = App.View.View;
+  var View    = App.View.View;
+  var fixture = document.getElementById('fixture');
 
   it('should exist', function () {
     expect(View).to.be.a('function');
@@ -27,12 +28,11 @@ describe('View', function () {
     });
 
     describe('#appendTo', function () {
-      var fixture = document.getElementById('fixture');
-
       it('should be able to append to an element', function () {
         view.appendTo(fixture);
 
         expect(view.el.parentNode).to.equal(fixture);
+        view.remove();
       });
 
       it('should accept an function', function () {
@@ -41,12 +41,11 @@ describe('View', function () {
         });
 
         expect(view.el.parentNode).to.equal(fixture);
+        view.remove();
       });
     });
 
     describe('#prependTo', function () {
-      var fixture = document.getElementById('fixture');
-
       it('should be able to prepend to an element, putting the prepended ' +
         'element first in the child list', function () {
         var view2 = new View();
@@ -55,17 +54,9 @@ describe('View', function () {
 
         expect(view.el.parentNode).to.equal(fixture);
         expect(fixture.firstChild).to.equal(view2.el);
-      });
-
-      it('should accept a function', function () {
-        view.appendTo(function (el) {
-          fixture.appendChild(el);
-        });
-
-        expect(view.el.parentNode).to.equal(fixture);
+        view.remove();
+        view2.remove();
       });
     });
-
-
   });
 });
