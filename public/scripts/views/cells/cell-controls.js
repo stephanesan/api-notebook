@@ -12,7 +12,7 @@ var CellControlsModel = require('../../models/cell-controls');
 var ControlsView = module.exports = View.extend({
   className: 'cell-controls',
   events: {
-    "click": "onClick"
+    'click': 'onClick'
   }
 });
 
