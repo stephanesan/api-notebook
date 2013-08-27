@@ -72,7 +72,7 @@ App.prototype.initialize = function (options) {
   });
 
   // Listen to keyboard presses
-  this.listenTo(Backbone.$(document), 'keydown', function (e) {
+  this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
     var ESC           = 27;
     var QUESTION_MARK = 191;
 
@@ -83,7 +83,7 @@ App.prototype.initialize = function (options) {
     if (e.which === ESC) {
       return this.hideShortcuts();
     }
-  }, this);
+  }, this));
 
   this.user = new App.Model.Session();
   this.user.fetch();
