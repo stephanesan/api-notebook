@@ -170,14 +170,15 @@ var getPropertyObject = function (cm, token, sandbox) {
       base = null;
       break;
     }
-    // If the property is a function, we can't do introspection yet so set to
-    // null. However, we can provide basic completion if it's a constructor
-    // function based on the prototype object.
+    // Functions are a special case. We have rudimentary introspection for the
+    // DSL. However, if it's a constructor we can provide additional context
+    // from the prototype.
     if (tprop.isFunction) {
       if (tprop.isConstructor) {
         base = base.prototype;
       } else {
-        base = null;
+        // Look up the `@return` property that should provide completion data
+        base = base['@return'];
       }
     }
   }
