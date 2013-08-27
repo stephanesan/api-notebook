@@ -39,11 +39,9 @@ var getPropertyNames = function (obj) {
     props[prop] = true;
   };
 
-  while (obj) {
+  do {
     _.each(Object.getOwnPropertyNames(obj), addProp);
-    // Check up the prototype chain for more variables
-    obj = Object.getPrototypeOf(obj);
-  }
+  } while (obj = Object.getPrototypeOf(obj));
 
   return props;
 };
@@ -155,6 +153,9 @@ var getPropertyObject = function (cm, token, sandbox) {
     case 'string':
       base = String.prototype;
       break;
+    case 'number':
+      base = Number.prototype;
+      break;
     case 'string-2': // RegExp
       base = RegExp.prototype;
       break;
@@ -164,9 +165,6 @@ var getPropertyObject = function (cm, token, sandbox) {
       } else {
         base = null;
       }
-      break;
-    case 'number':
-      base = Number.prototype;
       break;
     default:
       base = null;
@@ -182,6 +180,19 @@ var getPropertyObject = function (cm, token, sandbox) {
         base = null;
       }
     }
+  }
+
+  // Add some extra completion data for primitive values
+  switch (typeof base) {
+  case 'string':
+    base = String.prototype;
+    break;
+  case 'number':
+    base = Number.prototype;
+    break;
+  case 'boolean':
+    base = Boolean.prototype;
+    break;
   }
 
   return base;
