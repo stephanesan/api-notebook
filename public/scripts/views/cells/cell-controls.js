@@ -5,6 +5,8 @@
     "Switch to Code" deopending on current mode.
 */
 
+var _                 = require('underscore');
+var domify            = require('domify');
 var Backbone          = require('backbone');
 var View              = require('../view');
 var CellControlsModel = require('../../models/cell-controls');
@@ -12,7 +14,8 @@ var CellControlsModel = require('../../models/cell-controls');
 var ControlsView = module.exports = View.extend({
   className: 'cell-controls',
   events: {
-    "click": "onClick"
+    'mousedown': function (e) { e.stopPropagation(); },
+    'click .action': 'onClick'
   }
 });
 
@@ -35,53 +38,59 @@ ControlsView.prototype.initialize = function () {
 ControlsView.prototype.toggleView = function (view) {
   var toggleOn = (this.editorView !== view);
 
-  if (this.editorView) {
-    this.remove();
-  }
+  this.detach();
 
   if (toggleOn) {
     this.editorView = view;
-    this.delegateEvents(ControlsView.prototype.events);
     this.appendTo(view.el);
   }
+
+  this.delegateEvents(ControlsView.prototype.events);
 };
 
-ControlsView.prototype.remove = function () {
-  this.editorView = null;
-  View.prototype.remove.call(this);
+ControlsView.prototype.detach = function () {
+  if (this.editorView) {
+    this.el.parentNode.removeChild(this.el);
+  }
+  delete this.editorView;
 };
 
 ControlsView.prototype.render = function () {
-  var actionElStr;
-  var self = this;
-  this.model.actions.forEach(function (action) {
-    // TODO move action to a data-attrib
-    actionElStr = '<button class="action-' + action.name + '">' +
-    action.label + '<span>' + action.keyCode + '</span></button>';
-    // Parse HTML to DOM element and append to this view.
-    self.el.appendChild(Backbone.$(actionElStr)[0]);
-  });
+  var html = _.map(this.model.actions, function (action) {
+    var button = '<button class="action" data-action="' + action.name + '">';
+    button += action.label + '<span>' + action.keyCode + '</span></button>';
+    return button;
+  }).join('\n');
+  this.el.appendChild(domify(html));
+
+  var onBlur = _.bind(this.detach, this);
+  this.listenTo(Backbone.$(document), 'mousedown',  onBlur);
+  this.listenTo(Backbone.$(document), 'touchstart', onBlur);
+
+  this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
+    var ESC = 27;
+
+    if (e.which === ESC) {
+      return this.detach();
+    }
+  }, this));
+
   return this;
 };
 
 /**
  * Event handler for clicks on control buttons. Pass thru for clicks on the
  * parent element.
- * @param {object} event  The normalized event object.
+ * @param {object} e The normalized event object.
  */
-ControlsView.prototype.onClick = function (event) {
-  // Prevent clicks outside an action item; and orphaned clicks.
-  if (event.target === this.el || !this.editorView) {
-    return false;
-  }
-
-  var action = event.target.className.replace(/action-/, '');
+ControlsView.prototype.onClick = function (e) {
+  var action     = e.target.getAttribute('data-action');
   var editorView = this.editorView;
-  var viewFn = editorView[action];
+  var viewFn     = editorView[action];
 
   if (typeof viewFn === 'function') {
     viewFn.call(editorView);
   }
 
-  this.remove();
+  this.detach();
 };

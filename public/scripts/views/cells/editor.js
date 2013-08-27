@@ -1,7 +1,7 @@
-var _        = require('underscore');
-var trim     = require('trim');
-var Cell     = require('./cell');
-var BtnCellControls = require('./btn-cell-controls');
+var _           = require('underscore');
+var trim        = require('trim');
+var Cell        = require('./cell');
+var BtnControls = require('./btn-cell-controls');
 
 var messages = require('../../lib/messages');
 
@@ -14,7 +14,8 @@ EditorCell.prototype.events = {
 EditorCell.prototype.initialize = function () {
   Cell.prototype.initialize.apply(this, arguments);
   // Every editor cell needs a model to function
-  this.model = this.model || new this.EditorModel();
+  this.model       = this.model || new this.EditorModel();
+  this.btnControls = new BtnControls();
 };
 
 EditorCell.prototype.EditorModel = require('../../models/entry');
@@ -195,9 +196,10 @@ EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
 
-  // Every editor-cell has a controls-menu button
-  this.btnCellControls = new BtnCellControls({ parent: this });
-  this.btnCellControls.render().prependTo(this.el);
+  this.listenTo(this.btnControls, 'showControls', function () {
+    this.trigger('showControls', this);
+  }, this);
+  this.btnControls.render().prependTo(this.el);
 
   return this;
 };
