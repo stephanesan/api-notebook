@@ -12,7 +12,8 @@ var InspectorView = module.exports = View.extend({
 
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
-    options, ['prefix', 'parentView', 'inspect', 'special', 'context']
+    options,
+    ['prefix', 'parentView', 'inspect', 'special', 'context', 'showExtra']
   ));
 
   if (this.parentView) {
@@ -57,7 +58,8 @@ InspectorView.prototype._renderChild = function (prefix, object, special) {
     special:    special,
     parentView: this,
     inspect:    object,
-    context:    this.context
+    context:    this.context,
+    showExtra:  this.showExtra
   });
   this.children.push(inspector);
   inspector.render().appendTo(this.childrenEl);
@@ -121,12 +123,13 @@ InspectorView.prototype._renderChildren = function () {
 };
 
 InspectorView.prototype.renderPreview = function () {
-  var html = '';
+  var html    = '';
+  var special = this.special;
 
   html += '<div class="arrow"></div>';
   html += '<div class="preview ' + type(this.inspect) + '">';
   if (_.isString(this.prefix)) {
-    html += '<span class="property' + (this.special ? ' special' : '') + '">';
+    html += '<span class="property' + (special ? ' is-special' : '') + '">';
     html += _.escape(this.prefix);
     html += '</span>: ';
   }
@@ -137,6 +140,17 @@ InspectorView.prototype.renderPreview = function () {
 
   var el = this.previewEl = domify(html);
   this.el.appendChild(el);
+
+  if (special) { this.el.classList[this.showExtra ? 'remove' : 'add']('hide'); }
+
+  this.listenTo(messages, 'keydown:Alt-Alt', function (keyName) {
+    this.showExtra = true;
+    if (special) { this.el.classList.remove('hide'); }
+  }, this);
+  this.listenTo(messages, 'keyup:Alt', function () {
+    this.showExtra = false;
+    if (special) { this.el.classList.add('hide'); }
+  }, this);
 
   return this;
 };

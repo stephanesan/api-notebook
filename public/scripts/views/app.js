@@ -71,18 +71,25 @@ App.prototype.initialize = function (options) {
     silent:    true
   });
 
-  // Listen to keyboard presses
+  // Push any keyboard events into the global messages object, avoids listening
+  // multiple times to the document. Augments the event name to match the key
+  // map in human terms.
   this.listenTo(Backbone.$(document), 'keydown', function (e) {
-    var ESC           = 27;
-    var QUESTION_MARK = 191;
+    messages.trigger('keydown', CodeMirror.keyName(e, e.which === 16));
+    messages.trigger('keydown:' + CodeMirror.keyName(e, e.which === 16));
+  });
 
-    if (e.which === QUESTION_MARK && e.shiftKey) {
-      return this.toggleShortcuts();
-    }
+  this.listenTo(Backbone.$(document), 'keyup', function (e) {
+    messages.trigger('keyup', CodeMirror.keyName(e));
+    messages.trigger('keyup:' + CodeMirror.keyName(e));
+  });
 
-    if (e.which === ESC) {
-      return this.hideShortcuts();
-    }
+  this.listenTo(messages, 'keydown:Shift-/', function () {
+    this.toggleShortcuts();
+  }, this);
+
+  this.listenTo(messages, 'keydown:Esc', function () {
+    this.hideShortcuts();
   }, this);
 
   this.user = new App.Model.Session();

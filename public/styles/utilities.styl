@@ -11,12 +11,14 @@
   width: 0
   height: 150%
 
-.clearfix:before,
-.clearfix:after {
-  content: " "; /* 1 */
-  display: table; /* 2 */
-}
+.clearfix:after,
+.clearfix:before
+  content: " "
+  display: table
 
-.clearfix:after {
-  clear: both;
-}
+.clearfix:after
+  clear: both
+
+.hide
+  display: none
+  visibility: hidden
