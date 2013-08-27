@@ -22,6 +22,10 @@ CodeCell.prototype.EditorModel = require('../../models/code-entry');
 CodeCell.prototype.execute = function (cb) {
   var context = this.model.collection.serializeForEval();
 
+  // Set the value as our own model for executing
+  this.model.set('value', this.editor.getValue());
+  this.browseToCell(this.model);
+
   this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
     // Set the error or result to the inspector
     if (err) {

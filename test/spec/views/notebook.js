@@ -475,6 +475,51 @@ describe('Notebook', function () {
           it.skip('should be able to clone the cell');
           it.skip('should be able to delete the cell');
         });
+
+        describe('Line numbers', function () {
+          var getLineNumbers = function (view) {
+            var nums = [];
+            var els = view.el.getElementsByClassName('CodeMirror-linenumber');
+
+            for (var i = 0; i < els.length; i++) {
+              nums.push(els[i].firstChild.textContent);
+            }
+
+            return nums;
+          };
+
+          it('should continue line numbers from previous code cells', function () {
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
+          });
+
+          it('should continue line numbers when rearranged', function () {
+            codeCells[0].moveUp();
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
+
+            codeCells[0].moveDown();
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
+          });
+
+          it('should continue line numbers with different size cells', function () {
+            codeCells[0].setValue('multi\nline\ntext');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[0]).length).to.equal(3);
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('5');
+          });
+
+          it('should continue line number when rearranging multi line cells', function () {
+            codeCells[0].setValue('look\nanother\nmulti\nline\ntest');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[0]).length).to.equal(5);
+
+            codeCells[0].moveUp();
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('7');
+          });
+        });
       });
     });
 
