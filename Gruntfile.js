@@ -17,6 +17,25 @@ module.exports = function (grunt) {
       }
     },
 
+    shell: {
+      'mocha-phantomjs': {
+        command: './node_modules/.bin/mocha-phantomjs ./test/index.html',
+        options: {
+          stdout: true,
+          stderr: true,
+          failOnError: true
+        }
+      },
+      'jshint': {
+        command: './node_modules/.bin/jshint public/scripts routes app.js',
+        options: {
+          stdout: true,
+          stderr: true,
+          failOnError: true
+        }
+      }
+    },
+
     // Running browserify as the build/dependency management system
     browserify: {
       application: {
@@ -82,5 +101,6 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
+  grunt.registerTask('check',   ['shell:jshint', 'shell:mocha-phantomjs']);
   grunt.registerTask('default', ['build', 'watch']);
 };
