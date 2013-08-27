@@ -35,7 +35,8 @@
     "hbsfy": "~0.1.5",
     "node-dev": "~2.0",
     "uglifyify": "0.0.1",
-    "envify": "~0.1.0"
+    "envify": "~0.1.0",
+    "grunt-shell": "~0.3.1"
   },
   "engines": {
     "node": "0.10.13",
@@ -43,8 +44,7 @@
   },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
-    "lint": "./node_modules/.bin/jshint public/scripts routes app.js",
-    "test": "npm run lint && npm run build && ./node_modules/.bin/mocha-phantomjs ./test/index.html",
+    "test": "npm run build && ./node_modules/.bin/grunt check",
     "predeploy": "npm run build",
     "start": "node app.js"
   },
