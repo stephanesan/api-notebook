@@ -36,14 +36,10 @@ ControlsView.prototype.initialize = function () {
  * @param {View} view  The view to append to or remove from.
  */
 ControlsView.prototype.toggleView = function (view) {
-  var toggleOn = (this.editorView !== view);
-
   this.detach();
-
-  if (toggleOn) {
-    this.editorView = view;
-    this.appendTo(view.el);
-  }
+  this.editorView = view;
+  this.appendTo(view.el);
+  this.delegateEvents(ControlsView.prototype.events);
 };
 
 ControlsView.prototype.detach = function () {
