@@ -1,7 +1,7 @@
 var Ghost = require('./ghost');
+var state = require('../state');
 
 var Widget = module.exports = function (completion, data) {
-  var cm   = completion.cm;
   var that = this;
 
   this.data       = data;
@@ -9,25 +9,8 @@ var Widget = module.exports = function (completion, data) {
 
   if (!data.list.length) { return this.remove(); }
 
-  cm.addKeyMap(this.keyMap = {
+  completion.cm.addKeyMap(this.keyMap = {
     'Esc': function () { that.remove(); }
-  });
-
-  cm.addKeyMap(this.hintKeyMap = {
-    'Up':       function () { that.setActive(that.selectedHint - 1); },
-    'Down':     function () { that.setActive(that.selectedHint + 1); },
-    // Enable `Alt-` navigation for when we are showing advanced properties
-    'Alt-Up':   function () { that.setActive(that.selectedHint - 1); },
-    'Alt-Down': function () { that.setActive(that.selectedHint + 1); },
-    'Home':     function () { that.setActive(0); },
-    'End':      function () { that.setActive(-1); },
-    'Enter':    function () { that.accept(); },
-    'PageUp':   function () {
-      that.setActive(that.selectedHint - that.screenAmount());
-    },
-    'PageDown': function () {
-      that.setActive(that.selectedHint + that.screenAmount());
-    }
   });
 
   this.refresh();
@@ -43,6 +26,7 @@ Widget.prototype.remove = function () {
 Widget.prototype.removeHints = function () {
   if (!this.hints) { return; }
 
+  state.off('change:window.height', this.onResize);
   this.completion.cm.off('scroll', this.onScroll);
   this.completion.cm.removeKeyMap(this.hintKeyMap);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
@@ -78,8 +62,7 @@ Widget.prototype.refresh = function () {
   for (var i = 0, j = 0; i < completions.length; i++) {
     var cur = completions[i];
 
-    // Skip any filtered values
-    // if (this._filter(cur)) { console.log('success', cur); }
+    // Skip any filtered out values from being created
     if (!this._filter(cur)) { continue; }
 
     var el = hints.appendChild(document.createElement('li'));
@@ -87,10 +70,14 @@ Widget.prototype.refresh = function () {
     el.listId    = i;
     el.className = 'CodeMirror-hint';
 
+    // Move the activeHint as close as possible to the currently selected
+    // physical hint position. This is different to moving to the closest
+    // position in the result list.
     if (i <= currentHint) {
       activeHint = el.hintId;
     }
 
+    // Do Blink-style bolding of the completed text
     if (cur.indexOf(text) === 0) {
       var match = document.createElement('span');
       match.className = 'CodeMirror-hint-match';
@@ -102,53 +89,37 @@ Widget.prototype.refresh = function () {
     }
   }
 
-  if (!hints.childNodes.length) {
-    return this.removeHints();
-  }
+  // Add the hinting keymap here instead of later or earlier since we need to
+  // listen before we remove again, and we can't be listening when we don't
+  // display any hints to listen to.
+  cm.addKeyMap(this.hintKeyMap = {
+    'Up':       function () { that.setActive(that.selectedHint - 1); },
+    'Down':     function () { that.setActive(that.selectedHint + 1); },
+    // Enable `Alt-` navigation for when we are showing advanced properties
+    'Alt-Up':   function () { that.setActive(that.selectedHint - 1); },
+    'Alt-Down': function () { that.setActive(that.selectedHint + 1); },
+    'Home':     function () { that.setActive(0); },
+    'End':      function () { that.setActive(-1); },
+    'Enter':    function () { that.accept(); },
+    'PageUp':   function () {
+      that.setActive(that.selectedHint - that.screenAmount());
+    },
+    'PageDown': function () {
+      that.setActive(that.selectedHint + that.screenAmount());
+    }
+  });
 
-  if (hints.childNodes.length === 1) {
+  if (hints.childNodes.length < 2) {
     this.setActive(0);
     return this.removeHints();
   }
 
-  var pos  = cm.cursorCoords(this.data.from);
-  var top  = pos.bottom;
-  var left = pos.left;
-
   hints.className  = 'CodeMirror-hints';
-  hints.style.top  = top  + 'px';
-  hints.style.left = left + 'px';
-
   this.setActive(activeHint);
   document.body.appendChild(hints);
 
-  var box       = hints.getBoundingClientRect();
-  var winWidth  = window.innerWidth || Math.max(document.body.offsetWidth,
-    document.documentElement.offsetWidth);
-  var winHeight = window.innerHeight || Math.max(document.body.offsetHeight,
-    document.documentElement.offsetHeight);
-
-  var overlapX = box.right - winWidth;
-  var overlapY = box.bottom - winHeight;
-
-  if (overlapX > 0) {
-    if (box.right - box.left > winWidth) {
-      hints.style.width = (winWidth - 5) + 'px';
-      overlapX -= (box.right - box.left) - winWidth;
-    }
-    hints.style.left = (left = pos.left - overlapX) + 'px';
-  }
-
-  if (overlapY > 0) {
-    // Switch the hints to be above instead of below
-    if (winHeight - top < pos.top) {
-      hints.style.top = (top = 5) + 'px';
-      hints.style.height = (pos.top - 8) + 'px';
-      hints.className += ' CodeMirror-hints-top';
-    } else if (top + (box.bottom - box.top) > winHeight) {
-      hints.style.height = (winHeight - pos.bottom - 5) + 'px';
-    }
-  }
+  // Refresh the positioning of the hints within the DOM
+  this.reposition();
 
   CodeMirror.on(hints, 'click', function (e) {
     var el = e.target || e.srcElement;
@@ -177,6 +148,45 @@ Widget.prototype.refresh = function () {
     that.hints.style.top  = newTop + 'px';
     that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
   });
+
+  state.on('change:window.height', this.onResize = function () {
+    that.reposition();
+  });
+};
+
+Widget.prototype.reposition = function () {
+  var pos  = this.completion.cm.cursorCoords(this.data.from);
+  var top  = pos.bottom;
+  var left = pos.left;
+
+  this.hints.style.top  = top  + 'px';
+  this.hints.style.left = left + 'px';
+
+  var box       = this.hints.getBoundingClientRect();
+  var winWidth  = state.get('window.width');
+  var winHeight = state.get('window.height');
+
+  var overlapX = box.right - winWidth;
+  var overlapY = box.bottom - winHeight;
+
+  if (overlapX > 0) {
+    if (box.right - box.left > winWidth) {
+      this.hints.style.width = (winWidth - 5) + 'px';
+      overlapX -= (box.right - box.left) - winWidth;
+    }
+    this.hints.style.left = (left = pos.left - overlapX) + 'px';
+  }
+
+  if (overlapY > 0) {
+    // Switch the hints to be above instead of below
+    if (winHeight - top < pos.top) {
+      this.hints.style.top = (top = 5) + 'px';
+      this.hints.style.height = (pos.top - 8) + 'px';
+      this.hints.className += ' CodeMirror-hints-top';
+    } else if (top + (box.bottom - box.top) > winHeight) {
+      this.hints.style.height = (winHeight - pos.bottom - 5) + 'px';
+    }
+  }
 };
 
 Widget.prototype.accept = function () {
@@ -192,7 +202,7 @@ Widget.prototype.setActive = function (i) {
   var total = this.hints.childNodes.length;
   var node;
 
-  // Switch `i` to the closest number we can abuse
+  // Switch `i` to the closest number we can abuse.
   i = total ? i % total : 0;
 
   // When we have a negative value, take away from the end of the list, this
@@ -200,9 +210,10 @@ Widget.prototype.setActive = function (i) {
   if (i < 0) { i = total + i; }
 
   if (!total)                  { return this.removeGhost(); }
+  // Avoid reprocessing of the position if it's already set to that position.
   if (this.selectedHint === i) { return; }
 
-  // Remove the old active hint
+  // Remove the old active hint if we have a selected hint id.
   if (!isNaN(this.selectedHint)) {
     node = this.hints.childNodes[this.selectedHint];
     node.className = node.className.replace(' CodeMirror-hint-active', '');
@@ -221,6 +232,7 @@ Widget.prototype.setActive = function (i) {
     }
   }
 
+  // Should always create new ghost nodes for any text changes.
   this.removeGhost();
   this.ghost = new Ghost(this, this.data, this.data.list[node.listId]);
 };

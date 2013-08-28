@@ -72,33 +72,12 @@ App.prototype.initialize = function (options) {
     silent:    true
   });
 
-  // Push any keyboard events into the global messages object, avoids listening
-  // multiple times to the document. Augments the event name to match the key
-  // map in human terms.
-  this.listenTo(Backbone.$(document), 'keydown', function (e) {
-    messages.trigger('keydown', CodeMirror.keyName(e, e.which === 16));
-    messages.trigger('keydown:' + CodeMirror.keyName(e, e.which === 16));
-  });
-
-  this.listenTo(Backbone.$(document), 'keyup', function (e) {
-    messages.trigger('keyup', CodeMirror.keyName(e));
-    messages.trigger('keyup:' + CodeMirror.keyName(e));
-  });
-
   this.listenTo(messages, 'keydown:Shift-/', function () {
     this.toggleShortcuts();
   }, this);
 
   this.listenTo(messages, 'keydown:Esc', function () {
     this.hideShortcuts();
-  }, this);
-
-  this.listenTo(messages, 'keydown:Alt-Alt', function () {
-    state.set('showExtra', true);
-  }, this);
-
-  this.listenTo(messages, 'keyup:Alt', function () {
-    state.set('showExtra', false);
   }, this);
 
   this.user = new App.Model.Session();
@@ -111,7 +90,6 @@ App.prototype.initialize = function (options) {
 
 App.prototype.remove = function () {
   Backbone.history.stop();
-  window.onresize = null;
   View.prototype.remove.call(this);
 };
 
@@ -205,8 +183,8 @@ App.prototype.setupEmbeddableWidget = function () {
 
   // Listen to any resize triggers from the messages object and send the parent
   // frame our updated iframe size.
-  messages.on('resize', function () {
-    postMessage.trigger('height', doc.documentElement.scrollHeight);
+  this.listenTo(state, 'change:window.scrollHeight', function (_, height) {
+    postMessage.trigger('height', height);
   });
 };
 
@@ -224,11 +202,7 @@ App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   Backbone.history.loadUrl();
 
-  this.onResize = window.onresize = _.throttle(function () {
-    messages.trigger('resize');
-  }, 50);
-
-  this.onResize();
+  messages.trigger('resize');
 };
 
 App.prototype.runNotebook = function () {
