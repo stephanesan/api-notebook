@@ -8,7 +8,10 @@ var messages = require('../../lib/messages');
 var EditorCell = module.exports = Cell.extend();
 
 EditorCell.prototype.events = {
-  'keydown': function (e) { e.stopPropagation(); }
+  // Stop keys from bleeding through to the global key listener
+  'keydown': function (e) {
+    if (!CodeMirror.isModifierKey(e)) { e.stopPropagation(); }
+  }
 };
 
 EditorCell.prototype.initialize = function () {
