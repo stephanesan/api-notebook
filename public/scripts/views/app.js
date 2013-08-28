@@ -67,7 +67,7 @@ App.prototype.initialize = function (options) {
 
   Backbone.history.start({
     root:      '/',
-    pushState: false,
+    pushState: true,
     silent:    true
   });
 
