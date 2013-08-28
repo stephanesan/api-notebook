@@ -13,6 +13,14 @@ describe('Code Cell', function () {
 
     beforeEach(function () {
       view = new Code();
+      view.model.view = view;
+      view.sandbox    = new App.Sandbox();
+      // Stub the serialization function for testing
+      view.model.collection = {
+        getNextCode: sinon.stub().returns(undefined),
+        getPrevCode: sinon.stub().returns(undefined),
+        serializeForEval: sinon.stub().returns({})
+      };
     });
 
     it('should have a class', function () {
@@ -36,10 +44,6 @@ describe('Code Cell', function () {
       beforeEach(function () {
         view   = view.render().appendTo(fixture);
         editor = view.editor;
-        // Need to set certain properties for testing
-        view.model.view = view;
-        view.sandbox    = new App.Sandbox();
-        (new App.Collection.Notebook()).add(view.model);
       });
 
       afterEach(function () {
@@ -102,15 +106,6 @@ describe('Code Cell', function () {
       });
 
       describe('execute code', function () {
-        beforeEach(function () {
-          view.model.view = view;
-          view.sandbox    = new App.Sandbox();
-          // Stub the serialization function for testing
-          view.model.collection = {
-            serializeForEval: sinon.stub().returns({})
-          };
-        });
-
         it('should render the result', function (done) {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = '10';
