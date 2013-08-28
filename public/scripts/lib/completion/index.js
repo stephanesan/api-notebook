@@ -8,8 +8,6 @@ var Completion = module.exports = function (cm, autocomplete, options) {
 
   this.cm           = cm;
   this.options      = options;
-  this.ghost        = null;
-  this.widget       = null;
   this.autocomplete = autocomplete;
 
   // Add a filter function
@@ -27,27 +25,26 @@ var Completion = module.exports = function (cm, autocomplete, options) {
   };
   this.onChange = function (cm, data) {
     // Only update the display when we are inserting or deleting characters
-    if (data.origin && data.origin.charAt(0) !== '+') {
+    if (!data.origin || data.origin.charAt(0) !== '+') {
       return that.removeWidget();
     }
 
-    closeOnCursor = false;
     that.showHints();
+    closeOnCursor = false;
   };
   this.onCursorActivity = function (cm) {
-    if (closeOnCursor || cm.somethingSelected()) {
+    var close = closeOnCursor;
+    closeOnCursor = true;
+
+    if (close || cm.somethingSelected()) {
       return that.removeWidget();
     }
-
-    closeOnCursor = true;
   };
 
   this.cm.on('blur',           this.onBlur);
   this.cm.on('focus',          this.onFocus);
   this.cm.on('change',         this.onChange);
-  this.cm.on('beforeSelectionChange', this.onCursorActivity);
-
-  this.showHints();
+  this.cm.on('cursorActivity', this.onCursorActivity);
 };
 
 Completion.prototype.remove = function () {
@@ -63,21 +60,14 @@ Completion.prototype.refresh = function () {
 };
 
 Completion.prototype.showHints = function () {
-  var data = this.autocomplete(this.cm, this.options);
-  this.showWidget(data);
-};
-
-Completion.prototype._filter = function (string) {
-  return this.options.filter.call(this.data, string);
+  this.showWidget(this.autocomplete(this.cm, this.options));
 };
 
 Completion.prototype.showWidget = function (data) {
   this.removeWidget();
-  this.data   = data;
   this.widget = new Widget(this, data);
 };
 
 Completion.prototype.removeWidget = function () {
   if (this.widget) { this.widget.remove(); }
-  delete this.data;
 };

@@ -7,8 +7,8 @@ var Ghost = module.exports = function (widget, data, text) {
   this.completion = widget.completion;
 
   this.cm.addKeyMap(this.keyMap = {
-    'Tab':      function () { that.accept(); },
-    'Right':    function () { that.accept(); }
+    'Tab':   function () { that.accept(); },
+    'Right': function () { that.accept(); }
   });
 
   if (!text) { return this.remove(); }
@@ -38,8 +38,8 @@ Ghost.prototype.accept = function () {
 };
 
 Ghost.prototype.remove = function () {
-  this.cm.removeKeyMap(this.keyMap);
   if (this.ghost) { this.ghost.clear(); }
+  this.cm.removeKeyMap(this.keyMap);
   delete this.ghost;
   delete this.suffix;
   delete this.widget.ghost;

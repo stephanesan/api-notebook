@@ -7,16 +7,21 @@ var Widget = module.exports = function (completion, data) {
   this.data       = data;
   this.completion = completion;
 
+  if (!data.list.length) { return this.remove(); }
+
   cm.addKeyMap(this.keyMap = {
+    'Esc': function () { that.remove(); }
+  });
+
+  cm.addKeyMap(this.hintKeyMap = {
     'Up':       function () { that.setActive(that.selectedHint - 1); },
     'Down':     function () { that.setActive(that.selectedHint + 1); },
     // Enable `Alt-` navigation for when we are showing advanced properties
     'Alt-Up':   function () { that.setActive(that.selectedHint - 1); },
     'Alt-Down': function () { that.setActive(that.selectedHint + 1); },
     'Home':     function () { that.setActive(0); },
-    'End':      function () { that.setActive(completions.length); },
+    'End':      function () { that.setActive(-1); },
     'Enter':    function () { that.accept(); },
-    'Esc':      function () { that.remove(); },
     'PageUp':   function () {
       that.setActive(that.selectedHint - that.screenAmount());
     },
@@ -39,6 +44,7 @@ Widget.prototype.removeHints = function () {
   if (!this.hints) { return; }
 
   this.completion.cm.off('scroll', this.onScroll);
+  this.completion.cm.removeKeyMap(this.hintKeyMap);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
   delete this.hints;
 };
@@ -50,6 +56,7 @@ Widget.prototype.removeGhost = function () {
 };
 
 Widget.prototype.refresh = function () {
+  var that        = this;
   var activeHint  = 0;
   var currentHint = 0;
 
@@ -59,6 +66,7 @@ Widget.prototype.refresh = function () {
     currentHint = this.hints.childNodes[this.selectedHint].listId;
   }
 
+  this.removeGhost();
   this.removeHints();
   delete this.selectedHint;
 
@@ -71,7 +79,8 @@ Widget.prototype.refresh = function () {
     var cur = completions[i];
 
     // Skip any filtered values
-    if (!this.completion._filter(cur)) { continue; }
+    // if (this._filter(cur)) { console.log('success', cur); }
+    if (!this._filter(cur)) { continue; }
 
     var el = hints.appendChild(document.createElement('li'));
     el.hintId    = j++;
@@ -94,7 +103,6 @@ Widget.prototype.refresh = function () {
   }
 
   if (!hints.childNodes.length) {
-    this.removeGhost();
     return this.removeHints();
   }
 
@@ -103,14 +111,16 @@ Widget.prototype.refresh = function () {
     return this.removeHints();
   }
 
-  var pos   = cm.cursorCoords(this.data.from);
-  var top   = pos.bottom;
-  var left  = pos.left;
-  var below = true;
+  var pos  = cm.cursorCoords(this.data.from);
+  var top  = pos.bottom;
+  var left = pos.left;
 
   hints.className  = 'CodeMirror-hints';
   hints.style.top  = top  + 'px';
   hints.style.left = left + 'px';
+
+  this.setActive(activeHint);
+  document.body.appendChild(hints);
 
   var box       = hints.getBoundingClientRect();
   var winWidth  = window.innerWidth || Math.max(document.body.offsetWidth,
@@ -130,19 +140,15 @@ Widget.prototype.refresh = function () {
   }
 
   if (overlapY > 0) {
-    var height = box.bottom - box.top;
-    if (box.top - (pos.bottom - pos.top) - height > 0) {
-      below    = false;
-      overlapY = height + (pos.bottom - pos.top);
-    } else if (height > winHeight) {
-      hints.style.height = (winHeight - 5) + 'px';
-      overlapY -= height - winHeight;
+    // Switch the hints to be above instead of below
+    if (winHeight - top < pos.top) {
+      hints.style.top = (top = 5) + 'px';
+      hints.style.height = (pos.top - 8) + 'px';
+      hints.className += ' CodeMirror-hints-top';
+    } else if (top + (box.bottom - box.top) > winHeight) {
+      hints.style.height = (winHeight - pos.bottom - 5) + 'px';
     }
-    hints.style.top = (top = pos.bottom - overlapY) + 'px';
   }
-
-  this.setActive(activeHint);
-  document.body.appendChild(hints);
 
   CodeMirror.on(hints, 'click', function (e) {
     var el = e.target || e.srcElement;
@@ -164,7 +170,6 @@ Widget.prototype.refresh = function () {
     var point     = newTop - (window.pageYOffset ||
       (document.documentElement || document.body).scrollTop);
 
-    if (!below) { point += that.hints.offsetHeight; }
     if (point <= editor.top || point >= editor.bottom) {
       return completion.remove();
     }
@@ -177,6 +182,10 @@ Widget.prototype.refresh = function () {
 Widget.prototype.accept = function () {
   this.ghost.accept();
   this.remove();
+};
+
+Widget.prototype._filter = function (string) {
+  return this.completion.options.filter.call(this.data, string);
 };
 
 Widget.prototype.setActive = function (i) {
