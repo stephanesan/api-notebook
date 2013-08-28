@@ -6,6 +6,7 @@ var domify    = require('domify');
 var stringify = require('../lib/stringify');
 var state     = require('../lib/state');
 var messages  = require('../lib/messages');
+var isSpecial = require('../lib/is-special-property');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -105,9 +106,7 @@ InspectorView.prototype._renderChildren = function () {
         this._renderChild('set ' + prop, descriptor.set, true);
       }
     } else {
-      var isSpecial = !descriptor.writable || !descriptor.configurable ||
-                       !descriptor.enumerable;
-      this._renderChild(prop, descriptor.value, isSpecial);
+      this._renderChild(prop, descriptor.value, isSpecial(descriptor));
     }
   }, this);
 
@@ -138,7 +137,6 @@ InspectorView.prototype.renderPreview = function () {
   this.el.appendChild(el);
 
   var toggleExtra = _.bind(function (toggle) {
-    console.log(toggle);
     this.el.classList[toggle ? 'remove' : 'add']('hide');
   }, this);
 

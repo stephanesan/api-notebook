@@ -1,12 +1,6 @@
-var _ = require('underscore');
-
-var Pos = CodeMirror.Pos;
-
-// Reserved word list (http://mdn.io/reserved)
-var keywords = _.object(('break case catch continue debugger default delete ' +
-               'do else false finally for function if in instanceof new null ' +
-               'return switch throw true try typeof var void while ' +
-               'with').split(' '), true);
+var _        = require('underscore');
+var Pos      = CodeMirror.Pos;
+var keywords = require('./keywords');
 
 var varsToObject = function (scope) {
   var obj = {};
@@ -25,10 +19,6 @@ var isWhitespaceToken = function (token) {
 
 var getToken = function (cm, cur) {
   return cm.getTokenAt(cur);
-};
-
-var shouldDisplay = function (string) {
-  return string.indexOf(this.string) === 0;
 };
 
 var getPropertyNames = function (obj) {
@@ -58,7 +48,10 @@ var completeVariable = function (cm, token, sandbox) {
   _.extend(vars, varsToObject(token.state.globalVars));
   _.extend(vars, getPropertyNames(sandbox), keywords);
   // Return as an array for autocompletion
-  return _.keys(vars);
+  return {
+    context: sandbox,
+    results: _.keys(vars)
+  };
 };
 
 var getPropertyContext = function (cm, token) {
@@ -202,15 +195,21 @@ var getPropertyObject = function (cm, token, sandbox) {
 var completeProperty = function (cm, token, sandbox) {
   var obj = getPropertyObject(cm, token, sandbox);
 
-  if (!_.isObject(obj)) { return; }
+  if (!_.isObject(obj)) {
+    return { context: sandbox, results: [] };
+  }
 
-  return _.keys(getPropertyNames(obj));
+  return {
+    context: obj,
+    results: _.keys(getPropertyNames(obj))
+  };
 };
 
 module.exports = function (cm, options) {
   var cur     = cm.getCursor();
   var token   = getToken(cm, cur);
   var context = options.context || global;
+  var results = [];
 
   token.state = CodeMirror.innerMode(cm.getMode(), token.state).state;
 
@@ -225,22 +224,26 @@ module.exports = function (cm, options) {
     };
   }
 
-  var completions;
+  var completion;
   switch (token.type) {
   case 'keyword':
   case 'variable':
-    completions = completeVariable(cm, token, context);
+    completion = completeVariable(cm, token, context);
+    context    = completion.context;
+    results    = completion.results;
     break;
   case 'property':
-    completions = completeProperty(cm, token, context);
+    completion = completeProperty(cm, token, context);
+    context    = completion.context;
+    results    = completion.results;
     break;
   }
 
-  if (!completions) { return; }
-
   return {
-    list: _.filter(completions, shouldDisplay, token),
-    to:   new Pos(cur.line, token.end),
-    from: new Pos(cur.line, token.start)
+    list:    results,
+    token:   token,
+    context: context,
+    to:      new Pos(cur.line, token.end),
+    from:    new Pos(cur.line, token.start)
   };
 };
