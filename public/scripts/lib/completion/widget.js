@@ -26,9 +26,9 @@ Widget.prototype.remove = function () {
 Widget.prototype.removeHints = function () {
   if (!this.hints) { return; }
 
-  state.off('change:window.height', this.onResize);
   this.completion.cm.off('scroll', this.onScroll);
   this.completion.cm.removeKeyMap(this.hintKeyMap);
+  state.off('change:window.height change:window.width', this.onResize);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
   delete this.hints;
 };
@@ -149,9 +149,10 @@ Widget.prototype.refresh = function () {
     that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
   });
 
-  state.on('change:window.height', this.onResize = function () {
-    that.reposition();
-  });
+  state.on(
+    'change:window.height change:window.width',
+    this.onResize = function () { that.reposition(); }
+  );
 };
 
 Widget.prototype.reposition = function () {
