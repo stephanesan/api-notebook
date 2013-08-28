@@ -223,8 +223,7 @@ Notebook.prototype.appendView = function (view, before) {
       this.appendView(clone, view.el);
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
-      clone.focus();
-      clone.editor.setCursor(cursor);
+      clone.focus().editor.setCursor(cursor);
       this.refreshFromView(clone);
     });
 
@@ -253,7 +252,8 @@ Notebook.prototype.appendView = function (view, before) {
 
       var cursor = view.editor && view.editor.getCursor();
       view.remove();
-      newView.focus().editor.setCursor(cursor);
+      newView.focus();
+      if (cursor) { newView.editor.setCursor(cursor); }
     });
   }
 
@@ -269,7 +269,7 @@ Notebook.prototype.appendView = function (view, before) {
    * Event listener for 'show-cell-controls' event.
    * Appends the UIControls to the focused cell.
    */
-  this.listenTo(view, 'show-cell-controls', function (view) {
+  this.listenTo(view, 'showControls', function (view) {
     this.controls.toggleView(view);
   });
 

@@ -3,29 +3,25 @@ var domify = require('domify');
 var View = require('../view');
 
 var BtnCellControls = module.exports = View.extend({
-  className: 'btn btn-show-cell-controls',
   tagName: 'button',
+  className: 'btn btn-show-cell-controls',
   attributes: {
     type: 'button'
   },
   events: {
-    'click': 'onClick'
+    'mousedown':  'onClick',
+    'touchstart': 'onClick'
   }
 });
-
-BtnCellControls.prototype.initialize = function (options) {
-  this.parent = options.parent;
-};
 
 BtnCellControls.prototype.render = function () {
   this.el.innerHTML = '≡'; // U+2261
   return this;
 };
 
-BtnCellControls.prototype.onClick = function (event) {
-  if (this.parent) {
-    event.stopPropagation();
-    event.cancelBubble = true; // IE
-    this.parent.trigger('show-cell-controls', this.parent);
-  }
+BtnCellControls.prototype.onClick = function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.cancelBubble = true; // IE
+  this.trigger('showControls', this);
 };
