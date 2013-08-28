@@ -155,14 +155,16 @@ Widget.prototype.refresh = function () {
 };
 
 Widget.prototype.reposition = function () {
-  var pos  = this.completion.cm.cursorCoords(this.data.from);
-  var top  = pos.bottom;
-  var left = pos.left;
+  var pos   = this.completion.cm.cursorCoords(this.data.from);
+  var top   = pos.bottom;
+  var left  = pos.left;
+  var hints = this.hints;
 
-  this.hints.style.top  = top  + 'px';
-  this.hints.style.left = left + 'px';
+  hints.className = hints.className.replace(' CodeMirror-hints-top', '');
+  hints.style.top  = top  + 'px';
+  hints.style.left = left + 'px';
 
-  var box       = this.hints.getBoundingClientRect();
+  var box       = hints.getBoundingClientRect();
   var winWidth  = state.get('window.width');
   var winHeight = state.get('window.height');
 
@@ -171,20 +173,27 @@ Widget.prototype.reposition = function () {
 
   if (overlapX > 0) {
     if (box.right - box.left > winWidth) {
-      this.hints.style.width = (winWidth - 5) + 'px';
+      hints.style.width = (winWidth - 5) + 'px';
       overlapX -= (box.right - box.left) - winWidth;
     }
-    this.hints.style.left = (left = pos.left - overlapX) + 'px';
+    hints.style.left = (left = pos.left - overlapX) + 'px';
   }
 
   if (overlapY > 0) {
     // Switch the hints to be above instead of below
     if (winHeight - top < pos.top) {
-      this.hints.style.top = (top = 5) + 'px';
-      this.hints.style.height = (pos.top - 8) + 'px';
-      this.hints.className += ' CodeMirror-hints-top';
+      top = 5;
+      // When the box is larger than the available height, resize it. Otherwise,
+      // we need to position `x` from the top taking into account the height.
+      if (box.bottom - box.top > pos.top - top - 5) {
+        hints.style.height = (pos.top - top - 5) + 'px';
+      } else {
+        top += pos.top - (box.bottom - box.top) + 5;
+      }
+      hints.style.top = top + 'px';
+      hints.className += ' CodeMirror-hints-top';
     } else if (top + (box.bottom - box.top) > winHeight) {
-      this.hints.style.height = (winHeight - pos.bottom - 5) + 'px';
+      hints.style.height = (winHeight - pos.bottom - 5) + 'px';
     }
   }
 };
