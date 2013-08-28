@@ -47,7 +47,7 @@ var completeVariable = function (cm, token, sandbox) {
   // Extend with every other variable and keyword
   _.extend(vars, varsToObject(token.state.globalVars));
   _.extend(vars, getPropertyNames(sandbox), keywords);
-  // Return as an array for autocompletion
+
   return {
     context: sandbox,
     results: _.keys(vars)

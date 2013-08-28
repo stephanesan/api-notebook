@@ -168,7 +168,6 @@ describe('Code Cell', function () {
             from:   view.editor.getCursor(),
             text:  [ value.slice(-1) ]
           });
-          console.log(view._completion.widget.data.list);
           return view._completion.widget.data.list;
         };
 

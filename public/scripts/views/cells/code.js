@@ -7,7 +7,7 @@ var stripInput   = require('../../lib/cm-strip-input');
 var state        = require('../../lib/state');
 var autocomplete = require('../../lib/cm-sandbox-autocomplete');
 var keywords     = require('../../lib/keywords');
-var isHidden    = require('../../lib/is-hidden-property');
+var isHidden     = require('../../lib/is-hidden-property');
 
 var filterCompletion = function () {
   return this._completion.refresh();
@@ -130,10 +130,11 @@ CodeCell.prototype.browseToCell = function (newModel) {
 CodeCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
-  // Extends the context with our inline result references for autocompletion
-  var context = _.extend(
-    {}, this.sandbox.window, this.model.collection.serializeForEval()
-  );
+  // Extends the context with additional inline completion results. Requires
+  // using `Object.create` since you can't extend an object with every property
+  // of the global object.
+  var context = Object.create(this.sandbox.window);
+  _.extend(context, this.model.collection.serializeForEval());
 
   // Set up autocompletion
   this._completion = new Completion(this.editor, autocomplete, {

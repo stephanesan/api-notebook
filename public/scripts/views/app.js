@@ -12,6 +12,9 @@ var App = module.exports = View.extend({
   className: 'application'
 });
 
+App._        = _;
+App.Backbone = Backbone;
+
 // Access a sandbox instance from tests
 App.Sandbox     = require('../lib/sandbox');
 App.PostMessage = require('../lib/post-message');
