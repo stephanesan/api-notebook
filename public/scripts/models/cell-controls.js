@@ -1,9 +1,9 @@
 var Backbone = require('backbone');
 var isMac = require('../lib/browser').mac;
 
-var cmdKey = (isMac) ? "CMD" : "CTRL";
-var ctrlKey = "CTRL";
-var optKey = (isMac) ? "OPT" : "ALT";
+var cmdKey  = (isMac ? 'CMD' : 'CTRL');
+var ctrlKey = 'CTRL';
+var optKey  = (isMac ? 'OPT' : 'ALT');
 
 /**
  * Format a string of keyboard commands.

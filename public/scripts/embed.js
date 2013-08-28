@@ -4,6 +4,27 @@ var css = require('css-component');
 var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
 
 /**
+ * Simple function to loop over properties in an object or array.
+ *
+ * @param  {Object}   obj
+ * @param  {Function} fn
+ * @param  {*}        [context]
+ */
+var each = function (obj, fn, context) {
+  if (Object.prototype.toString.call(obj) === '[object Array]') {
+    for (var i = 0, l = obj.length; i < l; i++) {
+      fn.call(context, obj[i], i, obj);
+    }
+  } else if (obj === Object(obj)) {
+    for (var p in obj) {
+      if (obj.hasOwnProperty(p)) {
+        fn.call(context, obj[p], p, obj);
+      }
+    }
+  }
+};
+
+/**
  * Extend any object with the properties from other objects, overriding of left
  * to right.
  *
@@ -13,36 +34,15 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  * @return {Object}
  */
 var extend = function (obj /*, ...source */) {
-  var args = Array.prototype.slice.call(arguments, 1);
+  each(Array.prototype.slice.call(arguments, 1), function (source) {
+    if (source !== Object(source)) { return; }
 
-  for (var i = 0; i < args.length; i++) {
-    if (typeof args[i] === 'object') {
-      for (var p in args[i]) {
-        obj[p] = args[i][p];
-      }
-    }
-  }
+    each(source, function (prop, key) {
+      obj[key] = prop;
+    });
+  });
 
   return obj;
-};
-
-/**
- * Simple function to loop over properties in an object or array.
- *
- * @param  {Object}   obj
- * @param  {Function} fn
- * @param  {*}        [context]
- */
-var each = function (obj, fn, context) {
-  if (Object.prototype.toString.call(obj) === '[object Object]') {
-    for (var p in obj) {
-      fn.call(context, obj[p], p, obj);
-    }
-  } else if (obj.length === +obj.length) {
-    for (var i = 0, l = obj.length; i < l; i++) {
-      fn.call(context, obj[i], i, obj);
-    }
-  }
 };
 
 /**
@@ -58,13 +58,13 @@ var getDataAttributes = function (el) {
     return extend(obj, el.dataset);
   }
 
+  var upperCase = function (_, $0) { return $0.toUpperCase(); };
+
   var attrs = el.attributes;
   for (var i = 0, l = attrs.length; i < l; i++) {
     var attr = attrs.item(i);
     if (attr.nodeName.substr(0, 5) === 'data-') {
-      var name = attr.nodeName.substr(5).replace(/\-(\w)/, function (_, $0) {
-        return $0.toUpperCase();
-      });
+      var name = attr.nodeName.substr(5).replace(/\-(\w)/, upperCase);
 
       obj[name] = attr.nodeValue;
     }
@@ -229,7 +229,7 @@ Notebook.prototype.off = function (name, fn) {
     return this;
   }
 
-  var events = this._events[name]
+  var events = this._events[name];
   for (var i = 0; i < events; i++) {
     if (events[i] === fn) {
       events.splice(i, 1);
@@ -283,7 +283,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   for (var i = 0, l = scripts.length; i < l; i++) {
     script = scripts[i];
     // Allows the script to be loaded asyncronously if we provide this attribute
-    if (script.getAttribute('data-notebook') != null) { break; }
+    if (typeof script.getAttribute('data-notebook') === 'string') { break; }
   }
 
   var data = getDataAttributes(script);

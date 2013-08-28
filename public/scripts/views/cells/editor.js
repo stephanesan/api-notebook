@@ -93,6 +93,8 @@ EditorCell.prototype.appendNew = function () {
 };
 
 EditorCell.prototype.focus = function () {
+  // Set a hidden focus flag so we can use it to check in tests
+  this._focus = true;
   // Make focusing the editor async since it triggers other events such as
   // scrolling into view which interferes with iframe resizing events.
   setTimeout(_.bind(this.editor.focus, this.editor), 0);
@@ -113,6 +115,7 @@ EditorCell.prototype.refresh = function () {
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
+    delete this._focus;
     this.trigger('focus', this);
   }, this));
 
@@ -188,7 +191,7 @@ EditorCell.prototype.renderEditor = function () {
   }
 
   // If it was previously focused, let's focus the editor again
-  if (hasFocus) { this.editor.focus(); }
+  if (hasFocus) { this.focus(); }
   // Bind the editor events at the end in case of any focus issues when
   // changing docs, etc.
   this.bindEditor();
