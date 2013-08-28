@@ -6,14 +6,16 @@ var domify    = require('domify');
 var stringify = require('../lib/stringify');
 var state     = require('../lib/state');
 var messages  = require('../lib/messages');
-var isSpecial = require('../lib/is-special-property');
+var isHidden  = require('../lib/is-hidden-property');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
 });
 
 InspectorView.prototype.initialize = function (options) {
-  _.extend(this, _.pick(options, ['prefix', 'parent', 'inspect', 'special']));
+  _.extend(this, _.pick(
+    options, ['prefix', 'parent', 'inspect', 'special', 'hidden']
+  ));
 
   if (this.parent) {
     this.listenTo(this.parent, 'close', this.close);
@@ -51,11 +53,12 @@ InspectorView.prototype.stringifyPreview = function () {
   return stringify(this.inspect);
 };
 
-InspectorView.prototype._renderChild = function (prefix, object, special) {
+InspectorView.prototype._renderChild = function (prefix, obj, special, hide) {
   var inspector = new InspectorView({
     parent:  this,
+    hidden:  hide,
     prefix:  prefix,
-    inspect: object,
+    inspect: obj,
     special: special
   });
   this.children.push(inspector);
@@ -95,24 +98,26 @@ InspectorView.prototype._renderChildrenEl = function () {
 
 InspectorView.prototype._renderChildren = function () {
   _.each(Object.getOwnPropertyNames(this.inspect), function (prop) {
-    var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
+    var desc = Object.getOwnPropertyDescriptor(this.inspect, prop);
 
-    if (_.isFunction(descriptor.get) || _.isFunction(descriptor.set)) {
-      if (_.isFunction(descriptor.get)) {
-        this._renderChild('get ' + prop, descriptor.get, true);
+    if (_.isFunction(desc.get) || _.isFunction(desc.set)) {
+      if (_.isFunction(desc.get)) {
+        this._renderChild('get ' + prop, desc.get, true, true);
       }
 
-      if (_.isFunction(descriptor.set)) {
-        this._renderChild('set ' + prop, descriptor.set, true);
+      if (_.isFunction(desc.set)) {
+        this._renderChild('set ' + prop, desc.set, true, true);
       }
     } else {
-      this._renderChild(prop, descriptor.value, isSpecial(descriptor));
+      var hidden  = isHidden(this.inspect, prop);
+      var special = !desc.writable || !desc.configurable || !desc.enumerable;
+      this._renderChild(prop, desc.value, special, hidden);
     }
   }, this);
 
   // Hidden prototype - super handy when debugging
   var prototype = Object.getPrototypeOf(this.inspect);
-  this._renderChild('[[Prototype]]', prototype, true);
+  this._renderChild('[[Prototype]]', prototype, true, true);
 
   return this;
 };
@@ -140,7 +145,7 @@ InspectorView.prototype.renderPreview = function () {
     this.el.classList[toggle ? 'remove' : 'add']('hide');
   }, this);
 
-  if (this.special) {
+  if (this.hidden) {
     // Listen for state  changes to show extra properties/information
     toggleExtra(state.get('showExtra'));
     this.listenTo(state, 'change:showExtra', function (_, toggle) {

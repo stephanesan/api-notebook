@@ -20,6 +20,7 @@ Widget.prototype.remove = function () {
   this.removeGhost();
   this.removeHints();
   this.completion.cm.removeKeyMap(this.keyMap);
+  delete this.keyMap;
   delete this.completion.widget;
 };
 
@@ -31,6 +32,8 @@ Widget.prototype.removeHints = function () {
   state.off('change:window.height change:window.width', this.onResize);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
   delete this.hints;
+  delete this.onScroll;
+  delete this.hintKeyMap;
 };
 
 Widget.prototype.removeGhost = function () {

@@ -159,11 +159,6 @@ describe('Code Cell', function () {
 
       describe('autocompletion', function () {
         var testAutocomplete = function (value) {
-          var spy;
-          // Listens to the `update` event emitted by `show-hint`
-          view.listenTo(view.editor, 'startCompletion', function (cm) {
-            spy = sinon.spy(cm.state.completionActive, 'showHints');
-          });
           view.setValue(value);
           view.moveCursorToEnd();
           // Trigger a fake change event to cause autocompletion to occur
@@ -171,10 +166,10 @@ describe('Code Cell', function () {
             origin: '+input',
             to:     view.editor.getCursor(),
             from:   view.editor.getCursor(),
-            text:  [ value ]
+            text:  [ value.slice(-1) ]
           });
-          // Return the first call to show hints
-          return spy.getCall(0).args[0].list;
+          console.log(view._completion.widget.data.list);
+          return view._completion.widget.data.list;
         };
 
         it('should autocomplete variables', function () {
