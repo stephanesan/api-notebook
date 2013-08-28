@@ -1,29 +1,22 @@
-var Ghost = module.exports = function (completion, data, text) {
-  this.cm         = completion.cm;
-  this.data       = data;
-  this.completion = completion;
-
-  this.setText(text);
-};
-
-Ghost.prototype.removeText = function () {
-  if (!this.ghost) { return; }
-
-  this.ghost.clear();
-  delete this.ghost;
-  delete this.suffix;
-};
-
-Ghost.prototype.setText = function (text) {
+var Ghost = module.exports = function (widget, data, text) {
   var that = this;
-  this.removeText();
 
-  if (!text) { return; }
+  this.cm         = widget.completion.cm;
+  this.data       = data;
+  this.widget     = widget;
+  this.completion = widget.completion;
+
+  this.cm.addKeyMap(this.keyMap = {
+    'Tab':      function () { that.accept(); },
+    'Right':    function () { that.accept(); }
+  });
+
+  if (!text) { return this.remove(); }
 
   // At the moment, the ghost is going to assume the prefix text is accurate
   var suffix = this.suffix = text.substr(this.data.to.ch - this.data.from.ch);
 
-  if (!suffix.length) { return; }
+  if (!suffix.length) { return this.remove(); }
 
   var ghostHint = document.createElement('span');
   ghostHint.className = 'CodeMirror-hint-ghost';
@@ -41,9 +34,13 @@ Ghost.prototype.setText = function (text) {
 
 Ghost.prototype.accept = function () {
   this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
-  this.removeText();
+  this.remove();
 };
 
 Ghost.prototype.remove = function () {
-  this.removeText();
+  this.cm.removeKeyMap(this.keyMap);
+  if (this.ghost) { this.ghost.clear(); }
+  delete this.ghost;
+  delete this.suffix;
+  delete this.widget.ghost;
 };

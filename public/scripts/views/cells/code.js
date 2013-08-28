@@ -10,7 +10,7 @@ var keywords     = require('../../lib/keywords');
 var isSpecial    = require('../../lib/is-special-property');
 
 var filterCompletion = function () {
-  return this._completion.filterHints();
+  return this._completion.refresh();
 };
 
 var CodeCell = module.exports = EditorCell.extend({

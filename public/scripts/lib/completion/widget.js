@@ -1,40 +1,115 @@
+var Ghost = require('./ghost');
+
 var Widget = module.exports = function (completion, data) {
+  var cm   = completion.cm;
+  var that = this;
+
   this.data       = data;
   this.completion = completion;
 
-  var cm    = completion.cm;
-  var that  = this;
-  var text  = cm.getRange(data.from, data.to);
-  var hints = this.hints = document.createElement('ul');
-  hints.className   = 'CodeMirror-hints';
-  this.selectedHint = 0;
+  cm.addKeyMap(this.keyMap = {
+    'Up':       function () { that.setActive(that.selectedHint - 1); },
+    'Down':     function () { that.setActive(that.selectedHint + 1); },
+    // Enable `Alt-` navigation for when we are showing advanced properties
+    'Alt-Up':   function () { that.setActive(that.selectedHint - 1); },
+    'Alt-Down': function () { that.setActive(that.selectedHint + 1); },
+    'Home':     function () { that.setActive(0); },
+    'End':      function () { that.setActive(completions.length); },
+    'Enter':    function () { that.accept(); },
+    'Esc':      function () { that.remove(); },
+    'PageUp':   function () {
+      that.setActive(that.selectedHint - that.screenAmount());
+    },
+    'PageDown': function () {
+      that.setActive(that.selectedHint + that.screenAmount());
+    }
+  });
 
-  var completions = data.list;
+  this.refresh();
+};
 
-  for (var i = 0; i < completions.length; i++) {
-    var el  = hints.appendChild(document.createElement('li'));
+Widget.prototype.remove = function () {
+  this.removeGhost();
+  this.removeHints();
+  this.completion.cm.removeKeyMap(this.keyMap);
+  delete this.completion.widget;
+};
+
+Widget.prototype.removeHints = function () {
+  if (!this.hints) { return; }
+
+  this.completion.cm.off('scroll', this.onScroll);
+  if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
+  delete this.hints;
+};
+
+Widget.prototype.removeGhost = function () {
+  if (!this.ghost) { return; }
+
+  this.ghost.remove();
+};
+
+Widget.prototype.refresh = function () {
+  var activeHint  = 0;
+  var currentHint = 0;
+
+  // If we have current hints, get the current resultId so we can set it back as
+  // close as possible
+  if (this.hints && this.selectedHint) {
+    currentHint = this.hints.childNodes[this.selectedHint].listId;
+  }
+
+  this.removeHints();
+  delete this.selectedHint;
+
+  var cm          = this.completion.cm;
+  var text        = cm.getRange(this.data.from, this.data.to);
+  var hints       = this.hints = document.createElement('ul');
+  var completions = this.data.list;
+
+  for (var i = 0, j = 0; i < completions.length; i++) {
     var cur = completions[i];
 
-    el.className = 'CodeMirror-hint' + (i ? '' : ' CodeMirror-hint-active');
-    el.hintId = i;
+    // Skip any filtered values
+    if (!this.completion._filter(cur)) { continue; }
+
+    var el = hints.appendChild(document.createElement('li'));
+    el.hintId    = j++;
+    el.listId    = i;
+    el.className = 'CodeMirror-hint';
+
+    if (i <= currentHint) {
+      activeHint = el.hintId;
+    }
 
     if (cur.indexOf(text) === 0) {
-      var b = document.createElement('span');
-      b.className = 'CodeMirror-hint-match';
-      b.appendChild(document.createTextNode(cur.substr(0, text.length)));
-      el.appendChild(b);
+      var match = document.createElement('span');
+      match.className = 'CodeMirror-hint-match';
+      match.appendChild(document.createTextNode(cur.substr(0, text.length)));
+      el.appendChild(match);
       el.appendChild(document.createTextNode(cur.substr(text.length)));
     } else {
       el.appendChild(document.createTextNode(cur));
     }
   }
 
-  var pos   = cm.cursorCoords(data.from);
+  if (!hints.childNodes.length) {
+    this.removeGhost();
+    return this.removeHints();
+  }
+
+  if (hints.childNodes.length === 1) {
+    this.setActive(0);
+    return this.removeHints();
+  }
+
+  var pos   = cm.cursorCoords(this.data.from);
   var top   = pos.bottom;
   var left  = pos.left;
   var below = true;
 
-  hints.style.top  = top + 'px';
+  hints.className  = 'CodeMirror-hints';
+  hints.style.top  = top  + 'px';
   hints.style.left = left + 'px';
 
   var box       = hints.getBoundingClientRect();
@@ -66,41 +141,8 @@ var Widget = module.exports = function (completion, data) {
     hints.style.top = (top = pos.bottom - overlapY) + 'px';
   }
 
+  this.setActive(activeHint);
   document.body.appendChild(hints);
-
-  cm.addKeyMap(this.keyMap = {
-    'Up':       function () { that.setActive(that.selectedHint - 1); },
-    'Down':     function () { that.setActive(that.selectedHint + 1); },
-    // Enable `Alt-` navigation for when we are showing advanced properties
-    'Alt-Up':   function () { that.setActive(that.selectedHint - 1); },
-    'Alt-Down': function () { that.setActive(that.selectedHint + 1); },
-    'Home':     function () { that.setActive(0); },
-    'End':      function () { that.setActive(completions.length); },
-    'Enter':    function () { that.accept(); },
-    'PageUp':   function () {
-      that.setActive(that.selectedHint - that.screenAmount());
-    },
-    'PageDown': function () {
-      that.setActive(that.selectedHint + that.screenAmount());
-    }
-  });
-
-  var startScroll = cm.getScrollInfo();
-  cm.on('scroll', this.onScroll = function () {
-    var curScroll = cm.getScrollInfo();
-    var newTop    = top + startScroll.top - curScroll.top;
-    var editor    = cm.getWrapperElement().getBoundingClientRect();
-    var point     = newTop - (window.pageYOffset ||
-      (document.documentElement || document.body).scrollTop);
-
-    if (!below) { point += hints.offsetHeight; }
-    if (point <= editor.top || point >= editor.bottom) {
-      return completion.remove();
-    }
-
-    hints.style.top  = newTop + 'px';
-    hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
-  });
 
   CodeMirror.on(hints, 'click', function (e) {
     var el = e.target || e.srcElement;
@@ -114,35 +156,50 @@ var Widget = module.exports = function (completion, data) {
     setTimeout(function () { cm.focus(); }, 20);
   });
 
-  return true;
+  var startScroll = cm.getScrollInfo();
+  cm.on('scroll', this.onScroll = function () {
+    var curScroll = cm.getScrollInfo();
+    var newTop    = top + startScroll.top - curScroll.top;
+    var editor    = cm.getWrapperElement().getBoundingClientRect();
+    var point     = newTop - (window.pageYOffset ||
+      (document.documentElement || document.body).scrollTop);
+
+    if (!below) { point += that.hints.offsetHeight; }
+    if (point <= editor.top || point >= editor.bottom) {
+      return completion.remove();
+    }
+
+    that.hints.style.top  = newTop + 'px';
+    that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
+  });
 };
 
-Widget.prototype.remove = function () {
-  if (this.completion.widget !== this) { return; }
-
-  this.completion.widget = null;
-  this.completion.cm.removeKeyMap(this.keyMap);
-  this.hints.parentNode.removeChild(this.hints);
-
-  var cm = this.completion.cm;
-  cm.off('scroll', this.onScroll);
+Widget.prototype.accept = function () {
+  this.ghost.accept();
+  this.remove();
 };
-
-Widget.prototype.accept = function () { this.completion.accept(); };
 
 Widget.prototype.setActive = function (i) {
-  var length = this.data.list.length;
+  var total = this.hints.childNodes.length;
+  var node;
+
+  // Switch `i` to the closest number we can abuse
+  i = total ? i % total : 0;
+
   // When we have a negative value, take away from the end of the list, this
   // allows up to loop around the menu.
-  if (i < 0)          { i = length + i; }
-  if (i > length - 1) { i = i - length; }
+  if (i < 0) { i = total + i; }
 
-  i = Math.max(0, Math.min(i, length - 1));
-
+  if (!total)                  { return this.removeGhost(); }
   if (this.selectedHint === i) { return; }
 
-  var node = this.hints.childNodes[this.selectedHint];
-  node.className = node.className.replace(' CodeMirror-hint-active', '');
+  // Remove the old active hint
+  if (!isNaN(this.selectedHint)) {
+    node = this.hints.childNodes[this.selectedHint];
+    node.className = node.className.replace(' CodeMirror-hint-active', '');
+  }
+
+  // Add the class to the new active hint
   node = this.hints.childNodes[this.selectedHint = i];
   node.className += ' CodeMirror-hint-active';
 
@@ -155,7 +212,8 @@ Widget.prototype.setActive = function (i) {
     }
   }
 
-  this.completion.ghost.setText(this.data.list[i]);
+  this.removeGhost();
+  this.ghost = new Ghost(this, this.data, this.data.list[node.listId]);
 };
 
 Widget.prototype.screenAmount = function () {
