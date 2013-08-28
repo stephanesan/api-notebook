@@ -4,6 +4,7 @@ var Backbone  = require('backbone');
 var type      = require('../lib/type');
 var domify    = require('domify');
 var stringify = require('../lib/stringify');
+var state     = require('../lib/state');
 var messages  = require('../lib/messages');
 
 var InspectorView = module.exports = View.extend({
@@ -11,13 +12,10 @@ var InspectorView = module.exports = View.extend({
 });
 
 InspectorView.prototype.initialize = function (options) {
-  _.extend(this, _.pick(
-    options,
-    ['prefix', 'parentView', 'inspect', 'special', 'context', 'showExtra']
-  ));
+  _.extend(this, _.pick(options, ['prefix', 'parent', 'inspect', 'special']));
 
-  if (this.parentView) {
-    this.listenTo(this.parentView, 'close', this.close);
+  if (this.parent) {
+    this.listenTo(this.parent, 'close', this.close);
   }
 };
 
@@ -54,12 +52,10 @@ InspectorView.prototype.stringifyPreview = function () {
 
 InspectorView.prototype._renderChild = function (prefix, object, special) {
   var inspector = new InspectorView({
-    prefix:     prefix,
-    special:    special,
-    parentView: this,
-    inspect:    object,
-    context:    this.context,
-    showExtra:  this.showExtra
+    parent:  this,
+    prefix:  prefix,
+    inspect: object,
+    special: special
   });
   this.children.push(inspector);
   inspector.render().appendTo(this.childrenEl);
@@ -141,16 +137,18 @@ InspectorView.prototype.renderPreview = function () {
   var el = this.previewEl = domify(html);
   this.el.appendChild(el);
 
-  if (special) { this.el.classList[this.showExtra ? 'remove' : 'add']('hide'); }
+  var toggleExtra = _.bind(function (toggle) {
+    console.log(toggle);
+    this.el.classList[toggle ? 'remove' : 'add']('hide');
+  }, this);
 
-  this.listenTo(messages, 'keydown:Alt-Alt', function (keyName) {
-    this.showExtra = true;
-    if (special) { this.el.classList.remove('hide'); }
-  }, this);
-  this.listenTo(messages, 'keyup:Alt', function () {
-    this.showExtra = false;
-    if (special) { this.el.classList.add('hide'); }
-  }, this);
+  if (this.special) {
+    // Listen for state  changes to show extra properties/information
+    toggleExtra(state.get('showExtra'));
+    this.listenTo(state, 'change:showExtra', function (_, toggle) {
+      toggleExtra(toggle);
+    });
+  }
 
   return this;
 };

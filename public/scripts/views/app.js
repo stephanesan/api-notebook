@@ -5,6 +5,7 @@ var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
+var state    = require('../lib/state');
 var messages = require('../lib/messages');
 
 var App = module.exports = View.extend({
@@ -90,6 +91,14 @@ App.prototype.initialize = function (options) {
 
   this.listenTo(messages, 'keydown:Esc', function () {
     this.hideShortcuts();
+  }, this);
+
+  this.listenTo(messages, 'keydown:Alt-Alt', function () {
+    state.set('showExtra', true);
+  }, this);
+
+  this.listenTo(messages, 'keyup:Alt', function () {
+    state.set('showExtra', false);
   }, this);
 
   this.user = new App.Model.Session();
