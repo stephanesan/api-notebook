@@ -6,7 +6,6 @@ var Completion   = require('../../lib/completion');
 var stripInput   = require('../../lib/cm-strip-input');
 var state        = require('../../lib/state');
 var autocomplete = require('../../lib/cm-sandbox-autocomplete');
-var keywords     = require('../../lib/keywords');
 var isHidden     = require('../../lib/is-hidden-property');
 
 var filterCompletion = function () {
@@ -144,8 +143,8 @@ CodeCell.prototype.bindEditor = function () {
 
       // Check the token type and allow keywords to be completed
       if (!state.get('showExtra')) {
-        if (token.type !== 'variable' || !keywords.hasOwnProperty(string)) {
-          if (isHidden(this.context, string)) { return false; }
+        if (token.type === 'property' && isHidden(this.context, string)) {
+          return false;
         }
       }
 
