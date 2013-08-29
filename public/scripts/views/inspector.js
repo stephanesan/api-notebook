@@ -22,9 +22,16 @@ InspectorView.prototype.initialize = function (options) {
   }
 };
 
+var stopEvent = function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+};
+
 InspectorView.prototype.events = {
-  'click .preview, .arrow': function (e) {
-    e.stopPropagation();
+  'mouseup':   stopEvent,
+  'mousedown': stopEvent,
+  'click': function (e) {
+    stopEvent(e);
     this.toggle();
   }
 };
