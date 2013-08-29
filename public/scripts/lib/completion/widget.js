@@ -49,7 +49,7 @@ Widget.prototype.refresh = function () {
 
   // If we have current hints, get the current resultId so we can set it back as
   // close as possible
-  if (this.hints && this.selectedHint) {
+  if (this.hints && !isNaN(this.selectedHint)) {
     currentHint = this.hints.childNodes[this.selectedHint].listId;
   }
 
@@ -57,13 +57,13 @@ Widget.prototype.refresh = function () {
   this.removeHints();
   delete this.selectedHint;
 
-  var cm          = this.completion.cm;
-  var text        = cm.getRange(this.data.from, this.data.to);
-  var hints       = this.hints = document.createElement('ul');
-  var completions = this.data.list;
+  var cm    = this.completion.cm;
+  var list  = this.data.list;
+  var text  = cm.getRange(this.data.from, this.data.to);
+  var hints = this.hints = document.createElement('ul');
 
-  for (var i = 0, j = 0; i < completions.length; i++) {
-    var cur = completions[i];
+  for (var i = 0, j = 0; i < list.length; i++) {
+    var cur = list[i];
 
     // Skip any filtered out values from being created
     if (!this._filter(cur)) { continue; }
@@ -74,8 +74,7 @@ Widget.prototype.refresh = function () {
     el.className = 'CodeMirror-hint';
 
     // Move the activeHint as close as possible to the currently selected
-    // physical hint position. This is different to moving to the closest
-    // position in the result list.
+    // hints list position.
     if (i <= currentHint) {
       activeHint = el.hintId;
     }
@@ -117,12 +116,14 @@ Widget.prototype.refresh = function () {
     return this.removeHints();
   }
 
-  hints.className  = 'CodeMirror-hints';
-  this.setActive(activeHint);
+  hints.className = 'CodeMirror-hints';
   document.body.appendChild(hints);
 
   // Refresh the positioning of the hints within the DOM
   this.reposition();
+
+  // Set the active element after render so we can calculate scroll positions
+  this.setActive(activeHint);
 
   CodeMirror.on(hints, 'click', function (e) {
     var el = e.target || e.srcElement;
