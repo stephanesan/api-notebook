@@ -21,6 +21,10 @@ var getToken = function (cm, cur) {
   return cm.getTokenAt(cur);
 };
 
+var isValidVariableName = function (name) {
+  return /^[a-zA-Z_$][0-9a-zA-Z_$]+$/.test(name);
+};
+
 var getPropertyNames = function (obj) {
   var props = {};
   var addProp;
@@ -30,7 +34,10 @@ var getPropertyNames = function (obj) {
   };
 
   do {
-    _.each(Object.getOwnPropertyNames(obj), addProp);
+    _.each(Object.getOwnPropertyNames(obj), function (property) {
+      // Avoid any property that is not a valid JavaScript literal variable
+      if (isValidVariableName(property)) { addProp(property); }
+    });
   } while (obj = Object.getPrototypeOf(obj));
 
   return props;
