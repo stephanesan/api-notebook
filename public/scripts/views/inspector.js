@@ -6,7 +6,6 @@ var domify    = require('domify');
 var stringify = require('../lib/stringify');
 var state     = require('../lib/state');
 var messages  = require('../lib/messages');
-var isHidden  = require('../lib/is-hidden-property');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -109,16 +108,15 @@ InspectorView.prototype._renderChildren = function () {
 
     if (_.isFunction(desc.get) || _.isFunction(desc.set)) {
       if (_.isFunction(desc.get)) {
-        this._renderChild('get ' + prop, desc.get, true, true);
+        this._renderChild('get ' + prop, desc.get, true);
       }
 
       if (_.isFunction(desc.set)) {
-        this._renderChild('set ' + prop, desc.set, true, true);
+        this._renderChild('set ' + prop, desc.set, true);
       }
     } else {
-      var hidden  = isHidden(this.inspect, prop);
-      var special = !desc.writable || !desc.configurable || !desc.enumerable;
-      this._renderChild(prop, desc.value, special, hidden);
+      var isSpecial = !desc.writable || !desc.configurable || !desc.enumerable;
+      this._renderChild(prop, desc.value, isSpecial);
     }
   }, this);
 
