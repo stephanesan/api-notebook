@@ -33,7 +33,10 @@ var Ghost = module.exports = function (widget, data, text) {
 };
 
 Ghost.prototype.accept = function () {
-  this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
+  if (this.suffix && this.data) {
+    this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
+  }
+
   this.remove();
 };
 

@@ -2,11 +2,14 @@ var _        = require('underscore');
 var Pos      = CodeMirror.Pos;
 var keywords = require('./keywords');
 
-var varsToObject = function (scope) {
+var varsToObject = function (scope, ignore) {
   var obj = {};
 
   while (scope) {
-    if (typeof scope.name === 'string') { obj[scope.name] = true; }
+    // The scope variable could be the same token we are currently typing
+    if (typeof scope.name === 'string' && scope.name !== ignore) {
+      obj[scope.name] = true;
+    }
     scope = scope.next;
   }
 
@@ -44,20 +47,21 @@ var getPropertyNames = function (obj) {
 };
 
 var completeVariable = function (cm, token, sandbox) {
-  var vars = varsToObject(token.state.localVars);
+  var vars = varsToObject(token.state.localVars, token.string);
   var prev = token.state.context;
+
   // Extend the variables object with each context level
   while (prev) {
     _.extend(vars, varsToObject(prev.vars));
     prev = prev.prev;
   }
   // Extend with every other variable and keyword
-  _.extend(vars, varsToObject(token.state.globalVars));
+  _.extend(vars, varsToObject(token.state.globalVars, token.string));
   _.extend(vars, getPropertyNames(sandbox), keywords);
 
   return {
     context: sandbox,
-    results: _.keys(vars)
+    results: _.keys(vars).sort()
   };
 };
 
@@ -208,7 +212,7 @@ var completeProperty = function (cm, token, sandbox) {
 
   return {
     context: obj,
-    results: _.keys(getPropertyNames(obj))
+    results: _.keys(getPropertyNames(obj)).sort()
   };
 };
 
@@ -247,7 +251,7 @@ module.exports = function (cm, options) {
   }
 
   return {
-    list:    results.sort(),
+    list:    results,
     token:   token,
     context: context,
     to:      new Pos(cur.line, token.end),
