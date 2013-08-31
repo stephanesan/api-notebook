@@ -24,8 +24,8 @@ app.configure('development', function () {
 
 app.use(require('./routes'));
 
-// Any other id based URLs should fall through to serving up index.html
-app.get(/^\/(\w{20})$/, function (req, res) {
+// All other GET requests can be served the application.
+app.get('*', function (req, res) {
   res.sendfile(path.join(STATIC_DIR, 'index.html'));
 });
 
