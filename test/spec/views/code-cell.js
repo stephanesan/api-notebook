@@ -219,12 +219,69 @@ describe('Code Cell', function () {
 
         it('should autocomplete from the sandbox', function (done) {
           view.sandbox.execute('var testing = "test";', window, function () {
-            var suggestions = testAutocomplete('test');
-
-            expect(suggestions).to.contain('testing');
+            expect(testAutocomplete('test')).to.contain('testing');
             done();
           });
         });
+
+        describe('Functions process an @return property', function () {
+          it('should autocomplete strings', function (done) {
+            view.sandbox.execute(
+              'var test = function () {};\ntest["@return"] = "output";',
+              window,
+              function () {
+                expect(testAutocomplete('test().sub')).to.contain('substr');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete objects', function (done) {
+            view.sandbox.execute(
+              'var test = function () {};\ntest["@return"] = { test: "test" };',
+              window,
+              function () {
+                expect(testAutocomplete('test().te')).to.contain('test');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete chained functions', function (done) {
+            view.sandbox.execute(
+              [
+                'var test = function () {};',
+                'test["@return"] = { test: function () {} };',
+                'test["@return"].test["@return"] = "again";'
+              ].join('\n'),
+              window,
+              function () {
+                var suggestions = testAutocomplete('test().test().sub');
+
+                expect(suggestions).to.contain('sub');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete returned functions', function (done) {
+            view.sandbox.execute(
+              [
+                'var test = function () {};',
+                'test["@return"] = function () {};',
+                'test["@return"]["@return"] = "again";'
+              ].join('\n'),
+              window,
+              function () {
+                var suggestions = testAutocomplete('test()().sub');
+
+                expect(suggestions).to.contain('sub');
+                done();
+              }
+            );
+          });
+        });
+
 
         describe('properties', function () {
           it('should autocomplete object properties', function () {

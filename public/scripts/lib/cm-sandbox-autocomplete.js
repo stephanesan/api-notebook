@@ -89,7 +89,7 @@ var getPropertyContext = function (cm, token) {
     if (tprop.string !== '.') { return []; }
     tprop = eatSpace(tprop);
 
-    if (tprop.string === ')') {
+    while (tprop.string === ')') {
       level = 1;
       prev  = tprop; // Keep track in case this isn't a function after all
       do {
@@ -110,10 +110,20 @@ var getPropertyContext = function (cm, token) {
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
         tprop.isFunction = true;
+      // This case is a little tricky to work with since a function could
+      // return another function that is immediately invoked.
+      } else if (tprop.string === ')') {
+        context.push({
+          start: tprop.end,
+          end: tprop.end,
+          string: '',
+          state: tprop.state,
+          type: 'immed'
+        });
+      // Set `tprop` to be the token inside the parens and start working from
+      // that instead. If the last token is a space though, we need to move
+      // back a little further.
       } else {
-        // Set `tprop` to be the token inside the parens and start working from
-        // that instead. If the last token is a space though, we need to move
-        // back a little further.
         tprop = getToken(cm, new Pos(cur.line, prev.start));
         if (isWhitespaceToken(tprop)) {
           tprop = getToken(cm, new Pos(cur.line, tprop.start));
@@ -183,6 +193,9 @@ var getPropertyObject = function (cm, token, sandbox) {
         base = null;
       }
       break;
+    case 'immed':
+      base = base['@return'];
+      break;
     default:
       base = null;
       break;
@@ -190,7 +203,7 @@ var getPropertyObject = function (cm, token, sandbox) {
     // Functions are a special case. We have rudimentary introspection for the
     // DSL. However, if it's a constructor we can provide additional context
     // from the prototype.
-    if (tprop.isFunction) {
+    if (tprop.isFunction && typeof base === 'function') {
       if (tprop.isConstructor) {
         base = base.prototype;
       } else {
