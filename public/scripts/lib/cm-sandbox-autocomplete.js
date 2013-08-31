@@ -1,6 +1,7 @@
-var _        = require('underscore');
-var Pos      = CodeMirror.Pos;
-var keywords = require('./keywords');
+var _            = require('underscore');
+var Pos          = CodeMirror.Pos;
+var keywords     = require('./keywords');
+var correctToken = require('./cm-correct-token');
 
 var varsToObject = function (scope, ignore) {
   var obj = {};
@@ -218,25 +219,27 @@ var completeProperty = function (cm, token, sandbox) {
 
 module.exports = function (cm, options) {
   var cur     = cm.getCursor();
-  var token   = getToken(cm, cur);
+  var token   = correctToken(cm, getToken(cm, cur));
   var context = options.context || global;
   var results = [];
+  var type    = token.type;
+  var start   = token.start;
+  var end     = token.end;
 
-  token.state = CodeMirror.innerMode(cm.getMode(), token.state).state;
-
-  // Check if it's a valid word style token
-  if (!/^[\w$_]*$/.test(token.string)) {
-    token = {
-      start: cur.ch,
-      end: cur.ch,
-      string: '',
-      state: token.state,
-      type: token.string === '.' ? 'property' : null
-    };
+  // JavaScript can have any number of spaces between two property names, so we
+  // need to cater approppriately.
+  if (token.type === null && /[ ]+/.test(token.string)) {
+    var tprop = getToken(cm, new Pos(cur.line, token.start - 1));
+    // If the previous token was a property or variable, we can use that.
+    if (tprop.type === 'property' || tprop.type === 'variable') {
+      type  = 'property';
+      start = token.end;
+      end   = token.end;
+    }
   }
 
   var completion;
-  switch (token.type) {
+  switch (type) {
   case 'keyword':
   case 'variable':
     completion = completeVariable(cm, token, context);
@@ -254,7 +257,7 @@ module.exports = function (cm, options) {
     list:    results,
     token:   token,
     context: context,
-    to:      new Pos(cur.line, token.end),
-    from:    new Pos(cur.line, token.start)
+    to:      new Pos(cur.line, end),
+    from:    new Pos(cur.line, start)
   };
 };

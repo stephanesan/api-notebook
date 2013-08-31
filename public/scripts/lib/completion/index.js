@@ -10,6 +10,9 @@ var Completion = module.exports = function (cm, autocomplete, options) {
   this.options      = options;
   this.autocomplete = autocomplete;
 
+  // Default options
+  this.options.closeOn = this.options.closeOn || /[^$_a-zA-Z0-9]/;
+
   // Add a filter function
   if (typeof this.options.filter !== 'function') {
     this.options.filter = function (string) {
@@ -29,16 +32,30 @@ var Completion = module.exports = function (cm, autocomplete, options) {
       return that.removeWidget();
     }
 
-    that.showHints();
+    var closeOn = that.options.closeOn;
+    // Upon text insertion, check against the data given to use to decide if we
+    // need to create a new autocompletion widget.
+    if (data.origin !== '+delete' && closeOn.test(data.text.join('\n'))) {
+      that.removeWidget();
+    }
+    // Any deletions should check against the removed text to see if we need to
+    // start a new autocompletion widget.
+    if (data.origin === '+delete' && closeOn.test(data.removed.join('\n'))) {
+      that.removeWidget();
+    }
+
+    if (that.widget) {
+      that.widget.refresh();
+    } else {
+      that.showHints();
+    }
+
     closeOnCursor = false;
   };
   this.onCursorActivity = function (cm) {
-    var close = closeOnCursor;
-    closeOnCursor = true;
+    if (closeOnCursor) { that.removeWidget(); }
 
-    if (close || cm.somethingSelected()) {
-      return that.removeWidget();
-    }
+    closeOnCursor = true;
   };
 
   this.cm.on('blur',           this.onBlur);

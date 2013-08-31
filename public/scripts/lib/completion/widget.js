@@ -1,7 +1,9 @@
-var Ghost = require('./ghost');
-var state = require('../state');
+var Ghost       = require('./ghost');
+var state       = require('../state');
+var correctToken = require('../cm-correct-token');
 
 var Widget = module.exports = function (completion, data) {
+  var cm   = completion.cm;
   var that = this;
 
   this.data       = data;
@@ -9,7 +11,7 @@ var Widget = module.exports = function (completion, data) {
 
   if (!data.list.length) { return this.remove(); }
 
-  completion.cm.addKeyMap(this.keyMap = {
+  cm.addKeyMap(this.keyMap = {
     'Esc': function () { that.remove(); }
   });
 
@@ -44,6 +46,7 @@ Widget.prototype.removeGhost = function () {
 
 Widget.prototype.refresh = function () {
   var that        = this;
+  var cm          = this.completion.cm;
   var activeHint  = 0;
   var currentHint = 0;
 
@@ -57,10 +60,14 @@ Widget.prototype.refresh = function () {
   this.removeHints();
   delete this.selectedHint;
 
-  var cm    = this.completion.cm;
-  var list  = this.data.list;
-  var text  = cm.getRange(this.data.from, this.data.to);
-  var hints = this.hints = document.createElement('ul');
+  // Update data attributes with new positions
+  this.data.to    = cm.getCursor();
+  this.data.token = correctToken(cm, cm.getTokenAt(this.data.to));
+
+  var list     = this.data.list;
+  var text     = cm.getRange(this.data.from, this.data.to);
+  var hints    = this.hints = document.createElement('ul');
+  var results  = this._results = [];
 
   for (var i = 0, j = 0; i < list.length; i++) {
     var cur = list[i];
@@ -72,6 +79,9 @@ Widget.prototype.refresh = function () {
     el.hintId    = j++;
     el.listId    = i;
     el.className = 'CodeMirror-hint';
+
+    // Keep an array of displayed results
+    results.push(cur);
 
     // Move the activeHint as close as possible to the currently selected
     // hints list position.
