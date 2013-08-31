@@ -22,7 +22,7 @@ var getToken = function (cm, cur) {
 };
 
 var isValidVariableName = function (name) {
-  return /^[a-zA-Z_$][0-9a-zA-Z_$]+$/.test(name);
+  return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
 };
 
 var getPropertyNames = function (obj) {
@@ -247,7 +247,7 @@ module.exports = function (cm, options) {
   }
 
   return {
-    list:    results,
+    list:    results.sort(),
     token:   token,
     context: context,
     to:      new Pos(cur.line, token.end),

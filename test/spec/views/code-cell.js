@@ -177,6 +177,16 @@ describe('Code Cell', function () {
           expect(suggestions).to.contain('document');
         });
 
+        it('should autocomplete single characters', function (done) {
+          view.setValue('var o = {};');
+          // Execute the cell and retry typing with the result
+          view.execute(function () {
+            view.setValue('');
+            expect(testAutocomplete('o')).to.contain('o');
+            done();
+          });
+        });
+
         it('should autocomplete keywords', function () {
           var suggestions = testAutocomplete('sw');
 
