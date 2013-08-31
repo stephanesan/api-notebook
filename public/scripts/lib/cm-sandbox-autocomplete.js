@@ -219,7 +219,7 @@ var completeProperty = function (cm, token, sandbox) {
 
 module.exports = function (cm, options) {
   var cur     = cm.getCursor();
-  var token   = correctToken(cm, getToken(cm, cur));
+  var token   = correctToken(cm, cur);
   var context = options.context || global;
   var results = [];
   var type    = token.type;
@@ -229,9 +229,9 @@ module.exports = function (cm, options) {
   // JavaScript can have any number of spaces between two property names, so we
   // need to cater approppriately.
   if (token.type === null && /[ ]+/.test(token.string)) {
-    var tprop = getToken(cm, new Pos(cur.line, token.start - 1));
-    // If the previous token was a property or variable, we can use that.
-    if (tprop.type === 'property' || tprop.type === 'variable') {
+    var tprop = correctToken(cm, new Pos(cur.line, token.start));
+    // If the previous token was a period, we can still do completion.
+    if (tprop.type === 'property' && tprop.string === '') {
       type  = 'property';
       start = token.end;
       end   = token.end;

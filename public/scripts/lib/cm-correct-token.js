@@ -1,4 +1,6 @@
-module.exports = function (cm, token) {
+module.exports = function (cm, pos) {
+  var token = cm.getTokenAt(pos);
+
   token.state = CodeMirror.innerMode(cm.getMode(), token.state).state;
 
   if (token.string === '.') {

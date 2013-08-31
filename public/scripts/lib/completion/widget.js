@@ -62,7 +62,7 @@ Widget.prototype.refresh = function () {
 
   // Update data attributes with new positions
   this.data.to    = cm.getCursor();
-  this.data.token = correctToken(cm, cm.getTokenAt(this.data.to));
+  this.data.token = correctToken(cm, this.data.to);
 
   var list     = this.data.list;
   var text     = cm.getRange(this.data.from, this.data.to);
