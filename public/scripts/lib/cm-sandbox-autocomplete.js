@@ -70,12 +70,24 @@ var getPropertyContext = function (cm, token) {
   var cur     = cm.getCursor();
   var tprop   = token;
   var context = [];
-  var level, prev, subContext;
+  var level, prev, subContext, eatSpace;
+
+  // Since JavaScript allows any number of spaces between properties and parens,
+  // we will need to eat the additional spaces.
+  eatSpace = function () {
+    var token = getToken(cm, new Pos(cur.line, tprop.start));
+
+    if (token.type === null && /[ ]+/.test(token.string)) {
+      token = getToken(cm, new Pos(cur.line, token.start));
+    }
+
+    return token;
+  };
 
   while (tprop.type === 'property') {
-    tprop = getToken(cm, new Pos(cur.line, tprop.start));
+    tprop = eatSpace(tprop);
     if (tprop.string !== '.') { return []; }
-    tprop = getToken(cm, new Pos(cur.line, tprop.start));
+    tprop = eatSpace(tprop);
 
     if (tprop.string === ')') {
       level = 1;
@@ -93,16 +105,19 @@ var getPropertyContext = function (cm, token) {
       // While still in parens *and not at the beginning of the line*
       } while (level > 0 && tprop.start);
 
-      tprop = getToken(cm, new Pos(cur.line, tprop.start));
+      tprop = eatSpace(tprop);
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
         tprop.isFunction = true;
       } else {
-        if (!isWhitespaceToken(tprop)) { return []; }
         // Set `tprop` to be the token inside the parens and start working from
-        // that instead
-        tprop      = getToken(cm, new Pos(cur.line, prev.start));
+        // that instead. If the last token is a space though, we need to move
+        // back a little further.
+        tprop = getToken(cm, new Pos(cur.line, prev.start));
+        if (isWhitespaceToken(tprop)) {
+          tprop = getToken(cm, new Pos(cur.line, tprop.start));
+        }
         subContext = getPropertyContext(cm, tprop);
         // The subcontext has a new keyword, but a function was not found, set
         // the last property to be a constructor and function
@@ -121,21 +136,18 @@ var getPropertyContext = function (cm, token) {
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here
   if (tprop.type === 'variable') {
-    prev = getToken(cm, new Pos(cur.line, tprop.start));
+    prev = eatSpace(tprop);
 
-    if (isWhitespaceToken(prev)) {
-      prev = getToken(cm, new Pos(cur.line, prev.start));
-      // Sets whether the variable is actually a constructor function
-      if (prev.type === 'keyword' && prev.string === 'new') {
-        context.hasNew = true;
-        // Try to set a function to be a constructor function
-        _.some(context, function (tprop) {
-          if (!tprop.isFunction) { return; }
-          // Remove the `hasNew` flag and set the function to be a constructor
-          delete context.hasNew;
-          return (tprop.isConstructor = true);
-        });
-      }
+    // Sets whether the variable is actually a constructor function
+    if (prev.type === 'keyword' && prev.string === 'new') {
+      context.hasNew = true;
+      // Try to set a function to be a constructor function
+      _.some(context, function (tprop) {
+        if (!tprop.isFunction) { return; }
+        // Remove the `hasNew` flag and set the function to be a constructor
+        delete context.hasNew;
+        return (tprop.isConstructor = true);
+      });
     }
   }
 
@@ -225,18 +237,6 @@ module.exports = function (cm, options) {
   var type    = token.type;
   var start   = token.start;
   var end     = token.end;
-
-  // JavaScript can have any number of spaces between two property names, so we
-  // need to cater approppriately.
-  if (token.type === null && /[ ]+/.test(token.string)) {
-    var tprop = correctToken(cm, new Pos(cur.line, token.start));
-    // If the previous token was a period, we can still do completion.
-    if (tprop.type === 'property' && tprop.string === '') {
-      type  = 'property';
-      start = token.end;
-      end   = token.end;
-    }
-  }
 
   var completion;
   switch (type) {

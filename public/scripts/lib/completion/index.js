@@ -43,6 +43,10 @@ var Completion = module.exports = function (cm, autocomplete, options) {
     if (data.origin === '+delete' && closeOn.test(data.removed.join('\n'))) {
       that.removeWidget();
     }
+    // If the previous token is whitespace, trigger a new autocompletion widget.
+    if (/ */.test(cm.getTokenAt(data.from).string)) {
+      that.removeWidget();
+    }
 
     if (that.widget) {
       that.widget.refresh();

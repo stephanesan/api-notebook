@@ -168,7 +168,7 @@ describe('Code Cell', function () {
             from:   view.editor.getCursor(),
             text:  [ value.slice(-1) ]
           });
-          return view._completion.widget.data.list;
+          return view._completion.widget._results;
         };
 
         it('should autocomplete variables', function () {
@@ -292,6 +292,18 @@ describe('Code Cell', function () {
             var suggestions = testAutocomplete('(123).to');
 
             expect(suggestions).to.contain('toFixed');
+          });
+
+          it('should ignore whitespace between properties', function () {
+            expect(testAutocomplete('window  .win')).to.contain('window');
+            expect(testAutocomplete('window.  win')).to.contain('window');
+            expect(testAutocomplete('window  .  win')).to.contain('window');
+          });
+
+          it('should ignore whitespace inside parens', function () {
+            expect(testAutocomplete('(  123).to')).to.contain('toFixed');
+            expect(testAutocomplete('(123  ).to')).to.contain('toFixed');
+            expect(testAutocomplete('(  123  ).to')).to.contain('toFixed');
           });
         });
       });
