@@ -4,6 +4,7 @@ var path     = require('path');
 var passport = require('./lib/passport');
 
 var PORT           = process.env.PORT || 8000;
+var STATIC_DIR     = path.join(__dirname, 'build');
 var SESSION_SECRET = 'keyboard cat';
 
 app.configure(function () {
@@ -14,7 +15,7 @@ app.configure(function () {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  app.use(express.static(path.join(__dirname, 'build')));
+  app.use(express.static(STATIC_DIR));
 });
 
 app.configure('development', function () {
@@ -22,6 +23,11 @@ app.configure('development', function () {
 });
 
 app.use(require('./routes'));
+
+// All other GET requests can be served the application.
+app.get('*', function (req, res) {
+  res.sendfile(path.join(STATIC_DIR, 'index.html'));
+});
 
 app.listen(PORT, function () {
   console.log('Server listening on port ' + PORT);
