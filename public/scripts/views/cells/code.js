@@ -7,6 +7,8 @@ var stripInput   = require('../../lib/cm-strip-input');
 var state        = require('../../lib/state');
 var autocomplete = require('../../lib/cm-sandbox-autocomplete');
 var isHidden     = require('../../lib/is-hidden-property');
+var extraKeys    = require('./lib/extra-keys');
+var controls     = require('../../lib/controls').code;
 
 var filterCompletion = function () {
   return this._completion.refresh();
@@ -26,30 +28,6 @@ CodeCell.prototype.initialize = function () {
 
 CodeCell.prototype.EditorModel = require('../../models/code-entry');
 
-CodeCell.prototype.execute = function (cb) {
-  var context = this.model.collection.serializeForEval();
-
-  // Set the value as our own model for executing
-  this.model.set('value', this.editor.getValue());
-  this.browseToCell(this.model);
-
-  this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
-    // Set the error or result to the inspector
-    if (err) {
-      this.result.setError(err, this.sandbox.window);
-    } else {
-      this.result.setResult(result, this.sandbox.window);
-    }
-
-    this.model.set('result', result); // Keep a reference to the result
-    this.trigger('execute', this, err, result);
-
-    if (cb) { cb(err, result); }
-  }, this));
-
-  return this;
-};
-
 CodeCell.prototype.editorOptions = _.extend(
   {},
   EditorCell.prototype.editorOptions,
@@ -62,27 +40,7 @@ CodeCell.prototype.editorOptions = _.extend(
 );
 
 CodeCell.prototype.editorOptions.extraKeys = _.extend(
-  {},
-  EditorCell.prototype.editorOptions.extraKeys,
-  {
-    'Enter': function (cm) {
-      cm.view.execute();
-    },
-    'Up': function (cm) {
-      if (cm.doc.getCursor().line === 0) {
-        return cm.view.browseUp();
-      }
-      CodeMirror.commands.goLineUp(cm);
-    },
-    'Down': function (cm) {
-      if (cm.doc.getCursor().line === cm.doc.lastLine()) {
-        return cm.view.browseDown();
-      }
-      CodeMirror.commands.goLineDown(cm);
-    },
-    // Alias shift enter to the normal enter behaviour
-    'Shift-Enter': CodeMirror.keyMap.basic.Enter
-  }
+  {}, EditorCell.prototype.editorOptions.extraKeys, extraKeys(controls)
 );
 
 CodeCell.prototype.save = function () {
@@ -113,12 +71,48 @@ CodeCell.prototype.getPrevCodeView = function () {
   }
 };
 
+CodeCell.prototype.execute = function (cb) {
+  var context = this.model.collection.serializeForEval();
+
+  // Set the value as our own model for executing
+  this.model.set('value', this.editor.getValue());
+  this.browseToCell(this.model);
+
+  this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
+    // Set the error or result to the inspector
+    if (err) {
+      this.result.setError(err, this.sandbox.window);
+    } else {
+      this.result.setResult(result, this.sandbox.window);
+    }
+
+    this.model.set('result', result); // Keep a reference to the result
+    this.trigger('execute', this, err, result);
+
+    if (cb) { cb(err, result); }
+  }, this));
+
+  return this;
+};
+
 CodeCell.prototype.browseUp = function () {
-  this.trigger('browseUp', this, this._editorCid);
+  if (this.editor.doc.getCursor().line === 0) {
+    return this.trigger('browseUp', this, this._editorCid);
+  }
+
+  CodeMirror.commands.goLineUp(this.editor);
 };
 
 CodeCell.prototype.browseDown = function () {
-  this.trigger('browseDown', this, this._editorCid);
+  if (this.editor.doc.getCursor().line === this.editor.doc.lastLine()) {
+    return this.trigger('browseDown', this, this._editorCid);
+  }
+
+  CodeMirror.commands.goLineDown(this.editor);
+};
+
+CodeCell.prototype.newLine = function () {
+  CodeMirror.commands.newlineAndIndent(this.editor);
 };
 
 CodeCell.prototype.browseToCell = function (newModel) {
