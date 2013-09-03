@@ -4,6 +4,7 @@ var Backbone  = require('backbone');
 var type      = require('../lib/type');
 var domify    = require('domify');
 var stringify = require('../lib/stringify');
+var state     = require('../lib/state');
 var messages  = require('../lib/messages');
 
 var InspectorView = module.exports = View.extend({
@@ -12,17 +13,24 @@ var InspectorView = module.exports = View.extend({
 
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
-    options, ['prefix', 'parentView', 'inspect', 'special', 'context']
+    options, ['prefix', 'parent', 'inspect', 'special', 'hidden']
   ));
 
-  if (this.parentView) {
-    this.listenTo(this.parentView, 'close', this.close);
+  if (this.parent) {
+    this.listenTo(this.parent, 'close', this.close);
   }
 };
 
+var stopEvent = function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+};
+
 InspectorView.prototype.events = {
-  'click .preview, .arrow': function (e) {
-    e.stopPropagation();
+  'mouseup':   stopEvent,
+  'mousedown': stopEvent,
+  'click': function (e) {
+    stopEvent(e);
     this.toggle();
   }
 };
@@ -51,13 +59,13 @@ InspectorView.prototype.stringifyPreview = function () {
   return stringify(this.inspect);
 };
 
-InspectorView.prototype._renderChild = function (prefix, object, special) {
+InspectorView.prototype._renderChild = function (prefix, obj, special, hide) {
   var inspector = new InspectorView({
-    prefix:     prefix,
-    special:    special,
-    parentView: this,
-    inspect:    object,
-    context:    this.context
+    parent:  this,
+    hidden:  hide,
+    prefix:  prefix,
+    inspect: obj,
+    special: special
   });
   this.children.push(inspector);
   inspector.render().appendTo(this.childrenEl);
@@ -96,37 +104,37 @@ InspectorView.prototype._renderChildrenEl = function () {
 
 InspectorView.prototype._renderChildren = function () {
   _.each(Object.getOwnPropertyNames(this.inspect), function (prop) {
-    var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
+    var desc = Object.getOwnPropertyDescriptor(this.inspect, prop);
 
-    if (_.isFunction(descriptor.get) || _.isFunction(descriptor.set)) {
-      if (_.isFunction(descriptor.get)) {
-        this._renderChild('get ' + prop, descriptor.get, true);
+    if (_.isFunction(desc.get) || _.isFunction(desc.set)) {
+      if (_.isFunction(desc.get)) {
+        this._renderChild('get ' + prop, desc.get, true);
       }
 
-      if (_.isFunction(descriptor.set)) {
-        this._renderChild('set ' + prop, descriptor.set, true);
+      if (_.isFunction(desc.set)) {
+        this._renderChild('set ' + prop, desc.set, true);
       }
     } else {
-      var isSpecial = !descriptor.writable || !descriptor.configurable ||
-                       !descriptor.enumerable;
-      this._renderChild(prop, descriptor.value, isSpecial);
+      var isSpecial = !desc.writable || !desc.configurable || !desc.enumerable;
+      this._renderChild(prop, desc.value, isSpecial);
     }
   }, this);
 
   // Hidden prototype - super handy when debugging
   var prototype = Object.getPrototypeOf(this.inspect);
-  this._renderChild('[[Prototype]]', prototype, true);
+  this._renderChild('[[Prototype]]', prototype, true, true);
 
   return this;
 };
 
 InspectorView.prototype.renderPreview = function () {
-  var html = '';
+  var html    = '';
+  var special = this.special;
 
   html += '<div class="arrow"></div>';
   html += '<div class="preview ' + type(this.inspect) + '">';
   if (_.isString(this.prefix)) {
-    html += '<span class="property' + (this.special ? ' special' : '') + '">';
+    html += '<span class="property' + (special ? ' is-special' : '') + '">';
     html += _.escape(this.prefix);
     html += '</span>: ';
   }
@@ -137,6 +145,18 @@ InspectorView.prototype.renderPreview = function () {
 
   var el = this.previewEl = domify(html);
   this.el.appendChild(el);
+
+  var toggleExtra = _.bind(function (toggle) {
+    this.el.classList[toggle ? 'remove' : 'add']('hide');
+  }, this);
+
+  if (this.hidden) {
+    // Listen for state  changes to show extra properties/information
+    toggleExtra(state.get('showExtra'));
+    this.listenTo(state, 'change:showExtra', function (_, toggle) {
+      toggleExtra(toggle);
+    });
+  }
 
   return this;
 };

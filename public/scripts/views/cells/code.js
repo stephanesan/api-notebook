@@ -1,9 +1,16 @@
-var _               = require('underscore');
-var Backbone        = require('backbone');
-var EditorCell      = require('./editor');
-var ResultCell      = require('./result');
-var stripInput      = require('../../lib/cm-strip-input');
-var completion      = require('../../lib/cm-sandbox-completion');
+var _            = require('underscore');
+var Backbone     = require('backbone');
+var EditorCell   = require('./editor');
+var ResultCell   = require('./result');
+var Completion   = require('../../lib/completion');
+var stripInput   = require('../../lib/cm-strip-input');
+var state        = require('../../lib/state');
+var autocomplete = require('../../lib/cm-sandbox-autocomplete');
+var isHidden     = require('../../lib/is-hidden-property');
+
+var filterCompletion = function () {
+  return this._completion.refresh();
+};
 
 var CodeCell = module.exports = EditorCell.extend({
   className: 'cell cell-code'
@@ -119,19 +126,33 @@ CodeCell.prototype.browseToCell = function (newModel) {
   this.setValue(newModel.get('value'));
 };
 
-CodeCell.prototype.autocomplete = function () {
-  // Extends the context object our inline result references for autocompletion
+CodeCell.prototype.bindEditor = function () {
+  EditorCell.prototype.bindEditor.call(this);
+
+  // Extends the context with additional inline completion results. Requires
+  // using `Object.create` since you can't extend an object with every property
+  // of the global object.
   var context = Object.create(this.sandbox.window);
   _.extend(context, this.model.collection.serializeForEval());
 
-  CodeMirror.showHint(this.editor, completion, {
+  // Set up autocompletion
+  this._completion = new Completion(this.editor, autocomplete, {
     context: context,
-    completeSingle: false
-  });
-};
+    filter: function (string) {
+      var token = this.token;
 
-CodeCell.prototype.bindEditor = function () {
-  EditorCell.prototype.bindEditor.call(this);
+      // Check the token type and allow keywords to be completed
+      if (!state.get('showExtra')) {
+        if (token.type === 'property' && isHidden(this.context, string)) {
+          return false;
+        }
+      }
+
+      return string.substr(0, token.string.length) === token.string;
+    }
+  });
+
+  this.listenTo(state, 'change:showExtra', filterCompletion, this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     this.lastLine = this.startLine + cm.lastLine();
@@ -144,14 +165,16 @@ CodeCell.prototype.bindEditor = function () {
       if (this.getValue()) { this.execute(); }
       return this.trigger('text', this, commentBlock);
     }
-
-    // Trigger autocompletion on user events `+input` and `+delete`
-    if (data.origin && data.origin.charAt(0) === '+') {
-      return this.autocomplete();
-    }
   }, this));
 
   return this;
+};
+
+CodeCell.prototype.unbindEditor = function () {
+  this._completion.remove();
+  delete this._completion;
+  this.stopListening(state, 'change:showExtra', filterCompletion);
+  EditorCell.prototype.unbindEditor.call(this);
 };
 
 CodeCell.prototype.render = function () {

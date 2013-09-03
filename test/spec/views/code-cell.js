@@ -13,6 +13,14 @@ describe('Code Cell', function () {
 
     beforeEach(function () {
       view = new Code();
+      view.model.view = view;
+      view.sandbox    = new App.Sandbox();
+      // Stub the serialization function for testing
+      view.model.collection = {
+        getNextCode: sinon.stub().returns(undefined),
+        getPrevCode: sinon.stub().returns(undefined),
+        serializeForEval: sinon.stub().returns({})
+      };
     });
 
     it('should have a class', function () {
@@ -36,10 +44,6 @@ describe('Code Cell', function () {
       beforeEach(function () {
         view   = view.render().appendTo(fixture);
         editor = view.editor;
-        // Need to set certain properties for testing
-        view.model.view = view;
-        view.sandbox    = new App.Sandbox();
-        (new App.Collection.Notebook()).add(view.model);
       });
 
       afterEach(function () {
@@ -102,15 +106,6 @@ describe('Code Cell', function () {
       });
 
       describe('execute code', function () {
-        beforeEach(function () {
-          view.model.view = view;
-          view.sandbox    = new App.Sandbox();
-          // Stub the serialization function for testing
-          view.model.collection = {
-            serializeForEval: sinon.stub().returns({})
-          };
-        });
-
         it('should render the result', function (done) {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = '10';
@@ -164,11 +159,6 @@ describe('Code Cell', function () {
 
       describe('autocompletion', function () {
         var testAutocomplete = function (value) {
-          var spy;
-          // Listens to the `update` event emitted by `show-hint`
-          view.listenTo(view.editor, 'startCompletion', function (cm) {
-            spy = sinon.spy(cm.state.completionActive, 'showHints');
-          });
           view.setValue(value);
           view.moveCursorToEnd();
           // Trigger a fake change event to cause autocompletion to occur
@@ -176,16 +166,25 @@ describe('Code Cell', function () {
             origin: '+input',
             to:     view.editor.getCursor(),
             from:   view.editor.getCursor(),
-            text:  [ value ]
+            text:  [ value.slice(-1) ]
           });
-          // Return the first call to show hints
-          return spy.getCall(0).args[0].list;
+          return view._completion.widget._results;
         };
 
         it('should autocomplete variables', function () {
           var suggestions = testAutocomplete('doc');
 
           expect(suggestions).to.contain('document');
+        });
+
+        it('should autocomplete single characters', function (done) {
+          view.setValue('var o = {};');
+          // Execute the cell and retry typing with the result
+          view.execute(function () {
+            view.setValue('');
+            expect(testAutocomplete('o')).to.contain('o');
+            done();
+          });
         });
 
         it('should autocomplete keywords', function () {
@@ -220,12 +219,69 @@ describe('Code Cell', function () {
 
         it('should autocomplete from the sandbox', function (done) {
           view.sandbox.execute('var testing = "test";', window, function () {
-            var suggestions = testAutocomplete('test');
-
-            expect(suggestions).to.contain('testing');
+            expect(testAutocomplete('test')).to.contain('testing');
             done();
           });
         });
+
+        describe('Functions process an @return property', function () {
+          it('should autocomplete strings', function (done) {
+            view.sandbox.execute(
+              'var test = function () {};\ntest["@return"] = "output";',
+              window,
+              function () {
+                expect(testAutocomplete('test().sub')).to.contain('substr');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete objects', function (done) {
+            view.sandbox.execute(
+              'var test = function () {};\ntest["@return"] = { test: "test" };',
+              window,
+              function () {
+                expect(testAutocomplete('test().te')).to.contain('test');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete chained functions', function (done) {
+            view.sandbox.execute(
+              [
+                'var test = function () {};',
+                'test["@return"] = { test: function () {} };',
+                'test["@return"].test["@return"] = "again";'
+              ].join('\n'),
+              window,
+              function () {
+                var suggestions = testAutocomplete('test().test().sub');
+
+                expect(suggestions).to.contain('sub');
+                done();
+              }
+            );
+          });
+
+          it('should autocomplete returned functions', function (done) {
+            view.sandbox.execute(
+              [
+                'var test = function () {};',
+                'test["@return"] = function () {};',
+                'test["@return"]["@return"] = "again";'
+              ].join('\n'),
+              window,
+              function () {
+                var suggestions = testAutocomplete('test()().sub');
+
+                expect(suggestions).to.contain('sub');
+                done();
+              }
+            );
+          });
+        });
+
 
         describe('properties', function () {
           it('should autocomplete object properties', function () {
@@ -293,6 +349,18 @@ describe('Code Cell', function () {
             var suggestions = testAutocomplete('(123).to');
 
             expect(suggestions).to.contain('toFixed');
+          });
+
+          it('should ignore whitespace between properties', function () {
+            expect(testAutocomplete('window  .win')).to.contain('window');
+            expect(testAutocomplete('window.  win')).to.contain('window');
+            expect(testAutocomplete('window  .  win')).to.contain('window');
+          });
+
+          it('should ignore whitespace inside parens', function () {
+            expect(testAutocomplete('(  123).to')).to.contain('toFixed');
+            expect(testAutocomplete('(123  ).to')).to.contain('toFixed');
+            expect(testAutocomplete('(  123  ).to')).to.contain('toFixed');
           });
         });
       });

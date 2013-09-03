@@ -448,8 +448,9 @@ describe('Notebook', function () {
           };
 
           var simulateClick = function (element) {
-            var clickEvent = new CustomEvent("click", true, true);
-            element.dispatchEvent(clickEvent);
+            element.dispatchEvent(new CustomEvent('mousedown', true, true));
+            element.dispatchEvent(new CustomEvent('mouseup', true, true));
+            element.dispatchEvent(new CustomEvent('click', true, true));
           };
 
           it('should exist as one instance', function () {

@@ -5,11 +5,15 @@ var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
+var state    = require('../lib/state');
 var messages = require('../lib/messages');
 
 var App = module.exports = View.extend({
   className: 'application'
 });
+
+App._        = _;
+App.Backbone = Backbone;
 
 // Access a sandbox instance from tests
 App.Sandbox     = require('../lib/sandbox');
@@ -71,19 +75,13 @@ App.prototype.initialize = function (options) {
     silent:    true
   });
 
-  // Listen to keyboard presses
-  this.listenTo(Backbone.$(document), 'keydown', _.bind(function (e) {
-    var ESC           = 27;
-    var QUESTION_MARK = 191;
+  this.listenTo(messages, 'keydown:Shift-/', function () {
+    this.toggleShortcuts();
+  }, this);
 
-    if (e.which === QUESTION_MARK && e.shiftKey) {
-      return this.toggleShortcuts();
-    }
-
-    if (e.which === ESC) {
-      return this.hideShortcuts();
-    }
-  }, this));
+  this.listenTo(messages, 'keydown:Esc', function () {
+    this.hideShortcuts();
+  }, this);
 
   this.user = new App.Model.Session();
   this.user.fetch();
@@ -95,7 +93,6 @@ App.prototype.initialize = function (options) {
 
 App.prototype.remove = function () {
   Backbone.history.stop();
-  window.onresize = null;
   View.prototype.remove.call(this);
 };
 
@@ -189,8 +186,8 @@ App.prototype.setupEmbeddableWidget = function () {
 
   // Listen to any resize triggers from the messages object and send the parent
   // frame our updated iframe size.
-  messages.on('resize', function () {
-    postMessage.trigger('height', doc.documentElement.scrollHeight);
+  this.listenTo(state, 'change:window.scrollHeight', function (_, height) {
+    postMessage.trigger('height', height);
   });
 };
 
@@ -208,11 +205,7 @@ App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   Backbone.history.loadUrl();
 
-  this.onResize = window.onresize = _.throttle(function () {
-    messages.trigger('resize');
-  }, 50);
-
-  this.onResize();
+  messages.trigger('resize');
 };
 
 App.prototype.runNotebook = function () {
