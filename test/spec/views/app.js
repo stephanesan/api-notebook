@@ -54,21 +54,5 @@ describe('App', function () {
         expect(view.el.children).to.have.length.above(1);
       });
     });
-
-    describe('#appendTo', function () {
-      beforeEach(function () {
-        view.render().appendTo(fixture);
-      });
-
-      afterEach(function () {
-        view.remove();
-      });
-
-      it('should set a new gist', function () {
-        expect(view.notebook).to.exist;
-        expect(view.notebook.gist).to.exist;
-        expect(view.notebook.gist.id).to.not.exist;
-      });
-    });
   });
 });
