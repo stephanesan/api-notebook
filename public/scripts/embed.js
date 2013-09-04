@@ -11,8 +11,10 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  * @param  {*}        [context]
  */
 var each = function (obj, fn, context) {
-  if (obj.length === +obj.length) {
-    for (var i = 0, l = obj.length; i < l; i++) {
+  var l = obj.length;
+
+  if (l === +l) {
+    for (var i = 0; i < l; i++) {
       fn.call(context, obj[i], i, obj);
     }
   } else {
@@ -81,7 +83,8 @@ var getDataAttributes = function (el) {
 var defaults = {
   id:      null, // Initial id to pull content from
   content: null, // Fallback content in case of no id
-  style:   {}    // Set styles on the iframe
+  style:   {},   // Set styles on the iframe
+  alias:   {}    // Alias objects into the frame once available
 };
 
 /**
@@ -133,21 +136,17 @@ Notebook.prototype.makeFrame = function (el) {
   var frame = this.frame = document.createElement('iframe');
   frame.src = src;
 
-  if (typeof el.appendChild === 'function') {
-    el.appendChild(frame);
-  } else {
-    el(frame);
-  }
-
-  this.window = frame.contentWindow;
-
   // When the app is ready to receive events, send relevant info
-  this.once('ready', function ready () {
+  this.once('ready', function () {
     this.trigger('referrer', global.location.href);
 
     if (typeof this.options.content === 'string') {
       this.trigger('content', this.options.content);
     }
+
+    each(that.options.alias, function (value, key) {
+      this.trigger('alias', key, value);
+    }, this);
   });
 
   // When a new height comes through, update the iframe height
@@ -163,6 +162,14 @@ Notebook.prototype.makeFrame = function (el) {
     that.trigger.apply(that, e.data);
   }, false);
 
+  if (typeof el.appendChild === 'function') {
+    el.appendChild(frame);
+  } else {
+    el(frame);
+  }
+
+  this.window = frame.contentWindow;
+
   this.styleFrame(this.options.style);
 
   return this;
@@ -177,6 +184,13 @@ Notebook.prototype.makeFrame = function (el) {
 Notebook.prototype.styleFrame = function (style) {
   css(this.frame, style);
   return this;
+};
+
+Notebook.prototype.getVariable = function (key, done) {
+  this.once('export', function (key, value) {
+    done(value);
+  });
+  this.trigger('export', key);
 };
 
 /**
@@ -225,9 +239,10 @@ Notebook.prototype.on = function (name, fn) {
  */
 Notebook.prototype.once = function (name, fn) {
   var that = this;
-  return this.on(name, function () {
-    that.off(name, fn);
+  return this.on(name, function cb () {
+    that.off(name, cb);
     fn.apply(this, arguments);
+    fn = null;
   });
 };
 
@@ -247,7 +262,7 @@ Notebook.prototype.off = function (name, fn) {
   }
 
   var events = this._events[name];
-  for (var i = 0; i < events; i++) {
+  for (var i = 0; i < events.length; i++) {
     if (events[i] === fn) {
       events.splice(i, 1);
       i--;
@@ -275,7 +290,9 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
     delete that._frameEvent;
     args = Array.prototype.slice.call(arguments, 1);
     if (this._events && this._events[name]) {
-      each(this._events[name], function (fn) {
+      // Slice a copy of the events since we might be removing an event from
+      // within an event callback. In which case it would break the loop.
+      each(this._events[name].slice(), function (fn) {
         fn.apply(that, args);
       });
     }

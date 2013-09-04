@@ -186,6 +186,16 @@ App.prototype.setupEmbeddableWidget = function () {
     this.setDefaultContent(content);
   }, this);
 
+  // Allow passing of variables between the parent window and child frame.
+  postMessage.on('alias', function (key, value) {
+    global[key] = value;
+  });
+
+  // Allow grabbing a variable from the iframe and passing back to the parent.
+  postMessage.on('export', function (key) {
+    postMessage.trigger('export', key, global[key]);
+  });
+
   // Send a message to the parent frame and let it know we are ready to accept
   // messages and data.
   postMessage.trigger('ready');

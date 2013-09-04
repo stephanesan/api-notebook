@@ -55,4 +55,27 @@ describe('Embeddable Widget', function () {
       done();
     });
   });
+
+  it('should be able to pass objects into the notebook context', function (done) {
+    var alias = {
+      test: 'success',
+      again: 'more'
+    };
+
+    var notebook = new Notebook(fixture, {
+      alias: alias
+    });
+
+    notebook.on('ready', function () {
+      notebook.getVariable('test', function (variable) {
+        expect(variable).to.equal(alias.test);
+
+        notebook.getVariable('again', function (variable) {
+          expect(variable).to.equal(alias.again);
+          notebook.remove();
+          done();
+        });
+      });
+    });
+  });
 });
