@@ -127,7 +127,7 @@ Notebook.prototype.makeFrame = function (el) {
   var src  = NOTEBOOK_URL;
 
   if (this.options.id) {
-    src += ('/' === src[src.length - 1] ? '' : '/') + '#' + this.options.id;
+    src += ('/' === src[src.length - 1] ? '' : '/') + this.options.id;
   }
 
   var frame = this.frame = document.createElement('iframe');
@@ -139,8 +139,10 @@ Notebook.prototype.makeFrame = function (el) {
     el(frame);
   }
 
+  this.window = frame.contentWindow;
+
   // When the app is ready to receive events, send relevant info
-  this.on('ready', function () {
+  this.once('ready', function ready () {
     this.trigger('referrer', global.location.href);
 
     if (typeof this.options.content === 'string') {
@@ -212,6 +214,21 @@ Notebook.prototype.on = function (name, fn) {
   events.push(fn);
 
   return this;
+};
+
+/**
+ * Listen to an event being triggered by the frame once.
+ *
+ * @param  {String}   name
+ * @param  {Function} fn
+ * @return {Notebook}
+ */
+Notebook.prototype.once = function (name, fn) {
+  var that = this;
+  return this.on(name, function () {
+    that.off(name, fn);
+    fn.apply(this, arguments);
+  });
 };
 
 /**
