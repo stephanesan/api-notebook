@@ -8,7 +8,7 @@ var Backbone = require('backbone');
  *
  * @type {Object}
  */
-var middleware = _.extend({}, Backbone.Events);
+var middleware = module.exports = _.extend({}, Backbone.Events);
 
 /**
  * The stack is an object that contains all the middleware functions to be
