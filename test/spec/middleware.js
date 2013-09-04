@@ -18,7 +18,7 @@ describe('middleware', function () {
 
   describe('plugins', function () {
     afterEach(function () {
-      middleware._stack = {};
+      middleware.stack = {};
     });
 
     it('should define a `use` method', function () {
@@ -92,8 +92,8 @@ describe('middleware', function () {
 
     it('should be able to short circuit the rest of the execution stack', function () {
       var spy  = sinon.spy();
-      var next = sinon.spy(function (data) {
-        data.done();
+      var next = sinon.spy(function (data, next, done) {
+        done();
       });
 
 

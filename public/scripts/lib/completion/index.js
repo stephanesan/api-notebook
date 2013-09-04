@@ -49,7 +49,7 @@ var Completion = module.exports = function (cm, autocomplete, options) {
     }
 
     if (that.widget) {
-      that.widget.refresh();
+      that.refresh();
     } else {
       that.showHints();
     }
@@ -81,7 +81,10 @@ Completion.prototype.refresh = function () {
 };
 
 Completion.prototype.showHints = function () {
-  this.showWidget(this.autocomplete(this.cm, this.options));
+  var that = this;
+  this.autocomplete(this.cm, this.options, function (err, data) {
+    if (data) { that.showWidget(data); }
+  });
 };
 
 Completion.prototype.showWidget = function (data) {

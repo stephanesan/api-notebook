@@ -1,7 +1,11 @@
 var _            = require('underscore');
 var Pos          = CodeMirror.Pos;
 var keywords     = require('./keywords');
+var middleware   = require('./middleware');
 var correctToken = require('./cm-correct-token');
+
+// Require the autocompletion plugin to add additional functionality
+require('../plugins/autocomplete')(middleware);
 
 var varsToObject = function (scope, ignore) {
   var obj = {};
@@ -46,23 +50,42 @@ var getPropertyNames = function (obj) {
   return props;
 };
 
-var completeVariable = function (cm, token, sandbox) {
-  var vars = varsToObject(token.state.localVars, token.string);
-  var prev = token.state.context;
+var completeVariable = function (cm, token, context, done) {
+  // Grab the variables based on the token state.
+  middleware.use('completion:variable', function (data, next) {
+    _.extend(data.results, varsToObject(token.state.localVars, token.string));
 
-  // Extend the variables object with each context level
-  while (prev) {
-    _.extend(vars, varsToObject(prev.vars));
-    prev = prev.prev;
-  }
-  // Extend with every other variable and keyword
-  _.extend(vars, varsToObject(token.state.globalVars, token.string));
-  _.extend(vars, getPropertyNames(sandbox), keywords);
+    // Extend the variables object with each context level
+    var prev = token.state.context;
+    while (prev) {
+      _.extend(data.results, varsToObject(prev.vars));
+      prev = prev.prev;
+    }
 
-  return {
-    context: sandbox,
-    results: _.keys(vars).sort()
-  };
+    next();
+  });
+
+  // Grab all the variables from the context and add in keywords
+  middleware.use('completion:variable', function (data, next) {
+    _.extend(data.results, varsToObject(token.state.globalVars, token.string));
+    _.extend(data.results, getPropertyNames(context), keywords);
+    next();
+  });
+
+  // Trigger the autocompletion middleware to run
+  middleware.trigger('completion:variable', {
+    token:   token,
+    editor:  cm,
+    context: context,
+    results: {}
+  }, function (err, data) {
+    middleware.stack['completion:variable'].splice(-2);
+
+    return done(err, {
+      context: data.context,
+      results: _.keys(data.results).sort()
+    });
+  });
 };
 
 var getPropertyContext = function (cm, token) {
@@ -163,113 +186,135 @@ var getPropertyContext = function (cm, token) {
   return context;
 };
 
-var getPropertyObject = function (cm, token, sandbox) {
-  var base    = sandbox;
-  var context = getPropertyContext(cm, token);
-  var tprop;
+var getPropertyObject = function (cm, token, context, done) {
+  var base   = context;
+  var tokens = getPropertyContext(cm, token);
 
-  while (base && (tprop = context.pop())) {
-    switch (tprop.type) {
-    case 'variable':
-      base = sandbox[tprop.string];
-      break;
-    case 'property':
-      base = base[tprop.string];
-      break;
-    case 'string':
-      base = String.prototype;
-      break;
-    case 'number':
-      base = Number.prototype;
-      break;
-    case 'string-2': // RegExp
-      base = RegExp.prototype;
-      break;
-    case 'atom':
-      if (tprop.string === 'true' || tprop.string === 'false') {
-        base = Boolean.prototype;
-      } else {
-        base = null;
+  middleware.use('completion:context', function (data, next) {
+    var token  = data.token;
+    var type   = token.type;
+    var string = token.string;
+
+    if (type === 'variable' || type === 'property') {
+      var context = data[type === 'variable' ? 'global' : 'context'];
+      // Lookup the property on the current context
+      data.context = context[string];
+      // If the variable/property is a constructor function, we can provide
+      // some additional context by looking at the `prototype` property.
+      if (token.isFunction && token.isConstructor) {
+        if (typeof data.context === 'function') {
+          data.context = data.context.prototype;
+        }
       }
-      break;
-    case 'immed':
-      base = base['@return'];
-      break;
-    default:
-      base = null;
-      break;
+      return next();
     }
-    // Functions are a special case. We have rudimentary introspection for the
-    // DSL. However, if it's a constructor we can provide additional context
-    // from the prototype.
-    if (tprop.isFunction && typeof base === 'function') {
-      if (tprop.isConstructor) {
-        base = base.prototype;
-      } else {
-        // Look up the `@return` property that should provide completion data
-        base = base['@return'];
+
+    if (type === 'string') {
+      data.context = String.prototype;
+      return next();
+    }
+
+    if (type === 'number') {
+      data.context = Number.prototype;
+      return next();
+    }
+
+    if (type === 'string-2') {
+      data.context = RegExp.prototype;
+      return next();
+    }
+
+    if (type === 'atom' && (string === 'true' || string === 'false')) {
+      data.context = Boolean.prototype;
+      return next();
+    }
+
+    data.context = null;
+    return next();
+  });
+
+  middleware.trigger('completion:context', {
+    token:   tokens.pop(),
+    editor:  cm,
+    global:  context,
+    context: context
+  }, function again (err, data) {
+    if (!err) {
+      // Do some post processing work to correct primitive types
+      if (typeof data.context === 'string') {
+        data.context = String.prototype;
+      } else if (typeof data.context === 'number') {
+        data.context = Number.prototype;
+      } else if (typeof data.context === 'boolean') {
+        data.context = Boolean.prototype;
+      }
+
+      if (data.context && tokens.length) {
+        data.token = tokens.pop();
+        return middleware.trigger('completion:context', data, again);
       }
     }
-  }
 
-  // Add some extra completion data for primitive values
-  switch (typeof base) {
-  case 'string':
-    base = String.prototype;
-    break;
-  case 'number':
-    base = Number.prototype;
-    break;
-  case 'boolean':
-    base = Boolean.prototype;
-    break;
-  }
+    middleware.stack['completion:context'].pop();
 
-  return base;
+    return done(err, data.context);
+  });
 };
 
-var completeProperty = function (cm, token, sandbox) {
-  var obj = getPropertyObject(cm, token, sandbox);
+var completeProperty = function (cm, token, context, done) {
+  getPropertyObject(cm, token, context, function (err, context) {
+    if (!_.isObject(context)) {
+      return done({
+        context: context,
+        results: []
+      });
+    }
 
-  if (!_.isObject(obj)) {
-    return { context: sandbox, results: [] };
-  }
+    middleware.use('completion:property', function (data, next) {
+      _.extend(data.results, getPropertyNames(data.context));
+      return next();
+    });
 
-  return {
-    context: obj,
-    results: _.keys(getPropertyNames(obj)).sort()
-  };
+    middleware.trigger('completion:property', {
+      token:   token,
+      editor:  cm,
+      context: context,
+      results: {}
+    }, function (err, data) {
+      middleware.stack['completion:property'].pop();
+
+      return done(err, {
+        context: data.context,
+        results: _.keys(data.results).sort()
+      });
+    });
+  });
 };
 
-module.exports = function (cm, options) {
+module.exports = function (cm, options, done) {
   var cur     = cm.getCursor();
   var token   = correctToken(cm, cur);
   var context = options.context || global;
   var results = [];
   var type    = token.type;
-  var start   = token.start;
-  var end     = token.end;
 
-  var completion;
-  switch (type) {
-  case 'keyword':
-  case 'variable':
-    completion = completeVariable(cm, token, context);
-    context    = completion.context;
-    results    = completion.results;
-    break;
-  case 'property':
-    completion = completeProperty(cm, token, context);
-    context    = completion.context;
-    results    = completion.results;
-    break;
+  var cb = function (err, completion) {
+    return done(err, {
+      list:    completion.results,
+      token:   token,
+      context: completion.context,
+      to:      new Pos(cur.line, token.end),
+      from:    new Pos(cur.line, token.start)
+    });
+  };
+
+  if (type === 'keyword' || type === 'variable') {
+    return completeVariable(cm, token, context, cb);
   }
 
-  return {
-    list:    results,
-    token:   token,
-    context: context,
-    to:      new Pos(cur.line, end),
-    from:    new Pos(cur.line, start)
-  };
+  if (type === 'property') {
+    return completeProperty(cm, token, context, cb);
+  }
+
+  done();
 };

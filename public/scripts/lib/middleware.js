@@ -15,7 +15,7 @@ var middleware = module.exports = _.extend({}, Backbone.Events);
  * executed on an event. Similar in concept to `Backbone.Events._events`.
  * @type {Object}
  */
-middleware._stack = {};
+middleware.stack = {};
 
 /**
  * Register a function callback for the plugin hook. This is akin to the connect
@@ -28,8 +28,8 @@ middleware._stack = {};
  * @return {this}
  */
 middleware.use = function (name /*, ...fn */) {
-  this._stack = this._stack || {};
-  var stack = this._stack[name] || (this._stack[name] = []);
+  this.stack = this.stack || {};
+  var stack = this.stack[name] || (this.stack[name] = []);
   _.each(_.rest(arguments, 1), function (fn) {
     stack.push(fn);
   });
@@ -46,24 +46,20 @@ middleware.use = function (name /*, ...fn */) {
  *                         finished executing.
  */
 middleware.listenTo(middleware, 'all', function (name, data, done) {
-  var stack = (this._stack && this._stack[name]);
-  var pass  = {};
+  var stack = (this.stack && this.stack[name]);
   var index = 0;
   var sent  = false;
 
   // Call the complete function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
   // middleware operation since we could short-circuit the entire stack.
-  var complete = pass.done = function (/* err, ... */) {
+  var complete = function (err) {
     sent = true;
-    if (_.isFunction(done)) { done.apply(this, arguments); }
+    if (_.isFunction(done)) { done(err, data); }
   };
 
   // If the stack is not an array, return early.
   if (!_.isArray(stack)) { return complete(); }
-
-  // Extend the object to be passed to each function with the data provided.
-  _.extend(pass, data);
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
@@ -79,13 +75,13 @@ middleware.listenTo(middleware, 'all', function (name, data, done) {
       var arity = layer.length;
 
       if (err) {
-        if (arity === 3) {
-          layer(err, pass, next);
+        if (arity === 4) {
+          layer(err, data, next, complete);
         } else {
           next(err);
         }
-      } else if (arity < 3) {
-        layer(pass, next);
+      } else if (arity < 4) {
+        layer(data, next, complete);
       } else {
         next();
       }
