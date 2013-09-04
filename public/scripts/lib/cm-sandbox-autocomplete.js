@@ -26,22 +26,21 @@ var getToken = function (cm, cur) {
 };
 
 var isValidVariableName = function (name) {
-  return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
+  return (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/).test(name);
 };
 
 var getPropertyNames = function (obj) {
   var props = {};
   var addProp;
 
-  addProp = function (prop) {
-    props[prop] = true;
+  addProp = function (property) {
+    // Avoid any property that is not a valid JavaScript literal variable,
+    // since the autocompletion result wouldn't be valid JavaScript
+    if (isValidVariableName(property)) { props[property] = true; }
   };
 
   do {
-    _.each(Object.getOwnPropertyNames(obj), function (property) {
-      // Avoid any property that is not a valid JavaScript literal variable
-      if (isValidVariableName(property)) { addProp(property); }
-    });
+    _.each(Object.getOwnPropertyNames(obj), addProp);
   } while (obj = Object.getPrototypeOf(obj));
 
   return props;

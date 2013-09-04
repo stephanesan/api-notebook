@@ -8,6 +8,20 @@ var objectPrototypeKeys = Object.getOwnPropertyNames(Object.prototype);
 var functionPropertyKeys = Object.getOwnPropertyNames(function () {});
 
 /**
+ * Check if the object has a direct property on it. Uses
+ * `Object.prototype.hasOwnProperty` since the object we check against could
+ * have been created using `Object.create(null)` which means it wouldn't have
+ * `hasOwnProperty` on its prototype.
+ *
+ * @param  {Object}  object
+ * @param  {String}  property
+ * @return {Boolean}
+ */
+var _hasOwnProperty = function (object, property) {
+  return Object.prototype.hasOwnProperty.call(object, property);
+};
+
+/**
  * Check if the property of the object was inherited from `Object.prototype`.
  * Please note: We can't just compare to `Object.prototype` since objects in an
  * iFrame will have inherited from a different prototype.
@@ -19,10 +33,14 @@ var functionPropertyKeys = Object.getOwnPropertyNames(function () {});
 var isObjectProperty = function (object, property) {
   var obj = object;
 
+  var objectHasOwnProperty = function (property) {
+    return _hasOwnProperty(object, property);
+  };
+
   do {
     // Use `hasOwnProperty` from the Object's prototype since the object might
     // not have a property on it called
-    if (Object.prototype.hasOwnProperty.call(object, property)) {
+    if (objectHasOwnProperty(property)) {
       // Do a quick check to see if we are at the end of the prototype chain. If
       // we are, we need to compare the current object properties with
       // `Object.prototype` since we could just be at the end of a chain started
@@ -31,13 +49,11 @@ var isObjectProperty = function (object, property) {
       // Don't check for an exact match of keys since if the prototype is from
       // an iFrame, it could have been modified by one of those irritating JS
       // developers that mess with prototypes directly.
-      return _.every(objectPrototypeKeys, function (property) {
-        return Object.prototype.hasOwnProperty.call(object, property);
-      });
+      return _.every(objectPrototypeKeys, objectHasOwnProperty);
     }
   } while (object = Object.getPrototypeOf(object));
 
-  return false
+  return false;
 };
 
 /**
@@ -51,7 +67,7 @@ var isObjectProperty = function (object, property) {
 var isFunctionProperty = function (fn, property) {
   if (_.contains(functionPropertyKeys, property)) { return true; }
 
-  return !fn.hasOwnProperty(property);
+  return !_hasOwnProperty(fn, property);
 };
 
 /**

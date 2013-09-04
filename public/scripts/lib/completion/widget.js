@@ -1,5 +1,5 @@
-var Ghost       = require('./ghost');
-var state       = require('../state');
+var Ghost        = require('./ghost');
+var state        = require('../state');
 var correctToken = require('../cm-correct-token');
 
 var Widget = module.exports = function (completion, data) {
@@ -147,22 +147,6 @@ Widget.prototype.refresh = function () {
     setTimeout(function () { cm.focus(); }, 20);
   });
 
-  var startScroll = cm.getScrollInfo();
-  cm.on('scroll', this.onScroll = function () {
-    var curScroll = cm.getScrollInfo();
-    var newTop    = top + startScroll.top - curScroll.top;
-    var editor    = cm.getWrapperElement().getBoundingClientRect();
-    var point     = newTop - (window.pageYOffset ||
-      (document.documentElement || document.body).scrollTop);
-
-    if (point <= editor.top || point >= editor.bottom) {
-      return completion.remove();
-    }
-
-    that.hints.style.top  = newTop + 'px';
-    that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
-  });
-
   state.on(
     'change:window.height change:window.width',
     this.onResize = function () { that.reposition(); }
@@ -170,9 +154,11 @@ Widget.prototype.refresh = function () {
 };
 
 Widget.prototype.reposition = function () {
-  var pos   = this.completion.cm.cursorCoords(this.data.from);
+  var cm    = this.completion.cm;
+  var pos   = cm.cursorCoords(this.data.from);
   var top   = pos.bottom;
   var left  = pos.left;
+  var that  = this;
   var hints = this.hints;
 
   hints.className = hints.className.replace(' CodeMirror-hints-top', '');
@@ -197,7 +183,7 @@ Widget.prototype.reposition = function () {
 
   if (overlapY > 0) {
     var height = box.bottom - box.top;
-    var winPos = this.completion.cm.cursorCoords(this.data.from, 'window');
+    var winPos = cm.cursorCoords(this.data.from, 'window');
     // Switch the hints to be above instead of below
     if (winHeight - top < winPos.top) {
       // When the box is larger than the available height, resize it. Otherwise,
@@ -214,6 +200,22 @@ Widget.prototype.reposition = function () {
       hints.style.height = (winHeight - pos.bottom - 5) + 'px';
     }
   }
+
+  var startScroll = cm.getScrollInfo();
+  cm.on('scroll', this.onScroll = function () {
+    var curScroll = cm.getScrollInfo();
+    var newTop    = top + startScroll.top - curScroll.top;
+    var editor    = cm.getWrapperElement().getBoundingClientRect();
+    var point     = newTop - (window.pageYOffset ||
+      (document.documentElement || document.body).scrollTop);
+
+    if (point <= editor.top || point >= editor.bottom) {
+      return that.completion.remove();
+    }
+
+    that.hints.style.top  = newTop + 'px';
+    that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
+  });
 };
 
 Widget.prototype.accept = function () {

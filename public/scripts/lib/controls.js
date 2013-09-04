@@ -13,7 +13,7 @@ var keyMap = {
 
 // Additional keymap for Mac users.
 if (isMac) {
-  keyMap['Alt'] = 'Opt';
+  keyMap.Alt = 'Opt';
 }
 
 /**
