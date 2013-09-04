@@ -5,16 +5,21 @@ var domify   = require('domify');
 
 var View     = require('./view');
 var Notebook = require('./notebook');
-var state    = require('../lib/state');
-var messages = require('../lib/messages');
 var controls = require('../lib/controls');
+
+var state      = require('../lib/state');
+var messages   = require('../lib/messages');
+var middleware = require('../lib/middleware');
 
 var App = module.exports = View.extend({
   className: 'application'
 });
 
-App._        = _;
-App.Backbone = Backbone;
+App._          = _;
+App.Backbone   = Backbone;
+App.state      = state;
+App.messages   = messages;
+App.middleware = middleware;
 
 // Access a sandbox instance from tests
 App.Sandbox     = require('../lib/sandbox');

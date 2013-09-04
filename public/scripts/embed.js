@@ -11,11 +11,11 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  * @param  {*}        [context]
  */
 var each = function (obj, fn, context) {
-  if (Object.prototype.toString.call(obj) === '[object Array]') {
+  if (obj.length === +obj.length) {
     for (var i = 0, l = obj.length; i < l; i++) {
       fn.call(context, obj[i], i, obj);
     }
-  } else if (obj === Object(obj)) {
+  } else {
     for (var p in obj) {
       if (obj.hasOwnProperty(p)) {
         fn.call(context, obj[p], p, obj);
