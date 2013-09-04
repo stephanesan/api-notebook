@@ -129,9 +129,6 @@ Widget.prototype.refresh = function () {
   hints.className = 'CodeMirror-hints';
   document.body.appendChild(hints);
 
-  // Refresh the positioning of the hints within the DOM
-  this.reposition();
-
   // Set the active element after render so we can calculate scroll positions
   this.setActive(activeHint);
 
@@ -154,6 +151,8 @@ Widget.prototype.refresh = function () {
 };
 
 Widget.prototype.reposition = function () {
+  if (this.onScroll) { this.completion.cm.off('scroll', this.onScroll); }
+
   var cm    = this.completion.cm;
   var pos   = cm.cursorCoords(this.data.from);
   var top   = pos.bottom;
@@ -161,7 +160,7 @@ Widget.prototype.reposition = function () {
   var that  = this;
   var hints = this.hints;
 
-  hints.className = hints.className.replace(' CodeMirror-hints-top', '');
+  hints.className  = hints.className.replace(' CodeMirror-hints-top', '');
   hints.style.top  = top  + 'px';
   hints.style.left = left + 'px';
 
@@ -175,10 +174,10 @@ Widget.prototype.reposition = function () {
 
   if (overlapX > 0) {
     if (box.right - box.left > winWidth) {
-      hints.style.width = (winWidth - padding) + 'px';
+      hints.style.width = (winWidth - padding * 2) + 'px';
       overlapX -= (box.right - box.left) - winWidth;
     }
-    hints.style.left = (left = pos.left - overlapX) + 'px';
+    hints.style.left = (left = pos.left - overlapX - padding) + 'px';
   }
 
   if (overlapY > 0) {
@@ -252,6 +251,13 @@ Widget.prototype.setActive = function (i) {
   node = this.hints.childNodes[this.selectedHint = i];
   node.className += ' CodeMirror-hint-active';
 
+  // Should always create new ghost nodes for any text changes. When the new
+  // ghost is appended, trigger a reposition event to align the autocompletion
+  // with the text.
+  this.removeGhost();
+  this.ghost = new Ghost(this, this.data, this.data.list[node.listId]);
+  this.reposition();
+
   if (node.offsetTop < this.hints.scrollTop) {
     this.hints.scrollTop = node.offsetTop - 3;
   } else {
@@ -260,10 +266,6 @@ Widget.prototype.setActive = function (i) {
       this.hints.scrollTop = totalOffset - this.hints.clientHeight + 3;
     }
   }
-
-  // Should always create new ghost nodes for any text changes.
-  this.removeGhost();
-  this.ghost = new Ghost(this, this.data, this.data.list[node.listId]);
 };
 
 Widget.prototype.screenAmount = function () {
