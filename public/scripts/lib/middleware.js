@@ -20,8 +20,14 @@ middleware.stack = {};
 /**
  * Register a function callback for the plugin hook. This is akin to the connect
  * middleware system, albeit with some modifications to play nicely using
- * Backbone Events and a custom callback syntax since we are dealing with
+ * Backbone Events and a custom callback syntax since we aren't dealing with
  * request/response applications.
+ *
+ * Examples:
+ *   `completion:variable` - Augment a variable name lookup with custom results.
+ *   `completion:context`  - Augment a context lookup which is used for the base
+ *                           object of a property lookup.
+ *   `completion:property` - Augment a property name lookup with custom results.
  *
  * @param  {String}   namespace
  * @param  {Function} ...
