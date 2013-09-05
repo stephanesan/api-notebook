@@ -94,4 +94,18 @@ module.exports = function (middleware) {
 
     return next();
   });
+
+  /**
+   * Filters properties from being shown in the inspector.
+   *
+   * @param  {Object}   data
+   * @param  {Function} next
+   */
+  middleware.use('inspector:filter', function (data, next) {
+    if (!data.filter && data.internal === '[[Prototype]]') {
+      data.filter = true;
+    }
+
+    return next();
+  });
 };
