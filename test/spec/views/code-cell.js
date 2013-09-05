@@ -123,7 +123,7 @@ describe('Code Cell', function () {
         });
 
         it('should render an error', function (done) {
-          var spy  = sinon.spy(view.result, 'setError');
+          var spy  = sinon.spy(view.result, 'setResult');
           var code = 'throw new Error(\'Testing\');';
 
           view.on('execute', function (view, err, result) {

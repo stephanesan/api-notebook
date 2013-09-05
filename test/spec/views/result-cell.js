@@ -23,23 +23,25 @@ describe('Result Cell', function () {
 
     describe('#setResult', function () {
       it('should set the result', function () {
-        view.setResult('Testing', window);
-
-        expect(view.el.className).to.not.contain('result-error');
-        expect(view.el.className).to.not.contain('result-pending');
-        expect(view.inspector).to.be.ok;
-        expect(view.el.childNodes[0]).to.equal(view.inspector.el);
+        view.setResult(null, 'Testing', window, function (err) {
+          expect(err).to.not.exist;
+          expect(view.el.className).to.not.contain('result-error');
+          expect(view.el.className).to.not.contain('result-pending');
+          expect(view.inspector).to.be.ok;
+          expect(view.el.childNodes[0]).to.equal(view.inspector.el);
+        });
       });
     });
 
     describe('#setError', function () {
       it('should set the error', function () {
-        view.setError(new Error('Testing'), window);
-
-        expect(view.el.className).to.contain('result-error');
-        expect(view.el.className).to.not.contain('result-pending');
-        expect(view.inspector).to.be.ok;
-        expect(view.el.childNodes[0]).to.equal(view.inspector.el);
+        view.setResult(new Error('Testing'), null, window, function (err) {
+          expect(err).to.not.exist;
+          expect(view.el.className).to.contain('result-error');
+          expect(view.el.className).to.not.contain('result-pending');
+          expect(view.inspector).to.be.ok;
+          expect(view.el.childNodes[0]).to.equal(view.inspector.el);
+        });
       });
     });
   });

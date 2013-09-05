@@ -28,6 +28,8 @@ middleware.stack = {};
  *   `completion:context`  - Augment a context lookup which is used for the base
  *                           object of a property lookup.
  *   `completion:property` - Augment a property name lookup with custom results.
+ *   `result:render` - Render the result or error of a code cell execution.
+ *   `result:empty`  - Remove the result of a code cell execution.
  *
  * @param  {String}   namespace
  * @param  {Function} ...

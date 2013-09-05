@@ -79,16 +79,11 @@ CodeCell.prototype.execute = function (cb) {
   this.browseToCell(this.model);
 
   this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
-    // Set the error or result to the inspector
-    if (err) {
-      this.result.setError(err, this.sandbox.window);
-    } else {
-      this.result.setResult(result, this.sandbox.window);
-    }
+    this.model.set('result', result);
 
-    this.model.set('result', result); // Keep a reference to the result
+    this.result.setResult(err, result, this.sandbox.window);
+
     this.trigger('execute', this, err, result);
-
     if (cb) { cb(err, result); }
   }, this));
 
