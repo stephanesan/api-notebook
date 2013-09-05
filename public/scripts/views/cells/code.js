@@ -6,7 +6,6 @@ var Completion   = require('../../lib/completion');
 var stripInput   = require('../../lib/cm-strip-input');
 var state        = require('../../lib/state');
 var autocomplete = require('../../lib/cm-sandbox-autocomplete');
-var isHidden     = require('../../lib/is-hidden-property');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../../lib/controls').code;
 
@@ -131,19 +130,7 @@ CodeCell.prototype.bindEditor = function () {
 
   // Set up autocompletion
   this._completion = new Completion(this.editor, autocomplete, {
-    context: context,
-    filter: function (string) {
-      var token = this.token;
-
-      // Check the token type and allow keywords to be completed
-      if (!state.get('showExtra')) {
-        if (token.type === 'property' && isHidden(this.context, string)) {
-          return false;
-        }
-      }
-
-      return string.substr(0, token.string.length) === token.string;
-    }
+    context: context
   });
 
   this.listenTo(state, 'change:showExtra', filterCompletion, this);

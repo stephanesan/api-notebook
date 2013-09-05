@@ -4,9 +4,6 @@ var keywords     = require('./keywords');
 var middleware   = require('./middleware');
 var correctToken = require('./cm-correct-token');
 
-// Require the autocompletion plugin to add additional functionality
-require('../plugins/autocomplete')(middleware);
-
 var varsToObject = function (scope, ignore) {
   var obj = {};
 

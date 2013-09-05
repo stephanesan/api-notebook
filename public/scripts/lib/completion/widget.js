@@ -1,6 +1,7 @@
 var Ghost        = require('./ghost');
 var state        = require('../state');
 var correctToken = require('../cm-correct-token');
+var middleware   = require('../middleware');
 
 var Widget = module.exports = function (completion, data) {
   var cm   = completion.cm;
@@ -70,35 +71,44 @@ Widget.prototype.refresh = function () {
   var results  = this._results = [];
 
   for (var i = 0, j = 0; i < list.length; i++) {
-    var cur = list[i];
+    var string = list[i];
 
-    // Skip any filtered out values from being created
-    if (!this._filter(cur)) { continue; }
+    // Check against the filter to see if the element should be appended. This
+    // is going to fail if any of the middleware is async.
+    this._filter(string, function (err, display) {
+      if (!display) { return; }
 
-    var el = hints.appendChild(document.createElement('li'));
-    el.hintId    = j++;
-    el.listId    = i;
-    el.className = 'CodeMirror-hint';
+      var el = hints.appendChild(document.createElement('li'));
+      el.hintId    = j++;
+      el.listId    = i;
+      el.className = 'CodeMirror-hint';
 
-    // Keep an array of displayed results
-    results.push(cur);
+      // Keep an array of displayed results
+      results.push(string);
 
-    // Move the activeHint as close as possible to the currently selected
-    // hints list position.
-    if (i <= currentHint) {
-      activeHint = el.hintId;
-    }
+      // Move the activeHint as close as possible to the currently selected
+      // hints list position.
+      if (i <= currentHint) {
+        activeHint = el.hintId;
+      }
 
-    // Do Blink-style bolding of the completed text
-    if (cur.indexOf(text) === 0) {
-      var match = document.createElement('span');
-      match.className = 'CodeMirror-hint-match';
-      match.appendChild(document.createTextNode(cur.substr(0, text.length)));
-      el.appendChild(match);
-      el.appendChild(document.createTextNode(cur.substr(text.length)));
-    } else {
-      el.appendChild(document.createTextNode(cur));
-    }
+      // Do Blink-style bolding of the completed text
+      var index = string.indexOf(text);
+      if (index > -1) {
+        var prefix = string.substr(0, index);
+        var match  = string.substr(index, text.length);
+        var suffix = string.substr(index + text.length);
+
+        var highlight = document.createElement('span');
+        highlight.className = 'CodeMirror-hint-match';
+        highlight.appendChild(document.createTextNode(match));
+        el.appendChild(document.createTextNode(prefix));
+        el.appendChild(highlight);
+        el.appendChild(document.createTextNode(suffix));
+      } else {
+        el.appendChild(document.createTextNode(string));
+      }
+    });
   }
 
   // Add the hinting keymap here instead of later or earlier since we need to
@@ -222,8 +232,21 @@ Widget.prototype.accept = function () {
   this.remove();
 };
 
-Widget.prototype._filter = function (string) {
-  return this.completion.options.filter.call(this.data, string);
+Widget.prototype._filter = function (string, done) {
+  return middleware.trigger('completion:filter', {
+    token:   this.data.token,
+    string:  string,
+    display: true,
+    context: this.data.context
+  }, function (err, data) {
+    // If the property isn't already being hidden, test it's actually the start
+    // of the string.
+    if (!data.filter) {
+      var tokenString = data.token.string;
+      data.filter = data.string.substr(0, tokenString.length) !== tokenString;
+    }
+    return done(err, !data.filter);
+  });
 };
 
 Widget.prototype.setActive = function (i) {
