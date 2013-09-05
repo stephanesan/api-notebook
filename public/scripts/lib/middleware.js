@@ -28,6 +28,8 @@ middleware.stack = {};
  *   `completion:context`  - Augment a context lookup which is used for the base
  *                           object of a property lookup.
  *   `completion:property` - Augment a property name lookup with custom results.
+ *   `completion:filter`   - Filter completion suggestions from being displayed.
+ *   `inspector:filter` - Filter properties from displaying in the inspector.
  *
  * @param  {String}   namespace
  * @param  {Function} ...

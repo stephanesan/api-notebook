@@ -1,5 +1,4 @@
-var _      = require('underscore');
-var typeOf = require('./type');
+var _ = require('underscore');
 
 // Keep a reference to all the keys defined on the root object prototype.
 var objectPrototypeKeys = Object.getOwnPropertyNames(Object.prototype);
@@ -71,23 +70,28 @@ var isFunctionProperty = function (fn, property) {
 };
 
 /**
- * Returns whether the property should be hidden from autocompletion and the
- * object inspector.
- *
- * @param  {Object} object
- * @param  {String} property
- * @return {Boolean}
+ * Registers the property filtering middleware. It is responsible for
+ * @param  {[type]} middleware [description]
+ * @return {[type]}            [description]
  */
-module.exports = function (object, property) {
-  if (typeof object === 'function' && property === '@return') { return true; }
+module.exports = function (middleware) {
+  /**
+   * Sets whether the property should be filter from autocompletion suggestions.
+   *
+   * @param  {Object}   data
+   * @param  {Function} next
+   */
+  middleware.use('completion:filter', function (data, next) {
+    if (!data.filter) {
+      if (typeof data.context === 'object') {
+        data.filter = isObjectProperty(data.context, data.string);
+      }
 
-  if (typeof object === 'object') {
-    return isObjectProperty(object, property);
-  }
+      if (typeof data.context === 'function') {
+        data.filter = isFunctionProperty(data.context, data.string);
+      }
+    }
 
-  if (typeof object === 'function') {
-    return isFunctionProperty(object, property);
-  }
-
-  return false;
+    return next();
+  });
 };
