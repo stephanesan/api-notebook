@@ -79,6 +79,8 @@ var completeVariable = function (cm, token, context, done) {
     context: context,
     results: {}
   }, function (err, data) {
+    // Since we have pushed on two `completion:variable` middleware handlers, we
+    // need to remove them both from the end of the stack.
     middleware.stack['completion:variable'].splice(-2);
 
     return done(err, {
