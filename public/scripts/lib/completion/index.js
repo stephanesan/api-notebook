@@ -23,9 +23,11 @@ var Completion = module.exports = function (cm, autocomplete, options) {
   this.onBlur = function () {
     closeOnBlur = setTimeout(function () { that.removeWidget(); }, 100);
   };
+
   this.onFocus = function () {
     clearTimeout(closeOnBlur);
   };
+
   this.onChange = function (cm, data) {
     // Only update the display when we are inserting or deleting characters
     if (!data.origin || data.origin.charAt(0) !== '+') {
@@ -43,8 +45,17 @@ var Completion = module.exports = function (cm, autocomplete, options) {
     if (data.origin === '+delete' && closeOn.test(data.removed.join('\n'))) {
       that.removeWidget();
     }
+
+    var token = cm.getTokenAt(data.from);
+
+    // Don't want to be causing autocompletion when we are in the middle of an
+    // writing a varibable or property.
+    if (token.type && token.end !== cm.getCursor().ch) {
+      return that.removeWidget();
+    }
+
     // If the previous token is whitespace, trigger a new autocompletion widget.
-    if (/ */.test(cm.getTokenAt(data.from).string)) {
+    if (/ */.test(token.string)) {
       that.removeWidget();
     }
 
