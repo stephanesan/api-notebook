@@ -24,12 +24,14 @@ middleware.stack = {};
  * request/response applications.
  *
  * Examples:
+ *   `completion:filter`   - Filter completion suggestions from being displayed.
  *   `completion:variable` - Augment a variable name lookup with custom results.
  *   `completion:context`  - Augment a context lookup which is used for the base
  *                           object of a property lookup.
  *   `completion:property` - Augment a property name lookup with custom results.
- *   `completion:filter`   - Filter completion suggestions from being displayed.
  *   `inspector:filter` - Filter properties from displaying in the inspector.
+ *   `result:render` - Render the result or error of a code cell execution.
+ *   `result:empty`  - Remove the result of a code cell execution.
  *
  * @param  {String}   namespace
  * @param  {Function} ...
