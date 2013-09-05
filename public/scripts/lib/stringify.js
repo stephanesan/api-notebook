@@ -3,7 +3,17 @@ var type = require('./type');
 
 var stringifyElement = function (element) {
   var div = document.createElement('div');
-  div.appendChild(element.cloneNode(true));
+  var node;
+  // Document nodes can't be cloned and appended to the DOM, it throws an error.
+  if (element.nodeType === element.DOCUMENT_NODE) {
+    var node = document.createDocumentFragment();
+    for (var i = 0, l = element.childNodes.length; i < l; i++) {
+      node.appendChild(element.childNodes[i].cloneNode(true));
+    }
+  } else {
+    node = element.cloneNode(true);
+  }
+  div.appendChild(node);
   return div.innerHTML;
 };
 
