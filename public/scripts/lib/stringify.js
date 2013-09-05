@@ -1,9 +1,18 @@
 var _    = require('underscore');
 var type = require('./type');
 
+var stringifyString = function (string) {
+  return '"' + string.replace(/"/g, '\\"') + '"';
+};
+
 var stringifyElement = function (element) {
   var div = document.createElement('div');
   var node;
+  // If the element is actually an element attribute, append it to the div
+  // and return it as html.
+  if (element.nodeType === element.ATTRIBUTE_NODE) {
+    return element.name + '=' + stringifyString(element.value);
+  }
   // Document nodes can't be cloned and appended to the DOM, it throws an error.
   if (element.nodeType === element.DOCUMENT_NODE) {
     var node = document.createDocumentFragment();
@@ -15,10 +24,6 @@ var stringifyElement = function (element) {
   }
   div.appendChild(node);
   return div.innerHTML;
-};
-
-var stringifyString = function (string) {
-  return '"' + string.replace(/"/g, '\\"') + '"';
 };
 
 var stringifyByExpansion = function (object) {
