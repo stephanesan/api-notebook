@@ -105,5 +105,18 @@ describe('middleware', function () {
       expect(spy).to.have.been.calledOnce;
       expect(next).to.have.been.calledOnce;
     });
+
+    it('should only be able to call done once', function () {
+      var spy = sinon.spy();
+
+      middleware.use('test', function (data, next, done) {
+        done();
+        done();
+        done();
+      });
+      middleware.trigger('test', null, spy);
+
+      expect(spy).to.have.been.calledOnce;
+    });
   });
 });
