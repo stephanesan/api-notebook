@@ -27,6 +27,7 @@ ResultCell.prototype._reset = function (done) {
     el:   this.el,
     data: this.data
   }, function (err, data) {
+    middleware.stack['result:empty'].pop();
     data.el.classList.add('result-pending');
     data.el.classList.remove('result-error');
     done(err);
@@ -37,26 +38,25 @@ ResultCell.prototype._renderInspector = function (Inspector, options) {
   return this;
 };
 
-ResultCell.prototype.setResult = function (error, result, context, done) {
-  this._reset(function (err) {
+ResultCell.prototype.setResult = function (inspect, isError, context, done) {
+  this._reset(_.bind(function (err) {
     if (err) { return done && done(err); }
 
     middleware.use('result:render', function (data, next, done) {
+      var options = {
+        inspect: data.inspect,
+        context: data.context
+      };
+
       var inspector;
-      if (!data.error) {
-        inspector = data.data.inspector = new Inspector({
-          inspect: data.result,
-          context: data.context
-        });
+      if (!data.isError) {
+        inspector = data.data.inspector = new Inspector(options);
       } else {
-        inspector = data.data.inspector = new ErrorInspector({
-          inspect: data.error,
-          context: data.context
-        });
-        el.classList.add('result-error');
+        inspector = data.data.inspector = new ErrorInspector(options);
+        data.el.classList.add('result-error');
       }
 
-      inspector.render().appendTo(el);
+      inspector.render().appendTo(data.el);
 
       // Opens the inspector automatically when the type is an object
       var type = typeOf(data.inspect);
@@ -71,14 +71,14 @@ ResultCell.prototype.setResult = function (error, result, context, done) {
       el:      this.el,
       data:    this.data,
       context: context,
-      inspect: inspect
+      inspect: inspect,
+      isError: isError
     }, function (err, data) {
       middleware.stack['result:render'].pop();
-      el.classList.remove('result-pending');
-      data.data._rendered = true;
+      data.el.classList.remove('result-pending');
       return done && done(err);
     });
-  });
+  }, this));
 };
 
 ResultCell.prototype.render = function () {

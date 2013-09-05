@@ -110,8 +110,9 @@ describe('Code Cell', function () {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = '10';
 
-          view.on('execute', function (view, err, result) {
+          view.on('execute', function (view, result, isError) {
             expect(result).to.equal(10);
+            expect(isError).to.equal(false);
             expect(spy.calledOnce).to.be.ok;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.equal(10);
@@ -126,9 +127,9 @@ describe('Code Cell', function () {
           var spy  = sinon.spy(view.result, 'setResult');
           var code = 'throw new Error(\'Testing\');';
 
-          view.on('execute', function (view, err, result) {
-            expect(err.message).to.equal('Testing');
-            expect(result).to.not.exist;
+          view.on('execute', function (view, result, isError) {
+            expect(isError).to.equal(true);
+            expect(result.message).to.equal('Testing');
             expect(spy.calledOnce).to.be.ok;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.not.exist;

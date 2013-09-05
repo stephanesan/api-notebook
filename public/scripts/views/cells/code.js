@@ -78,14 +78,20 @@ CodeCell.prototype.execute = function (cb) {
   this.model.set('value', this.editor.getValue());
   this.browseToCell(this.model);
 
-  this.sandbox.execute(this.getValue(), context, _.bind(function (err, result) {
-    this.model.set('result', result);
-
-    this.result.setResult(err, result, this.sandbox.window);
-
-    this.trigger('execute', this, err, result);
-    if (cb) { cb(err, result); }
-  }, this));
+  this.sandbox.execute(this.getValue(), context,
+    _.bind(function (result, isError) {
+      if (isError) {
+        this.model.unset('result');
+      } else {
+        this.model.set('result', result);
+      }
+      // Trigger `execute` and set the result, each of which need an additional
+      // flag to indicate whether the the
+      this.result.setResult(result, isError, this.sandbox.window);
+      this.trigger('execute', this, result, isError);
+      if (cb) { cb(result, isError); }
+    }, this)
+  );
 
   return this;
 };
