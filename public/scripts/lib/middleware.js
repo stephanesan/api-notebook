@@ -28,6 +28,11 @@ middleware.stack = {};
  *   `completion:context`  - Augment a context lookup which is used for the base
  *                           object of a property lookup.
  *   `completion:property` - Augment a property name lookup with custom results.
+ *   `persistence:change`      - Every time the notebook contents change.
+ *   `persistence:serialize`   - Serialize the collection of cells into a format
+ *                               that can be sent to the server.
+ *   `persistence:deserialize` - Deserialize data from the server into an array
+ *                               of cells the notebook collection can consume.
  *
  * @param  {String}   namespace
  * @param  {Function} ...

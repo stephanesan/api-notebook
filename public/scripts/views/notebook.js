@@ -3,13 +3,13 @@ var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
-var CodeView           = require('./cells/code');
-var TextView           = require('./cells/text');
-var EditorView         = require('./cells/editor');
-var EntryModel         = require('../models/entry');
-var CellControls       = require('./cells/cell-controls');
-var GistModel          = require('../models/gist');
-var NotebookCollection = require('../collections/notebook');
+var CodeView     = require('./cells/code');
+var TextView     = require('./cells/text');
+var EditorView   = require('./cells/editor');
+var EntryModel   = require('../models/entry');
+var CellControls = require('./cells/cell-controls');
+var GistModel    = require('../models/gist');
+var Notebook     = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
 var insertAfter = require('../lib/insert-after');
@@ -31,7 +31,7 @@ var saveGist = _.debounce(function () {
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
-  this.collection = this.collection || new NotebookCollection();
+  this.collection = this.collection || new Notebook();
   this._uniqueId  = 0;
   this.user       = options.user;
   // Every notebook has a unique gist and collection
@@ -45,7 +45,7 @@ Notebook.prototype.initialize = function (options) {
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
   this.listenTo(this.user,       'changeUser',         this.updateUser);
-  this.listenTo(this.collection, 'remove sort change', this.save);
+  this.listenTo(this.collection, 'remove sort change', this.update);
 };
 
 Notebook.prototype.remove = function () {
@@ -57,7 +57,7 @@ Notebook.prototype.fork = function (cb) {
   return this.gist.fork(cb);
 };
 
-Notebook.prototype.save = function () {
+Notebook.prototype.update = function () {
   if (!this.rendering) { saveGist.call(this); }
   return this;
 };
@@ -71,7 +71,7 @@ Notebook.prototype.updateUser = function () {
     model.view.renderEditor();
   });
   // If the user has changed, attempt to save the current notebook
-  this.save();
+  this.update();
 };
 
 Notebook.prototype.setContent = function (content) {
