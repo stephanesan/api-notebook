@@ -282,7 +282,6 @@ describe('Code Cell', function () {
           });
         });
 
-
         describe('properties', function () {
           it('should autocomplete object properties', function () {
             var suggestions = testAutocomplete('document.getElementBy');
@@ -361,6 +360,44 @@ describe('Code Cell', function () {
             expect(testAutocomplete('(  123).to')).to.contain('toFixed');
             expect(testAutocomplete('(123  ).to')).to.contain('toFixed');
             expect(testAutocomplete('(  123  ).to')).to.contain('toFixed');
+          });
+        });
+
+        describe('middleware', function () {
+          it('should be able to hook onto variable completion', function () {
+            var spy = sinon.spy(function (data, next) {
+              data.results.something = true;
+              next();
+            });
+
+            App.middleware.use('completion:variable', spy);
+
+            expect(testAutocomplete('some')).to.contain('something');
+            expect(spy).to.have.been.calledOnce;
+          });
+
+          it('should be able to hook onto context lookups', function () {
+            var spy = sinon.spy(function (data, next, done) {
+              data.context = { random: 'property' };
+              done();
+            });
+
+            App.middleware.use('completion:context', spy);
+
+            expect(testAutocomplete('something.ran')).to.contain('random');
+            expect(spy).to.have.been.calledOnce;
+          });
+
+          it('should be able to hook into property completion', function () {
+            var spy = sinon.spy(function (data, next) {
+              data.results.somethingElse = true;
+              next();
+            });
+
+            App.middleware.use('completion:property', spy);
+
+            expect(testAutocomplete('moreOf.some')).to.contain('somethingElse');
+            expect(spy).to.have.been.calledOnce;
           });
         });
       });

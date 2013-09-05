@@ -53,21 +53,22 @@ middleware.use = function (name /*, ...fn */) {
  * @param  {Function} done A callback function to call when the stack has
  *                         finished executing.
  */
-middleware.listenTo(middleware, 'all', function (name, data, done) {
+middleware.listenTo(middleware, 'all', function (name, data, out) {
   var stack = (this.stack && this.stack[name]);
   var index = 0;
   var sent  = false;
 
-  // Call the complete function when are done executing the stack of functions.
+  // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
   // middleware operation since we could short-circuit the entire stack.
-  var complete = function (err) {
+  var done = function (err) {
+    if (sent) { return; }
     sent = true;
-    if (_.isFunction(done)) { done(err, data); }
+    if (_.isFunction(out)) { out(err, data); }
   };
 
   // If the stack is not an array, return early.
-  if (!_.isArray(stack)) { return complete(); }
+  if (!_.isArray(stack)) { return done(); }
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
@@ -75,7 +76,7 @@ middleware.listenTo(middleware, 'all', function (name, data, done) {
     var layer = stack[index++];
 
     if (sent || !layer) {
-      if (!sent) { complete(err); }
+      if (!sent) { done(err); }
       return;
     }
 
@@ -84,12 +85,12 @@ middleware.listenTo(middleware, 'all', function (name, data, done) {
 
       if (err) {
         if (arity === 4) {
-          layer(err, data, next, complete);
+          layer(err, data, next, done);
         } else {
           next(err);
         }
       } else if (arity < 4) {
-        layer(data, next, complete);
+        layer(data, next, done);
       } else {
         next();
       }
