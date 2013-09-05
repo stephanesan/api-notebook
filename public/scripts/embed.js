@@ -11,12 +11,12 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  * @param  {*}        [context]
  */
 var each = function (obj, fn, context) {
-  var l = obj.length;
+  var len = obj.length;
   // Check that the length property is a number, in which case we can do a for
   // loop for `0 - length`. This allows us to pass in array like objects (such
   // as arguments, DOM lists) and even strings.
-  if (l === +l) {
-    for (var i = 0; i < l; i++) {
+  if (len === +len) {
+    for (var i = 0; i < len; i++) {
       fn.call(context, obj[i], i, obj);
     }
   } else {
