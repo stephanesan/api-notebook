@@ -1,6 +1,6 @@
 /* global describe, it */
 
-describe('autocompletion', function () {
+describe('Completion', function () {
   var editor;
 
   beforeEach(function () {

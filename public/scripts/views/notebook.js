@@ -3,11 +3,12 @@ var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
+var persistence = require('../state/persistence');
+
 var CodeView           = require('./code-cell');
 var TextView           = require('./text-cell');
 var EditorView         = require('./editor-cell');
 var CellControls       = require('./cell-controls');
-var GistModel          = require('../models/gist');
 var EntryModel         = require('../models/cell');
 var NotebookCollection = require('../collections/notebook');
 
@@ -18,33 +19,15 @@ var Notebook = module.exports = View.extend({
   className: 'notebook'
 });
 
-var saveGist = _.debounce(function () {
-  if (!this.user.id || !this.isOwner()) { return; }
-
-  var gist = this.collection.serializeForGist();
-
-  if (!trim.right(gist)) { return; }
-  this.gist.setNotebook(gist);
-  this.gist.save(null, { patch: true });
-}, 500);
-
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
   this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
-  this.user       = options.user;
-  // Every notebook has a unique gist and collection
-  this.gist       = options.gist;
-  this.collection = this.gist.notebook;
-
-  this.listenToOnce(this.gist, 'sync', function (model) {
-    Backbone.history.navigate(model.id);
-  });
 
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
-  this.listenTo(this.user,       'changeUser',         this.updateUser);
+  this.listenTo(persistence,     'changeUser',         this.updateUser);
   this.listenTo(this.collection, 'remove sort change', this.update);
 };
 
@@ -53,18 +36,15 @@ Notebook.prototype.remove = function () {
   return View.prototype.remove.call(this);
 };
 
-Notebook.prototype.fork = function (cb) {
-  return this.gist.fork(cb);
-};
+Notebook.prototype.update = _.throttle(function () {
+  if (this._rendering || this._updating) { return; }
 
-Notebook.prototype.update = function () {
-  if (!this.rendering) { saveGist.call(this); }
-  return this;
-};
-
-Notebook.prototype.isOwner = function () {
-  return this.gist.isOwner();
-};
+  this._updating = true;
+  // Serialize the notebook and set the persistant notebook contents
+  persistence.update(this.collection.toJSON(), function (err, notebook) {
+    this._updating = false;
+  });
+}, 100);
 
 Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
@@ -75,36 +55,35 @@ Notebook.prototype.updateUser = function () {
 };
 
 Notebook.prototype.setContent = function (content) {
-  var cells = this.collection.deserializeFromGist(content);
-
-  // Empty all the current content to reset with new contents
   this.el.innerHTML = '';
-  _.each(cells, function (cell) {
-    var appendView = 'appendCodeView';
-    if (cell.type === 'text') { appendView = 'appendTextView'; }
-    this[appendView](null, cell.value);
-  }, this);
 
-  if (!this.el.childNodes.length) { this.appendCodeView(); }
+  persistence.deserialize(content, _.bind(function (err, cells) {
+    // Empty all the current content to reset with new contents
+    _.each(cells, function (cell) {
+      var appendView = 'appendCodeView';
+      if (cell.type === 'text') { appendView = 'appendTextView'; }
+      this[appendView](null, cell.value);
+    }, this);
 
-  this.collection.last().view.focus();
+    if (!this.el.childNodes.length) { this.appendCodeView(); }
 
-  return this;
+    this.collection.last().view.focus();
+  }, this));
 };
 
 Notebook.prototype.render = function () {
-  // Use a `rendering` flag to avoid resaving, etc. when rendering a gist
-  this.rendering = true;
+  // Use a `rendering` flag to avoid resaving, etc. when rendering a notebook
+  this._rendering = true;
   this.el.classList.add('loading');
   View.prototype.render.call(this);
 
   var doneRendering = _.bind(function () {
-    this.rendering = false;
+    this._rendering = false;
     this.el.classList.remove('loading');
   }, this);
 
   // Reset the state
-  if (this.gist.isNew()) {
+  if (persistence.isNew()) {
     this.updateUser();
     this.setContent('');
     doneRendering();
@@ -112,19 +91,19 @@ Notebook.prototype.render = function () {
     return this;
   }
 
-  this.gist.fetch({
-    success: _.bind(function () {
-      this.updateUser();
-      this.setContent(this.gist.getNotebook());
-      doneRendering();
-    }, this),
+  // this.gist.fetch({
+  //   success: _.bind(function () {
+  //     this.updateUser();
+  //     this.setContent(this.gist.getNotebook());
+  //     doneRendering();
+  //   }, this),
 
-    // No gist exists or unauthorized, etc.
-    error: _.bind(function () {
-      doneRendering();
-      Backbone.history.navigate('', { trigger: true });
-    }, this)
-  });
+  //   // No gist exists or unauthorized, etc.
+  //   error: _.bind(function () {
+  //     doneRendering();
+  //     Backbone.history.navigate('', { trigger: true });
+  //   }, this)
+  // });
 
   return this;
 };
@@ -369,9 +348,9 @@ Notebook.prototype.appendTo = function (el) {
     if (model.view.editor) { model.view.editor.refresh(); }
   });
 
-  // Focus the final cell on appending, since focusing before its in the DOM
-  // causes a few issues with phantom cursors.
-  if (this.collection.last()) { this.collection.last().view.focus(); }
+  // Focus the cell upon appending, since focusing before its in the DOM causes
+  // phantom cursors.
+  this.appendCodeView().focus();
 
   return this;
 };

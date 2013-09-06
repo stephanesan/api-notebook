@@ -10,19 +10,17 @@ var stringifyElement = function (element) {
   var node;
   // If the element is actually an element attribute, append it to the div
   // and return it as html.
-  if (element.nodeType === element.ATTRIBUTE_NODE) {
+  if (element.nodeType === Node.ATTRIBUTE_NODE) {
     return element.name + '=' + stringifyString(element.value);
   }
-  // Document nodes can't be cloned and appended to the DOM, it throws an error.
-  if (element.nodeType === element.DOCUMENT_NODE) {
-    var node = document.createDocumentFragment();
-    for (var i = 0, l = element.childNodes.length; i < l; i++) {
-      node.appendChild(element.childNodes[i].cloneNode(true));
-    }
-  } else {
+  // Not all elements are supported, so if we fail render it as an object. I'll
+  // come back later and add support for additional node types.
+  try {
     node = element.cloneNode(true);
+    div.appendChild(node);
+  } catch (e) {
+    return stringifyObject(element);
   }
-  div.appendChild(node);
   return div.innerHTML;
 };
 

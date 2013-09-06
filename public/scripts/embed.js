@@ -125,6 +125,11 @@ Notebook.prototype.makeFrame = function (el) {
     each(that.options.alias, function (value, key) {
       this.trigger('alias', key, value);
     }, this);
+
+    // Once all the data has been passed through to the frame, let it know it
+    // is ready to render. This would be handy for embedding an inline loading
+    // indicator or similar while the iframe starts to load too.
+    this.trigger('ready');
   });
 
   // When a new height comes through, update the iframe height
@@ -147,7 +152,6 @@ Notebook.prototype.makeFrame = function (el) {
   }
 
   this.window = frame.contentWindow;
-
   this.styleFrame(this.options.style);
 
   return this;
