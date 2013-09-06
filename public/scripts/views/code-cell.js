@@ -1,13 +1,12 @@
-var _            = require('underscore');
-var Backbone     = require('backbone');
-var EditorCell   = require('./editor-cell');
-var ResultCell   = require('./result-cell');
-var Completion   = require('../lib/completion');
-var stripInput   = require('../lib/codemirror/strip-input');
-var state        = require('../state/state');
-var autocomplete = require('../lib/codemirror/sandbox-completion');
-var extraKeys    = require('./lib/extra-keys');
-var controls     = require('../lib/controls').code;
+var _          = require('underscore');
+var Backbone   = require('backbone');
+var EditorCell = require('./editor-cell');
+var ResultCell = require('./result-cell');
+var Completion = require('../lib/completion');
+var stripInput = require('../lib/codemirror/strip-input');
+var state      = require('../state/state');
+var extraKeys  = require('./lib/extra-keys');
+var controls   = require('../lib/controls').code;
 
 var filterCompletion = function () {
   return this._completion.refresh();
@@ -129,8 +128,8 @@ CodeCell.prototype.bindEditor = function () {
   var context = Object.create(this.sandbox.window);
   _.extend(context, this.model.collection.serializeForEval());
 
-  // Set up autocompletion
-  this._completion = new Completion(this.editor, autocomplete, {
+  // Set up the autocompletion widget.
+  this._completion = new Completion(this.editor, {
     context: context
   });
 

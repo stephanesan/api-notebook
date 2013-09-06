@@ -203,13 +203,6 @@ var getPropertyObject = function (cm, token, context, done) {
  */
 var completeProperty = function (cm, token, context, done) {
   getPropertyObject(cm, token, context, function (err, context) {
-    if (!_.isObject(context)) {
-      return done({
-        context: context,
-        results: []
-      });
-    }
-
     middleware.trigger('completion:property', {
       token:   token,
       editor:  cm,
@@ -256,5 +249,5 @@ module.exports = function (cm, options, done) {
     return completeProperty(cm, token, context, cb);
   }
 
-  done();
+ return done();
 };

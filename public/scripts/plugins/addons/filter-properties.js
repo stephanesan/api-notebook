@@ -1,10 +1,11 @@
-var _ = require('underscore');
+var each  = require('foreach');
+var toObj = require('../../lib/objectify');
 
 // Keep a reference to all the keys defined on the root object prototype.
-var objectPrototypeKeys = Object.getOwnPropertyNames(Object.prototype);
+var objectPrototypeKeys = toObj(Object.getOwnPropertyNames(Object.prototype));
 
 // Keep a reference to all the keys on a function created by the function.
-var functionPropertyKeys = Object.getOwnPropertyNames(function () {});
+var functionPropertyKeys = toObj(Object.getOwnPropertyNames(function () {}));
 
 /**
  * Check if the object has a direct property on it. Uses
@@ -48,7 +49,15 @@ var isObjectProperty = function (object, property) {
       // Don't check for an exact match of keys since if the prototype is from
       // an iFrame, it could have been modified by one of those irritating JS
       // developers that mess with prototypes directly.
-      return _.every(objectPrototypeKeys, objectHasOwnProperty);
+      for (var key in objectPrototypeKeys) {
+        if (objectPrototypeKeys.hasOwnProperty(key)) {
+          if (!objectHasOwnProperty(key)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
     }
   } while (object = Object.getPrototypeOf(object));
 
@@ -64,48 +73,61 @@ var isObjectProperty = function (object, property) {
  * @return {Boolean}
  */
 var isFunctionProperty = function (fn, property) {
-  if (_.contains(functionPropertyKeys, property)) { return true; }
+  if (_hasOwnProperty(functionPropertyKeys, property)) { return true; }
 
   return !_hasOwnProperty(fn, property);
 };
 
 /**
- * Registers the property filtering middleware. It is responsible for
- * @param  {[type]} middleware [description]
- * @return {[type]}            [description]
+ * Sets whether the property should be filter from autocompletion suggestions.
+ *
+ * @param  {Object}   data
+ * @param  {Function} next
  */
-module.exports = function (middleware) {
-  /**
-   * Sets whether the property should be filter from autocompletion suggestions.
-   *
-   * @param  {Object}   data
-   * @param  {Function} next
-   */
-  middleware.use('completion:filter', function (data, next) {
-    if (!data.filter) {
-      if (typeof data.context === 'object') {
-        data.filter = isObjectProperty(data.context, data.string);
-      }
-
-      if (typeof data.context === 'function') {
-        data.filter = isFunctionProperty(data.context, data.string);
-      }
+var completionFilterPlugin = function (data, next) {
+  if (!data.filter) {
+    if (typeof data.context === 'object') {
+      data.filter = isObjectProperty(data.context, data.string);
     }
 
-    return next();
-  });
-
-  /**
-   * Filters properties from being shown in the inspector.
-   *
-   * @param  {Object}   data
-   * @param  {Function} next
-   */
-  middleware.use('inspector:filter', function (data, next) {
-    if (!data.filter && data.internal === '[[Prototype]]') {
-      data.filter = true;
+    if (typeof data.context === 'function') {
+      data.filter = isFunctionProperty(data.context, data.string);
     }
+  }
 
-    return next();
-  });
+  return next();
+};
+
+/**
+ * Filters properties from being shown in the inspector.
+ *
+ * @param  {Object}   data
+ * @param  {Function} next
+ */
+var inspectorFilterPlugin = function (data, next) {
+  if (!data.filter && data.internal === '[[Prototype]]') {
+    data.filter = true;
+  }
+
+  return next();
+};
+
+/**
+ * Attach the middleware to the application.
+ *
+ * @param {Object} middleware
+ */
+exports.attach = function (middleware) {
+  middleware.use('inspector:filter',  inspectorFilterPlugin);
+  middleware.use('completion:filter', completionFilterPlugin);
+};
+
+/**
+ * Detaches the middleware from the application. Useful during tests.
+ *
+ * @param {Object} middleware
+ */
+exports.detach = function (middleware) {
+  middleware.disuse('inspector:filter',  inspectorFilterPlugin);
+  middleware.disuse('completion:filter', completionFilterPlugin);
 };

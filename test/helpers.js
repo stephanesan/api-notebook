@@ -1,3 +1,10 @@
+/**
+ * Simulate a keypress event enough to test CodeMirror.
+ *
+ * @param  {CodeMirror}    editor
+ * @param  {String|Number} code
+ * @param  {Object}        props
+ */
 var fakeKey = function (cm, code, props) {
   if (typeof code === 'string') {
     code = code.charCodeAt(0);
@@ -7,7 +14,7 @@ var fakeKey = function (cm, code, props) {
     type: 'keydown',
     keyCode: code,
     preventDefault: function () {},
-    stopPropagation: function() {}
+    stopPropagation: function () {}
   };
 
   if (props) {
@@ -19,21 +26,27 @@ var fakeKey = function (cm, code, props) {
   cm.triggerOnKeyDown(e);
 };
 
-var simulateKey = function (editor, code, props) {
-  if (typeof code === 'string') {
-    code = code.charCodeAt(0);
-  }
+var fakeChange = function (editor, text) {
+};
 
-  props = props || {};
+/**
+ * Test the autocompletion widget on a javascript editor instance.
+ *
+ * @param  {CodeMirror} editor
+ * @param  {String}     value
+ * @return {Array}
+ */
+var testCompletion = function (editor, text) {
+  editor.focus();
+  editor.setValue(text);
+  editor.setCursor(editor.lastLine(), Infinity);
+  // Trigger a fake change event to cause autocompletion to occur
+  CodeMirror.signal(editor, 'change', editor, {
+    origin: '+input',
+    to:     editor.getCursor(),
+    from:   editor.getCursor(),
+    text:   [ text.slice(-1) ]
+  });
 
-  var initKeyEvent = function (name) {
-    var e = document.createEvent('KeyboardEvent');
-    // Can't seem to get this working, so will have to work testing keyboard events
-    e.initKeyboardEvent(name, true, true, window, props.ctrlKey, props.altKey, props.shiftKey, props.metaKey, code, 0);
-    editor.getInputField().dispatchEvent(e);
-  };
-
-  initKeyEvent('keydown');
-  initKeyEvent('keypress');
-  initKeyEvent('keyup');
+  return editor.state.completionActive.widget._results;
 };

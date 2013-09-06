@@ -14,6 +14,11 @@ App.middleware = require('./state/middleware');
 App.Sandbox     = require('./lib/sandbox');
 App.PostMessage = require('./lib/post-message');
 
+App.CodeMirror = {
+  Editor:     CodeMirror, // Programatically create editors in tests
+  Completion: require('./lib/completion')
+};
+
 App.View = {
   View:           require('./views/view'),
   Notebook:       require('./views/notebook'),
@@ -42,7 +47,3 @@ App.Collection = {
 // Attach core plugins
 require('./plugins/core/completion')(App.middleware);
 require('./plugins/core/result-cell')(App.middleware);
-
-// Attach the plugins
-require('./plugins/addons/function-return')(App.middleware);
-require('./plugins/addons/filter-properties')(App.middleware);

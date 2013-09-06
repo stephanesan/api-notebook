@@ -1,32 +1,8 @@
-var css = require('css-component');
+var css  = require('css-component');
+var each = require('foreach');
 
 // Set the location to load the notebook from
 var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
-
-/**
- * Simple function to loop over properties in an object or array.
- *
- * @param  {Object}   obj
- * @param  {Function} fn
- * @param  {*}        [context]
- */
-var each = function (obj, fn, context) {
-  var len = obj.length;
-  // Check that the length property is a number, in which case we can do a for
-  // loop for `0 - length`. This allows us to pass in array like objects (such
-  // as arguments, DOM lists) and even strings.
-  if (len === +len) {
-    for (var i = 0; i < len; i++) {
-      fn.call(context, obj[i], i, obj);
-    }
-  } else {
-    for (var p in obj) {
-      if (obj.hasOwnProperty(p)) {
-        fn.call(context, obj[p], p, obj);
-      }
-    }
-  }
-};
 
 /**
  * Extend any object with the properties from other objects, overriding of left
