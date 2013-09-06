@@ -118,5 +118,94 @@ describe('middleware', function () {
 
       expect(spy).to.have.been.calledOnce;
     });
+
+    it('should be able to remove a middleware plugin', function () {
+      var spy = sinon.spy();
+
+      middleware.use('test', spy);
+      middleware.disuse('test', spy);
+
+      middleware.trigger('test');
+
+      expect(spy).to.not.have.been.called;
+    });
+
+    it('should be able to register a core plugin that is run last', function () {
+      var spy      = sinon.spy();
+      var coreSpy  = sinon.spy(function (data, next) {
+        expect(stackSpy).to.have.been.calledOnce;
+        next();
+      });
+      var stackSpy = sinon.spy(function (data, next) {
+        expect(coreSpy).to.not.have.been.called;
+        next();
+      });
+
+      middleware.core('test', coreSpy);
+      middleware.use('test', stackSpy);
+
+      middleware.trigger('test', null, spy);
+
+      expect(spy).to.have.been.calledOnce;
+      expect(coreSpy).to.have.been.calledOnce;
+      expect(stackSpy).to.have.been.calledOnce;
+    });
+
+    it('should be able to register error handling middleware', function () {
+      var errorSpy = sinon.spy(function (err, data, next, done) {
+        expect(err.message).to.equal('Test');
+      });
+      var throwSpy = sinon.spy(function (data, next) {
+        throw new Error('Test');
+      });
+
+      middleware.use('test', errorSpy);
+      middleware.use('test', throwSpy);
+      middleware.use('test', errorSpy);
+
+      middleware.trigger('test');
+
+      expect(throwSpy).to.have.been.calledOnce;
+      expect(errorSpy).to.have.been.calledOnce;
+    });
+
+    it('should be able to resolve middleware asynchronously', function (done) {
+      var spy = sinon.spy(function (data, next) {
+        setTimeout(function () {
+          next();
+        }, 0);
+      });
+
+      middleware.use('test', spy);
+      middleware.use('test', spy);
+      middleware.use('test', spy);
+
+      middleware.trigger('test', null, function () {
+        expect(spy).to.have.been.calledThrice;
+        done();
+      });
+    });
+
+    it('should be able to pass errors asynchronously', function (done) {
+      var errorSpy = sinon.spy(function (err, data, next, done) {
+        expect(err.message).to.equal('Test');
+        next();
+      });
+      var throwSpy = sinon.spy(function (data, next) {
+        setTimeout(function () {
+          next(new Error('Test'));
+        }, 0);
+      });
+
+      middleware.use('test', errorSpy);
+      middleware.use('test', throwSpy);
+      middleware.use('test', errorSpy);
+
+      middleware.trigger('test', null, function () {
+        expect(errorSpy).to.have.been.calledOnce;
+        expect(throwSpy).to.have.been.calledOnce;
+        done();
+      });
+    });
   });
 });
