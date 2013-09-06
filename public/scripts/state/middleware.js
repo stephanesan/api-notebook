@@ -27,7 +27,7 @@ var middleware = module.exports = _.extend({}, Backbone.Events);
  * executed on an event. Similar in concept to `Backbone.Events._events`.
  * @type {Object}
  */
-middleware.stack = {};
+middleware._stack = {};
 
 /**
  * The core is an object that contains middleware that should always be run last
@@ -36,7 +36,7 @@ middleware.stack = {};
  *
  * @type {Object}
  */
-middleware.core = {};
+middleware._core = {};
 
 /**
  * Register a function callback for the plugin hook. This is akin to the connect
@@ -49,7 +49,7 @@ middleware.core = {};
  * @return {this}
  */
 middleware.use = function (name, fn) {
-  var stack = this.stack[name] || (this.stack[name] = []);
+  var stack = this._stack[name] || (this._stack[name] = []);
   stack.push(fn);
   return this;
 };
@@ -64,7 +64,7 @@ middleware.use = function (name, fn) {
  * @return {this}
  */
 middleware.core = function (name, fn) {
-  this.core[name] = fn;
+  this._core[name] = fn;
   return this;
 };
 
@@ -77,11 +77,11 @@ middleware.core = function (name, fn) {
  */
 middleware.disuse = function (name, fn) {
   if (!fn) {
-    delete this.stack[name];
+    delete this._stack[name];
     return this;
   }
 
-  var stack = this.stack[name];
+  var stack = this._stack[name];
   for (var i = 0; i < stack.length; i++) {
     if (stack[i] === fn) {
       stack.splice(i, 1);
@@ -89,7 +89,7 @@ middleware.disuse = function (name, fn) {
     }
   }
 
-  if (!stack.length) { delete this.stack[name]; }
+  if (!stack.length) { delete this._stack[name]; }
 
   return this;
 };
@@ -106,10 +106,10 @@ middleware.disuse = function (name, fn) {
 middleware.listenTo(middleware, 'all', function (name, data, out) {
   var sent  = false;
   var index = 0;
-  var stack = this.stack[name] ? this.stack[name].slice() : [];
+  var stack = this._stack[name] ? this._stack[name].slice() : [];
 
   // Core plugins should always be appended to the end of the stack.
-  if (this.core[name]) { stack.push(this.core[name]); }
+  if (this._core[name]) { stack.push(this._core[name]); }
 
   // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
