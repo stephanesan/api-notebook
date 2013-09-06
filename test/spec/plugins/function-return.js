@@ -11,7 +11,7 @@ describe('Function Return Plugin', function () {
     functionReturnPlugin.detach(App.middleware);
   });
 
-  describe('Inspector should hide the @return property', function () {
+  describe('Inspector', function () {
     it('should hide the @return property from display', function () {
       var fn = function () {};
       fn['@return'] = 'test';
@@ -27,7 +27,7 @@ describe('Function Return Plugin', function () {
     });
   });
 
-  describe('Completion should process the @return property', function () {
+  describe('Completion', function () {
     var editor;
 
     var testAutocomplete = function (text) {

@@ -1,4 +1,3 @@
-var each  = require('foreach');
 var toObj = require('../../lib/objectify');
 
 // Keep a reference to all the keys defined on the root object prototype.
@@ -32,6 +31,7 @@ var _hasOwnProperty = function (object, property) {
  */
 var isObjectProperty = function (object, property) {
   var obj = object;
+  var key;
 
   var objectHasOwnProperty = function (property) {
     return _hasOwnProperty(object, property);
@@ -50,13 +50,12 @@ var isObjectProperty = function (object, property) {
       // an iFrame, it could have been modified by one of those irritating JS
       // developers that mess with prototypes directly.
       for (var key in objectPrototypeKeys) {
-        if (objectPrototypeKeys.hasOwnProperty(key)) {
+        if (_hasOwnProperty(objectPrototypeKeys, key)) {
           if (!objectHasOwnProperty(key)) {
             return false;
           }
         }
       }
-
       return true;
     }
   } while (object = Object.getPrototypeOf(object));
