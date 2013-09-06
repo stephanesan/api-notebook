@@ -84,13 +84,13 @@ var isFunctionProperty = function (fn, property) {
  * @param  {Function} next
  */
 var completionFilterPlugin = function (data, next) {
-  if (!data.filter) {
+  if (data.filter) {
     if (typeof data.context === 'object') {
-      data.filter = isObjectProperty(data.context, data.string);
+      data.filter = !isObjectProperty(data.context, data.string);
     }
 
     if (typeof data.context === 'function') {
-      data.filter = isFunctionProperty(data.context, data.string);
+      data.filter = !isFunctionProperty(data.context, data.string);
     }
   }
 
@@ -104,8 +104,8 @@ var completionFilterPlugin = function (data, next) {
  * @param  {Function} next
  */
 var inspectorFilterPlugin = function (data, next) {
-  if (!data.filter && data.internal === '[[Prototype]]') {
-    data.filter = true;
+  if (data.filter && data.internal === '[[Prototype]]') {
+    data.filter = false;
   }
 
   return next();

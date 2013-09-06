@@ -236,10 +236,10 @@ Widget.prototype._filter = function (string, done) {
   return middleware.trigger('completion:filter', {
     token:   this.data.token,
     string:  string,
-    display: true,
+    filter:  true,
     context: this.data.context
   }, function (err, data) {
-    return done(err, !data.filter);
+    return done(err, data.filter);
   });
 };
 

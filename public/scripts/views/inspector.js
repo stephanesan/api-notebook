@@ -176,7 +176,7 @@ InspectorView.prototype.renderPreview = function () {
   // Run filter middleware to check if the property should be filtered from
   // the basic display.
   middleware.trigger('inspector:filter', {
-    filter:     false,
+    filter:     true,
     parent:     parent,
     property:   this.property,
     internal:   this.internal,
@@ -188,7 +188,7 @@ InspectorView.prototype.renderPreview = function () {
       this.el.classList[toggle ? 'remove' : 'add']('hide');
     }, this);
 
-    if (data.filter) {
+    if (!data.filter) {
       // Listen for state changes to show extra properties/information
       toggleExtra(state.get('showExtra'));
       this.listenTo(state, 'change:showExtra', function (_, toggle) {

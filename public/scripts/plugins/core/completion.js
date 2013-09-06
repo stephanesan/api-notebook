@@ -167,10 +167,10 @@ module.exports = function (middleware) {
    * @param  {Function} next
    */
   middleware.core('completion:filter', function (data, next) {
-    if (!data.filter) {
+    if (data.filter) {
       var string = data.token.string;
-      data.filter = data.string.length <= string.length ||
-                    data.string.substr(0, string.length) !== string;
+      data.filter = data.string.length > string.length &&
+                    data.string.substr(0, string.length) === string;
     }
     return next();
   });

@@ -8,7 +8,7 @@ var RETURN_PROP = '@return';
  */
 var inspectorFilterPlugin = function (data, next) {
   if (typeof data.parent === 'function' && data.property === RETURN_PROP) {
-    data.filter = true;
+    data.filter = false;
   }
 
   return next();
