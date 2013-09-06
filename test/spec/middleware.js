@@ -154,6 +154,7 @@ describe('middleware', function () {
     it('should be able to register error handling middleware', function () {
       var errorSpy = sinon.spy(function (err, data, next, done) {
         expect(err.message).to.equal('Test');
+        next();
       });
       var throwSpy = sinon.spy(function (data, next) {
         throw new Error('Test');
@@ -162,8 +163,11 @@ describe('middleware', function () {
       middleware.use('test', errorSpy);
       middleware.use('test', throwSpy);
       middleware.use('test', errorSpy);
+      middleware.use('test', errorSpy);
 
-      middleware.trigger('test');
+      middleware.trigger('test', null, function (err) {
+        expect(err).to.not.exist;
+      });
 
       expect(throwSpy).to.have.been.calledOnce;
       expect(errorSpy).to.have.been.calledOnce;
@@ -200,12 +204,30 @@ describe('middleware', function () {
       middleware.use('test', errorSpy);
       middleware.use('test', throwSpy);
       middleware.use('test', errorSpy);
+      middleware.use('test', errorSpy);
 
-      middleware.trigger('test', null, function () {
+      middleware.trigger('test', null, function (err) {
+        expect(err).to.not.exist;
         expect(errorSpy).to.have.been.calledOnce;
         expect(throwSpy).to.have.been.calledOnce;
         done();
       });
+    });
+
+    it('should be able to pass errors to the next error handling middleware', function () {
+      var errorSpy = sinon.spy(function (err, data, next, done) {
+        expect(error.message).to.equal('Test');
+        next(err);
+      });
+
+      middleware.use('test', function () { throw new Error('Test'); });
+      middleware.use('test', errorSpy);
+      middleware.use('test', errorSpy);
+      middleware.use('test', errorSpy);
+
+      middleware.trigger('test');
+
+      expect(errorSpy).to.have.been.calledThrice;
     });
   });
 });
