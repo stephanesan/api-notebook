@@ -7,51 +7,12 @@ var View     = require('./view');
 var Notebook = require('./notebook');
 var controls = require('../lib/controls');
 
-var state      = require('../lib/state');
-var messages   = require('../lib/messages');
-var middleware = require('../lib/middleware');
+var state    = require('../state/state');
+var messages = require('../state/messages');
 
 var App = module.exports = View.extend({
   className: 'application'
 });
-
-App._          = _;
-App.Backbone   = Backbone;
-App.state      = state;
-App.messages   = messages;
-App.middleware = middleware;
-
-// Access a sandbox instance from tests
-App.Sandbox     = require('../lib/sandbox');
-App.PostMessage = require('../lib/post-message');
-
-// Alias all the available views
-App.View = {
-  View:           require('./view'),
-  Notebook:       require('./notebook'),
-  Inspector:      require('./inspector'),
-  ErrorInspector: require('./error-inspector'),
-  Cell:           require('./cells/cell'),
-  CodeCell:       require('./cells/code'),
-  TextCell:       require('./cells/text'),
-  EditorCell:     require('./cells/editor'),
-  ResultCell:     require('./cells/result'),
-  CellControls:   require('./cells/cell-controls'),
-};
-
-// Alias all the available models
-App.Model = {
-  Entry:     require('../models/entry'),
-  CodeEntry: require('../models/code-entry'),
-  TextEntry: require('../models/text-entry'),
-  Gist:      require('../models/gist'),
-  Session:   require('../models/session')
-};
-
-// Alias all the available collections
-App.Collection = {
-  Notebook: require('../collections/notebook')
-};
 
 App.prototype.events = {
   'click .modal-toggle':   'toggleShortcuts',

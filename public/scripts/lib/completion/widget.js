@@ -1,7 +1,7 @@
 var Ghost        = require('./ghost');
-var state        = require('../state');
-var correctToken = require('../cm-correct-token');
-var middleware   = require('../middleware');
+var state        = require('../../state/state');
+var correctToken = require('../codemirror/correct-token');
+var middleware   = require('../../state/middleware');
 
 var Widget = module.exports = function (completion, data) {
   var cm   = completion.cm;

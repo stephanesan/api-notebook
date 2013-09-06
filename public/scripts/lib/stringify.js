@@ -1,5 +1,5 @@
-var _    = require('underscore');
-var type = require('./type');
+var _      = require('underscore');
+var typeOf = require('./type');
 
 var stringifyElement = function (element) {
   var div = document.createElement('div');
@@ -41,9 +41,8 @@ var stringifyError = function (error) {
   return Error.prototype.toString.call(error);
 };
 
-
 module.exports = function (object) {
-  switch (type(object)) {
+  switch (typeOf(object)) {
   case 'error':
     return stringifyError(object);
   case 'array':

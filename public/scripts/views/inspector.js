@@ -1,12 +1,11 @@
 var _          = require('underscore');
 var View       = require('./view');
-var Backbone   = require('backbone');
-var type       = require('../lib/type');
 var domify     = require('domify');
+var Backbone   = require('backbone');
 var stringify  = require('../lib/stringify');
-var state      = require('../lib/state');
-var messages   = require('../lib/messages');
-var middleware = require('../lib/middleware');
+var state      = require('../state/state');
+var messages   = require('../state/messages');
+var middleware = require('../state/middleware');
 
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
@@ -161,7 +160,7 @@ InspectorView.prototype.renderPreview = function () {
   }
 
   html += '<div class="arrow"></div>';
-  html += '<div class="preview ' + type(this.inspect) + '">';
+  html += '<div class="preview">';
   if (prefix) {
     html += '<span class="property' + (special ? ' is-special' : '') + '">';
     html += _.escape('' + prefix);

@@ -1,13 +1,13 @@
 var _            = require('underscore');
 var Backbone     = require('backbone');
-var EditorCell   = require('./editor');
-var ResultCell   = require('./result');
-var Completion   = require('../../lib/completion');
-var stripInput   = require('../../lib/cm-strip-input');
-var state        = require('../../lib/state');
-var autocomplete = require('../../lib/cm-sandbox-autocomplete');
+var EditorCell   = require('./editor-cell');
+var ResultCell   = require('./result-cell');
+var Completion   = require('../lib/completion');
+var stripInput   = require('../lib/codemirror/strip-input');
+var state        = require('../state/state');
+var autocomplete = require('../lib/codemirror/sandbox-completion');
 var extraKeys    = require('./lib/extra-keys');
-var controls     = require('../../lib/controls').code;
+var controls     = require('../lib/controls').code;
 
 var filterCompletion = function () {
   return this._completion.refresh();
@@ -25,7 +25,7 @@ CodeCell.prototype.initialize = function () {
   this.sandbox    = this.options.sandbox;
 };
 
-CodeCell.prototype.EditorModel = require('../../models/code-entry');
+CodeCell.prototype.EditorModel = require('../models/code-cell');
 
 CodeCell.prototype.editorOptions = _.extend(
   {},

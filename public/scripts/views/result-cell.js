@@ -1,10 +1,10 @@
 var _              = require('underscore');
 var domify         = require('domify');
-var typeOf         = require('../../lib/type');
+var typeOf         = require('../lib/type');
 var Cell           = require('./cell');
-var middleware     = require('../../lib/middleware');
-var Inspector      = require('../inspector');
-var ErrorInspector = require('../error-inspector');
+var middleware     = require('../state/middleware');
+var Inspector      = require('./inspector');
+var ErrorInspector = require('./error-inspector');
 
 var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result result-pending'

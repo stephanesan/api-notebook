@@ -1,8 +1,8 @@
 var _            = require('underscore');
 var Pos          = CodeMirror.Pos;
 var keywords     = require('./keywords');
-var middleware   = require('./middleware');
-var correctToken = require('./cm-correct-token');
+var middleware   = require('../../state/middleware');
+var correctToken = require('./correct-token');
 
 var varsToObject = function (scope, ignore) {
   var obj = {};
