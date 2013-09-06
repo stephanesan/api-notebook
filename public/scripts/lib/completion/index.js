@@ -1,24 +1,23 @@
-var Widget = require('./widget');
-var Pos    = CodeMirror.Pos;
+var Widget       = require('./widget');
+var Pos          = CodeMirror.Pos;
+var autocomplete = require('../codemirror/sandbox-completion');
 
-var Completion = module.exports = function (cm, autocomplete, options) {
+var Completion = module.exports = function (cm, options) {
   var that          = this;
   var closeOnCursor = true;
   var closeOnBlur;
 
-  this.cm           = cm;
-  this.options      = options;
-  this.autocomplete = autocomplete;
-
-  // Default options
+  this.cm      = cm;
+  this.options = options || {};
   this.options.closeOn = this.options.closeOn || /[^$_a-zA-Z0-9]/;
 
-  // Add a filter function
   if (typeof this.options.filter !== 'function') {
     this.options.filter = function (string) {
       return string.substr(0, this.token.string.length) === this.token.string;
     };
   }
+
+  this.cm.state.completionActive = this;
 
   this.onBlur = function () {
     closeOnBlur = setTimeout(function () { that.removeWidget(); }, 100);
@@ -29,6 +28,8 @@ var Completion = module.exports = function (cm, autocomplete, options) {
   };
 
   this.onChange = function (cm, data) {
+    closeOnCursor = false;
+
     // Only update the display when we are inserting or deleting characters
     if (!data.origin || data.origin.charAt(0) !== '+') {
       return that.removeWidget();
@@ -64,8 +65,6 @@ var Completion = module.exports = function (cm, autocomplete, options) {
     } else {
       that.showHints();
     }
-
-    closeOnCursor = false;
   };
   this.onCursorActivity = function (cm) {
     if (closeOnCursor) { that.removeWidget(); }
@@ -81,6 +80,7 @@ var Completion = module.exports = function (cm, autocomplete, options) {
 
 Completion.prototype.remove = function () {
   this.removeWidget();
+  delete this.cm.state.completionActive;
   this.cm.off('blur',           this.onBlur);
   this.cm.off('focus',          this.onFocus);
   this.cm.off('change',         this.onChange);
@@ -93,7 +93,7 @@ Completion.prototype.refresh = function () {
 
 Completion.prototype.showHints = function () {
   var that = this;
-  this.autocomplete(this.cm, this.options, function (err, data) {
+  autocomplete(this.cm, this.options, function (err, data) {
     if (data) { that.showWidget(data); }
   });
 };

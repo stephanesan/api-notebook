@@ -232,14 +232,16 @@ describe('Notebook', function () {
       });
 
       it('should be able to reference previous results', function (done) {
-        codeCells[0].on('execute', function (view, err, result) {
-          codeCells[1].on('execute', function (view, err, result) {
+        codeCells[0].on('execute', function (view, result, isError) {
+          codeCells[1].on('execute', function (view, result, isError) {
             expect(result).to.equal(99);
+            expect(isError).to.equal(false);
             expect(codeCells[1].model.get('result')).to.equal(99);
             done();
           });
 
           expect(result).to.equal(99);
+          expect(isError).to.equal(false);
           expect(codeCells[0].model.get('result')).to.equal(99);
 
           codeCells[1].setValue('$1');
@@ -291,6 +293,24 @@ describe('Notebook', function () {
           expect(view.collection.at(2).view.getValue()).to.equal('testing');
           expect(view.collection.at(2).view._focus).to.be.ok;
           expect(view.collection.at(2).view.editor.getCursor().ch).to.equal(7);
+        });
+
+        it('should append a new code view on blur if its the last cell', function (done) {
+          textCells.push(view.appendTextView().focus());
+
+          expect(view.collection.length).to.equal(5);
+          expect(view.collection.at(4).get('type')).to.equal('text');
+
+          setTimeout(function () {
+            var input = document.createElement('input');
+            fixture.appendChild(input);
+            input.focus();
+            fixture.removeChild(input);
+
+            expect(view.collection.length).to.equal(6);
+            expect(view.collection.at(5).get('type')).to.equal('code');
+            done();
+          }, 0);
         });
       });
 
@@ -419,23 +439,6 @@ describe('Notebook', function () {
           codeCells[1].browseDown();
           expect(codeCells[1].editor.getCursor().ch).to.equal(4);
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
-        });
-
-        it('should be able to reference previous results', function (done) {
-          codeCells[0].setValue('8342');
-          codeCells[1].setValue('$1');
-
-          codeCells[0].execute(function (err0, result0) {
-            expect(err0).to.not.exist;
-            expect(codeCells[0].model.get('result')).to.equal(8342);
-
-            codeCells[1].execute(function (err1, result1) {
-              expect(err1).to.not.exist;
-              expect(codeCells[1].model.get('result')).to.equal(8342);
-              done();
-            });
-          });
-
         });
 
         describe('Overlay Menu', function () {

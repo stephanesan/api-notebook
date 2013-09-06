@@ -18,7 +18,8 @@
     "brfs": "0.0.7",
     "stacktrace-js": "~0.5.0",
     "domify": "~1.0.0",
-    "css-component": "0.0.2"
+    "css-component": "0.0.2",
+    "foreach": "~2.0.4"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",

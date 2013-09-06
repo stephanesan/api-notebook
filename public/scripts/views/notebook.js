@@ -3,16 +3,16 @@ var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
-var CodeView     = require('./cells/code');
-var TextView     = require('./cells/text');
-var EditorView   = require('./cells/editor');
-var EntryModel   = require('../models/entry');
-var CellControls = require('./cells/cell-controls');
-var GistModel    = require('../models/gist');
-var Notebook     = require('../collections/notebook');
+var CodeView           = require('./code-cell');
+var TextView           = require('./text-cell');
+var EditorView         = require('./editor-cell');
+var CellControls       = require('./cell-controls');
+var GistModel          = require('../models/gist');
+var EntryModel         = require('../models/cell');
+var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
-var insertAfter = require('../lib/insert-after');
+var insertAfter = require('../lib/browser/insert-after');
 
 var Notebook = module.exports = View.extend({
   className: 'notebook'
@@ -31,7 +31,7 @@ var saveGist = _.debounce(function () {
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
-  this.collection = this.collection || new Notebook();
+  this.collection = this.collection || new NotebookCollection();
   this._uniqueId  = 0;
   this.user       = options.user;
   // Every notebook has a unique gist and collection
@@ -286,6 +286,13 @@ Notebook.prototype.appendView = function (view, before) {
       this.getNextView(view).moveCursorToEnd(0).focus();
 
       if (!view.getValue()) { view.remove(); }
+    });
+
+    // Append a new code cell when we blur a text cell and it the last cell.
+    this.listenTo(view, 'blur', function (view) {
+      if (this.el.lastChild === view.el) {
+        this.appendCodeView().focus();
+      }
     });
   }
 

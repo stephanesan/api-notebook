@@ -1,8 +1,29 @@
-var dev  = process.env.NODE_ENV !== 'production';
-var port = process.env.PORT || 3000;
+var DEV        = process.env.NODE_ENV !== 'production';
+var PLUGIN_DIR = __dirname + '/public/scripts/plugins/addons';
 
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
+
+  var browserifyPlugins   = {};
+  var browserifyTransform = ['envify', 'brfs'];
+
+  if (!DEV) {
+    browserifyTransform.push('uglifyify');
+  }
+
+  require('fs').readdirSync(PLUGIN_DIR).forEach(function (filename) {
+    // Remove trailing extension and transform to camelCase
+    var baseName = grunt.util._.camelize(filename.replace(/\.js$/, ''));
+
+    browserifyPlugins[baseName] = {
+      src:  PLUGIN_DIR + '/' + filename,
+      dest: 'build/plugins/' + filename,
+      options: {
+        transform:  browserifyTransform,
+        standalone: baseName + 'Plugin'
+      }
+    };
+  });
 
   grunt.initConfig({
     // Clean the build directory before each build
@@ -37,9 +58,9 @@ module.exports = function (grunt) {
     },
 
     // Running browserify as the build/dependency management system
-    browserify: {
+    browserify: grunt.util._.extend({
       application: {
-        src: ['public/scripts/index.js'],
+        src: 'public/scripts/index.js',
         dest: 'build/scripts/bundle.js',
         options: {
           shim: {
@@ -51,20 +72,20 @@ module.exports = function (grunt) {
               }
             }
           },
-          debug: dev,
-          transform: dev ? ['envify', 'brfs'] : ['envify', 'brfs', 'uglifyify']
+          debug:     DEV,
+          transform: browserifyTransform
         }
       },
       embed: {
-        src: ['public/scripts/embed.js'],
+        src: 'public/scripts/embed.js',
         dest: 'build/scripts/embed.js',
         options: {
           // debug: dev, // Currently broken when used with `standalone`
-          transform: dev ? ['envify'] : ['envify', 'uglifyify'],
+          transform:  browserifyTransform,
           standalone: 'Notebook'
         }
       }
-    },
+    }, browserifyPlugins),
 
     // Using less to compile the CSS output
     stylus: {
