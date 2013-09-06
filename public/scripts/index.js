@@ -41,6 +41,7 @@ App.Collection = {
 
 // Attach core plugins
 require('./plugins/core/completion')(App.middleware);
+require('./plugins/core/result-cell')(App.middleware);
 
 // Attach the plugins
 require('./plugins/addons/function-return')(App.middleware);
