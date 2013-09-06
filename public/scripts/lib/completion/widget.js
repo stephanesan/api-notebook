@@ -239,12 +239,6 @@ Widget.prototype._filter = function (string, done) {
     display: true,
     context: this.data.context
   }, function (err, data) {
-    // If the property isn't already being hidden, test it's actually the start
-    // of the string.
-    if (!data.filter) {
-      var tokenString = data.token.string;
-      data.filter = data.string.substr(0, tokenString.length) !== tokenString;
-    }
     return done(err, !data.filter);
   });
 };

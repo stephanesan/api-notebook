@@ -104,7 +104,12 @@ middleware.disuse = function (name, fn) {
  *                         finished executing.
  */
 middleware.listenTo(middleware, 'all', function (name, data, out) {
-  var sent = false;
+  var sent  = false;
+  var index = 0;
+  var stack = this.stack[name] ? this.stack[name].slice() : [];
+
+  // Core plugins should always be appended to the end of the stack.
+  if (this.core[name]) { stack.push(this.core[name]); }
 
   // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
@@ -114,16 +119,6 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     sent = true;
     if (_.isFunction(out)) { out(err, data); }
   };
-
-  // If the stack is not an array, return early.
-  if (!_.isArray(this.stack[name])) { return done(); }
-
-  // Start the index at `0` and slice the stack to create a new stack array.
-  var index = 0;
-  var stack = this.stack[name].slice();
-
-  // Core plugins should be merged onto the end of the stack
-  if (this.core[name]) { stack.push(this.core[name]); }
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.

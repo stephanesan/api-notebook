@@ -179,11 +179,11 @@ describe('Code Cell', function () {
         });
 
         it('should autocomplete single characters', function (done) {
-          view.setValue('var o = {};');
+          view.setValue('var test = { o: "test" };');
           // Execute the cell and retry typing with the result
           view.execute(function () {
             view.setValue('');
-            expect(testAutocomplete('o')).to.contain('o');
+            expect(testAutocomplete('test.')).to.contain('o');
             done();
           });
         });
@@ -259,7 +259,7 @@ describe('Code Cell', function () {
               function () {
                 var suggestions = testAutocomplete('test().test().sub');
 
-                expect(suggestions).to.contain('sub');
+                expect(suggestions).to.contain('substr');
                 done();
               }
             );
@@ -276,7 +276,7 @@ describe('Code Cell', function () {
               function () {
                 var suggestions = testAutocomplete('test()().sub');
 
-                expect(suggestions).to.contain('sub');
+                expect(suggestions).to.contain('substr');
                 done();
               }
             );
@@ -303,9 +303,10 @@ describe('Code Cell', function () {
           });
 
           it('should autocomplete regular expressions', function () {
-            var suggestions = testAutocomplete('(/./).te');
+            var suggestions = testAutocomplete('(/./g).');
 
             expect(suggestions).to.contain('test');
+            expect(suggestions).to.contain('global');
           });
 
           it('should autocomplete booleans', function () {

@@ -40,7 +40,7 @@ App.Collection = {
 };
 
 // Attach core plugins
-
+require('./plugins/core/completion')(App.middleware);
 
 // Attach the plugins
 require('./plugins/addons/function-return')(App.middleware);

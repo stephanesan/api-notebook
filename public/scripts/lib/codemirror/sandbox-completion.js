@@ -1,85 +1,45 @@
 var _            = require('underscore');
 var Pos          = CodeMirror.Pos;
-var keywords     = require('./keywords');
 var middleware   = require('../../state/middleware');
 var correctToken = require('./correct-token');
 
-var varsToObject = function (scope, ignore) {
-  var obj = {};
-
-  while (scope) {
-    // The scope variable could be the same token we are currently typing
-    if (typeof scope.name === 'string' && scope.name !== ignore) {
-      obj[scope.name] = true;
-    }
-    scope = scope.next;
-  }
-
-  return obj;
-};
-
+/**
+ * Verifies whether a given token is whitespace or not.
+ *
+ * @param  {Object}  token
+ * @return {Boolean}
+ */
 var isWhitespaceToken = function (token) {
-  return token.type === null && /^\s*$/.test(token.string);
+  return token.type === null && /^ *$/.test(token.string);
 };
 
+/**
+ * Returns the token at a given position.
+ *
+ * @param  {CodeMirror}     cm
+ * @param  {CodeMirror.Pos} cur
+ * @return {Object}
+ */
 var getToken = function (cm, cur) {
   return cm.getTokenAt(cur);
 };
 
-var isValidVariableName = function (name) {
-  return (/^[a-zA-Z_$][0-9a-zA-Z_$]*$/).test(name);
-};
-
-var getPropertyNames = function (obj) {
-  var props = {};
-  var addProp;
-
-  addProp = function (property) {
-    // Avoid any property that is not a valid JavaScript literal variable,
-    // since the autocompletion result wouldn't be valid JavaScript
-    if (isValidVariableName(property)) { props[property] = true; }
-  };
-
-  do {
-    _.each(Object.getOwnPropertyNames(obj), addProp);
-  } while (obj = Object.getPrototypeOf(obj));
-
-  return props;
-};
-
+/**
+ * Complete variable completion suggestions.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @param  {Object}     context
+ * @param  {Function}   done
+ */
 var completeVariable = function (cm, token, context, done) {
-  // Grab the variables based on the token state.
-  middleware.use('completion:variable', function (data, next) {
-    _.extend(data.results, varsToObject(token.state.localVars, token.string));
-
-    // Extend the variables object with each context level
-    var prev = token.state.context;
-    while (prev) {
-      _.extend(data.results, varsToObject(prev.vars));
-      prev = prev.prev;
-    }
-
-    next();
-  });
-
-  // Grab all the variables from the context and add in keywords
-  middleware.use('completion:variable', function (data, next) {
-    _.extend(data.results, varsToObject(token.state.globalVars, token.string));
-    _.extend(data.results, getPropertyNames(context), keywords);
-    next();
-  });
-
-  // Trigger the autocompletion middleware to run
+  // Trigger the completion middleware to run
   middleware.trigger('completion:variable', {
     token:   token,
     editor:  cm,
     context: context,
     results: {}
   }, function (err, data) {
-    // Since we have pushed on two `completion:variable` middleware handlers, we
-    // need to remove them both from the end of the stack.
-    middleware.stack['completion:variable'].splice(-2);
-
     return done(err, {
       context: data.context,
       results: _.keys(data.results).sort()
@@ -87,6 +47,15 @@ var completeVariable = function (cm, token, context, done) {
   });
 };
 
+/**
+ * Collects information about the current token context by traversing through
+ * the CodeMirror editor. Currently it's pretty simplistic and only works over
+ * a single line.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @return {Array}
+ */
 var getPropertyContext = function (cm, token) {
   var cur     = cm.getCursor();
   var tprop   = token;
@@ -98,7 +67,7 @@ var getPropertyContext = function (cm, token) {
   eatSpace = function () {
     var token = getToken(cm, new Pos(cur.line, tprop.start));
 
-    if (token.type === null && /[ ]+/.test(token.string)) {
+    if (token.type === null && / +/.test(token.string)) {
       token = getToken(cm, new Pos(cur.line, token.start));
     }
 
@@ -185,52 +154,18 @@ var getPropertyContext = function (cm, token) {
   return context;
 };
 
+/**
+ * Gets the property context for completing a property by looping through each
+ * of the context tokens. Provides some additional help by moving primitives to
+ * their prototype objects so it can continue autocompletion.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @param  {Object}     context
+ * @param  {Function}   done
+ */
 var getPropertyObject = function (cm, token, context, done) {
-  var base   = context;
   var tokens = getPropertyContext(cm, token);
-
-  middleware.use('completion:context', function (data, next) {
-    var token  = data.token;
-    var type   = token.type;
-    var string = token.string;
-
-    if (type === 'variable' || type === 'property') {
-      var context = data[type === 'variable' ? 'global' : 'context'];
-      // Lookup the property on the current context
-      data.context = context[string];
-      // If the variable/property is a constructor function, we can provide
-      // some additional context by looking at the `prototype` property.
-      if (token.isFunction && token.isConstructor) {
-        if (typeof data.context === 'function') {
-          data.context = data.context.prototype;
-        }
-      }
-      return next();
-    }
-
-    if (type === 'string') {
-      data.context = String.prototype;
-      return next();
-    }
-
-    if (type === 'number') {
-      data.context = Number.prototype;
-      return next();
-    }
-
-    if (type === 'string-2') {
-      data.context = RegExp.prototype;
-      return next();
-    }
-
-    if (type === 'atom' && (string === 'true' || string === 'false')) {
-      data.context = Boolean.prototype;
-      return next();
-    }
-
-    data.context = null;
-    return next();
-  });
 
   middleware.trigger('completion:context', {
     token:   tokens.pop(),
@@ -254,12 +189,18 @@ var getPropertyObject = function (cm, token, context, done) {
       }
     }
 
-    middleware.stack['completion:context'].pop();
-
     return done(err, data.context);
   });
 };
 
+/**
+ * Provides completion suggestions for a property.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @param  {Object}     context
+ * @param  {Function}   done
+ */
 var completeProperty = function (cm, token, context, done) {
   getPropertyObject(cm, token, context, function (err, context) {
     if (!_.isObject(context)) {
@@ -269,19 +210,12 @@ var completeProperty = function (cm, token, context, done) {
       });
     }
 
-    middleware.use('completion:property', function (data, next) {
-      _.extend(data.results, getPropertyNames(data.context));
-      return next();
-    });
-
     middleware.trigger('completion:property', {
       token:   token,
       editor:  cm,
       context: context,
       results: {}
     }, function (err, data) {
-      middleware.stack['completion:property'].pop();
-
       return done(err, {
         context: data.context,
         results: _.keys(data.results).sort()
@@ -290,6 +224,13 @@ var completeProperty = function (cm, token, context, done) {
   });
 };
 
+/**
+ * Trigger the completion module by passing in the current codemirror instance.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     options
+ * @param  {Function}   done
+ */
 module.exports = function (cm, options, done) {
   var cur     = cm.getCursor();
   var token   = correctToken(cm, cur);
