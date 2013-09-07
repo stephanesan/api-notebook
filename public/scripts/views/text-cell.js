@@ -130,7 +130,7 @@ TextCell.prototype.renderEditor = function () {
     this.renderMarkdown();
   }
 
-  setTimeout(function () { messages.trigger('resize'); }, 0);
+  process.nextTick(function () { messages.trigger('resize'); }, 0);
 
   return this;
 };

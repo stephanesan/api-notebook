@@ -5,16 +5,6 @@ var stringifyString = function (string) {
   return '"' + string.replace(/"/g, '\\"') + '"';
 };
 
-var stringifyElement = function (element) {
-  try {
-    var div = document.createElement('div');
-    div.appendChild(element.cloneNode(true));
-    return div.innerHTML;
-  } catch (e) {
-    return stringifyObject(element);
-  }
-};
-
 var stringifyByExpansion = function (object) {
   // If the object should be expanded to be viewed, just show the type
   if (_.isString(object)) { return stringifyString(object); }
@@ -43,6 +33,16 @@ var stringifyObject = function (object) {
 var stringifyError = function (error) {
   // TIL DOMExceptions don't allow calling `toString` or string type coersion
   return Error.prototype.toString.call(error);
+};
+
+var stringifyElement = function (element) {
+  try {
+    var div = document.createElement('div');
+    div.appendChild(element.cloneNode(true));
+    return div.innerHTML;
+  } catch (e) {
+    return stringifyObject(element);
+  }
 };
 
 module.exports = function (object) {

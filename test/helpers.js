@@ -26,9 +26,6 @@ var fakeKey = function (cm, code, props) {
   cm.triggerOnKeyDown(e);
 };
 
-var fakeChange = function (editor, text) {
-};
-
 /**
  * Test the autocompletion widget on a javascript editor instance.
  *
@@ -36,7 +33,13 @@ var fakeChange = function (editor, text) {
  * @param  {String}     value
  * @return {Array}
  */
-var testCompletion = function (editor, text) {
+var testCompletion = function (editor, text, done) {
+  // Listens to an event triggered by the widget
+  editor.on('refreshCompletion', function finish (cm, results) {
+    editor.off('refreshCompletion', finish);
+    return done(results);
+  });
+  // Set the correct positioning
   editor.focus();
   editor.setValue(text);
   editor.setCursor(editor.lastLine(), Infinity);
@@ -47,6 +50,4 @@ var testCompletion = function (editor, text) {
     from:   editor.getCursor(),
     text:   [ text.slice(-1) ]
   });
-
-  return editor.state.completionActive.widget._results;
 };

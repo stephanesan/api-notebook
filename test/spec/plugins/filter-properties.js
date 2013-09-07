@@ -28,8 +28,17 @@ describe('Filter Properties Plugin', function () {
   describe('Completion', function () {
     var editor;
 
-    var testAutocomplete = function (text) {
-      return testCompletion(editor, text);
+    var testAutocomplete = function (text, expected) {
+      return function (done) {
+        testCompletion(editor, text, function (results) {
+          if (expected === +expected) {
+            expect(results.length).to.equal(expected);
+          } else {
+            expect(results).to.contain(expected);
+          }
+          done();
+        });
+      };
     };
 
     beforeEach(function () {
@@ -45,38 +54,38 @@ describe('Filter Properties Plugin', function () {
     });
 
     describe('Object', function () {
-      it('should not display object prototype properties in completion', function () {
+      it('should not display object prototype properties in completion', function (done) {
         window.test = {};
 
-        expect(testAutocomplete('test.').length).to.equal(0);
+        testAutocomplete('test.', 0)(done);
       });
 
-      it('should display user defined properties of the same name', function () {
+      it('should display user defined properties of the same name', function (done) {
         window.test = { hasOwnProperty: true };
 
-        expect(testAutocomplete('test.has')).to.contain('hasOwnProperty');
+        testAutocomplete('test.has', 'hasOwnProperty')(done);
       });
 
-      it('should work as expected with Object.create(null)', function () {
+      it('should work as expected with Object.create(null)', function (done) {
         window.test = Object.create(null);
         window.test.hasOwnProperty = true;
 
-        expect(testAutocomplete('test.has')).to.contain('hasOwnProperty');
+        testAutocomplete('test.has', 'hasOwnProperty')(done);
       });
     });
 
     describe('Function', function () {
-      it('should not display function prototype properties in completion', function () {
+      it('should not display function prototype properties in completion', function (done) {
         window.test = function () {};
 
-        expect(testAutocomplete('test.').length).to.equal(0);
+        testAutocomplete('test.', 0)(done);
       });
 
-      it('should display user defined properties of the same name', function () {
+      it('should display user defined properties of the same name', function (done) {
         window.test = function () {};
         window.test.bind = 'test';
 
-        expect(testAutocomplete('test.b')).to.contain('bind');
+        testAutocomplete('test.b', 'bind')(done);
       });
     });
   });

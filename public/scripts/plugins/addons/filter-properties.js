@@ -31,7 +31,6 @@ var _hasOwnProperty = function (object, property) {
  */
 var isObjectProperty = function (object, property) {
   var obj = object;
-  var key;
 
   var objectHasOwnProperty = function (property) {
     return _hasOwnProperty(object, property);

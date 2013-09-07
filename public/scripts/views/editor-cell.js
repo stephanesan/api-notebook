@@ -73,7 +73,7 @@ EditorCell.prototype.focus = function () {
   this._focus = true;
   // Make focusing the editor async since it triggers other events such as
   // scrolling into view which interferes with iframe resizing events.
-  setTimeout(_.bind(this.editor.focus, this.editor), 0);
+  process.nextTick(_.bind(this.editor.focus, this.editor));
   return this;
 };
 

@@ -106,7 +106,7 @@ middleware.disuse = function (name, fn) {
 middleware.listenTo(middleware, 'all', function (name, data, out) {
   var sent  = false;
   var index = 0;
-  var stack = this._stack[name] ? this._stack[name].slice() : [];
+  var stack = _.toArray(this._stack[name]);
 
   // Core plugins should always be appended to the end of the stack.
   if (this._core[name]) { stack.push(this._core[name]); }
@@ -122,7 +122,7 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
-  var next = function (err) {
+  (function next (err) {
     var layer = stack[index++];
 
     if (sent || !layer) {
@@ -151,8 +151,5 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     } catch (e) {
       next(e);
     }
-  };
-
-  // Call next to kick off looping through the stack
-  next();
+  })();
 });

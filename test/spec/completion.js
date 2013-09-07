@@ -1,6 +1,6 @@
 /* global describe, it */
 
-describe('autocompletion', function () {
+describe('Completion', function () {
   var editor;
 
   beforeEach(function () {
@@ -15,132 +15,123 @@ describe('autocompletion', function () {
     document.body.removeChild(editor.getWrapperElement());
   });
 
-  var testAutocomplete = function (text) {
-    return testCompletion(editor, text);
+  var testAutocomplete = function (text, expected) {
+    return function (done) {
+      testCompletion(editor, text, function (results) {
+        expect(results).to.contain(expected);
+        done();
+      });
+    };
   };
 
-  it('should complete variables', function () {
-    expect(testAutocomplete('doc')).to.contain('document');
-  });
+  it('should complete variables', testAutocomplete('doc', 'document'));
 
-  it('should complete keywords', function () {
-    expect(testAutocomplete('sw')).to.contain('switch');
-  });
+  it('should complete keywords', testAutocomplete('sw', 'switch'));
 
-  it('should complete using static analysis', function () {
-    var suggestions = testAutocomplete('var testing = "test";\ntes');
+  it(
+    'should complete using static analysis',
+    testAutocomplete('var testing = "test";\ntes', 'testing')
+  );
 
-    expect(suggestions).to.contain('testing');
-  });
+  it(
+    'should complete from outer scope statically',
+    testAutocomplete('var testing = "test";\nfunction () {\n  tes', 'testing')
+  );
 
-  it('should complete from outer scope statically', function () {
-    var suggestions = testAutocomplete(
-      'var testing = "test";\nfunction () {\n  tes'
-    );
-
-    expect(suggestions).to.contain('testing');
-  });
-
-  it('should complete from the global scope statically', function () {
-    var suggestions = testAutocomplete(
+  it(
+    'should complete from the global scope statically',
+    testAutocomplete(
       'var testing = "test";\nfunction () {\n  var test = "again";\n' +
-      '  function () {\n    tes'
-    );
-
-    expect(suggestions).to.contain('test');
-    expect(suggestions).to.contain('testing');
-  });
+      '  function () {\n    tes',
+      'testing'
+    )
+  );
 
   describe('properties', function () {
-    it('should complete object properties', function () {
-      var suggestions = testAutocomplete('document.getElementBy');
+    it(
+      'should complete object properties',
+      testAutocomplete('document.getElementBy', 'getElementById')
+    );
 
-      expect(suggestions).to.contain('getElementById');
+    it('should complete single characters', function (done) {
+      window.test = { o: 'test' };
+
+      testAutocomplete('test.', 'o')(done);
     });
 
-    it('should complete single characters', function () {
-      window.test = { o: "test" };
+    it('should complete numbers', testAutocomplete('123..to', 'toFixed'));
 
-      expect(testAutocomplete('test.')).to.contain('o');
-    });
+    it('should complete strings', testAutocomplete('"test".sub', 'substr'));
 
-    it('should complete numbers', function () {
-      var suggestions = testAutocomplete('123..to');
+    it(
+      'should complete regular expressions',
+      testAutocomplete('(/./g).te', 'test')
+    );
 
-      expect(suggestions).to.contain('toFixed');
-    });
+    it('should complete booleans', testAutocomplete('true.to', 'toString'));
 
-    it('should complete strings', function () {
-      var suggestions = testAutocomplete('"test".sub');
+    it('should complete function property', testAutocomplete('Date.n', 'now'));
 
-      expect(suggestions).to.contain('substr');
-    });
+    it(
+      'should complete constructor properties',
+      testAutocomplete('new Date().get', 'getYear')
+    );
 
-    it('should complete regular expressions', function () {
-      var suggestions = testAutocomplete('(/./g).');
+    it(
+      'should complete object constructor properties',
+      testAutocomplete('new window.Date().get', 'getYear')
+    );
 
-      expect(suggestions).to.contain('test');
-      expect(suggestions).to.contain('global');
-    });
+    it(
+      'should complete normal object properties with new',
+      testAutocomplete('new window.Dat', 'Date')
+    );
 
-    it('should complete booleans', function () {
-      var suggestions = testAutocomplete('true.to');
+    it(
+      'constructor should work without parens',
+      testAutocomplete('(new Date).get', 'getMonth')
+    );
 
-      expect(suggestions).to.contain('toString');
-    });
+    it(
+      'should work with parens around the value',
+      testAutocomplete('(123).to', 'toFixed')
+    );
 
-    it('should complete functions', function () {
-      var suggestions = testAutocomplete('Date.n');
+    describe('Whitespace', function () {
+      it(
+        'should ignore whitespace after variable',
+        testAutocomplete('window  .win', 'window')
+      );
 
-      expect(suggestions).to.contain('now');
-    });
+      it(
+        'should ignore whitespace before property',
+        testAutocomplete('window.   win', 'window')
+      );
 
-    it('should complete constructor properties', function () {
-      var suggestions = testAutocomplete('new Date().get');
+      it(
+        'should ignore whitespace before after after properties',
+        testAutocomplete('window    .   win', 'window')
+      );
 
-      expect(suggestions).to.contain('getYear');
-    });
+      it(
+        'should ignore whitespace at beginning of parens',
+        testAutocomplete('(   123).to', 'toFixed')
+      );
 
-    it('should complete object constructor properties', function () {
-      var suggestions = testAutocomplete('new window.Date().get');
+      it(
+        'should ignore whitespace at the end of parens',
+        testAutocomplete('(123    ).to', 'toFixed')
+      );
 
-      expect(suggestions).to.contain('getYear');
-    });
-
-    it('should complete normal object properties with new', function () {
-      var suggestions = testAutocomplete('new window.Dat');
-
-      expect(suggestions).to.contain('Date');
-    });
-
-    it('constructor should work without parens', function () {
-      var suggestions = testAutocomplete('(new Date).get');
-
-      expect(suggestions).to.contain('getMonth');
-      expect(suggestions).to.contain('getYear');
-    });
-
-    it('should work with parens around the value', function () {
-      var suggestions = testAutocomplete('(123).to');
-
-      expect(suggestions).to.contain('toFixed');
-    });
-
-    it('should ignore whitespace between properties', function () {
-      expect(testAutocomplete('window  .win')).to.contain('window');
-      expect(testAutocomplete('window.  win')).to.contain('window');
-      expect(testAutocomplete('window  .  win')).to.contain('window');
-    });
-
-    it('should ignore whitespace inside parens', function () {
-      expect(testAutocomplete('(  123).to')).to.contain('toFixed');
-      expect(testAutocomplete('(123  ).to')).to.contain('toFixed');
-      expect(testAutocomplete('(  123  ).to')).to.contain('toFixed');
+      it(
+        'should ignore whitespace at the beginning and end of parens',
+        testAutocomplete('(    123    ).to', 'toFixed')
+      );
     });
   });
 
   describe('middleware', function () {
-    it('should be able to hook onto variable completion', function () {
+    it('should be able to hook onto variable completion', function (done) {
       var spy = sinon.spy(function (data, next) {
         data.results.something = true;
         next();
@@ -148,13 +139,14 @@ describe('autocompletion', function () {
 
       App.middleware.use('completion:variable', spy);
 
-      expect(testAutocomplete('some')).to.contain('something');
-      expect(spy).to.have.been.calledOnce;
-
-      App.middleware.disuse('completion:variable', spy);
+      testAutocomplete('some', 'something')(function () {
+        expect(spy).to.have.been.calledOnce;
+        App.middleware.disuse('completion:variable', spy);
+        done();
+      });
     });
 
-    it('should be able to hook onto context lookups', function () {
+    it('should be able to hook onto context lookups', function (done) {
       var spy = sinon.spy(function (data, next, done) {
         data.context = { random: 'property' };
         done();
@@ -162,13 +154,14 @@ describe('autocompletion', function () {
 
       App.middleware.use('completion:context', spy);
 
-      expect(testAutocomplete('something.ran')).to.contain('random');
-      expect(spy).to.have.been.calledOnce;
-
-      App.middleware.disuse('completion:context', spy);
+      testAutocomplete('something.ran', 'random')(function () {
+        expect(spy).to.have.been.calledOnce;
+        App.middleware.disuse('completion:context', spy);
+        done();
+      });
     });
 
-    it('should be able to hook into property completion', function () {
+    it('should be able to hook into property completion', function (done) {
       var spy = sinon.spy(function (data, next) {
         data.results.somethingElse = true;
         next();
@@ -176,10 +169,11 @@ describe('autocompletion', function () {
 
       App.middleware.use('completion:property', spy);
 
-      expect(testAutocomplete('moreOf.some')).to.contain('somethingElse');
-      expect(spy).to.have.been.calledOnce;
-
-      App.middleware.disuse('completion:property', spy);
+      testAutocomplete('moreOf.some', 'somethingElse')(function () {
+        expect(spy).to.have.been.calledOnce;
+        App.middleware.disuse('completion:property', spy);
+        done();
+      });
     });
   });
 });
