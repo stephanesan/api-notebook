@@ -48,6 +48,6 @@ var testCompletion = function (editor, text, done) {
     origin: '+input',
     to:     editor.getCursor(),
     from:   editor.getCursor(),
-    text:   [ text.slice(-1) ]
+    text:   [text.slice(-1)]
   });
 };

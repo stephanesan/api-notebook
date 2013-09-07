@@ -96,7 +96,6 @@ describe('middleware', function () {
         done();
       });
 
-
       middleware.use('test', next);
       middleware.use('test', next);
       middleware.use('test', next);

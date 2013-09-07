@@ -1,8 +1,6 @@
 /* global describe, it */
 
 describe('Filter Properties Plugin', function () {
-  var fixture = document.getElementById('fixture');
-
   beforeEach(function () {
     filterPropertiesPlugin.attach(App.middleware);
   });
