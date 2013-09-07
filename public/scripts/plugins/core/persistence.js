@@ -4,7 +4,7 @@ var OPEN_CODE_BLOCK  = '```javascript';
 var CLOSE_CODE_BLOCK = '```';
 
 /**
- * Sets up the base serialization middleware that can be overrriden in userland.
+ * Sets up the base persistence middleware that can be overrriden in userland.
  *
  * @param  {Object} middleware
  */
@@ -16,7 +16,7 @@ module.exports = function (middleware) {
    * @param  {Function} next
    */
   middleware.core('persistence:serialize', function (data, next) {
-    data.notebook = _.map(this.notebook, function (cell) {
+    data.notebook = _.map(data.notebook, function (cell) {
       if (cell.type === 'text') { return cell.value; }
       // Wrap code cells as a JavaScript code block for Markdown
       return [OPEN_CODE_BLOCK, cell.value, CLOSE_CODE_BLOCK].join('\n');
@@ -39,7 +39,9 @@ module.exports = function (middleware) {
     var resetParser = function (newType) {
       // Text cells need to cater for the first line being empty since we are
       // joining the sections together with two newlines.
-      if (type === 'text' && value[0] === '') { value.shift(); }
+      if (type === 'text' && value.length > 1) {
+        value.shift();
+      }
 
       if (!value.length) { return type = newType; }
 
@@ -70,6 +72,17 @@ module.exports = function (middleware) {
     resetParser();
     data.notebook = collection;
 
+    return next();
+  });
+
+  /**
+   * Set a fresh notebooks default content to be a single code cell.
+   *
+   * @param  {Object}   data
+   * @param  {Function} next
+   */
+  middleware.core('persistence:defaultContent', function (data, next) {
+    data.notebook = [OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK].join('\n');
     return next();
   });
 };

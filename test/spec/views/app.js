@@ -31,7 +31,7 @@ describe('App', function () {
     });
 
     it('should have a class name of `application`', function () {
-      expect(view.el.className).to.equal('application');
+      expect(view.el.className).to.contain('application');
     });
 
     describe('#render', function () {

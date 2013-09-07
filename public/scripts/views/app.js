@@ -23,18 +23,17 @@ App.prototype.events = {
 };
 
 App.prototype.initialize = function (options) {
-  messages.trigger('ready');
+  this.notebook = new Notebook();
+  this.notebook.render();
 
-  Backbone.history.start({
-    pushState: true
-  });
-
+  this.updateUser();
   this.listenTo(persistence, 'changeUser',      this.updateUser,      this);
   this.listenTo(messages,    'keydown:Esc',     this.hideShortcuts,   this);
   this.listenTo(messages,    'keydown:Shift-/', this.toggleShortcuts, this);
 };
 
 App.prototype.remove = function () {
+  this.notebook.remove();
   Backbone.history.stop();
   View.prototype.remove.call(this);
 };
@@ -45,8 +44,8 @@ App.prototype.updateUser = function () {
 
   this.el.classList[isOwner  ? 'add' : 'remove']('user-is-owner');
   this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
-  this.el.classList[isAuth   ? 'add' : 'remove']('user-not-authenticated');
-  this.el.classList[!isAuth  ? 'add' : 'remove']('user-is-authenticated');
+  this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
+  this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
 
   // Adding and removing some of these classes cause the container to resize.
   messages.trigger('resize');
@@ -80,7 +79,7 @@ App.prototype.render = function () {
       '<div class="notebook-header-secondary">' +
         '<button class="btn-text notebook-fork">Make my own copy</button>' +
         '<button class="btn-text notebook-auth">' +
-          'Authenticate using Github' +
+          'Authenticate' +
         '</button>' +
         '<button class="notebook-exec">Run All</button>' +
         '<button class="ir modal-toggle">Keyboard Shortcuts</button>' +
@@ -88,7 +87,7 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="banner notebook-auth">' +
-      '<p>Please sign in with Github to save the notebook.</p>' +
+      '<p>Please authenticate to save the notebook.</p>' +
     '</div>' +
 
     '<div class="modal-backdrop"></div>'
@@ -130,17 +129,18 @@ App.prototype.render = function () {
 
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
+  this.notebook.appendTo(this.el);
   messages.trigger('resize');
 };
 
-App.prototype.runNotebook = function (done) {
-  this.notebook.execute(done);
+App.prototype.runNotebook = function () {
+  this.notebook.execute();
 };
 
-App.prototype.authNotebook = function (done) {
+App.prototype.authNotebook = function () {
   // Authentication
 };
 
-App.prototype.forkNotebook = function (done) {
-  persistence.duplicate(done);
+App.prototype.forkNotebook = function () {
+  persistence.duplicate();
 };

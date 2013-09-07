@@ -20,15 +20,14 @@ var Notebook = module.exports = View.extend({
 });
 
 Notebook.prototype.initialize = function (options) {
-  this.sandbox    = new Sandbox();
-  this.controls   = new CellControls().render();
-  this.collection = this.collection || new NotebookCollection();
-  this._uniqueId  = 0;
+  this.sandbox   = new Sandbox();
+  this.controls  = new CellControls().render();
+  this._uniqueId = 0;
 
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
-  this.listenTo(persistence,     'changeUser',         this.updateUser);
-  this.listenTo(this.collection, 'remove sort change', this.update);
+  this.listenTo(persistence, 'changeUser',    this.updateUser);
+  this.listenTo(persistence, 'resetNotebook', this.render);
 };
 
 Notebook.prototype.remove = function () {
@@ -36,28 +35,41 @@ Notebook.prototype.remove = function () {
   return View.prototype.remove.call(this);
 };
 
-Notebook.prototype.update = _.throttle(function () {
-  if (this._rendering || this._updating) { return; }
+Notebook.prototype.update = (function () {
+  var updating    = false;
+  var updateQueue = false;
 
-  this._updating = true;
-  // Serialize the notebook and set the persistant notebook contents
-  persistence.update(this.collection.toJSON(), function (err, notebook) {
-    this._updating = false;
-  });
-}, 100);
+  return function () {
+    // If we are currently in an update operation, set a flag to remind
+    // ourselves to process the data once we are free.
+    if (updating) { return updateQueue = true; }
+
+    updating = true;
+    // Serialize the notebook and set the persistant notebook contents
+    persistence.update(this.collection.toJSON(), _.bind(function (err, notebook) {
+      updating = false;
+      if (updateQueue) {
+        updateQueue = false;
+        this.update();
+      }
+    }, this));
+  };
+})();
 
 Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
     model.view.renderEditor();
   });
-  // If the user has changed, attempt to save the current notebook
-  this.update();
 };
 
-Notebook.prototype.setContent = function (content) {
-  this.el.innerHTML = '';
+Notebook.prototype.render = function () {
+  View.prototype.render.call(this);
+  if (this.collection) { this.stopListening(this.collection); }
 
-  persistence.deserialize(content, _.bind(function (err, cells) {
+  this.collection = new NotebookCollection();
+  this.listenTo(this.collection, 'remove sort change', this.update);
+
+  persistence.deserialize(_.bind(function (err, cells) {
     // Empty all the current content to reset with new contents
     _.each(cells, function (cell) {
       var appendView = 'appendCodeView';
@@ -65,47 +77,10 @@ Notebook.prototype.setContent = function (content) {
       this[appendView](null, cell.value);
     }, this);
 
-    if (!this.el.childNodes.length) { this.appendCodeView(); }
+    if (!this.collection.length) { this.appendCodeView(); }
 
     this.collection.last().view.focus();
   }, this));
-};
-
-Notebook.prototype.render = function () {
-  // Use a `rendering` flag to avoid resaving, etc. when rendering a notebook
-  this._rendering = true;
-  this.el.classList.add('loading');
-  View.prototype.render.call(this);
-
-  var doneRendering = _.bind(function () {
-    this._rendering = false;
-    this.el.classList.remove('loading');
-  }, this);
-
-  // Reset the state
-  if (persistence.isNew()) {
-    this.updateUser();
-    this.setContent('');
-    doneRendering();
-    Backbone.history.navigate('');
-    return this;
-  }
-
-  // this.gist.fetch({
-  //   success: _.bind(function () {
-  //     this.updateUser();
-  //     this.setContent(this.gist.getNotebook());
-  //     doneRendering();
-  //   }, this),
-
-  //   // No gist exists or unauthorized, etc.
-  //   error: _.bind(function () {
-  //     doneRendering();
-  //     Backbone.history.navigate('', { trigger: true });
-  //   }, this)
-  // });
-
-  return this;
 };
 
 Notebook.prototype.execute = function (cb) {
@@ -113,9 +88,9 @@ Notebook.prototype.execute = function (cb) {
   this.execution = true;
 
   // This chaining is a little awkward, but it allows the execution to work with
-  // asynchronous callbacks
+  // asynchronous callbacks.
   (function execution (view) {
-    // If no view is passed through, we must have hit the last view
+    // If no view is passed through, we must have hit the last view.
     if (!view) {
       that.execution = false;
       return cb && cb();
@@ -324,7 +299,6 @@ Notebook.prototype.appendView = function (view, before) {
   }
 
   // Some references may be needed
-  view.notebook   = this;
   view.sandbox    = this.sandbox;
   view.model.view = view;
   // Add the model to the collection
@@ -348,9 +322,9 @@ Notebook.prototype.appendTo = function (el) {
     if (model.view.editor) { model.view.editor.refresh(); }
   });
 
-  // Focus the cell upon appending, since focusing before its in the DOM causes
-  // phantom cursors.
-  this.appendCodeView().focus();
+  // Focus the cell upon appending, since focusing before its in the DOM results
+  // in phantom cursors.
+  if (this.collection.last()) { this.collection.last().view.focus(); }
 
   return this;
 };

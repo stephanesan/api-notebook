@@ -72,7 +72,11 @@ var prepareState = function (done) {
   // Allow passing through default content in the case that loading an id fails
   // or no id was passed through to begin with.
   postMessage.on('content', function (content) {
-    App.persistence.set('defaultContent', content);
+    // Hooks into the default content middleware pipe and sets the notebook.
+    App.middleware.use('persistence:defaultContent', function (data, _, done) {
+      data.notebook = content;
+      return done();
+    });
   }, this);
 
   // Allow passing of variables between the parent window and child frame.
@@ -109,14 +113,23 @@ var prepareState = function (done) {
  */
 App.start = function (el, done) {
   return prepareState(function (err) {
-    done(err, new App().render().appendTo(el));
+    App.messages.trigger('ready');
+
+    // Start up the history router, which will trigger the start of other
+    // subsystems such as persistence and authentication.
+    App.Backbone.history.start({
+      pushState: true
+    });
+
+    var app = new App().render().appendTo(el);
+    if (done) { done(err, app); }
   });
 };
 
 // Attach core plugins
 require('./plugins/core/completion')(App.middleware);
 require('./plugins/core/result-cell')(App.middleware);
-require('./plugins/core/markdown-serialization')(App.middleware);
+require('./plugins/core/persistence')(App.middleware);
 
 // Currently for testing, we'll implement persistence alongside the localStorage
 // plugin. This allows me to test whether the functionality actually works.

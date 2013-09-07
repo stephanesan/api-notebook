@@ -9,18 +9,18 @@
  * `inspector:filter`    - Filter properties from displaying in the inspector.
  * `result:render`       - Render the result or error of a code cell execution.
  * `result:empty`        - Remove the result of a code cell execution.
- * `persistence:update`       - Every time the notebook contents change.
- * `persistence:serialize`    - Serialize the collection of cells into a format
- *                              that can be sent to the server.
- * `persistence:deserialize`  - Deserialize data from the server into an array
- *                              of cells the notebook collection can consume.
- * `persistence:authenticate` - Triggers an authentication check of the user,
- *                              needs to return a user id that can be used to
- *                              decide if we are the owner of a notebook.
- * `persistence:session`      - Used to load an initial session, should not
- *                              trigger any sort of authentication.
- * `persistence:load`         - Load a notebook from somewhere.
- * `persistence:save`         - Save a notebook to somewhere.
+ * `persistence:change`        - Every time the notebook contents change.
+ * `persistence:serialize`     - Serialize the collection of cells into a format
+ *                               that can be sent to the server.
+ * `persistence:deserialize`   - Deserialize data from the server into an array
+ *                               of cells the notebook collection can consume.
+ * `persistence:authenticate`  - Triggers an authentication check of the user,
+ *                               needs to return a user id that can be used to
+ *                               decide if we are the owner of a notebook.
+ * `persistence:authenticated` - Used to load an initial session, should not
+ *                               trigger any sort of authentication.
+ * `persistence:load`          - Load a notebook from somewhere.
+ * `persistence:save`          - Save a notebook to somewhere.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');
@@ -116,6 +116,7 @@ middleware.disuse = function (name, fn) {
  *                         finished executing.
  */
 middleware.listenTo(middleware, 'all', function (name, data, out) {
+  var that  = this;
   var sent  = false;
   var index = 0;
   var stack = _.toArray(this._stack[name]);
@@ -151,12 +152,12 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
       // have an error in the pipeline.
       if (err) {
         if (arity === 4) {
-          layer(err, data, next, done);
+          layer.call(that, err, data, next, done);
         } else {
           next(err);
         }
       } else if (arity < 4) {
-        layer(data, next, done);
+        layer.call(that, data, next, done);
       } else {
         next();
       }

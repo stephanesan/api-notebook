@@ -1,6 +1,5 @@
-var Backbone    = require('backbone');
-var messages    = require('./messages');
-var persistence = require('./persistence');
+var Backbone = require('backbone');
+var messages = require('./messages');
 
 /**
  * Extendable implementation of application state data. State can listen to the
@@ -37,8 +36,4 @@ state.listenTo(messages, 'keydown:Alt-Alt', function () {
 
 state.listenTo(messages, 'keyup:Alt', function () {
   state.set('showExtra', false);
-});
-
-state.listenTo(messages, 'ready', function () {
-  persistence.isAuthenticated();
 });

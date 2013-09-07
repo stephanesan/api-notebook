@@ -1,5 +1,7 @@
 var _          = require('underscore');
 var Backbone   = require('backbone');
+var router     = require('./router');
+var messages   = require('./messages');
 var middleware = require('./middleware');
 
 /**
@@ -7,25 +9,33 @@ var middleware = require('./middleware');
  * two flags should ever be set - `userId` and `notebook` - but more could be
  * set external to the module.
  *
- * @type {Object}
+ * @type {Function}
  */
-var persistence = module.exports = new (Backbone.Model.extend({
+var Persistence = Backbone.Model.extend({
   defaults: {
-    id:       undefined, // Holds the notebook unique id.
-    userId:   undefined, // Holds the persistence session user id.
-    ownerId:  undefined, // Holds the notebook owners user id.
-    notebook: '',        // Holds the notebook content in serialized format.
-    defaultContent: ''   // Holds the default notebook content for new notebooks
+    id:       null, // Holds the notebook unique id.
+    userId:   null, // Holds the persistence session user id.
+    ownerId:  null, // Holds the notebook owners user id.
+    notebook: ''    // Holds the notebook content in serialized format.
   }
-}))();
+});
 
 /**
  * Return whether the current user session is the owner of the current notebook.
  *
  * @return {Boolean}
  */
-persistence.isOwner = function () {
+Persistence.prototype.isOwner = function () {
   return this.get('ownerId') === this.get('userId');
+};
+
+/**
+ * Return whether a user is currently authenticated.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype.isAuthenticated = function () {
+  return !!this.get('userId');
 };
 
 /**
@@ -34,11 +44,11 @@ persistence.isOwner = function () {
  * @param  {Array}    cells
  * @param  {Function} done
  */
-persistence.update = function (cells, done) {
-  this.serialize(cells, function (err, notebook) {
+Persistence.prototype.update = function (cells, done) {
+  this.serialize(cells, _.bind(function (err, notebook) {
     this.set('notebook', notebook);
-    done(err, notebook);
-  });
+    return done(err, notebook);
+  }, this));
 };
 
 /**
@@ -47,12 +57,16 @@ persistence.update = function (cells, done) {
  * @param  {Array}    cells
  * @param  {Function} done
  */
-persistence.serialize = function (cells, done) {
-  middleware.trigger('persistence:serialize', {
-    notebook: cells
-  }, function (err, data) {
-    return done(err, data.notebook);
-  });
+Persistence.prototype.serialize = function (cells, done) {
+  middleware.trigger(
+    'persistence:serialize',
+    _.extend(this.getMiddlewareData(), {
+      notebook: cells
+    }),
+    _.bind(function (err, data) {
+      return done(err, data.notebook);
+    }, this)
+  );
 };
 
 /**
@@ -60,12 +74,14 @@ persistence.serialize = function (cells, done) {
  *
  * @param  {Function} done
  */
-persistence.deserialize = function (done) {
-  middleware.trigger('persistence:deserialize', {
-    notebook: this.get('notebook')
-  }, function (err, data) {
-    return done(err, data.notebook);
-  });
+Persistence.prototype.deserialize = function (done) {
+  middleware.trigger(
+    'persistence:deserialize',
+    this.getMiddlewareData(),
+    _.bind(function (err, data) {
+      return done(err, data.notebook);
+    }, this)
+  );
 };
 
 /**
@@ -73,27 +89,25 @@ persistence.deserialize = function (done) {
  *
  * @param  {Function} done
  */
-persistence.save = function (done) {
-  middleware.trigger('persistence:save', {
-    notebook: this.get('notebook')
-  }, function (err, data) {
-    this.set('notebook', data.notebook);
-    done(err, data.notebook);
-  });
-};
+Persistence.prototype.save = function (done) {
+  middleware.trigger(
+    'persistence:save',
+    this.getMiddlewareData(),
+    _.bind(function (err, data) {
+      if (!data.id) {
+        Backbone.history.navigate('');
+        return done(err, data.notebook);
+      }
 
-/**
- * Load the notebook.
- *
- * @param  {Function} done
- */
-persistence.load = function (done) {
-  middleware.trigger('persistence:load', {
-    notebook: null,
-  }, function (err, data) {
-    this.set('notebook', data.notebook);
-    done(err, data.notebook);
-  });
+      this.set('id',       data.id);
+      this.set('userId',   data.userId);
+      this.set('ownerId',  data.ownerId);
+      this.set('notebook', data.notebook);
+      // Navigate to the updated url and call the callback with the saved content.
+      Backbone.history.navigate(data.id);
+      return done(err, data.notebook);
+    }, this)
+  );
 };
 
 /**
@@ -101,30 +115,37 @@ persistence.load = function (done) {
  *
  * @param  {Function} done
  */
-persistence.authenticate = function (done) {
-  middleware.trigger('persistence:authenticate', {
-    userId: this.get('userId')
-  }, function (err, data) {
-    this.set('userId', data.userId);
-    done(err, data.userId);
+Persistence.prototype.authenticate = function (done) {
+  middleware.trigger(
+    'persistence:authenticate',
+    this.getMiddlewareData(),
+    _.bind(function (err, data) {
+      this.set('userId', data.userId);
+      done(err, data.userId);
+    }, this)
+  );
+};
+
+/**
+ * Get the persistence object in a format that is suitable for middleware.
+ *
+ * @return {Object}
+ */
+Persistence.prototype.getMiddlewareData = function () {
+  return _.extend(this.toJSON(), {
+    save:            _.bind(this.save, this),
+    update:          _.bind(this.update, this),
+    isOwner:         _.bind(this.isOwner, this),
+    isAuthenticated: _.bind(this.isAuthenticated, this)
   });
 };
 
 /**
- * Check with the external service whether we are actually authenticated. This
- * will only check, and not actually trigger authentication which would be a
- * jarring experience.
+ * Exports a static instance of persistence.
  *
- * @param  {Function} done
+ * @type {Object}
  */
-persistence.isAuthenticated = function (done) {
-  middleware.trigger('persistence:session', {
-    userId: this.get('userId')
-  }, function (err, data) {
-    this.set('userId', data.userId);
-    done(err, data.userId);
-  });
-};
+var persistence = module.exports = new Persistence();
 
 /**
  * Listens to any changes to the user id and emits a custom `changeUser` event
@@ -139,8 +160,88 @@ persistence.listenTo(persistence, 'change:userId', function () {
  * Any time the notebook changes, trigger the `persistence:change` middleware
  * handler.
  */
-persistence.listenTo(persistence, 'change:notebook', function () {
-  middleware.trigger('persistence:change', {
-    notebook: this.get('notebook')
-  });
+persistence.listenTo(persistence, 'change:notebook', (function () {
+  var changing    = false;
+  var changeQueue = false;
+
+  return function change () {
+    // If we are already changing the data, but it has not yet been resolved,
+    // set a change queue flag to `true` to let ourselves know we have changes
+    // queued to sync once we finish the current operation.
+    if (changing) { return changeQueue = true; }
+
+    changing = true;
+    middleware.trigger(
+      'persistence:change',
+      this.getMiddlewareData(),
+      _.bind(function (err, data) {
+        changing = false;
+        if (changeQueue) {
+          changeQueue = false;
+          change.call(this);
+        }
+      }, this)
+    );
+  };
+})());
+
+/**
+ * Create a new notebook.
+ */
+persistence.listenTo(router, 'route:newNotebook', function () {
+  // Trigger a `defaultContent` hook that can be used to set a fresh notebooks
+  // contents.
+  return middleware.trigger(
+    'persistence:defaultContent',
+    _.extend(this.getMiddlewareData(), {
+      notebook: null
+    }),
+    _.bind(function (err, data) {
+      this.set('notebook', data.notebook, { silent: true });
+      this.trigger('resetNotebook', this);
+    }, this)
+  );
+});
+
+/**
+ * Load an existing notebook from an external service.
+ */
+persistence.listenTo(router, 'route:loadNotebook', function (id) {
+  return middleware.trigger(
+    'persistence:load',
+    _.extend(this.getMiddlewareData(), {
+      id:       id,
+      ownerId:  null,
+      notebook: null
+    }), _.bind(function (err, data) {
+      if (!data.id) {
+        return Backbone.history.navigate('', { trigger: true });
+      }
+
+      this.set('id',       data.id);
+      this.set('userId',   data.userId);
+      this.set('ownerId',  data.ownerId);
+      this.set('notebook', data.notebook);
+      // Triggers a custom reset notebook event to tell the notebook we can
+      // cleanly rerender all notebook content.
+      this.trigger('resetNotebook', this);
+    }, this)
+  );
+});
+
+/**
+ * Check with an external service whether a users session is authenticated. This
+ * will only check, and not actually trigger authentication which would be a
+ * jarring experience.
+ */
+persistence.listenToOnce(messages, 'ready', function () {
+  return middleware.trigger(
+    'persistence:authenticated',
+    _.extend(this.getMiddlewareData(), {
+      userId: null
+    }), _.bind(function (err, data) {
+      this.set('userId',  data.userId);
+      this.set('ownerId', data.userId);
+    }, this)
+  );
 });
