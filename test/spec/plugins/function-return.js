@@ -1,8 +1,6 @@
 /* global describe, it */
 
 describe('Function Return Plugin', function () {
-  var fixture = document.getElementById('fixture');
-
   beforeEach(function () {
     functionReturnPlugin.attach(App.middleware);
   });
@@ -30,8 +28,8 @@ describe('Function Return Plugin', function () {
   describe('Completion', function () {
     var editor;
 
-    var testAutocomplete = function (text) {
-      return testCompletion(editor, text);
+    var testAutocomplete = function (text, done) {
+      return testCompletion(editor, text, done);
     };
 
     beforeEach(function () {
@@ -46,36 +44,46 @@ describe('Function Return Plugin', function () {
       document.body.removeChild(editor.getWrapperElement());
     });
 
-    it('should autocomplete strings', function () {
+    it('should autocomplete strings', function (done) {
       window.test = function () {};
       window.test['@return'] = 'output';
 
-      expect(testAutocomplete('test().sub')).to.contain('substr');
+      testAutocomplete('test().sub', function (results) {
+        expect(results).to.contain('substr');
+        done();
+      });
     });
 
-    it('should autocomplete objects', function () {
+    it('should autocomplete objects', function (done) {
       window.test = function () {};
       window.test['@return'] = { test: 'test' };
 
-      expect(testAutocomplete('test().te')).to.contain('test');
+      testAutocomplete('test().te', function (results) {
+        expect(results).to.contain('test');
+        done();
+      });
     });
 
-    it('should autocomplete chained functions', function () {
+    it('should autocomplete chained functions', function (done) {
       window.test = function () {};
       window.test['@return'] = { test: function () {} };
       window.test['@return'].test['@return'] = 'again';
 
-      var suggestions = testAutocomplete('test().test().sub');
-      expect(suggestions).to.contain('substr');
+      testAutocomplete('test().test().sub', function (results) {
+        expect(results).to.contain('substr');
+        done();
+      });
     });
 
-    it('should autocomplete returned functions', function () {
+    it('should autocomplete returned functions', function (done) {
       window.test = function () {};
       window.test['@return'] = function () {};
       window.test['@return']['@return'] = 'again';
 
-      var suggestions = testAutocomplete('test()().sub');
-      expect(suggestions).to.contain('substr');
+      testAutocomplete('test()().sub', function (results) {
+        expect(results).to.contain('substr');
+        done();
+      });
     });
   });
 });

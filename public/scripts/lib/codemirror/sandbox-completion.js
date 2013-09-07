@@ -67,7 +67,7 @@ var getPropertyContext = function (cm, token) {
   eatSpace = function () {
     var token = getToken(cm, new Pos(cur.line, tprop.start));
 
-    if (token.type === null && / +/.test(token.string)) {
+    if (token.type === null && /^ +$/.test(token.string)) {
       token = getToken(cm, new Pos(cur.line, token.start));
     }
 
@@ -249,5 +249,5 @@ module.exports = function (cm, options, done) {
     return completeProperty(cm, token, context, cb);
   }
 
- return done();
+  return done();
 };

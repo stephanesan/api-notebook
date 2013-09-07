@@ -18,7 +18,7 @@ describe('middleware', function () {
 
   describe('plugins', function () {
     afterEach(function () {
-      middleware.stack = {};
+      middleware._stack = {};
     });
 
     it('should define a `use` method', function () {
@@ -96,7 +96,6 @@ describe('middleware', function () {
         done();
       });
 
-
       middleware.use('test', next);
       middleware.use('test', next);
       middleware.use('test', next);
@@ -130,7 +129,7 @@ describe('middleware', function () {
       expect(spy).to.not.have.been.called;
     });
 
-    it('should be able to register a core plugin that is run last', function () {
+    it('should be able to register a core plugin that always runs last', function () {
       var spy      = sinon.spy();
       var coreSpy  = sinon.spy(function (data, next) {
         expect(stackSpy).to.have.been.calledOnce;

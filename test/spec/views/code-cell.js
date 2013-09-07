@@ -161,8 +161,10 @@ describe('Code Cell', function () {
       describe('completion', function () {
         it('should complete from the sandbox', function (done) {
           view.sandbox.execute('var testing = "test";', window, function () {
-            expect(testCompletion(view.editor, 'test')).to.contain('testing');
-            done();
+            testCompletion(view.editor, 'test', function (results) {
+              expect(results).to.contain('testing');
+              done();
+            });
           });
         });
       });

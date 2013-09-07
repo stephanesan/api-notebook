@@ -1,3 +1,4 @@
+var _            = require('underscore');
 var Widget       = require('./widget');
 var Pos          = CodeMirror.Pos;
 var autocomplete = require('../codemirror/sandbox-completion');
@@ -56,16 +57,17 @@ var Completion = module.exports = function (cm, options) {
     }
 
     // If the previous token is whitespace, trigger a new autocompletion widget.
-    if (/ */.test(token.string)) {
+    if (/^ *$/.test(token.string)) {
       that.removeWidget();
     }
 
-    if (that.widget) {
+    if (that._completionActive) {
       that.refresh();
     } else {
-      that.showHints();
+      that.showWidget();
     }
   };
+
   this.onCursorActivity = function (cm) {
     if (closeOnCursor) { that.removeWidget(); }
 
@@ -87,22 +89,25 @@ Completion.prototype.remove = function () {
   this.cm.off('cursorActivity', this.onCursorActivity);
 };
 
-Completion.prototype.refresh = function () {
-  if (this.widget) { this.widget.refresh(); }
+Completion.prototype.refresh = function (done) {
+  if (this.widget) {
+    return this.widget.refresh(done);
+  }
+
+  return done && done();
 };
 
-Completion.prototype.showHints = function () {
-  var that = this;
-  autocomplete(this.cm, this.options, function (err, data) {
-    if (data) { that.showWidget(data); }
-  });
-};
-
-Completion.prototype.showWidget = function (data) {
+Completion.prototype.showWidget = function () {
   this.removeWidget();
-  this.widget = new Widget(this, data);
+  this._completionActive = true;
+  autocomplete(this.cm, this.options, _.bind(function (err, data) {
+    if (!this.widget && data) {
+      this.widget = new Widget(this, data);
+    }
+  }, this));
 };
 
 Completion.prototype.removeWidget = function () {
+  this._completionActive = false;
   if (this.widget) { this.widget.remove(); }
 };

@@ -49,27 +49,6 @@ var cloneNode = function (node) {
 };
 
 /**
- * Stringify an element node. Handle every type of node, not just elements but
- * also strings and comments.
- *
- * @param  {Node} element
- * @return {String}
- */
-var stringifyElement = function (element) {
-  var div = document.createElement('div');
-  // Not all elements are supported, so if we fail render it as an object. I'll
-  // come back later and add support for additional node types.
-  try {
-    // Attempt to clone the node and append to a faux div to get the innerHTML.
-    var node = cloneNode(element);
-    div.appendChild(node);
-    return div.innerHTML;
-  } catch (e) {
-    return stringifyObject(element);
-  }
-};
-
-/**
  * Used in nested stringifications such as the array and object, it will check
  * the object type and stringify accordingly. Always render primitives, while
  * objects will be stringified to their type output.
@@ -124,6 +103,27 @@ var stringifyObject = function (object) {
 var stringifyError = function (error) {
   // TIL DOMExceptions don't allow calling `toString` or string type coersion
   return Error.prototype.toString.call(error);
+};
+
+/**
+ * Stringify an element node. Handle every type of node, not just elements but
+ * also strings and comments.
+ *
+ * @param  {Node} element
+ * @return {String}
+ */
+var stringifyElement = function (element) {
+  var div = document.createElement('div');
+  // Not all elements are supported, so if we fail render it as an object. I'll
+  // come back later and add support for additional node types.
+  try {
+    // Attempt to clone the node and append to a faux div to get the innerHTML.
+    var node = cloneNode(element);
+    div.appendChild(node);
+    return div.innerHTML;
+  } catch (e) {
+    return stringifyObject(element);
+  }
 };
 
 /**
