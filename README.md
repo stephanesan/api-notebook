@@ -15,7 +15,7 @@ grunt check
 ## Environment Variables
 
 ```
-export NOTEBOOK_URL="" # Set this before building any scripts
+export NOTEBOOK_URL="http://localhost:8000" # Set this before building any scripts
 export GITHUB_CLIENT_ID=""
 export GITHUB_CLIENT_SECRET=""
 ```
