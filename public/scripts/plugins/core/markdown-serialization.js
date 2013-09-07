@@ -17,9 +17,9 @@ module.exports = function (middleware) {
    */
   middleware.core('persistence:serialize', function (data, next) {
     data.notebook = _.map(this.notebook, function (cell) {
-      if (model.type === 'text') { return model.value; }
+      if (cell.type === 'text') { return cell.value; }
       // Wrap code cells as a JavaScript code block for Markdown
-      return [OPEN_CODE_BLOCK, model.value, CLOSE_CODE_BLOCK].join('\n');
+      return [OPEN_CODE_BLOCK, cell.value, CLOSE_CODE_BLOCK].join('\n');
     }).join('\n\n');
 
     return next();
