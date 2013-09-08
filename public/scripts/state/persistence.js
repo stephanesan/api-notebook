@@ -141,6 +141,62 @@ Persistence.prototype.getMiddlewareData = function () {
 };
 
 /**
+ * Triggers a middleware hook that returns a fresh notebook contents.
+ *
+ * @param {Function} done
+ */
+Persistence.prototype.newNotebook = function (done) {
+  return middleware.trigger(
+    'persistence:new',
+    _.extend(this.getMiddlewareData(), {
+      notebook: null
+    }),
+    _.bind(function (err, data) {
+      this.set('id',       null);
+      this.set('ownerId',  this.get('userId'));
+      this.set('notebook', data.notebook, { silent: true });
+      this.trigger('resetNotebook', this);
+      done(err, data.notebook);
+    }, this)
+  );
+};
+
+/**
+ * Load a notebook from an external service based on an id string.
+ *
+ * @param  {String}   id
+ * @param  {Function} done
+ */
+Persistence.prototype.loadNotebook = function (id, done) {
+  // Sets the id to the new id, which in turn will trigger navigation. In case
+  // that the request fails, it'll create a new notebook and the id will be
+  // reset back to null and we will navigate back to root.
+  this.set('id', id);
+
+  return middleware.trigger(
+    'persistence:load',
+    _.extend(this.getMiddlewareData(), {
+      id:       id,
+      ownerId:  null,
+      notebook: null
+    }),
+    _.bind(function (err, data) {
+      if (err || !data.id) {
+        return persistence.newNotebook();
+      }
+
+      this.set('id',       data.id);
+      this.set('userId',   data.userId);
+      this.set('ownerId',  data.ownerId);
+      this.set('notebook', data.notebook);
+      // Triggers a custom reset notebook event to tell the notebook we can
+      // cleanly rerender all notebook content.
+      this.trigger('resetNotebook', this);
+    }, this)
+  );
+};
+
+/**
  * Exports a static instance of persistence.
  *
  * @type {Object}
@@ -189,44 +245,14 @@ persistence.listenTo(persistence, 'change:notebook', (function () {
  * Create a new notebook.
  */
 persistence.listenTo(router, 'route:newNotebook', function () {
-  // Trigger a `defaultContent` hook that can be used to set a fresh notebooks
-  // contents.
-  return middleware.trigger(
-    'persistence:defaultContent',
-    _.extend(this.getMiddlewareData(), {
-      notebook: null
-    }),
-    _.bind(function (err, data) {
-      this.set('notebook', data.notebook, { silent: true });
-      this.trigger('resetNotebook', this);
-    }, this)
-  );
+  return persistence.newNotebook();
 });
 
 /**
  * Load an existing notebook from an external service.
  */
 persistence.listenTo(router, 'route:loadNotebook', function (id) {
-  return middleware.trigger(
-    'persistence:load',
-    _.extend(this.getMiddlewareData(), {
-      id:       id,
-      ownerId:  null,
-      notebook: null
-    }), _.bind(function (err, data) {
-      if (!data.id) {
-        return Backbone.history.navigate('', { trigger: true });
-      }
-
-      this.set('id',       data.id);
-      this.set('userId',   data.userId);
-      this.set('ownerId',  data.ownerId);
-      this.set('notebook', data.notebook);
-      // Triggers a custom reset notebook event to tell the notebook we can
-      // cleanly rerender all notebook content.
-      this.trigger('resetNotebook', this);
-    }, this)
-  );
+  return persistence.loadNotebook(id);
 });
 
 /**
@@ -244,4 +270,11 @@ persistence.listenToOnce(messages, 'ready', function () {
       this.set('ownerId', data.userId);
     }, this)
   );
+});
+
+/**
+ * Redirects the page to the updated id.
+ */
+persistence.listenTo(persistence, 'change:id', function (_, id) {
+  return Backbone.history.navigate(id || '');
 });

@@ -104,27 +104,32 @@ var Notebook = module.exports = function (el, options) {
  * @return {Notebook}
  */
 Notebook.prototype.makeFrame = function (el) {
-  var that = this;
-  var src  = NOTEBOOK_URL;
-
-  if (this.options.id) {
-    src += ('/' === src[src.length - 1] ? '' : '/') + this.options.id;
-  }
+  var that   = this;
+  var src    = NOTEBOOK_URL;
+  var config = {};
 
   var frame = this.frame = document.createElement('iframe');
   frame.src = src;
 
-  // When the app is ready to receive events, send relevant info
+  // An initial notebook id to load.
+  if (this.options.id) {
+    config.id = this.options.id;
+  }
+
+  // Fallback content when the initial id fails to load or no id is provided.
+  if (typeof this.options.content === 'string') {
+    config.content = this.options.content;
+  }
+
+  // Application variables to alias inside the iframe.
+  if (typeof this.options.alias === 'object') {
+    config.alias = this.options.alias;
+  }
+
+  // When the app is ready to receive events, send configuration data and let
+  // the frame know when we are ready to execute.
   this.once('ready', function () {
-    this.trigger('referrer', global.location.href);
-
-    if (typeof this.options.content === 'string') {
-      this.trigger('content', this.options.content);
-    }
-
-    each(that.options.alias, function (value, key) {
-      this.trigger('alias', key, value);
-    }, this);
+    this.trigger('config', config);
 
     // Once all the data has been passed through to the frame, let it know it
     // is ready to render. This would be handy for embedding an inline loading

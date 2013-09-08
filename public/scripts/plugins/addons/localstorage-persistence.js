@@ -51,7 +51,7 @@ var changePlugin = function (data, next) {
 var savePlugin = function (data, next) {
   process.nextTick(function () {
     if (!data.id) { data.id = generateId(); }
-    localStorage.setItem(localStorageKey(data.id), data.notebook);
+    localStorage.setItem(localStorageKey(data.id), data.notebook || '');
     return next();
   });
 };
@@ -64,6 +64,12 @@ var savePlugin = function (data, next) {
  */
 var loadPlugin = function (data, next) {
   process.nextTick(function () {
+    var key = localStorageKey(data.id);
+
+    if (!localStorage.getItem(key)) {
+      return next(new Error('No notebook found.'));
+    }
+
     data.ownerId  = USER_ID;
     data.notebook = localStorage.getItem(localStorageKey(data.id));
     return next();

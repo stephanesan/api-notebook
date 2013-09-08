@@ -1,35 +1,25 @@
-var logger = function (data, next) {
-  console.log(data);
-  next();
-};
 
 
 /**
- * Registers all the neccessary handlers for Github gist based persistence.
+ * Registers all the neccessary handlers for Github gist persistence.
  *
  * @param {Object} middleware
  */
 exports.attach = function (middleware) {
-  middleware.use('persistence:change',       logger);
-  middleware.use('persistence:serialize',    logger);
-  middleware.use('persistence:deserialize',  logger);
-  middleware.use('persistence:authenticate', logger);
-  middleware.use('persistence:session',      logger);
-  middleware.use('persistence:load',         logger);
-  middleware.use('persistence:save',         logger);
+  middleware.use('persistence:change',        changePlugin);
+  middleware.use('persistence:authenticated', authenticatedPlugin);
+  middleware.use('persistence:load',          loadPlugin);
+  middleware.use('persistence:save',          savePlugin);
 };
 
 /**
- * Removes Gisthub gist sync listeners.
+ * Registers all the neccessary handlers for Github gist persistence.
  *
- * @param  {Object} middleware
+ * @param {Object} middleware
  */
 exports.detach = function (middleware) {
-  middleware.disuse('persistence:change',       logger);
-  middleware.disuse('persistence:serialize',    logger);
-  middleware.disuse('persistence:deserialize',  logger);
-  middleware.disuse('persistence:authenticate', logger);
-  middleware.disuse('persistence:session',      logger);
-  middleware.disuse('persistence:load',         logger);
-  middleware.disuse('persistence:save',         logger);
+  middleware.disuse('persistence:change',        changePlugin);
+  middleware.disuse('persistence:authenticated', authenticatedPlugin);
+  middleware.disuse('persistence:load',          loadPlugin);
+  middleware.disuse('persistence:save',          savePlugin);
 };

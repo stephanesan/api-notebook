@@ -81,7 +81,7 @@ module.exports = function (middleware) {
    * @param  {Object}   data
    * @param  {Function} next
    */
-  middleware.core('persistence:defaultContent', function (data, next) {
+  middleware.core('persistence:new', function (data, next) {
     data.notebook = [OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK].join('\n');
     return next();
   });

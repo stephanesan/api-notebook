@@ -8,6 +8,7 @@ App._          = require('underscore');
 App.Backbone   = require('backbone');
 
 App.state       = require('./state/state');
+App.config      = require('./state/config');
 App.router      = require('./state/router');
 App.messages    = require('./state/messages');
 App.middleware  = require('./state/middleware');
@@ -48,40 +49,19 @@ App.Collection = {
  * Set up the initial application state. This could be synchronous (accessing
  * the page directly) or asynchronous (embeddable widget).
  *
- * @param  {Function} done
+ * @param {Object}   config
+ * @param {Function} done
  */
 var prepareState = function (done) {
   if (!global.parent || global === global.parent) {
     return done();
   }
 
-  var doc         = global.document;
-  var base        = doc.getElementsByTagName('base')[0];
+  var config      = {};
   var postMessage = new App.PostMessage(global.parent);
 
-  // Set the base url for opening links from the iframe in the parent frame.
-  postMessage.on('referrer', function (href) {
-    if (base) { base.parentNode.removeChild(base); }
-
-    base = doc.createElement('base');
-    base.setAttribute('href', href);
-    base.setAttribute('target', '_parent');
-    (doc.head || doc.getElementsByTagName('head')[0]).appendChild(base);
-  });
-
-  // Allow passing through default content in the case that loading an id fails
-  // or no id was passed through to begin with.
-  postMessage.on('content', function (content) {
-    // Hooks into the default content middleware pipe and sets the notebook.
-    App.middleware.use('persistence:defaultContent', function (data, _, done) {
-      data.notebook = content;
-      return done();
-    });
-  }, this);
-
-  // Allow passing of variables between the parent window and child frame.
-  postMessage.on('alias', function (key, value) {
-    global[key] = value;
+  postMessage.on('config', function (data) {
+    App._.extend(config, data);
   });
 
   // Allow grabbing a variable from the iframe and passing back to the parent.
@@ -95,8 +75,9 @@ var prepareState = function (done) {
     postMessage.trigger('height', height);
   });
 
+  // The parent frame will send back a ready response when setup is complete.
   postMessage.on('ready', function () {
-    done();
+    done(null, config);
   });
 
   // Send a message to the parent frame and let it know we are ready to accept
@@ -111,8 +92,20 @@ var prepareState = function (done) {
  *
  * @param  {Function|Element} el
  */
-App.start = function (el, done) {
-  return prepareState(function (err) {
+App.start = function (el /*, config */, done) {
+  var config = {};
+
+  if (typeof done === 'object') {
+    config = arguments[1];
+    done   = arguments[2];
+  }
+
+  return prepareState(function (err, data) {
+    // Extends the passed in config with data received from the parent frame and
+    // initializes the starting application config.
+    App.config.set(App._.extend({}, config, data));
+
+    // Allows different parts of the application to kickstart requests.
     App.messages.trigger('ready');
 
     // Start up the history router, which will trigger the start of other
@@ -126,11 +119,8 @@ App.start = function (el, done) {
   });
 };
 
-// Attach core plugins
+// Attach core middleware modules.
 require('./plugins/core/completion')(App.middleware);
 require('./plugins/core/result-cell')(App.middleware);
 require('./plugins/core/persistence')(App.middleware);
-
-// Currently for testing, we'll implement persistence alongside the localStorage
-// plugin. This allows me to test whether the functionality actually works.
-require('./plugins/addons/localstorage-persistence').attach(App.middleware);
+require('./plugins/core/authentication')(App.middleware);
