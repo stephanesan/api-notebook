@@ -85,4 +85,12 @@ module.exports = function (middleware) {
     data.notebook = [OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK].join('\n');
     return next();
   });
+
+  /**
+   * Default load middleware needs to pass an error since nothing was loaded.
+   */
+  middleware.core('persistence:load', function (data, next) {
+    data.id = null;
+    return next();
+  });
 };

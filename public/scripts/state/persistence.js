@@ -103,7 +103,7 @@ Persistence.prototype.save = function (done) {
       this.set('userId',   data.userId);
       this.set('ownerId',  data.ownerId);
       this.set('notebook', data.notebook);
-      // Navigate to the updated url and call the callback with the saved content.
+
       Backbone.history.navigate(data.id);
       return done(err, data.notebook);
     }, this)
@@ -156,7 +156,7 @@ Persistence.prototype.newNotebook = function (done) {
       this.set('ownerId',  this.get('userId'));
       this.set('notebook', data.notebook, { silent: true });
       this.trigger('resetNotebook', this);
-      done(err, data.notebook);
+      if (done) { done(err, data.notebook); }
     }, this)
   );
 };
@@ -181,8 +181,8 @@ Persistence.prototype.loadNotebook = function (id, done) {
       notebook: null
     }),
     _.bind(function (err, data) {
-      if (err || !data.id) {
-        return persistence.newNotebook();
+      if (!data.id) {
+        return this.newNotebook(done);
       }
 
       this.set('id',       data.id);
@@ -192,8 +192,16 @@ Persistence.prototype.loadNotebook = function (id, done) {
       // Triggers a custom reset notebook event to tell the notebook we can
       // cleanly rerender all notebook content.
       this.trigger('resetNotebook', this);
+      if (done) { done(err, data.notebook); }
     }, this)
   );
+};
+
+/**
+ * Resets the persistence model state.
+ */
+Persistence.prototype.reset = function () {
+  return this.set(this.defaults);
 };
 
 /**

@@ -8,10 +8,10 @@ var USER_ID = 'blakeembrey';
  */
 var generateId = function () {
   var s4 = function () {
-    return (Math.random()*(0x10000 - 1)|0).toString(16);
-  }
+    return Math.floor(Math.random()*(0x10000 - 1)).toString(16);
+  };
 
-  return [s4(), s4(), s4(), s4()].join('-');
+  return [s4(), s4(), s4(), s4()].join('');
 };
 
 /**
@@ -66,9 +66,8 @@ var loadPlugin = function (data, next) {
   process.nextTick(function () {
     var key = localStorageKey(data.id);
 
-    if (!localStorage.getItem(key)) {
-      return next(new Error('No notebook found.'));
-    }
+    // Hand loading off to the next middleware module.
+    if (!localStorage.getItem(key)) { return next(); }
 
     data.ownerId  = USER_ID;
     data.notebook = localStorage.getItem(localStorageKey(data.id));

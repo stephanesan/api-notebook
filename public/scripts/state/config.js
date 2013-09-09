@@ -1,4 +1,5 @@
 var _           = require('underscore');
+var Backbone    = require('backbone');
 var middleware  = require('./middleware');
 var persistence = require('./persistence');
 
@@ -30,7 +31,7 @@ config.listenTo(config, 'change:referrer', (function () {
     if (base) { base.parentNode.removeChild(base); }
 
     base = doc.createElement('base');
-    base.setAttribute('href', href);
+    base.setAttribute('href', referrer);
     base.setAttribute('target', '_parent');
     (doc.head || doc.getElementsByTagName('head')[0]).appendChild(base);
   };

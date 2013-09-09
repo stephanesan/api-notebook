@@ -20,9 +20,10 @@ var Notebook = module.exports = View.extend({
 });
 
 Notebook.prototype.initialize = function (options) {
-  this.sandbox   = new Sandbox();
-  this.controls  = new CellControls().render();
-  this._uniqueId = 0;
+  this.sandbox    = new Sandbox();
+  this.controls   = new CellControls().render();
+  this._uniqueId  = 0;
+  this.collection = new NotebookCollection();
 
   // If the user changes at any point in the applications state, we may now
   // be granted the ability to edit, fork.. or we may have lost the ability
@@ -31,30 +32,26 @@ Notebook.prototype.initialize = function (options) {
 };
 
 Notebook.prototype.remove = function () {
+  persistence.reset();
   this.sandbox.remove();
   return View.prototype.remove.call(this);
 };
 
-Notebook.prototype.update = (function () {
-  var updating    = false;
-  var updateQueue = false;
+Notebook.prototype.update = function () {
+  // If we are currently in an update operation, set a flag to remind
+  // ourselves to process the data once we are free.
+  if (this._updating) { return this._updateQueue = true; }
 
-  return function () {
-    // If we are currently in an update operation, set a flag to remind
-    // ourselves to process the data once we are free.
-    if (updating) { return updateQueue = true; }
-
-    updating = true;
-    // Serialize the notebook and set the persistant notebook contents
-    persistence.update(this.collection.toJSON(), _.bind(function (err, notebook) {
-      updating = false;
-      if (updateQueue) {
-        updateQueue = false;
-        this.update();
-      }
-    }, this));
-  };
-})();
+  this._updating = true;
+  // Serialize the notebook and set the persistant notebook contents
+  persistence.update(this.collection.toJSON(), _.bind(function (err, notebook) {
+    this._updating = false;
+    if (this._updateQueue) {
+      this._updateQueue = false;
+      this.update();
+    }
+  }, this));
+};
 
 Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
@@ -63,9 +60,12 @@ Notebook.prototype.updateUser = function () {
 };
 
 Notebook.prototype.render = function () {
-  View.prototype.render.call(this);
-  if (this.collection) { this.stopListening(this.collection); }
+  this.stopListening(this.collection);
+  this.collection.each(function (model) {
+    model.view.remove();
+  });
 
+  View.prototype.render.call(this);
   this.collection = new NotebookCollection();
   this.listenTo(this.collection, 'remove sort change', this.update);
 
@@ -81,6 +81,21 @@ Notebook.prototype.render = function () {
 
     this.collection.last().view.focus();
   }, this));
+
+  return this;
+};
+
+Notebook.prototype.appendTo = function () {
+  View.prototype.appendTo.apply(this, arguments);
+
+  // Any editor cells will need refreshing to display properly.
+  this.collection.each(function (model) {
+    if (model.view && model.view.editor) {
+      model.view.editor.refresh();
+    }
+  });
+
+  return this;
 };
 
 Notebook.prototype.execute = function (cb) {
@@ -310,21 +325,6 @@ Notebook.prototype.appendView = function (view, before) {
   // Sort the collection every time a node is added in a different position to
   // just being appended at the end
   if (before) { this.collection.sort(); }
-
-  return this;
-};
-
-Notebook.prototype.appendTo = function (el) {
-  View.prototype.appendTo.call(this, el);
-
-  // Any editor cells will need refreshing to display properly
-  this.collection.each(function (model) {
-    if (model.view.editor) { model.view.editor.refresh(); }
-  });
-
-  // Focus the cell upon appending, since focusing before its in the DOM results
-  // in phantom cursors.
-  if (this.collection.last()) { this.collection.last().view.focus(); }
 
   return this;
 };
