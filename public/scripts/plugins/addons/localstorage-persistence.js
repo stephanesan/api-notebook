@@ -46,11 +46,11 @@ var changePlugin = function (data, next) {
   data.save(next);
 };
 
-var savePlugin = function (data, next) {
+var savePlugin = function (data, next, done) {
   process.nextTick(function () {
     if (!data.id) { data.id = generateId(); }
     localStorage.setItem(localStorageKey(data.id), data.notebook || '');
-    return next();
+    return done();
   });
 };
 
@@ -60,7 +60,7 @@ var savePlugin = function (data, next) {
  * @param  {Object}   data
  * @param  {Function} next
  */
-var loadPlugin = function (data, next) {
+var loadPlugin = function (data, next, done) {
   process.nextTick(function () {
     var key = localStorageKey(data.id);
 
@@ -69,7 +69,7 @@ var loadPlugin = function (data, next) {
 
     data.ownerId  = USER_ID;
     data.notebook = localStorage.getItem(localStorageKey(data.id));
-    return next();
+    return done();
   });
 };
 

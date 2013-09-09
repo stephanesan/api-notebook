@@ -145,9 +145,9 @@ Persistence.prototype.getMiddlewareData = function () {
  *
  * @param {Function} done
  */
-Persistence.prototype.newNotebook = function (done) {
+Persistence.prototype.new = function (done) {
   if (this.get('id')) {
-    return this.loadNotebook(this.get('id'), done);
+    return this.load(this.get('id'), done);
   }
 
   return middleware.trigger(
@@ -171,7 +171,7 @@ Persistence.prototype.newNotebook = function (done) {
  * @param {String}   id
  * @param {Function} done
  */
-Persistence.prototype.loadNotebook = function (id, done) {
+Persistence.prototype.load = function (id, done) {
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
@@ -181,7 +181,7 @@ Persistence.prototype.loadNotebook = function (id, done) {
     }),
     _.bind(function (err, data) {
       if (!data.id) {
-        return this.newNotebook(done);
+        return this.new(done);
       }
 
       this.set('id',       data.id);
@@ -276,7 +276,7 @@ persistence.listenTo(persistence, 'change:id', function (_, id) {
  * Resets the notebook to a fresh state.
  */
 persistence.listenTo(router, 'route:newNotebook', function () {
-  return persistence.newNotebook();
+  return persistence.new();
 });
 
 /**
@@ -285,5 +285,5 @@ persistence.listenTo(router, 'route:newNotebook', function () {
  * @param  {String} id
  */
 persistence.listenTo(router, 'route:loadNotebook', function (id) {
-  return persistence.loadNotebook(id);
+  return persistence.load(id);
 });

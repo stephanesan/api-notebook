@@ -116,7 +116,7 @@ describe('Persistence', function () {
     });
 
     it('should render a new notebook with a single code cell', function (done) {
-      App.persistence.newNotebook(function (err, notebook) {
+      App.persistence.new(function (err, notebook) {
         expect(notebook).to.equal('```javascript\n\n```');
         done();
       });
