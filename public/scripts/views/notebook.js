@@ -3,6 +3,7 @@ var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
+var router      = require('../state/router');
 var persistence = require('../state/persistence');
 
 var CodeView           = require('./code-cell');

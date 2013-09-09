@@ -41,8 +41,8 @@ Persistence.prototype.isAuthenticated = function () {
 /**
  * Simple wrapper around the serialize method that also sets the notebook.
  *
- * @param  {Array}    cells
- * @param  {Function} done
+ * @param {Array}    cells
+ * @param {Function} done
  */
 Persistence.prototype.update = function (cells, done) {
   this.serialize(cells, _.bind(function (err, notebook) {
@@ -54,8 +54,8 @@ Persistence.prototype.update = function (cells, done) {
 /**
  * Pass an array of cells that represent the notebook for serialization.
  *
- * @param  {Array}    cells
- * @param  {Function} done
+ * @param {Array}    cells
+ * @param {Function} done
  */
 Persistence.prototype.serialize = function (cells, done) {
   middleware.trigger(
@@ -72,7 +72,7 @@ Persistence.prototype.serialize = function (cells, done) {
 /**
  * Trigger deserializing from the notebook contents.
  *
- * @param  {Function} done
+ * @param {Function} done
  */
 Persistence.prototype.deserialize = function (done) {
   middleware.trigger(
@@ -87,7 +87,7 @@ Persistence.prototype.deserialize = function (done) {
 /**
  * Save the notebook.
  *
- * @param  {Function} done
+ * @param {Function} done
  */
 Persistence.prototype.save = function (done) {
   middleware.trigger(
@@ -113,7 +113,7 @@ Persistence.prototype.save = function (done) {
 /**
  * Authenticate with the external persistence provider.
  *
- * @param  {Function} done
+ * @param {Function} done
  */
 Persistence.prototype.authenticate = function (done) {
   middleware.trigger(
@@ -146,6 +146,10 @@ Persistence.prototype.getMiddlewareData = function () {
  * @param {Function} done
  */
 Persistence.prototype.newNotebook = function (done) {
+  if (this.get('id')) {
+    return this.loadNotebook(this.get('id'), done);
+  }
+
   return middleware.trigger(
     'persistence:new',
     _.extend(this.getMiddlewareData(), {
@@ -164,15 +168,10 @@ Persistence.prototype.newNotebook = function (done) {
 /**
  * Load a notebook from an external service based on an id string.
  *
- * @param  {String}   id
- * @param  {Function} done
+ * @param {String}   id
+ * @param {Function} done
  */
 Persistence.prototype.loadNotebook = function (id, done) {
-  // Sets the id to the new id, which in turn will trigger navigation. In case
-  // that the request fails, it'll create a new notebook and the id will be
-  // reset back to null and we will navigate back to root.
-  this.set('id', id);
-
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
@@ -188,7 +187,7 @@ Persistence.prototype.loadNotebook = function (id, done) {
       this.set('id',       data.id);
       this.set('userId',   data.userId);
       this.set('ownerId',  data.ownerId);
-      this.set('notebook', data.notebook);
+      this.set('notebook', data.notebook, { silent: true });
       // Triggers a custom reset notebook event to tell the notebook we can
       // cleanly rerender all notebook content.
       this.trigger('resetNotebook', this);
@@ -201,7 +200,7 @@ Persistence.prototype.loadNotebook = function (id, done) {
  * Resets the persistence model state.
  */
 Persistence.prototype.reset = function () {
-  return this.set(this.defaults);
+  return this.set(this.defaults, { silent: true });
 };
 
 /**
@@ -250,20 +249,6 @@ persistence.listenTo(persistence, 'change:notebook', (function () {
 })());
 
 /**
- * Create a new notebook.
- */
-persistence.listenTo(router, 'route:newNotebook', function () {
-  return persistence.newNotebook();
-});
-
-/**
- * Load an existing notebook from an external service.
- */
-persistence.listenTo(router, 'route:loadNotebook', function (id) {
-  return persistence.loadNotebook(id);
-});
-
-/**
  * Check with an external service whether a users session is authenticated. This
  * will only check, and not actually trigger authentication which would be a
  * jarring experience.
@@ -285,4 +270,20 @@ persistence.listenToOnce(messages, 'ready', function () {
  */
 persistence.listenTo(persistence, 'change:id', function (_, id) {
   return Backbone.history.navigate(id || '');
+});
+
+/**
+ * Resets the notebook to a fresh state.
+ */
+persistence.listenTo(router, 'route:newNotebook', function () {
+  return persistence.newNotebook();
+});
+
+/**
+ * Loads the notebook from the persistence layer.
+ *
+ * @param  {String} id
+ */
+persistence.listenTo(router, 'route:loadNotebook', function (id) {
+  return persistence.loadNotebook(id);
 });

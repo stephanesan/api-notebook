@@ -24,7 +24,15 @@ App.prototype.events = {
 
 App.prototype.initialize = function (options) {
   this.notebook = new Notebook();
-  this.notebook.render();
+
+  // Start up the history router, which will trigger the start of other
+  // subsystems such as persistence and authentication.
+  Backbone.history.start({
+    pushState: true
+  });
+
+  // Allows different parts of the application to kickstart requests.
+  messages.trigger('ready');
 
   this.updateUser();
   this.listenTo(persistence, 'changeUser',      this.updateUser,      this);
@@ -68,6 +76,7 @@ App.prototype.toggleShortcuts = function () {
 };
 
 App.prototype.render = function () {
+  this.notebook.render();
   View.prototype.render.call(this);
 
   this.el.appendChild(domify(
@@ -131,6 +140,7 @@ App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   this.notebook.appendTo(this.el);
   messages.trigger('resize');
+  return this;
 };
 
 App.prototype.runNotebook = function () {
@@ -138,7 +148,7 @@ App.prototype.runNotebook = function () {
 };
 
 App.prototype.authNotebook = function () {
-  // Authentication
+  persistence.authenticate();
 };
 
 App.prototype.forkNotebook = function () {

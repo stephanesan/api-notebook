@@ -11,6 +11,6 @@ var Backbone = require('backbone');
 module.exports = new (Backbone.Router.extend({
   routes: {
     '':    'newNotebook',
-    ':id': 'loadNotebook'
+    '*id': 'loadNotebook'
   }
 }))();

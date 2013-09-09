@@ -21,6 +21,7 @@
  *                               trigger any sort of authentication.
  * `persistence:load`          - Load a notebook from somewhere.
  * `persistence:save`          - Save a notebook to somewhere.
+ * `persistence:new`           - Create a fresh notebook contents.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');
@@ -88,7 +89,7 @@ middleware.core = function (name, fn) {
  * @return {this}
  */
 middleware.disuse = function (name, fn) {
-  if (!fn) {
+  if (!fn || !this._stack[name]) {
     delete this._stack[name];
     return this;
   }
@@ -123,6 +124,7 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
 
   // Core plugins should always be appended to the end of the stack.
   if (this._core[name]) { stack.push(this._core[name]); }
+
 
   // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each

@@ -43,9 +43,7 @@ var authenticatedPlugin = function (data, next) {
  * @param  {Function} next
  */
 var changePlugin = function (data, next) {
-  data.save(function () {
-    return next();
-  });
+  data.save(next);
 };
 
 var savePlugin = function (data, next) {

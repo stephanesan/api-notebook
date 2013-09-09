@@ -105,15 +105,6 @@ App.start = function (el /*, config */, done) {
     // initializes the starting application config.
     App.config.set(App._.extend({}, config, data));
 
-    // Allows different parts of the application to kickstart requests.
-    App.messages.trigger('ready');
-
-    // Start up the history router, which will trigger the start of other
-    // subsystems such as persistence and authentication.
-    App.Backbone.history.start({
-      pushState: true
-    });
-
     var app = new App().render().appendTo(el);
     if (done) { done(err, app); }
   });

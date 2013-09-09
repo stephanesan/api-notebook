@@ -18,20 +18,14 @@ module.exports = function (tasks, done, context) {
   // The next function is a simple async iterator that breaks iteration when
   // passed an error. Execute immediately to kick of the task runner.
   (function next (err, result) {
-    // The loop has been intentionally broken, it can handle any issues that
-    // occur as a result.
-    if (breaker) {
-      return _.isFunction(breaker) && breaker(err, results);
-    }
-
     // If we have incremented an index (e.g. run some tasks), we should save the
-    // result.
+    // result to the results array.
     if (index) { results.push(result); }
 
     var layer = tasks[index++];
 
-    if (err || !layer) {
-      return done.call(context, err, results);
+    if (breaker || err || !layer) {
+      return _.isFunction(done) && done.call(context, err, results);
     }
 
     // Make the stack execution async because when the stack is too large
@@ -47,7 +41,8 @@ module.exports = function (tasks, done, context) {
   })();
 
   // Return a function that breaks the async series.
-  return function (done) {
-    breaker = done || true;
+  return function (complete) {
+    done = complete;
+    return breaker = true;
   };
 };
