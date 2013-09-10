@@ -53,7 +53,7 @@ App.Collection = {
  * @param {Function} done
  */
 var prepareState = function (done) {
-  if (!global.parent || global === global.parent) {
+  if (global === global.parent) {
     return done();
   }
 
@@ -101,11 +101,13 @@ App.start = function (el /*, config */, done) {
   }
 
   return prepareState(function (err, data) {
+    var app = new App().render().appendTo(el);
     // Extends the passed in config with data received from the parent frame and
     // initializes the starting application config.
     App.config.set(App._.extend({}, config, data));
-
-    var app = new App().render().appendTo(el);
+    // Allows different parts of the application to kickstart requests.
+    App.messages.trigger('ready');
+    // Passes the app instance to the callback function.
     if (done) { done(err, app); }
   });
 };

@@ -31,9 +31,6 @@ App.prototype.initialize = function (options) {
     pushState: true
   });
 
-  // Allows different parts of the application to kickstart requests.
-  messages.trigger('ready');
-
   this.updateUser();
   this.listenTo(persistence, 'changeUser',      this.updateUser,      this);
   this.listenTo(messages,    'keydown:Esc',     this.hideShortcuts,   this);

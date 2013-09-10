@@ -25,8 +25,10 @@ describe('Local Storage Persistence Plugin', function () {
       });
     });
 
-    it('should load the id from localstorage', function (done) {
-      App.persistence.load(id, function (err, notebook) {
+    it('should load the id from localStorage', function (done) {
+      App.persistence.set('id', id);
+
+      App.persistence.load(function (err, notebook) {
         expect(notebook).to.equal(text);
 
         localStorage.clear();

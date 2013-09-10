@@ -141,49 +141,19 @@ Persistence.prototype.getMiddlewareData = function () {
 };
 
 /**
- * Triggers a middleware hook that returns a fresh notebook contents.
- *
- * @param {Function} done
- */
-Persistence.prototype.new = function (done) {
-  if (this.get('id')) {
-    return this.load(this.get('id'), done);
-  }
-
-  return middleware.trigger(
-    'persistence:new',
-    _.extend(this.getMiddlewareData(), {
-      notebook: null
-    }),
-    _.bind(function (err, data) {
-      this.set('id',       null);
-      this.set('ownerId',  this.get('userId'));
-      this.set('notebook', data.notebook, { silent: true });
-      this.trigger('resetNotebook', this);
-      if (done) { done(err, data.notebook); }
-    }, this)
-  );
-};
-
-/**
  * Load a notebook from an external service based on an id string.
  *
  * @param {String}   id
  * @param {Function} done
  */
-Persistence.prototype.load = function (id, done) {
+Persistence.prototype.load = function (done) {
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
-      id:       id,
       ownerId:  null,
       notebook: null
     }),
     _.bind(function (err, data) {
-      if (!data.id) {
-        return this.new(done);
-      }
-
       this.set('id',       data.id);
       this.set('userId',   data.userId);
       this.set('ownerId',  data.ownerId);
@@ -251,9 +221,11 @@ persistence.listenTo(persistence, 'change:notebook', (function () {
 /**
  * Check with an external service whether a users session is authenticated. This
  * will only check, and not actually trigger authentication which would be a
- * jarring experience.
+ * jarring experience. Also load the initial notebook contents alongside.
  */
 persistence.listenToOnce(messages, 'ready', function () {
+  persistence.load();
+
   return middleware.trigger(
     'persistence:authenticated',
     _.extend(this.getMiddlewareData(), {
@@ -268,15 +240,10 @@ persistence.listenToOnce(messages, 'ready', function () {
 /**
  * Redirects the page to the updated id.
  */
-persistence.listenTo(persistence, 'change:id', function (_, id) {
-  return Backbone.history.navigate(id || '');
-});
-
-/**
- * Resets the notebook to a fresh state.
- */
-persistence.listenTo(router, 'route:newNotebook', function () {
-  return persistence.new();
+persistence.listenTo(persistence, 'change:id', function (model, id) {
+  process.nextTick(function () {
+    Backbone.history.navigate(_.isEmpty(id) ? '' : id.toString());
+  });
 });
 
 /**
@@ -284,6 +251,8 @@ persistence.listenTo(router, 'route:newNotebook', function () {
  *
  * @param  {String} id
  */
-persistence.listenTo(router, 'route:loadNotebook', function (id) {
-  return persistence.load(id);
-});
+persistence.listenTo(
+  router, 'route:newNotebook route:loadNotebook', function (id) {
+    return persistence.set('id', id);
+  }
+);

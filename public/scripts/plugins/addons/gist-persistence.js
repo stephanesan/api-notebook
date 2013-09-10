@@ -1,4 +1,18 @@
+var changePlugin = function (data, next, done) {
+  return data.save(done);
+};
 
+var authenticatedPlugin = function (data, next, done) {
+
+};
+
+var loadPlugin = function (data, next, done) {
+
+};
+
+var savePlugin = function (data, next, done) {
+
+};
 
 /**
  * Registers all the neccessary handlers for Github gist persistence.

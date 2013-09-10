@@ -21,7 +21,6 @@
  *                               trigger any sort of authentication.
  * `persistence:load`          - Load a notebook from somewhere.
  * `persistence:save`          - Save a notebook to somewhere.
- * `persistence:new`           - Create a fresh notebook contents.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');

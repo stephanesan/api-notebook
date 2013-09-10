@@ -29,11 +29,13 @@ var localStorageKey = function (key) {
  *
  * @param  {Object}   data
  * @param  {Function} next
+ * @param  {Function} done
  */
-var authenticatedPlugin = function (data, next) {
+var authenticatedPlugin = function (data, next, done) {
   data.userId  = USER_ID;
   data.ownerId = USER_ID;
-  return next();
+  return done();
+  return done();
 };
 
 /**
@@ -41,9 +43,10 @@ var authenticatedPlugin = function (data, next) {
  *
  * @param  {Object}   data
  * @param  {Function} next
+ * @param  {Function} done
  */
-var changePlugin = function (data, next) {
-  data.save(next);
+var changePlugin = function (data, next, done) {
+  return data.save(done);
 };
 
 var savePlugin = function (data, next, done) {

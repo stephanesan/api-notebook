@@ -76,21 +76,16 @@ module.exports = function (middleware) {
   });
 
   /**
-   * Set a fresh notebooks default content to be a single code cell.
+   * Default middleware that loads the initial notebook as a single code cell.
    *
    * @param  {Object}   data
    * @param  {Function} next
    */
-  middleware.core('persistence:new', function (data, next) {
-    data.notebook = [OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK].join('\n');
-    return next();
-  });
-
-  /**
-   * Default load middleware needs to pass an error since nothing was loaded.
-   */
   middleware.core('persistence:load', function (data, next) {
-    data.id = null;
-    return next();
+    process.nextTick(function () {
+      data.id       = null;
+      data.notebook = [OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK].join('\n');
+      return next();
+    });
   });
 };

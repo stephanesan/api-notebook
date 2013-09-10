@@ -46,7 +46,7 @@ config.listenTo(config, 'change:referrer', (function () {
  * @param  {Function} next
  * @param  {Function} done
  */
-middleware.use('persistence:new', function (data, next, done) {
+middleware.use('persistence:load', function (data, next, done) {
   if (config.get('content')) {
     data.notebook = config.get('content');
     return done();
