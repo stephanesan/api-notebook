@@ -7,7 +7,22 @@ var authenticatedPlugin = function (data, next, done) {
 };
 
 var loadPlugin = function (data, next, done) {
+  if (!data.id) { return next(); }
 
+  this.trigger('ajax', {
+    url: 'https://api.github.com/gists/' + data.id,
+    type: 'GET'
+  }, function (err, ajax) {
+    var content = ajax.content;
+
+    if (!content || !content.files || !content.files['notebook.md']) {
+      return next();
+    }
+
+    data.ownerId  = content.user.id;
+    data.notebook = content.files['notebook.md'].content;
+    return done();
+  });
 };
 
 var savePlugin = function (data, next, done) {

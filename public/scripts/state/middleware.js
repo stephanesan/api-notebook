@@ -21,6 +21,8 @@
  *                               trigger any sort of authentication.
  * `persistence:load`          - Load a notebook from somewhere.
  * `persistence:save`          - Save a notebook to somewhere.
+ * `ajax` - Submit an asynchonous ajax request that will be responded with the
+ *          ajax object.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');

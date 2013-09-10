@@ -39,7 +39,7 @@ module.exports = function (middleware) {
     var resetParser = function (newType) {
       // Text cells need to cater for the first line being empty since we are
       // joining the sections together with two newlines.
-      if (type === 'text' && value.length > 1) {
+      if (type === 'text' && value[0] === '') {
         value.shift();
       }
 

@@ -28,7 +28,7 @@ App.prototype.initialize = function (options) {
   // Start up the history router, which will trigger the start of other
   // subsystems such as persistence and authentication.
   Backbone.history.start({
-    pushState: true
+    pushState: false
   });
 
   this.updateUser();
