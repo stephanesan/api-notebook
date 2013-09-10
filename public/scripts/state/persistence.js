@@ -191,7 +191,7 @@ var persistence = module.exports = new Persistence();
  * that different parts of the application bind to and does things like
  * rerendering of notebook.
  */
-persistence.listenTo(persistence, 'change:userId', function () {
+persistence.listenTo(persistence, 'change:userId change:ownerId', function () {
   this.trigger('changeUser', this);
 });
 
