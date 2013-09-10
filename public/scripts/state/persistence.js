@@ -26,7 +26,7 @@ var Persistence = Backbone.Model.extend({
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  return !this.get('ownerId') || this.get('ownerId') === this.get('userId');
+  return this.get('ownerId') === this.get('userId');
 };
 
 /**
@@ -191,7 +191,7 @@ var persistence = module.exports = new Persistence();
  * that different parts of the application bind to and does things like
  * rerendering of notebook.
  */
-persistence.listenTo(persistence, 'change:userId change:ownerId', function () {
+persistence.listenTo(persistence, 'change:userId', function () {
   this.trigger('changeUser', this);
 });
 

@@ -217,7 +217,7 @@ describe('Notebook', function () {
           expect(isError).to.equal(false);
           expect(codeCells[0].model.get('result')).to.equal(99);
 
-          codeCells[1].setValue('$0');
+          codeCells[1].setValue('$1');
           codeCells[1].execute();
         });
 
@@ -227,7 +227,7 @@ describe('Notebook', function () {
 
       it('should execute all cells sequentially', function (done) {
         codeCells[0].setValue('3874');
-        codeCells[1].setValue('$0');
+        codeCells[1].setValue('$1');
 
         view.execute(function () {
           expect(codeCells[0].model.get('result')).to.equal(3874);
@@ -466,37 +466,37 @@ describe('Notebook', function () {
           };
 
           it('should continue line numbers from previous code cells', function () {
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
           });
 
           it('should continue line numbers when rearranged', function () {
             codeCells[0].moveDown();
             codeCells[0].moveDown();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('3');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
 
             codeCells[0].moveUp();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
           });
 
           it('should continue line numbers with different size cells', function () {
             codeCells[0].setValue('multi\nline\ntext');
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
             expect(getLineNumbers(codeCells[0]).length).to.equal(3);
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('4');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('5');
           });
 
           it('should continue line numbers when rearranging multi line cells', function () {
             codeCells[0].setValue('look\nanother\nmulti\nline\ntest');
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
             expect(getLineNumbers(codeCells[0]).length).to.equal(5);
 
             codeCells[0].moveDown();
             codeCells[0].moveDown();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('1');
+            expect(getLineNumbers(codeCells[0])[0]).to.equal('3');
+            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
           });
         });
       });
