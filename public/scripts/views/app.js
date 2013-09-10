@@ -149,5 +149,5 @@ App.prototype.authNotebook = function () {
 };
 
 App.prototype.forkNotebook = function () {
-  persistence.duplicate();
+  persistence.fork();
 };

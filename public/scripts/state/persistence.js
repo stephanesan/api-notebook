@@ -174,6 +174,20 @@ Persistence.prototype.reset = function () {
 };
 
 /**
+ * Pseudo persistence forking.
+ */
+Persistence.prototype.fork = function () {
+  // Allows a reference back to the original notebook. Could be a useful to
+  // track where notebooks originally came from.
+  if (this.get('id')) {
+    this.set('originalId', this.get('id'));
+  }
+  // Removes the notebook id and sets the user id to the current user.
+  this.set('id', null);
+  this.set('ownerId', this.get('userId'));
+};
+
+/**
  * Exports a static instance of persistence.
  *
  * @type {Object}
@@ -185,7 +199,7 @@ var persistence = module.exports = new Persistence();
  * that different parts of the application bind to and does things like
  * rerendering of notebook.
  */
-persistence.listenTo(persistence, 'change:userId', function () {
+persistence.listenTo(persistence, 'change:userId change:ownerId', function () {
   this.trigger('changeUser', this);
 });
 
