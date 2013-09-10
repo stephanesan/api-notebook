@@ -15,10 +15,8 @@ module.exports = function (middleware) {
    * @param  {Function} next
    */
   middleware.core('ajax', function (data, next) {
-    // Use Backbone's ajax function to submit the request.
-    data.xhr = Backbone.$.ajax(_.extend({
-      dataType: 'json'
-    }, data, {
+    var request = _.extend({}, data, {
+      processData: data.type === 'GET',
       success: function (content, status, xhr) {
         data.content = content;
         return next();
@@ -26,6 +24,13 @@ module.exports = function (middleware) {
       error: function (xhr) {
         return next(new Error(xhr.statusText));
       }
-    }))
+    });
+
+    if (typeof data.data === 'object' && data.type === 'GET') {
+      request.data = JSON.stringify(data.data);
+    }
+
+    // Use Backbone's ajax function to submit the request.
+    data.xhr = Backbone.$.ajax(request);
   });
 };

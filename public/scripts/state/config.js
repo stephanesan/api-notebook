@@ -13,15 +13,6 @@ var persistence = require('./persistence');
 var config = module.exports = new Backbone.Model();
 
 /**
- * Listens for global id changes and updates persistence. Primarily for loading
- * a new notebook from the embed frame where the current url scheme is unlikely
- * to be maintained.
- */
-config.listenTo(config, 'change:id', function (_, id) {
-  return persistence.set('id', id);
-});
-
-/**
  * Updates a base url tag when the referrer id changes.
  */
 config.listenTo(config, 'change:referrer', (function () {
@@ -64,4 +55,22 @@ config.listenTo(config, 'change:alias', function (model, alias) {
   _.each(alias, function (value, key) {
     global[key] = value;
   });
+});
+
+/**
+ * Listens for global id changes and updates persistence. Primarily for loading
+ * a new notebook from the embed frame where the current url scheme is unlikely
+ * to be maintained.
+ */
+config.listenTo(config, 'change:id', function (_, id) {
+  return persistence.set('id', id);
+});
+
+/**
+ * Listens for config data changes and sets a config property on the middleware
+ * object that represents the config. Useful for middleware to access config
+ * variables.
+ */
+config.listenTo(config, 'change', function () {
+  middleware.config = config.toJSON();
 });

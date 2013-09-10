@@ -120,4 +120,5 @@ require('./plugins/core/persistence')(App.middleware);
 require('./plugins/core/authentication')(App.middleware);
 
 // Gist persistence testing
+require('./plugins/addons/proxy').attach(App.middleware);
 require('./plugins/addons/gist-persistence').attach(App.middleware);

@@ -1,7 +1,7 @@
 {
   "name": "JSNotebook",
   "version": "0.0.1",
-  "description": "JSNotebook API proxy",
+  "description": "JSNotebook",
   "private": true,
   "dependencies": {
     "underscore": "~1.5.1",
@@ -11,8 +11,6 @@
     "trim": "0.0.1",
     "express": "~3.3",
     "jshint": "~2.1",
-    "passport": "~0.1",
-    "passport-github": "~0.1",
     "request": "~2.26.0",
     "marked": "~0.2.9",
     "brfs": "0.0.7",

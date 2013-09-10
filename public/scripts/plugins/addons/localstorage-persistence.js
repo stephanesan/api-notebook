@@ -35,7 +35,6 @@ var authenticatedPlugin = function (data, next, done) {
   data.userId  = USER_ID;
   data.ownerId = USER_ID;
   return done();
-  return done();
 };
 
 /**

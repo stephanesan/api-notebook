@@ -26,7 +26,7 @@ var Persistence = Backbone.Model.extend({
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  return this.get('ownerId') === this.get('userId');
+  return !this.get('ownerId') || this.get('ownerId') === this.get('userId');
 };
 
 /**
@@ -47,7 +47,7 @@ Persistence.prototype.isAuthenticated = function () {
 Persistence.prototype.update = function (cells, done) {
   this.serialize(cells, _.bind(function (err, notebook) {
     this.set('notebook', notebook);
-    return done(err, notebook);
+    return done && done(err, notebook);
   }, this));
 };
 
@@ -64,7 +64,7 @@ Persistence.prototype.serialize = function (cells, done) {
       notebook: cells
     }),
     _.bind(function (err, data) {
-      return done(err, data.notebook);
+      return done && done(err, data.notebook);
     }, this)
   );
 };
@@ -79,7 +79,7 @@ Persistence.prototype.deserialize = function (done) {
     'persistence:deserialize',
     this.getMiddlewareData(),
     _.bind(function (err, data) {
-      return done(err, data.notebook);
+      return done && done(err, data.notebook);
     }, this)
   );
 };
@@ -94,18 +94,10 @@ Persistence.prototype.save = function (done) {
     'persistence:save',
     this.getMiddlewareData(),
     _.bind(function (err, data) {
-      if (!data.id) {
-        Backbone.history.navigate('');
-        return done(err, data.notebook);
-      }
-
       this.set('id',       data.id);
-      this.set('userId',   data.userId);
       this.set('ownerId',  data.ownerId);
-      this.set('notebook', data.notebook);
 
-      Backbone.history.navigate(data.id);
-      return done(err, data.notebook);
+      return done && done(err, data.notebook);
     }, this)
   );
 };
@@ -121,7 +113,7 @@ Persistence.prototype.authenticate = function (done) {
     this.getMiddlewareData(),
     _.bind(function (err, data) {
       this.set('userId', data.userId);
-      done(err, data.userId);
+      return done && done(err, data.userId);
     }, this)
   );
 };
@@ -161,7 +153,7 @@ Persistence.prototype.load = function (done) {
       // Triggers a custom reset notebook event to tell the notebook we can
       // cleanly rerender all notebook content.
       this.trigger('resetNotebook', this);
-      if (done) { done(err, data.notebook); }
+      return done && done(err, data.notebook);
     }, this)
   );
 };

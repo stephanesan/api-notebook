@@ -21,8 +21,9 @@
  *                               trigger any sort of authentication.
  * `persistence:load`          - Load a notebook from somewhere.
  * `persistence:save`          - Save a notebook to somewhere.
- * `ajax` - Submit an asynchonous ajax request that will be responded with the
- *          ajax object.
+ * `ajax`                - Submit an asynchonous ajax request that will be
+ *                         responded with the ajax object.
+ * `authenticate:oauth2` - Trigger the oauth2 authentication flow.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');
@@ -125,7 +126,6 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
 
   // Core plugins should always be appended to the end of the stack.
   if (this._core[name]) { stack.push(this._core[name]); }
-
 
   // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
