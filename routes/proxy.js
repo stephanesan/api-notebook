@@ -19,16 +19,15 @@ var mergeData = {
 
 app.all('*', function (req, res, next) {
   var data = {};
-  data.qs  = req.query;
-  data.uri = decodeURIComponent(req.path.substr(1));
 
-  var parse = url.parse(data.uri);
+  var qs  = data.qs  = req.query;
+  var uri = data.uri = url.parse(decodeURIComponent(req.path.substr(1)));
 
   // Extends the query string with additonal url data
-  _.extend(data.qs, mergeData[parse.host + parse.pathname]);
+  _.extend(data.qs, mergeData[uri.host + uri.pathname]);
 
   // Github requires we pass basic auth when checking authorizations
-  if (!(parse.host + parse.pathname).indexOf('api.github.com/applications')) {
+  if (!(uri.host + uri.pathname).indexOf('api.github.com/applications')) {
     data.auth = {
       user: process.env.GITHUB_CLIENT_ID,
       pass: process.env.GITHUB_CLIENT_SECRET

@@ -3,7 +3,7 @@ HEROKU_APP      := $(shell echo $(HEROKU_ENDPOINT) | sed -E "s/^git@heroku.com:(
 HEROKU_URL      := "http://$(HEROKU_APP).herokuapp.com"
 
 deploy: check-endpoint
-	@NODE_ENV="production" NOTEBOOK_URL=$(HEROKU_URL) grunt build
+	@NODE_ENV="production" NOTEBOOK_URL=$(HEROKU_URL) GITHUB_CLIENT_ID=$(DEPLOY_GITHUB_CLIENT_ID) grunt build
 	@rm -rf deploy
 	@mkdir deploy
 	@cp -r build        deploy/build
