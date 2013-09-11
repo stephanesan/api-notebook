@@ -15,7 +15,7 @@ describe('Persistence', function () {
         return done();
       }
 
-      next();
+      return next();
     });
 
     App.start(fixture, {
@@ -40,7 +40,7 @@ describe('Persistence', function () {
     });
   });
 
-  xit('should deserialize on loading a notebook', function (done) {
+  it('should deserialize on loading a notebook', function (done) {
     App.middleware.use('persistence:load', function loadNotebook (data, next, done) {
       data.notebook = '# Simple test';
       App.middleware.disuse('persistence:load', loadNotebook);
@@ -54,6 +54,7 @@ describe('Persistence', function () {
         App.middleware.disuse('persistence:deserialize', deserializeNotebook);
         return done();
       }
+      return next();
     });
 
     App.start(fixture, function (err, app) {

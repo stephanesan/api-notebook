@@ -229,7 +229,7 @@ persistence.listenTo(persistence, 'change:notebook', (function () {
  * will only check, and not actually trigger authentication which would be a
  * jarring experience. Also load the initial notebook contents alongside.
  */
-persistence.listenToOnce(messages, 'ready', function () {
+persistence.listenTo(messages, 'ready', function () {
   persistence.load();
 
   return middleware.trigger(
