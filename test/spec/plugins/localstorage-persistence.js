@@ -1,6 +1,9 @@
-/* global describe, it */
+/* global describe, it, beforeEach, afterEach */
 
 describe('Local Storage Persistence Plugin', function () {
+  var id;
+  var notebook = '# Testing localStorage';
+
   beforeEach(function () {
     localstoragePersistencePlugin.attach(App.middleware);
   });
@@ -10,30 +13,25 @@ describe('Local Storage Persistence Plugin', function () {
     localstoragePersistencePlugin.detach(App.middleware);
   });
 
-  describe('Id', function () {
-    var text = '# Testing localStorage';
-    var id;
+  it('should save to localStorage with a made up id', function (done) {
+    App.persistence.set('notebook', notebook);
 
-    it('should save to localStorage with a made up id', function (done) {
-      App.persistence.set('notebook', text);
+    App.persistence.save(function (err, content) {
+      expect(content).to.equal(notebook);
+      expect(id = App.persistence.get('id')).to.exist;
 
-      App.persistence.save(function (err, notebook) {
-        expect(notebook).to.equal(text);
-        expect(id = App.persistence.get('id')).to.exist;
-
-        done();
-      });
+      done();
     });
+  });
 
-    it('should load the id from localStorage', function (done) {
-      App.persistence.set('id', id);
+  it('should load the id from localStorage', function (done) {
+    App.persistence.set('id', id);
 
-      App.persistence.load(function (err, notebook) {
-        expect(notebook).to.equal(text);
+    App.persistence.load(function (err, content) {
+      expect(content).to.equal(notebook);
 
-        localStorage.clear();
-        done();
-      });
+      localStorage.clear();
+      done();
     });
   });
 });

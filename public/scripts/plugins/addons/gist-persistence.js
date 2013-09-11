@@ -92,7 +92,7 @@ var loadPlugin = function (data, next, done) {
  * @param  {Function} done
  */
 var savePlugin = function (data, next, done) {
-  if (!accessToken) { return next(); }
+  if (!accessToken) { return next(new Error('No access token.')); }
 
   this.trigger('ajax', {
     url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : '') + '?' +
