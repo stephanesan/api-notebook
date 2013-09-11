@@ -180,6 +180,12 @@ Notebook.prototype.styleFrame = function (style) {
   return this;
 };
 
+/**
+ * Returns a variable from the embedded page.
+ *
+ * @param  {String}   key
+ * @param  {Function} done
+ */
 Notebook.prototype.getVariable = function (key, done) {
   this.once('export', function (key, value) {
     done(value);
@@ -310,7 +316,8 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
 
   for (var i = 0, l = scripts.length; i < l; i++) {
     script = scripts[i];
-    // Allows the script to be loaded asyncronously if we provide this attribute
+    // Allows the script to be loaded asynchronously if we provide this
+    // attribute with the script tag.
     if (typeof script.getAttribute('data-notebook') === 'string') { break; }
   }
 

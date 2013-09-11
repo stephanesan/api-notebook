@@ -4,9 +4,6 @@ var router      = require('./router');
 var middleware  = require('./middleware');
 var persistence = require('./persistence');
 
-// Keep a reference to the current document head element
-var docHead = document.head || document.getElementsByTagName('head')[0];
-
 /**
  * Configuration is a static backbone model that we listen to for changes in
  * application setup.
@@ -19,7 +16,8 @@ var config = module.exports = new Backbone.Model();
  * Updates a base url tag when the referrer id changes.
  */
 config.listenTo(config, 'change:referrer', (function () {
-  var base = document.getElementsByTagName('base')[0];
+  var base    = document.getElementsByTagName('base')[0];
+  var docHead = document.head || document.getElementsByTagName('head')[0];
 
   return function (_, referrer) {
     if (base) { base.parentNode.removeChild(base); }
