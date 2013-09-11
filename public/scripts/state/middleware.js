@@ -122,32 +122,70 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
   var that  = this;
   var sent  = false;
   var index = 0;
-  var stack = _.toArray(this._stack[name]);
+  var prevData;
+
+  // Set up the initial stack.
+  var stack = _.map(this._stack[name], function (fn) {
+    return {
+      fn:   fn,
+      args: []
+    }
+  });
+
+  // An "all" middleware listener can be hooked onto in a similar fashion to the
+  // "all" Backbone event. It is passed an additional name parameter as the
+  // first argument of the callback function.
+  stack.push.apply(stack, _.map(this._stack['all'], function (fn) {
+    return {
+      fn:   fn,
+      args: [name]
+    };
+  }));
 
   // Core plugins should always be appended to the end of the stack.
-  if (this._core[name]) { stack.push(this._core[name]); }
+  if (_.isFunction(this._core[name])) {
+    stack.push({
+      fn:   this._core[name],
+      args: []
+    });
+  }
 
   // Call the final function when are done executing the stack of functions.
   // It should also be passed as a parameter of the data object to each
   // middleware operation since we could short-circuit the entire stack.
-  var done = function (err) {
-    if (sent) { return; }
+  var done = function (err, data) {
+    if (sent)                 { return; }
+    if (arguments.length < 2) { data = prevData; }
     sent = true;
     if (_.isFunction(out)) { out(err, data); }
   };
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
-  (function next (err) {
-    var layer = stack[index++];
+  (function next (err, data) {
+    var layer  = stack[index++];
 
+    // If we were provided two arguments, the second argument would have been
+    // an updated data object. If we weren't passed two arguments, use the
+    // previous know data object.
+    if (arguments.length < 2) {
+      data = prevData;
+    } else {
+      prevData = data;
+    }
+
+    // If we have called the done callback inside the middleware, or we have hit
+    // the end of the stack loop, we need to break the recursive next loop.
     if (sent || !layer) {
-      if (!sent) { done(err); }
+      if (!sent) { done(err, data); }
       return;
     }
 
+    var plugin = layer.fn;
+    var args   = layer.args;
+
     try {
-      var arity = layer.length;
+      var arity = plugin.length - args.length;
 
       // Error handling middleware can be registered by using a function with
       // four arguments. E.g. `function (err, data, next, done) {}`. Any
@@ -155,17 +193,19 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
       // have an error in the pipeline.
       if (err) {
         if (arity === 4) {
-          layer.call(that, err, data, next, done);
+          args.push(err, data, next, done);
+          plugin.apply(null, args);
         } else {
-          next(err);
+          next(err, data);
         }
       } else if (arity < 4) {
-        layer.call(that, data, next, done);
+        args.push(data, next, done);
+        plugin.apply(null, args);
       } else {
-        next();
+        next(null, data);
       }
     } catch (e) {
-      next(e);
+      next(e, data);
     }
-  })();
+  })(null, data);
 });
