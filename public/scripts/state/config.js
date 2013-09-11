@@ -52,6 +52,11 @@ middleware.use('persistence:load', function (data, next, done) {
  * @param  {Object} alias
  */
 config.listenTo(config, 'change:alias', function (model, alias) {
+  // Removes previous globals
+  _.each(model.previousAttributes().alias, function (_, key) {
+    delete global[key];
+  });
+
   _.each(alias, function (value, key) {
     global[key] = value;
   });

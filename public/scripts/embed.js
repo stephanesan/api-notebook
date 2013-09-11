@@ -1,5 +1,6 @@
-var css  = require('css-component');
-var each = require('foreach');
+var css    = require('css-component');
+var each   = require('foreach');
+var Kamino = require('kamino');
 
 // Set the location to load the notebook from
 var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
@@ -126,6 +127,11 @@ Notebook.prototype.makeFrame = function (el) {
     config.alias = this.options.alias;
   }
 
+  // Provide middleware for use within the notebook.
+  if (typeof this.options.middleware === 'object') {
+    config.middleware = this.options.middleware;
+  }
+
   // When the app is ready to receive events, send configuration data and let
   // the frame know when we are ready to execute.
   this.once('ready', function () {
@@ -147,7 +153,7 @@ Notebook.prototype.makeFrame = function (el) {
     if (e.source !== frame.contentWindow) { return; }
 
     that._frameEvent = e;
-    that.trigger.apply(that, e.data);
+    that.trigger.apply(that, Kamino.parse(e.data));
   }, false);
 
   if (typeof el.appendChild === 'function') {
@@ -287,7 +293,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   }
 
   args = Array.prototype.slice.call(arguments, 0);
-  this.frame.contentWindow.postMessage(args, NOTEBOOK_URL);
+  this.frame.contentWindow.postMessage(Kamino.stringify(args), NOTEBOOK_URL);
   return this;
 };
 

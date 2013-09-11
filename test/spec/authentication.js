@@ -31,7 +31,7 @@ describe('Authentication', function () {
 
       server.respondWith(
         'POST',
-        /^https\:\/\/www.example.com\/oauth2\/token.*code=123/,
+        /^https\:\/\/www.example.com\/oauth2\/token.+code=123/,
         [200, {}, 'access_token=123456&token_type=bearer']
       );
 

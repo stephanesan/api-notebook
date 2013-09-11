@@ -17,7 +17,8 @@
     "stacktrace-js": "~0.5.0",
     "domify": "~1.0.0",
     "css-component": "0.0.2",
-    "foreach": "~2.0.4"
+    "foreach": "~2.0.4",
+    "kamino": "git://github.com/tildeio/kamino.js"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",
