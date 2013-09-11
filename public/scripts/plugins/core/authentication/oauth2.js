@@ -61,13 +61,17 @@ module.exports = function (middleware) {
           'client_secret': data.clientSecret
         }),
         type: 'POST'
-      }, function (err, ajax) {
+      }, function (err, xhr) {
         if (err) { return next(err); }
 
-        var content = qs.parse(ajax.content);
-        data.tokenType   = content.token_type;
-        data.accessToken = content.access_token;
-        return next(data.error && new Error(data.error));
+        var content = qs.parse(xhr.responseText);
+        var data    = {
+          tokenType:   content.token_type,
+          accessToken: content.access_token
+        };
+
+        // The returned body from the ajax request could provide an error string
+        return next(content.error && new Error(content.error), data);
       });
     };
 

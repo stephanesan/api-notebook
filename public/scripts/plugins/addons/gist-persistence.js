@@ -1,4 +1,4 @@
-var accessToken;
+var middleware, accessToken;
 
 /**
  * Any time a change occurs, we'll sync the change with out Github gist.
@@ -21,10 +21,9 @@ var changePlugin = function (data, next, done) {
  * @param  {Function} done
  */
 var authenticatePlugin = function (data, next, done) {
-  var middleware = this;
-  var clientId   = process.env.GITHUB_CLIENT_ID;
+  var clientId = process.env.GITHUB_CLIENT_ID;
 
-  this.trigger('authenticate:oauth2', {
+  middleware.trigger('authenticate:oauth2', {
     scope:            ['gist'],
     clientId:         clientId,
     tokenUrl:         'https://github.com/login/oauth/access_token',
@@ -38,8 +37,8 @@ var authenticatePlugin = function (data, next, done) {
       url: 'https://api.github.com/applications/' + clientId + '/tokens/' +
             accessToken,
       dataType: 'json'
-    }, function (err, authorization) {
-      data.userId = authorization.content.user.id;
+    }, function (err, xhr) {
+      data.userId = xhr.content.user.id;
       return done();
     });
   });
@@ -70,8 +69,8 @@ var loadPlugin = function (data, next, done) {
     url: 'https://api.github.com/gists/' + data.id,
     type: 'GET',
     dataType: 'json'
-  }, function (err, ajax) {
-    var content = ajax.content;
+  }, function (err, xhr) {
+    var content = xhr.content;
 
     if (!content || !content.files || !content.files['notebook.md']) {
       return next();
@@ -94,7 +93,7 @@ var loadPlugin = function (data, next, done) {
 var savePlugin = function (data, next, done) {
   if (!accessToken) { return next(new Error('No access token.')); }
 
-  this.trigger('ajax', {
+  middleware.trigger('ajax', {
     url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : '') + '?' +
           'access_token=' + accessToken,
     type: data.id ? 'PATCH' : 'POST',
@@ -106,9 +105,9 @@ var savePlugin = function (data, next, done) {
       }
     }),
     dataType: 'json'
-  }, function (err, ajax) {
-    data.id      = ajax.content.id;
-    data.ownerId = ajax.content.user && ajax.content.user.id;
+  }, function (err, xhr) {
+    data.id      = xhr.content.id;
+    data.ownerId = xhr.content.user && xhr.content.user.id;
     return done();
   });
 };
@@ -118,12 +117,14 @@ var savePlugin = function (data, next, done) {
  *
  * @param {Object} middleware
  */
-exports.attach = function (middleware) {
-  middleware.use('persistence:change',        changePlugin);
-  middleware.use('persistence:authenticate',  authenticatePlugin);
-  middleware.use('persistence:authenticated', authenticatedPlugin);
-  middleware.use('persistence:load',          loadPlugin);
-  middleware.use('persistence:save',          savePlugin);
+exports.attach = function (attach) {
+  middleware = attach;
+
+  attach.use('persistence:change',        changePlugin);
+  attach.use('persistence:authenticate',  authenticatePlugin);
+  attach.use('persistence:authenticated', authenticatedPlugin);
+  attach.use('persistence:load',          loadPlugin);
+  attach.use('persistence:save',          savePlugin);
 };
 
 /**
@@ -131,10 +132,12 @@ exports.attach = function (middleware) {
  *
  * @param {Object} middleware
  */
-exports.detach = function (middleware) {
-  middleware.disuse('persistence:change',        changePlugin);
-  middleware.disuse('persistence:authenticate',  authenticatePlugin);
-  middleware.disuse('persistence:authenticated', authenticatedPlugin);
-  middleware.disuse('persistence:load',          loadPlugin);
-  middleware.disuse('persistence:save',          savePlugin);
+exports.detach = function (detach) {
+  middleware = undefined;
+
+  detach.disuse('persistence:change',        changePlugin);
+  detach.disuse('persistence:authenticate',  authenticatePlugin);
+  detach.disuse('persistence:authenticated', authenticatedPlugin);
+  detach.disuse('persistence:load',          loadPlugin);
+  detach.disuse('persistence:save',          savePlugin);
 };

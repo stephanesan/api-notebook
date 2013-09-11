@@ -18,11 +18,10 @@ module.exports = function (middleware) {
     var request = _.extend({}, data, {
       processData: data.type === 'GET',
       success: function (content, status, xhr) {
-        data.content = content;
-        return next();
+        return next(null, _.extend({}, xhr, { content: content }));
       },
       error: function (xhr) {
-        return next(new Error(xhr.statusText));
+        return next(new Error(xhr.statusText), _.extend({}, xhr));
       }
     });
 
