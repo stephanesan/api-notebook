@@ -1,7 +1,51 @@
-/* global describe, it */
+/* global describe, it, beforeEach, afterEach */
 
 describe('Authentication', function () {
   describe('Oauth2', function () {
+    var oldOpen, server;
 
+    beforeEach(function () {
+      oldOpen = window.open;
+      server  = sinon.fakeServer.create();
+      window.open = sinon.spy();
+    });
+
+    afterEach(function () {
+      server.restore();
+      window.open = oldOpen;
+    });
+
+    it('should do the normal oauth2 authentication flow', function (done) {
+      var tokenUrl         = 'https://www.example.com/oauth2/token';
+      var authorizationUrl = 'https://www.example.com/oauth2/authorize';
+
+      App.middleware.trigger('authenticate:oauth2', {
+        'tokenUrl':         tokenUrl,
+        'authorizationUrl': authorizationUrl
+      }, function (err, auth) {
+        expect(err).to.not.exist;
+        expect(auth.accessToken).to.equal('123456');
+
+        return done();
+      });
+
+      server.respondWith(
+        'POST',
+        /^https\:\/\/www.example.com\/oauth2\/token.*code=123/,
+        [200, {}, 'access_token=123456&token_type=bearer']
+      );
+
+      // Emulates waiting for the round-trip to the authentication server.
+      setTimeout(function () {
+        expect(window.open.lastCall.args[0]).to.contain(authorizationUrl);
+        // Cheat and grab the state we passed through to the authentication server.
+        var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
+        window.authenticateOauth2('http://localhost:3000/?code=123&state=' + state);
+        // Respond to the request for the token
+        setTimeout(function () {
+          server.respond();
+        }, 50);
+      }, 50);
+    });
   });
 });

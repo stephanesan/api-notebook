@@ -15,8 +15,8 @@ module.exports = function (middleware) {
    *   `authorizationUrl` - "https://www.example.com/oauth2/authorize"
    *   `tokenUrl`         - "https://www.example.com/oauth2/token"
    *   `clientId`         - EXAMPLE_CLIENT_ID
+   *   `clientSecret`     - EXAMPLE_CLIENT_SECRET *NOT RECOMMENDED*
    *   `scope`            - ["user", "read", "write"]
-   *   `state`            - UNGUESSABLE_RANDOM_STRING
    *
    * @param  {Object}   data
    * @param  {Function} next
@@ -56,8 +56,9 @@ module.exports = function (middleware) {
 
       middleware.trigger('ajax', {
         url: data.tokenUrl + '?' + qs.stringify({
-          'code':      uri.query.code,
-          'client_id': data.clientId
+          'code':          uri.query.code,
+          'client_id':     data.clientId,
+          'client_secret': data.clientSecret
         }),
         type: 'POST'
       }, function (err, ajax) {
