@@ -8,7 +8,7 @@ var PROXY_URL = '/proxy';
  * @param  {Function} next
  */
 var ajaxPlugin = function (data, next) {
-  data.url = PROXY_URL + '/' + encodeURIComponent(data.url);
+  data.url = PROXY_URL + '/' + data.url;
   return next();
 };
 

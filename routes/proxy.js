@@ -1,6 +1,5 @@
 var _       = require('underscore');
-var express = require('express');
-var app     = module.exports = express();
+var http    = require('http');
 var url     = require('url');
 var request = require('request');
 
@@ -17,11 +16,17 @@ var mergeData = {
   }
 };
 
-app.all('*', function (req, res, next) {
+/**
+ * Exports a simple http proxy to be used with API requests.
+ *
+ * @param {Object} req
+ * @param {Object} res
+ */
+module.exports = http.createServer(function (req, res) {
   var data = {};
 
   var qs  = data.qs  = req.query;
-  var uri = data.uri = url.parse(decodeURIComponent(req.path.substr(1)));
+  var uri = data.uri = url.parse(req.path.substr(1));
 
   // Extends the query string with additonal url data
   _.extend(qs, mergeData[uri.host + uri.pathname]);
@@ -34,12 +39,17 @@ app.all('*', function (req, res, next) {
     };
   }
 
-  // This works perfectly as far as I can tell locally and proxies all requests
-  // and adds the right request data from above, but once deployed to Herkoku a
-  // request to `http://stark-brook-6792.herokuapp.com/proxy/
-  // https://api.github.com/gists/d6cd2bd5f4580136fdd9` results in it serving
-  // `http://developer.github.com/` instead. I also rewrote this using
-  // `node-http-proxy` last night, but couldn't get any requests to
-  // `https://api.github.com` to work.
+  // Remove any `x-forwarded-*` headers set by the upstream proxy (E.g. Heroku)
+  // Keeping these headers may cause APIs to do unexpected things, such as
+  // Github which redirects requests when `x-forwarded-proto` === `http`.
+  _.each(req.headers, function (_, key) {
+    if (key.substr(0, 11) === 'x-forwarded') {
+      delete req.headers[key];
+    }
+  });
+
+  // Pipe the request data directly into the proxy request and back to the
+  // response object. This avoids having to buffer content bodies in cases where
+  // they could be exepectedly large and unneeded.
   req.pipe(request(data)).pipe(res);
 });
