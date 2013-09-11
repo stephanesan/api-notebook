@@ -78,12 +78,4 @@ describe('Embeddable Widget', function () {
       });
     });
   });
-
-  it('should be able to register middleware', function (done) {
-    var notebook = new Notebook(fixture, {
-      middleware: {
-        'persistence:load': {}
-      }
-    });
-  });
 });

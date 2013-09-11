@@ -16,6 +16,7 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  */
 var extend = function (obj /*, ...source */) {
   each(Array.prototype.slice.call(arguments, 1), function (source) {
+    // Stops primitives from going through the loop
     if (source !== Object(source)) { return; }
 
     each(source, function (prop, key) {
@@ -27,7 +28,7 @@ var extend = function (obj /*, ...source */) {
 };
 
 /**
- * Getting all the data atrributes of an element. Works on all browsers.
+ * Getting all the data atrributes of an element. Works cross-browser.
  *
  * @param  {Element} el
  * @return {Object}
@@ -127,9 +128,9 @@ Notebook.prototype.makeFrame = function (el) {
     config.alias = this.options.alias;
   }
 
-  // Provide middleware for use within the notebook.
-  if (typeof this.options.middleware === 'object') {
-    config.middleware = this.options.middleware;
+  // Allow injection of scripts directly into the iframe.
+  if (typeof this.options.inject === 'object') {
+    config.inject = this.options.inject;
   }
 
   // When the app is ready to receive events, send configuration data and let
