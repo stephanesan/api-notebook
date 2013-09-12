@@ -129,13 +129,13 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     return {
       fn:   fn,
       args: []
-    }
+    };
   });
 
   // An "all" middleware listener can be hooked onto in a similar fashion to the
   // "all" Backbone event. It is passed an additional name parameter as the
   // first argument of the callback function.
-  stack.push.apply(stack, _.map(this._stack['all'], function (fn) {
+  stack.push.apply(stack, _.map(this._stack.all, function (fn) {
     return {
       fn:   fn,
       args: [name]
