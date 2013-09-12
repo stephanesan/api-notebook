@@ -32,7 +32,7 @@ module.exports = http.createServer(function (req, res) {
   _.extend(qs, mergeData[uri.host + uri.pathname]);
 
   // Github requires we pass basic auth when checking authorizations
-  if (!(uri.host + uri.pathname).indexOf('api.github.com/applications')) {
+  if ((uri.host + uri.pathname).indexOf('api.github.com/applications') === 0) {
     data.auth = {
       user: process.env.GITHUB_CLIENT_ID,
       pass: process.env.GITHUB_CLIENT_SECRET
