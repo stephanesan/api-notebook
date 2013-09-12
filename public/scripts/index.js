@@ -60,6 +60,8 @@ var prepareState = function (done) {
   var config      = {};
   var postMessage = new App.PostMessage(global.parent);
 
+  // A config object can be passed from the parent frame with configuration
+  // options.
   postMessage.on('config', function (data) {
     App._.extend(config, data);
   });

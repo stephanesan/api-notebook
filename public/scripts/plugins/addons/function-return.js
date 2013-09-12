@@ -6,9 +6,9 @@ var RETURN_PROP = '@return';
  * @param  {Object}   data
  * @param  {Function} next
  */
-var inspectorFilterPlugin = function (data, next) {
+var inspectorFilterPlugin = function (data, next, done) {
   if (typeof data.parent === 'function' && data.property === RETURN_PROP) {
-    data.filter = false;
+    return done(null, false);
   }
 
   return next();

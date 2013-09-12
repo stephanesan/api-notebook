@@ -16,8 +16,8 @@ var config = module.exports = new Backbone.Model();
  * Updates a base url tag when the referrer id changes.
  */
 config.listenTo(config, 'change:referrer', (function () {
-  var base    = document.getElementsByTagName('base')[0];
-  var docHead = document.head || document.getElementsByTagName('head')[0];
+  var base = document.getElementsByTagName('base')[0];
+  var head = document.head || document.getElementsByTagName('head')[0];
 
   return function (_, referrer) {
     if (base) { base.parentNode.removeChild(base); }
@@ -25,7 +25,7 @@ config.listenTo(config, 'change:referrer', (function () {
     base = document.createElement('base');
     base.setAttribute('href', referrer);
     base.setAttribute('target', '_parent');
-    docHead.appendChild(base);
+    head.appendChild(base);
   };
 })());
 

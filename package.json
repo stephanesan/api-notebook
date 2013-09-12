@@ -18,7 +18,8 @@
     "domify": "~1.0.0",
     "css-component": "0.0.2",
     "foreach": "~2.0.4",
-    "kamino": "git://github.com/tildeio/kamino.js"
+    "kamino": "git://github.com/tildeio/kamino.js",
+    "async": "~0.2.9"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",

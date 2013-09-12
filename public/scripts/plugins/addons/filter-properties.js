@@ -82,15 +82,13 @@ var isFunctionProperty = function (fn, property) {
  * @param  {Object}   data
  * @param  {Function} next
  */
-var completionFilterPlugin = function (data, next) {
-  if (data.filter) {
-    if (typeof data.context === 'object') {
-      data.filter = !isObjectProperty(data.context, data.string);
-    }
+var completionFilterPlugin = function (data, next, done) {
+  if (typeof data.context === 'object') {
+    return done(null, !isObjectProperty(data.context, data.string));
+  }
 
-    if (typeof data.context === 'function') {
-      data.filter = !isFunctionProperty(data.context, data.string);
-    }
+  if (typeof data.context === 'function') {
+    return done(null, !isFunctionProperty(data.context, data.string));
   }
 
   return next();
@@ -102,9 +100,9 @@ var completionFilterPlugin = function (data, next) {
  * @param  {Object}   data
  * @param  {Function} next
  */
-var inspectorFilterPlugin = function (data, next) {
-  if (data.filter && data.internal === '[[Prototype]]') {
-    data.filter = false;
+var inspectorFilterPlugin = function (data, next, done) {
+  if (data.internal === '[[Prototype]]') {
+    return done(null, false);
   }
 
   return next();
