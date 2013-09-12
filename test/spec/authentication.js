@@ -5,14 +5,13 @@ describe('Authentication', function () {
     var oldOpen, server;
 
     beforeEach(function () {
-      oldOpen = window.open;
-      server  = sinon.fakeServer.create();
-      window.open = sinon.spy();
+      server = sinon.fakeServer.create();
+      sinon.stub(window, 'open');
     });
 
     afterEach(function () {
       server.restore();
-      window.open = oldOpen;
+      window.open.restore();
     });
 
     it('should do the normal oauth2 authentication flow', function (done) {
