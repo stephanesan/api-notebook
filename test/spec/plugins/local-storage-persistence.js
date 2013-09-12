@@ -5,12 +5,12 @@ describe('Local Storage Persistence Plugin', function () {
   var notebook = '# Testing localStorage';
 
   beforeEach(function () {
-    localstoragePersistencePlugin.attach(App.middleware);
+    localStoragePersistencePlugin.attach(App.middleware);
   });
 
   afterEach(function () {
     App.persistence.reset();
-    localstoragePersistencePlugin.detach(App.middleware);
+    localStoragePersistencePlugin.detach(App.middleware);
   });
 
   it('should save to localStorage with a made up id', function (done) {

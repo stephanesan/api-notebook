@@ -107,7 +107,7 @@ var Notebook = module.exports = function (el, options) {
  */
 Notebook.prototype.makeFrame = function (el) {
   var that   = this;
-  var src    = NOTEBOOK_URL;
+  var src    = NOTEBOOK_URL + '/embed.html';
   var config = {};
 
   var frame = this.frame = document.createElement('iframe');
