@@ -30,7 +30,7 @@ describe('Local Storage Persistence Plugin', function () {
     App.persistence.load(function (err, content) {
       expect(content).to.equal(notebook);
 
-      localStorage.clear();
+      localStorage.removeItem('notebook-' + id);
       done();
     });
   });
