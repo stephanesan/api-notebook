@@ -113,18 +113,16 @@ var savePlugin = function (data, next, done) {
 };
 
 /**
- * Registers all the neccessary handlers for Github gist persistence.
+ * A { key: function } map of all middleware used in the plugin.
  *
- * @param {Object} middleware
+ * @type {Object}
  */
-exports.attach = function (attach) {
-  middleware = attach;
-
-  attach.use('persistence:change',        changePlugin);
-  attach.use('persistence:authenticate',  authenticatePlugin);
-  attach.use('persistence:authenticated', authenticatedPlugin);
-  attach.use('persistence:load',          loadPlugin);
-  attach.use('persistence:save',          savePlugin);
+var plugins = {
+  'persistence:change':        changePlugin,
+  'persistence:authenticate':  authenticatePlugin,
+  'persistence:authenticated': authenticatedPlugin,
+  'persistence:load':          loadPlugin,
+  'persistence:save':          savePlugin
 };
 
 /**
@@ -132,12 +130,27 @@ exports.attach = function (attach) {
  *
  * @param {Object} middleware
  */
+exports.attach = function (attach) {
+  middleware = attach;
+
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      attach.use(key, plugins[key]);
+    }
+  }
+};
+
+/**
+ * Detaches all middleware used by gist persistence.
+ *
+ * @param {Object} middleware
+ */
 exports.detach = function (detach) {
   middleware = undefined;
 
-  detach.disuse('persistence:change',        changePlugin);
-  detach.disuse('persistence:authenticate',  authenticatePlugin);
-  detach.disuse('persistence:authenticated', authenticatedPlugin);
-  detach.disuse('persistence:load',          loadPlugin);
-  detach.disuse('persistence:save',          savePlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      detach.disuse(key, plugins[key]);
+    }
+  }
 };

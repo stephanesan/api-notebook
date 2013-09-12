@@ -5,7 +5,7 @@ var request = require('request');
 
 /**
  * Uses a simple object representation of urls to merge additional data with
- * proxied requests. Port this to use RAML ASAP.
+ * proxied requests. TODO: Port this to use RAML.
  *
  * @type {Object}
  */
@@ -39,7 +39,7 @@ module.exports = http.createServer(function (req, res) {
     };
   }
 
-  // Remove any `x-forwarded-*` headers set by the upstream proxy (E.g. Heroku)
+  // Remove any `x-forwarded-*` headers set by the upstream proxy (E.g. Heroku).
   // Keeping these headers may cause APIs to do unexpected things, such as
   // Github which redirects requests when `x-forwarded-proto` === `http`.
   _.each(req.headers, function (_, key) {

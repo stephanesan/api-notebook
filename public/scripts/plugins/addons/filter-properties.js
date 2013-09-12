@@ -109,13 +109,26 @@ var inspectorFilterPlugin = function (data, next, done) {
 };
 
 /**
+ * A { key: function } map of all middleware used in the plugin.
+ *
+ * @type {Object}
+ */
+var plugins = {
+  'inspector:filter':  inspectorFilterPlugin,
+  'completion:filter': completionFilterPlugin
+};
+
+/**
  * Attach the middleware to the application.
  *
  * @param {Object} middleware
  */
 exports.attach = function (middleware) {
-  middleware.use('inspector:filter',  inspectorFilterPlugin);
-  middleware.use('completion:filter', completionFilterPlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.use(key, plugins[key]);
+    }
+  }
 };
 
 /**
@@ -124,6 +137,9 @@ exports.attach = function (middleware) {
  * @param {Object} middleware
  */
 exports.detach = function (middleware) {
-  middleware.disuse('inspector:filter',  inspectorFilterPlugin);
-  middleware.disuse('completion:filter', completionFilterPlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.disuse(key, plugins[key]);
+    }
+  }
 };

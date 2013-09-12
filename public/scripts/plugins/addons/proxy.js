@@ -13,19 +13,36 @@ var ajaxPlugin = function (data, next) {
 };
 
 /**
- * Attaches the relevant middleware for the plugin.
+ * A { key: function } map of all middleware used in the plugin.
+ *
+ * @type {Object}
+ */
+var plugins = {
+  'ajax': ajaxPlugin
+};
+
+/**
+ * Attach the middleware to the application.
  *
  * @param {Object} middleware
  */
 exports.attach = function (middleware) {
-  middleware.use('ajax', ajaxPlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.use(key, plugins[key]);
+    }
+  }
 };
 
 /**
- * Detach any middleware added by the plugin.
+ * Detaches the middleware from the application. Useful during tests.
  *
  * @param {Object} middleware
  */
 exports.detach = function (middleware) {
-  middleware.disuse('ajax', ajaxPlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.disuse(key, plugins[key]);
+    }
+  }
 };

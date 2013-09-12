@@ -76,15 +76,15 @@ var loadPlugin = function (data, next, done) {
 };
 
 /**
- * Registers all the neccessary handlers for localStorage-based persistence.
+ * A { key: function } map of all middleware used in the plugin.
  *
- * @param {Object} middleware
+ * @type {Object}
  */
-exports.attach = function (middleware) {
-  middleware.use('persistence:change',        changePlugin);
-  middleware.use('persistence:authenticated', authenticatedPlugin);
-  middleware.use('persistence:load',          loadPlugin);
-  middleware.use('persistence:save',          savePlugin);
+var plugins = {
+  'persistence:change':        changePlugin,
+  'persistence:authenticated': authenticatedPlugin,
+  'persistence:load':          loadPlugin,
+  'persistence:save':          savePlugin
 };
 
 /**
@@ -92,9 +92,23 @@ exports.attach = function (middleware) {
  *
  * @param {Object} middleware
  */
+exports.attach = function (middleware) {
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.use(key, plugins[key]);
+    }
+  }
+};
+
+/**
+ * Removes all the handlers used by localStorage-based persistence.
+ *
+ * @param {Object} middleware
+ */
 exports.detach = function (middleware) {
-  middleware.disuse('persistence:change',        changePlugin);
-  middleware.disuse('persistence:authenticated', authenticatedPlugin);
-  middleware.disuse('persistence:load',          loadPlugin);
-  middleware.disuse('persistence:save',          savePlugin);
+  for (var key in plugins) {
+    if (plugins.hasOwnProperty(key)) {
+      middleware.disuse(key, plugins[key]);
+    }
+  }
 };
