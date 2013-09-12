@@ -78,4 +78,20 @@ describe('Embeddable Widget', function () {
       });
     });
   });
+
+  it('should be able to inject scripts before the app initializes', function (done) {
+    this.timeout(5000);
+
+    var notebook = new Notebook(fixture, {
+      inject: ['http://code.jquery.com/jquery-2.0.2.min.js']
+    });
+
+    notebook.on('rendered', function () {
+      notebook.getVariable('$.fn.jquery', function (version) {
+        expect(version).to.equal('2.0.2');
+        notebook.remove();
+        done();
+      });
+    });
+  });
 });

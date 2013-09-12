@@ -1,11 +1,16 @@
-// Bootstrap any required functionality before launching the application
-require('./bootstrap');
+var bootstrap  = require('./bootstrap');
+var loadScript = require('load-script');
 
-// Alias the main app to the window for testing
-var App = window.App = require('./views/app');
+/**
+ * The main application is aliased to the `window` for external access.
+ *
+ * @type {Function}
+ */
+var App = global.App = require('./views/app');
 
-App._          = require('underscore');
-App.Backbone   = require('backbone');
+App._        = require('underscore');
+App.async    = require('async');
+App.Backbone = require('backbone');
 
 App.state       = require('./state/state');
 App.config      = require('./state/config');
@@ -52,12 +57,11 @@ App.Collection = {
  * @param {Object}   config
  * @param {Function} done
  */
-var prepareState = function (done) {
+var prepareState = function (config, done) {
   if (global === global.parent) {
-    return done();
+    return done(null, config);
   }
 
-  var config      = {};
   var postMessage = new App.PostMessage(global.parent);
 
   // A config object can be passed from the parent frame with configuration
@@ -66,9 +70,11 @@ var prepareState = function (done) {
     App._.extend(config, data);
   });
 
-  // Allow grabbing a variable from the iframe and passing back to the parent.
-  postMessage.on('export', function (key) {
-    postMessage.trigger('export', key, global[key]);
+  // Allow running code in the context of this window by passing it through as a
+  // string.
+  postMessage.on('exec', function (evil) {
+    /* jshint evil: true */
+    postMessage.trigger('exec', global.eval(evil));
   });
 
   // Listen to any resize triggers from the messages object and send the parent
@@ -79,7 +85,7 @@ var prepareState = function (done) {
 
   // The parent frame will send back a ready response when setup is complete.
   postMessage.on('ready', function () {
-    done(null, config);
+    done(null, config, postMessage);
   });
 
   // Send a message to the parent frame and let it know we are ready to accept
@@ -92,7 +98,9 @@ var prepareState = function (done) {
  * prepare state before we actually append the notebook which relies on some of
  * the middleware being available.
  *
- * @param  {Function|Element} el
+ * @param {Function|Element} el
+ * @param {Object}           config
+ * @param {Function}         done
  */
 App.start = function (el /*, config */, done) {
   var config = {};
@@ -102,15 +110,21 @@ App.start = function (el /*, config */, done) {
     done   = arguments[2];
   }
 
-  return prepareState(function (err, data) {
-    var app = new App().render().appendTo(el);
-    // Extends the passed in config with data received from the parent frame and
-    // initializes the starting application config.
-    App.config.set(App._.extend({}, config, data));
-    // Allows different parts of the application to kickstart requests.
-    App.messages.trigger('ready');
-    // Passes the app instance to the callback function.
-    if (done) { done(err, app); }
+  return prepareState(config, function (err, config, postMessage) {
+    // Load all the injected scripts before starting the app.
+    App.async.each(config.inject || [], function (script, done) {
+      return loadScript(script, done);
+    }, function (err) {
+      var app = new App().render().appendTo(el);
+      // Set the config object after the app is started since it interacts with
+      // different parts of the application.
+      App.config.set(config);
+      // Allows different parts of the application to kickstart requests.
+      App.messages.trigger('ready');
+      if (postMessage) { postMessage.trigger('rendered'); }
+      // Passes the app instance to the callback function.
+      return done && done(err, app);
+    });
   });
 };
 
