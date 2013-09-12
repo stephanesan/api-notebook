@@ -9,6 +9,10 @@ app.configure(function () {
   app.use(express.logger());
 
   app.use(express.static(STATIC_DIR));
+
+  // Mount the raml examples under `/raml` for the notebook to use.
+  var ramlExamples = path.dirname(require.resolve('raml-examples'));
+  app.use('/raml', express.static(ramlExamples));
 });
 
 app.configure('development', function () {
