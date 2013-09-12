@@ -23,7 +23,6 @@ var Notebook = module.exports = View.extend({
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
-  this._uniqueId  = 0;
   this.collection = new NotebookCollection();
 
   // If the user changes at any point in the applications state, we may now
@@ -307,11 +306,6 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'linesChanged', this.refreshFromView);
-  }
-
-  if (view.model.get('type') === 'code') {
-    // Assign a unique index to every model for referencing upon execution
-    view.model._uniqueCellId = this._uniqueId++;
   }
 
   // Some references may be needed

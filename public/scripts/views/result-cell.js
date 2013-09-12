@@ -43,11 +43,19 @@ ResultCell.prototype.setResult = function (inspect, isError, context, done) {
   }, this));
 };
 
+ResultCell.prototype.refresh = function () {
+  if (this._resultLabel) {
+    var index = this.model.collection.indexOf(this.model);
+    this._resultLabel.textContent = '$' + index + '=';
+  }
+};
+
 ResultCell.prototype.render = function () {
   Cell.prototype.render.call(this);
 
-  this.el.appendChild(domify(
-    '<div class="result-label">$' + this.model._uniqueCellId + '= </div>'
+  // Prepends a container for the result reference label.
+  this.el.appendChild(this._resultLabel = domify(
+    '<div class="result-label"></div>'
   ));
 
   return this;
