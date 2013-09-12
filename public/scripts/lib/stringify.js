@@ -21,7 +21,7 @@ var stringifyString = function (string) {
 var cloneNode = function (node) {
   if (node.nodeType === Node.DOCUMENT_NODE) {
     var fragment = document.createDocumentFragment();
-    for (var i = 0, l = node.childNodes.length; i < l; i++) {
+    for (var i = 0, len = node.childNodes.length; i < len; i++) {
       fragment.appendChild(cloneNode(node.childNodes[i]));
     }
     return fragment;
@@ -114,8 +114,8 @@ var stringifyError = function (error) {
  */
 var stringifyElement = function (element) {
   var div = document.createElement('div');
-  // Not all elements are supported, so if we fail render it as an object. I'll
-  // come back later and add support for additional node types.
+  // Not all elements are supported, so if we fail render it as an object.
+  // TODO: Add support for addition node types.
   try {
     // Attempt to clone the node and append to a faux div to get the innerHTML.
     var node = cloneNode(element);

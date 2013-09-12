@@ -1,7 +1,7 @@
 var middleware, accessToken;
 
 /**
- * Any time a change occurs, we'll sync the change with out Github gist.
+ * Any time a change occurs, we'll sync the change with our Github gist.
  *
  * @param  {Object}   data
  * @param  {Function} next
@@ -14,7 +14,7 @@ var changePlugin = function (data, next, done) {
 /**
  * Authenticate with the github oauth endpoint. Since we are unlikely to include
  * our client secret with the client code, you'll probably want to include the
- * proxy plugin.
+ * proxy plugin (`./proxy.js`).
  *
  * @param  {Object}   data
  * @param  {Function} next
