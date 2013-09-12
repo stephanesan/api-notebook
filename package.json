@@ -31,14 +31,15 @@
     "handlebars-runtime": "~1.0.12",
     "grunt-browserify": "~1.2.1",
     "grunt-cli": "~0.1.9",
-    "jshint": "~2.1.9",
     "hbsfy": "~0.1.5",
     "node-dev": "~2.0",
     "uglifyify": "0.0.1",
     "envify": "~0.1.0",
     "grunt-shell": "~0.3.1",
     "grunt-contrib-connect": "~0.5.0",
-    "mocha-phantomjs": "~3.1.2"
+    "mocha-phantomjs": "~3.1.2",
+    "grunt-newer": "~0.5.0",
+    "grunt-contrib-jshint": "~0.6.4"
   },
   "engines": {
     "node": "0.10.13",

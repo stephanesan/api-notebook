@@ -46,17 +46,16 @@ module.exports = function (grunt) {
       }
     },
 
+    jshint: {
+      files: ['routes/**/*.js', 'public/**/*.js', '*.js'],
+      options: {
+        jshintrc: '.jshintrc'
+      }
+    },
+
     shell: {
       'mocha-phantomjs': {
         command: './node_modules/.bin/mocha-phantomjs ./test/index.html',
-        options: {
-          stdout: true,
-          stderr: true,
-          failOnError: true
-        }
-      },
-      'jshint': {
-        command: './node_modules/.bin/jshint public/scripts routes app.js',
         options: {
           stdout: true,
           stderr: true,
@@ -139,6 +138,6 @@ module.exports = function (grunt) {
   );
 
   grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
-  grunt.registerTask('check',   ['shell:jshint', 'headless-test']);
+  grunt.registerTask('check',   ['jshint', 'headless-test']);
   grunt.registerTask('default', ['build', 'watch']);
 };
