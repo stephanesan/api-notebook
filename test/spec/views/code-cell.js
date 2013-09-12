@@ -15,11 +15,10 @@ describe('Code Cell', function () {
       view = new Code();
       view.model.view = view;
       view.sandbox    = new App.Sandbox();
-      // Stub the serialization function for testing
       view.model.collection = {
+        indexOf:     sinon.stub().returns(0),
         getNextCode: sinon.stub().returns(undefined),
-        getPrevCode: sinon.stub().returns(undefined),
-        serializeForEval: sinon.stub().returns({})
+        getPrevCode: sinon.stub().returns(undefined)
       };
     });
 
@@ -34,7 +33,7 @@ describe('Code Cell', function () {
       });
 
       it('should append a result view', function () {
-        expect(view.result).to.be.an.instanceof(App.View.ResultCell);
+        expect(view.resultCell).to.be.an.instanceof(App.View.ResultCell);
       });
     });
 
@@ -107,7 +106,7 @@ describe('Code Cell', function () {
 
       describe('execute code', function () {
         it('should render the result', function (done) {
-          var spy  = sinon.spy(view.result, 'setResult');
+          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = '10';
 
           view.on('execute', function (view, result, isError) {
@@ -124,7 +123,7 @@ describe('Code Cell', function () {
         });
 
         it('should render an error', function (done) {
-          var spy  = sinon.spy(view.result, 'setResult');
+          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = 'throw new Error(\'Testing\');';
 
           view.on('execute', function (view, result, isError) {
@@ -160,7 +159,7 @@ describe('Code Cell', function () {
 
       describe('completion', function () {
         it('should complete from the sandbox', function (done) {
-          view.sandbox.execute('var testing = "test";', window, function () {
+          view.sandbox.execute('var testing = "test";', function () {
             testCompletion(view.editor, 'test', function (results) {
               expect(results).to.contain('testing');
               done();

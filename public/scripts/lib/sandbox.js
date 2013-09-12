@@ -13,30 +13,33 @@ Sandbox.prototype.createFrame = function () {
 };
 
 Sandbox.prototype.execute = function (code, cb) {
-  // Using an asynchronous callback to clear the any possible stack trace
-  // that would include implementation logic.
-  process.nextTick(_.bind(function () {
-    var isError = false;
-    var result, err;
+  var isError = false;
+  var result;
 
-    middleware.trigger('sandbox:context', {}, function (err, context) {
-      try {
-        if (typeof context === 'object') {
-          this.window.console = this.window.console || {};
-          this.window.console._notebookAPI = context;
-          code = 'with (window.console._notebookAPI) {\n' + code + '\n}';
+  middleware.trigger('sandbox:context', {}, _.bind(function (err, context) {
+    if (typeof context === 'object') {
+      this.window.console = this.window.console || {};
+      this.window.console._notebookApi = context;
+      code = 'with (window.console._notebookApi) {\n' + code + '\n}';
+    }
+
+    // Allow middleware to hook into before execution
+    middleware.trigger('sandbox:execute', this.window, _.bind(function (err) {
+      // Using an asynchronous callback to clear the any possible stack trace
+      // that would include implementation logic.
+      process.nextTick(_.bind(function () {
+        try {
+          /* jshint evil: true */
+          result = this.window.eval(code);
+        } catch (error) {
+          result  = error;
+          isError = true;
+        } finally {
+          delete this.window.console._notebookApi;
+          return cb && cb(result, isError);
         }
-
-        /* jshint evil: true */
-        result = this.window.eval(code);
-      } catch (error) {
-        err     = error;
-        isError = true;
-      } finally {
-        delete this.window.console._notebookAPI;
-        cb(isError ? err : result, isError);
-      }
-    });
+      }, this));
+    }, this));
   }, this));
 };
 

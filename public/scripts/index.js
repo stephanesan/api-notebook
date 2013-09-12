@@ -128,9 +128,4 @@ App.start = function (el /*, config */, done) {
   });
 };
 
-// Attach core middleware modules.
-require('./plugins/core/ajax')(App.middleware);
-require('./plugins/core/completion')(App.middleware);
-require('./plugins/core/result-cell')(App.middleware);
-require('./plugins/core/persistence')(App.middleware);
-require('./plugins/core/authentication')(App.middleware);
+require('./plugins/core')(App.middleware);

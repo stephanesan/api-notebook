@@ -24,6 +24,7 @@
  * `ajax`                - Submit an asynchonous ajax request that will be
  *                         responded with the ajax object.
  * `authenticate:oauth2` - Trigger the oauth2 authentication flow.
+ * `sandbox:context`     - Provide additional context variables to the sandbox.
  */
 var _        = require('underscore');
 var Backbone = require('backbone');
