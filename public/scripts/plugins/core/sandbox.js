@@ -20,11 +20,29 @@ var contextPlugin = function (context, next) {
  * @param  {Object}   window
  * @param  {Function} next
  */
-var executePlugin = function (window, next) {
-  /* jshint evil: true */
-  window.eval('console._notebookApi.require = ' + loadScript);
+var executePlugin = function (data, next, done) {
+  var code = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
 
-  return next();
+  /* jshint evil: true */
+  data.context.eval('console._notebookApi.require = ' + loadScript);
+
+  // Uses an asynchronous callback to clear the any possible stack trace
+  // that would include implementation logic.
+  // TODO: Augment the stack trace to remove any existing implementation logic.
+  process.nextTick(function () {
+    var exec = {};
+
+    try {
+      /* jshint evil: true */
+      exec.result  = data.context.eval(code);
+      exec.isError = false;
+    } catch (error) {
+      exec.result  = error;
+      exec.isError = true;
+    } finally {
+      return done(null, exec);
+    }
+  });
 };
 
 /**
@@ -33,6 +51,6 @@ var executePlugin = function (window, next) {
  * @param  {Object} middleware
  */
 module.exports = function (middleware) {
-  middleware.core('sandbox:context', contextPlugin);
   middleware.core('sandbox:execute', executePlugin);
+  middleware.core('sandbox:context', contextPlugin);
 };

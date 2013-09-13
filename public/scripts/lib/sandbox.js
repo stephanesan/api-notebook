@@ -13,34 +13,25 @@ Sandbox.prototype.createFrame = function () {
 };
 
 Sandbox.prototype.execute = function (code, cb) {
-  var isError = false;
-  var result;
+  var global = this.window;
 
-  middleware.trigger('sandbox:context', {}, _.bind(function (err, context) {
-    if (typeof context === 'object') {
-      this.window.console = this.window.console || {};
-      this.window.console._notebookApi = context;
-      code = 'with (window.console._notebookApi) {\n' + code + '\n}';
-    }
+  middleware.trigger('sandbox:context', {}, function (err, context) {
+    // Provides additional context under the `console` object. This works in the
+    // same fashion as how Chrome's console is implemented, and has the benefit
+    // of any context variables not wiping out `window` variables (they will
+    // just be shadowed with `with`).
+    global.console = global.console || {};
+    global.console._notebookApi = context;
 
-    // Allow middleware to hook into before execution
-    middleware.trigger('sandbox:execute', this.window, _.bind(function (err) {
-      // Using an asynchronous callback to clear the any possible stack trace
-      // that would include implementation logic.
-      process.nextTick(_.bind(function () {
-        try {
-          /* jshint evil: true */
-          result = this.window.eval(code);
-        } catch (error) {
-          result  = error;
-          isError = true;
-        } finally {
-          delete this.window.console._notebookApi;
-          return cb && cb(result, isError);
-        }
-      }, this));
-    }, this));
-  }, this));
+    // Allows middleware to hook into the execution event.
+    middleware.trigger('sandbox:execute', {
+      code:    code,
+      context: global
+    }, function (err, exec) {
+      delete global.console._notebookApi;
+      return cb && cb(exec.result, exec.isError);
+    });
+  });
 };
 
 Sandbox.prototype.remove = function () {
