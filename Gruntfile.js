@@ -47,7 +47,9 @@ module.exports = function (grunt) {
     },
 
     jshint: {
-      files: ['routes/**/*.js', 'public/**/*.js', '*.js'],
+      all: {
+        src: ['routes/**/*.js', 'public/**/*.js', '*.js']
+      },
       options: {
         jshintrc: '.jshintrc'
       }
@@ -69,15 +71,6 @@ module.exports = function (grunt) {
         src: 'public/scripts/index.js',
         dest: 'build/scripts/bundle.js',
         options: {
-          shim: {
-            'backbone.native': {
-              path: __dirname + '/vendor/backbone.native.js',
-              exports: 'Backbone',
-              depends: {
-                'backbone': 'Backbone'
-              }
-            }
-          },
           debug:     DEV,
           transform: browserifyTransform
         }
@@ -109,21 +102,19 @@ module.exports = function (grunt) {
     watch: {
       html: {
         files: ['public/**/*.html'],
-        tasks: ['copy']
+        tasks: ['newer:copy']
+      },
+      lint: {
+        files: ['<%= jshint.all.src %>'],
+        tasks: ['newer:jshint:all']
       },
       scripts: {
-        files: ['public/**/*.{js,hbs}'],
-        tasks: ['browserify'],
-        options: {
-          livereload: true
-        }
+        files: ['public/**/*.js'],
+        tasks: ['browserify']
       },
       styles: {
         files: ['public/**/*.styl'],
-        tasks: ['stylus'],
-        options: {
-          livereload: true
-        }
+        tasks: ['stylus']
       }
     }
   });
@@ -137,7 +128,15 @@ module.exports = function (grunt) {
     ['test-notebook', 'build', 'connect:test-server', 'shell:mocha-phantomjs']
   );
 
-  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
-  grunt.registerTask('check',   ['jshint', 'headless-test']);
-  grunt.registerTask('default', ['build', 'watch']);
+  grunt.registerTask('build',   [
+    'clean', 'copy', 'browserify', 'stylus'
+  ]);
+
+  grunt.registerTask('check',   [
+    'jshint:all', 'headless-test'
+  ]);
+
+  grunt.registerTask('default', [
+    'build', 'watch'
+  ]);
 };
