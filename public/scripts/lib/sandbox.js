@@ -26,10 +26,11 @@ Sandbox.prototype.execute = function (code, cb) {
     // Allows middleware to hook into the execution event.
     middleware.trigger('sandbox:execute', {
       code:    code,
-      context: global
+      context: context,
+      window:  global
     }, function (err, exec) {
       delete global.console._notebookApi;
-      return cb && cb(exec.result, exec.isError);
+      return cb && cb(null, exec);
     });
   });
 };

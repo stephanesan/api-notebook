@@ -11,6 +11,10 @@ var contextPlugin = function (context, next) {
   // to the wrong window object. That would load the script in the wrong window.
   context.require = loadScript;
 
+  // Helper properties for executing async code within a cell.
+  context.async   = function () {};
+  context.timeout = 2000;
+
   return next();
 };
 
@@ -21,26 +25,54 @@ var contextPlugin = function (context, next) {
  * @param  {Function} next
  */
 var executePlugin = function (data, next, done) {
-  var code = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
+  var code    = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
+  var async   = false;
+  var exec    = {};
+  var context = data.context;
+
+  context.async = function () {
+    var timeout;
+    // Sets the async flag to true so we won't call the callback immediately.
+    async = true;
+    // Add a fallback catch in case we are using the `async` function accidently
+    // or not handling some edge case. This idea comes from `Mocha` async tests,
+    // but here we just need to set `timeout = Infinity`.
+    if (isFinite(context.timeout) && context.timeout > 0) {
+      timeout = setTimeout(function () {
+        return done(
+          new Error('Timeout of ' + context.timeout + 'ms exceeded'), {}
+        );
+      }, context.timeout);
+    }
+    // Return a function that can be executed to end the async operation inside
+    // the cell. This is handy for all sorts of things, like ajax requests.
+    return function (err, result) {
+      // Clear the failure timeout.
+      clearTimeout(timeout);
+      // Passes off to the middleware iteration since it already caters for
+      // this sort of async execution.
+      exec.result  = err || result;
+      exec.isError = !!err;
+      return done(null, exec);
+    };
+  };
 
   /* jshint evil: true */
-  data.context.eval('console._notebookApi.require = ' + loadScript);
+  data.window.eval('console._notebookApi.require = ' + context.require);
 
   // Uses an asynchronous callback to clear the any possible stack trace
   // that would include implementation logic.
   // TODO: Augment the stack trace to remove any existing implementation logic.
   process.nextTick(function () {
-    var exec = {};
-
     try {
       /* jshint evil: true */
-      exec.result  = data.context.eval(code);
+      exec.result  = data.window.eval(code);
       exec.isError = false;
     } catch (error) {
       exec.result  = error;
       exec.isError = true;
     } finally {
-      return done(null, exec);
+      return !async && done(null, exec);
     }
   });
 };

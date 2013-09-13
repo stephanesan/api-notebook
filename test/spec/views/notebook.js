@@ -205,16 +205,16 @@ describe('Notebook', function () {
       });
 
       it('should be able to reference previous results', function (done) {
-        codeCells[0].on('execute', function (view, result, isError) {
-          codeCells[1].on('execute', function (view, result, isError) {
-            expect(result).to.equal(99);
-            expect(isError).to.equal(false);
+        codeCells[0].on('execute', function (view, data) {
+          codeCells[1].on('execute', function (view, data) {
+            expect(data.result).to.equal(99);
+            expect(data.isError).to.equal(false);
             expect(codeCells[1].model.get('result')).to.equal(99);
             done();
           });
 
-          expect(result).to.equal(99);
-          expect(isError).to.equal(false);
+          expect(data.result).to.equal(99);
+          expect(data.isError).to.equal(false);
           expect(codeCells[0].model.get('result')).to.equal(99);
 
           codeCells[1].setValue('$1');

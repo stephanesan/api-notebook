@@ -23,7 +23,7 @@ ResultCell.prototype._reset = function (done) {
   });
 };
 
-ResultCell.prototype.setResult = function (inspect, isError, context, done) {
+ResultCell.prototype.setResult = function (data, context, done) {
   this._reset(_.bind(function (err) {
     if (err) { return done && done(err); }
 
@@ -31,10 +31,10 @@ ResultCell.prototype.setResult = function (inspect, isError, context, done) {
       el:      this.el,
       data:    this.data,
       context: context,
-      inspect: inspect,
-      isError: isError
+      inspect: data.result,
+      isError: data.isError
     }, function (err, data) {
-      if (isError) {
+      if (data.isError) {
         data.el.classList.add('result-error');
       }
       data.el.classList.remove('result-pending');
