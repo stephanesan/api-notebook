@@ -21,7 +21,7 @@ var contextPlugin = function (context, next) {
  * @param  {Function} next
  */
 var executePlugin = function (window, next) {
-  // Fixes the require function to execute in the correct context.
+  /* jshint evil: true */
   window.eval('console._notebookApi.require = ' + loadScript);
 
   return next();
