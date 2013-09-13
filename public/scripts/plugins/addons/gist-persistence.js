@@ -65,7 +65,7 @@ var authenticatedPlugin = function (data, next, done) {
 var loadPlugin = function (data, next, done) {
   if (!data.id) { return next(); }
 
-  this.trigger('ajax', {
+  middleware.trigger('ajax', {
     url: 'https://api.github.com/gists/' + data.id,
     type: 'GET',
     dataType: 'json'
