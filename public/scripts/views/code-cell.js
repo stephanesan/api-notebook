@@ -73,7 +73,11 @@ CodeCell.prototype.getPrevCodeView = function () {
 CodeCell.prototype.execute = function (cb) {
   // Set the value as our own model for executing
   this.model.set('value', this.editor.getValue());
-  this.browseToCell(this.model);
+  // Make sure we have focus on the currently executing cell.
+  if (!this.hasFocus()) {
+    this.browseToCell(this.model);
+    this.moveCursorToEnd();
+  }
 
   this.sandbox.execute(this.getValue(), _.bind(function (err, data) {
     if (data.isError) {
