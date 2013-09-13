@@ -53,7 +53,7 @@ describe('Code Cell', function () {
         expect(editor.getOption('mode')).to.equal('javascript');
       });
 
-      describe('keyboard shortcuts', function () {
+      describe('Keyboard Shortcuts', function () {
         var UP    = 38;
         var DOWN  = 40;
         var ENTER = 13;
@@ -104,7 +104,7 @@ describe('Code Cell', function () {
         });
       });
 
-      describe('execute code', function () {
+      describe('Execute Code', function () {
         it('should render the result', function (done) {
           var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = '10';
@@ -138,9 +138,99 @@ describe('Code Cell', function () {
           editor.setValue(code);
           view.execute();
         });
+
+        it('should render asynchronous results', function (done) {
+          var spy  = sinon.spy(view.resultCell, 'setResult');
+          var code = [
+            'var done = async();',
+            'setTimeout(function () {',
+            '  done(null, "Testing");',
+            '}, 0);'
+          ].join('\n');
+
+          view.on('execute', function (view, data) {
+            expect(data.isError).to.equal(false);
+            expect(data.result).to.equal('Testing');
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            expect(view.model.get('result')).to.equal('Testing');
+            done();
+          });
+
+          editor.setValue(code);
+          view.execute();
+        });
+
+        it('should render asynchronous errors', function (done) {
+          var spy  = sinon.spy(view.resultCell, 'setResult');
+          var code = [
+            'var done = async();',
+            'setTimeout(function () {',
+            '  done(new Error("Testing"));',
+            '}, 0);'
+          ].join('\n');
+
+          view.on('execute', function (view, data) {
+            expect(data.isError).to.equal(true);
+            expect(data.result.message).to.equal('Testing');
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            expect(view.model.get('result')).to.not.exist;
+            done();
+          });
+
+          editor.setValue(code);
+          view.execute();
+        });
+
+        it('should have a failover system in case async is never resolved', function (done) {
+          var timeout = window.setTimeout;
+          var spy     = sinon.spy(view.resultCell, 'setResult');
+          var code    = 'var done = async();';
+          var clock   = sinon.useFakeTimers();
+
+          view.on('execute', function (view, data) {
+            clock.restore();
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            done();
+          });
+
+          editor.setValue(code);
+          view.execute();
+
+          timeout(function () {
+            clock.tick(2000);
+          }, 20);
+        });
+
+        it('should be able to change the timeout on the failover system', function (done) {
+          var timeout = window.setTimeout;
+          var spy     = sinon.spy(view.resultCell, 'setResult');
+          var code    = 'timeout = 5000;\nvar done = async();';
+          var clock   = sinon.useFakeTimers();
+
+          view.on('execute', function (view, data) {
+            clock.restore();
+            expect(spy.calledOnce).to.be.ok;
+            expect(view.model.get('value')).to.equal(code);
+            done();
+          });
+
+          editor.setValue(code);
+          view.execute();
+
+          timeout(function () {
+            clock.tick(2000);
+            timeout(function () {
+              expect(spy).to.not.have.been.called;
+              clock.tick(3000);
+            }, 20);
+          }, 20);
+        });
       });
 
-      describe('comment block', function () {
+      describe('Comment Block', function () {
         it('should open a text cell and execute the current content', function () {
           var textSpy = sinon.spy(function (view, text) {
             expect(text).to.equal('testing');
@@ -157,7 +247,7 @@ describe('Code Cell', function () {
         });
       });
 
-      describe('completion', function () {
+      describe('Completion', function () {
         it('should complete from the sandbox', function (done) {
           view.sandbox.execute('var testing = "test";', function () {
             testCompletion(view.editor, 'test', function (results) {

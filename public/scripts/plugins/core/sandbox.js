@@ -40,7 +40,7 @@ var executePlugin = function (data, next, done) {
     if (isFinite(context.timeout) && context.timeout > 0) {
       timeout = setTimeout(function () {
         return done(
-          new Error('Timeout of ' + context.timeout + 'ms exceeded'), {}
+          new Error('Timeout of ' + context.timeout + 'ms exceeded'), exec
         );
       }, context.timeout);
     }
