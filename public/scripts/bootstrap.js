@@ -1,6 +1,6 @@
-// Shim Backbone with the required helpers
-require('backbone');
-require('backbone.native');
+// Shim Backbone with the functionality from Backbone.native
+var Backbone = require('backbone');
+Backbone.$   = require('../../vendor/backbone.native').$;
 
 // Require codemirror instance
 require('codemirror');
