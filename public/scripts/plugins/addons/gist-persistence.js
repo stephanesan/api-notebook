@@ -38,7 +38,7 @@ var authenticatePlugin = function (data, next, done) {
             accessToken,
       dataType: 'json'
     }, function (err, xhr) {
-      data.userId = xhr.content.user.id;
+      data.userId = JSON.parse(xhr.responseText).user.id;
       return done();
     });
   });
@@ -67,10 +67,9 @@ var loadPlugin = function (data, next, done) {
 
   middleware.trigger('ajax', {
     url: 'https://api.github.com/gists/' + data.id,
-    type: 'GET',
-    dataType: 'json'
+    type: 'GET'
   }, function (err, xhr) {
-    var content = xhr.content;
+    var content = JSON.parse(xhr.responseText);
 
     if (!content || !content.files || !content.files['notebook.md']) {
       return next();
@@ -103,11 +102,11 @@ var savePlugin = function (data, next, done) {
           content: data.contents
         }
       }
-    }),
-    dataType: 'json'
+    })
   }, function (err, xhr) {
-    data.id      = xhr.content.id;
-    data.ownerId = xhr.content.user && xhr.content.user.id;
+    var content = JSON.parse(xhr.responseText);
+    data.id      = content.id;
+    data.ownerId = content.user && content.user.id;
     return done();
   });
 };

@@ -1,3 +1,4 @@
+/* global App */
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
 
@@ -38,7 +39,7 @@ var Api = function (name /*, url */, done) {
 
   // Allow a custom callback to be passed in, otherwise we should use the
   // current cells async execution function.
-  done = done || this.async();
+  done = done || App._executeContext.async();
 
   // Bypass reloading a RAML document if the name and URL already matches a
   // loaded and generated client.

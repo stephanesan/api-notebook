@@ -16,14 +16,17 @@ module.exports = function (middleware) {
    */
   middleware.core('ajax', function (data, next) {
     var request = _.extend({}, data, {
-      processData: data.type === 'GET',
       success: function (content, status, xhr) {
-        return next(null, _.extend({}, xhr, { content: content }));
+        return next(null, xhr);
       },
       error: function (xhr) {
-        return next(new Error(xhr.statusText), _.extend({}, xhr));
+        return next(new Error(xhr.statusText), xhr);
       }
     });
+
+    if (!('processData' in data)) {
+      data.processData = (data.type === 'GET');
+    }
 
     if (typeof data.data === 'object' && data.type === 'GET') {
       request.data = JSON.stringify(data.data);

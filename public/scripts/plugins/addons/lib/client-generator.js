@@ -58,17 +58,17 @@ var sanitizeAST = function (ast) {
 };
 
 /**
- * List of all plain HTTP methods.
+ * List of all plain HTTP methods in the format from the AST.
  *
  * @type {Object}
  */
-var httpMethods = {
-  'get':    true,
-  'put':    true,
-  'post':   true,
-  'patch':  true,
-  'delete': true
-};
+var httpMethods = _.chain(
+    ['get', 'put', 'post', 'patch', 'delete']
+  ).map(function (method) {
+    return [method, {
+      method: method
+    }];
+  }).object().value();
 
 /**
  * Returns a function that can be used to make ajax requests.
@@ -77,11 +77,25 @@ var httpMethods = {
  * @return {Function}
  */
 var httpRequest = function (uri, method) {
-  console.log(uri, method);
-
-  // Switches behaviour based on the HTTP method.
+  // Switch behaviour based on the method data.
   return function () {
+    var done;
 
+    if (arguments.length > 1) {
+      done = arguments[1];
+    } else {
+      done = App._executeContext.async();
+    }
+
+    // We know this code works, so bump the execution timeout up
+    App._executeContext.timeout = Infinity;
+
+    // Trigger ajax middleware resolution so other middleware can hook onto
+    // these requests and augment.
+    App.middleware.trigger('ajax', {
+      url:  uri.href,
+      type: method.method
+    }, done);
   };
 };
 

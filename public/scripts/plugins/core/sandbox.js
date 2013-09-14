@@ -74,6 +74,8 @@ var executePlugin = function (data, next, done) {
   // that would include implementation logic.
   // TODO: Augment the stack trace to remove any existing implementation logic.
   process.nextTick(function () {
+    /* global App */
+    App._executeContext = context;
     try {
       /* jshint evil: true */
       exec.result  = data.window.eval(code);
@@ -82,6 +84,7 @@ var executePlugin = function (data, next, done) {
       exec.result  = error;
       exec.isError = true;
     } finally {
+      delete App._executeContext;
       return !async && done(null, exec);
     }
   });
