@@ -3,6 +3,7 @@ var PLUGIN_DIR = __dirname + '/public/scripts/plugins/addons';
 var BUILD_DIR  = __dirname + '/build';
 var DEPLOY_DIR = __dirname + '/deploy';
 var TEST_PORT  = 9876;
+var jsRegex    = /\.js$/;
 
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
@@ -15,8 +16,9 @@ module.exports = function (grunt) {
   }
 
   require('fs').readdirSync(PLUGIN_DIR).forEach(function (filename) {
+    if (!jsRegex.test(filename)) { return; }
     // Remove trailing extension and transform to camelCase
-    var baseName = grunt.util._.camelize(filename.replace(/\.js$/, ''));
+    var baseName = grunt.util._.camelize(filename.replace(jsRegex, ''));
 
     browserifyPlugins[baseName] = {
       src:  PLUGIN_DIR + '/' + filename,

@@ -56,3 +56,9 @@ traits:
   /{songId}:
     is: [ secured ]
     type: member
+/test:
+  type: collection
+  /{testId}:
+    type: member
+    /about:
+      type: member
