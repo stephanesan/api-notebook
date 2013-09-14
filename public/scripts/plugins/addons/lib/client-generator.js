@@ -117,6 +117,12 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var attachMethods = function (nodes, context, methods) {
+    // Ensure all parameters are strings in the array.
+    if (_.isArray(nodes)) {
+      nodes = _.map(nodes, String);
+    }
+
+    // Use the `path` module to join the url parts together.
     var route = path.join.apply(null, [uri.path].concat(nodes));
 
     // Iterate over all the possible methods and attach.
@@ -144,6 +150,9 @@ var generateClient = function (ast) {
     return attachMethods(template(path, context || {}), {}, httpMethods);
   };
 
+  // Enable the `@return` property used by the completion plugin.
+  client[RETURN_PROPERTY] = attachMethods('', {}, httpMethods);
+
   /**
    * Recurses through a resource object in the RAML AST, generating a dynamic
    * DSL that only allows methods that were defined in the RAML spec.
@@ -158,17 +167,23 @@ var generateClient = function (ast) {
     _.each(resources, function (resource, route) {
       var routeName  = route;
       var resources  = resource.resources;
+      var routeNodes = nodes.concat(route);
       var templateOnly, allTemplates;
 
       // The route name only contains a single uri paramater and no static text.
       if (templateOnly = route.match(TEMPLATE_ONLY_REGEX)) {
         routeName = templateOnly[1];
-        return context[routeName] = function (id) {
+        context[routeName] = function (id) {
           var newContext = {};
           var routeNodes = nodes.concat(id);
           attachMethods(routeNodes, newContext, resource.methods);
           return attachResources(routeNodes, newContext, resources);
         };
+
+        var returnPropContext = {};
+        attachMethods(routeNodes, returnPropContext, resource.methods);
+        attachResources(routeNodes, returnPropContext, resources);
+        return context[routeName][RETURN_PROPERTY] = returnPropContext;
       }
 
       // The route contains any number of templates and text.
@@ -178,7 +193,6 @@ var generateClient = function (ast) {
 
       // The route is only static text, we can easily add the next route.
       var newContext = context[routeName] || (context[routeName] = {});
-      var routeNodes = nodes.concat(route);
       attachMethods(routeNodes, newContext, resource.methods);
       return attachResources(routeNodes, newContext, resources);
     });

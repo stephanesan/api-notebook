@@ -60,5 +60,5 @@ traits:
   type: collection
   /{testId}:
     type: member
-    /about:
+    /{nestedId}:
       type: member
