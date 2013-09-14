@@ -162,7 +162,7 @@ module.exports = function (grunt) {
 
     watch: {
       html: {
-        files: ['public/**/*.html'],
+        files: ['public/**/*.{html,yml}'],
         tasks: ['newer:copy']
       },
       lint: {

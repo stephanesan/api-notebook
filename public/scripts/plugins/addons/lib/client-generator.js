@@ -6,8 +6,7 @@ var path = App.Library.path;
 var RETURN_PROPERTY = '@return';
 
 // Catch commonly used regular expressions
-var TEMPLATE_REGEX      = /\{(\w+)\}/g;
-var TEMPLATE_ONLY_REGEX = /^\{(\w+)\}$/;
+var TEMPLATE_REGEX = /\{(\w+)\}/g;
 
 /**
  * Simple "template" function for working with the uri param variables.
@@ -117,11 +116,6 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var attachMethods = function (nodes, context, methods) {
-    // Ensure all parameters are strings in the array.
-    if (_.isArray(nodes)) {
-      nodes = _.map(nodes, String);
-    }
-
     // Use the `path` module to join the url parts together.
     var route = path.join.apply(null, [uri.path].concat(nodes));
 
@@ -168,27 +162,48 @@ var generateClient = function (ast) {
       var routeName  = route;
       var resources  = resource.resources;
       var routeNodes = nodes.concat(route);
-      var templateOnly, allTemplates;
-
-      // The route name only contains a single uri paramater and no static text.
-      if (templateOnly = route.match(TEMPLATE_ONLY_REGEX)) {
-        routeName = templateOnly[1];
-        context[routeName] = function (id) {
-          var newContext = {};
-          var routeNodes = nodes.concat(id);
-          attachMethods(routeNodes, newContext, resource.methods);
-          return attachResources(routeNodes, newContext, resources);
-        };
-
-        var returnPropContext = {};
-        attachMethods(routeNodes, returnPropContext, resource.methods);
-        attachResources(routeNodes, returnPropContext, resources);
-        return context[routeName][RETURN_PROPERTY] = returnPropContext;
-      }
+      var allTemplates;
 
       // The route contains any number of templates and text.
       if (allTemplates = route.match(TEMPLATE_REGEX)) {
-        console.log(allTemplates);
+        var group      = allTemplates.join('');
+        var startIndex = route.length - group.length;
+        // The route must end with the template tags and have no intermediate
+        // text between template tags.
+        if (route.indexOf(group) === startIndex) {
+          var startText = route.substr(0, startIndex);
+          // The route is only a template tag with no static text, use the
+          // template tag text.
+          if (startIndex === 0) {
+            routeName = allTemplates[0].slice(1, -1);
+          } else {
+            routeName = startText;
+          }
+
+          context[routeName] = function () {
+            var args = _.first(arguments, allTemplates.length);
+
+            // Check the taken arguments length matches the expected number.
+            if (args.length !== allTemplates.length) {
+              throw new Error(
+                'Insufficient parameters given for "' + route + '". ' +
+                'Expected ' + allTemplates.length + ', but got ' + args.length
+              );
+            }
+
+            var newContext = {};
+            var routeNodes = nodes.concat(startText + args.join(''));
+            attachMethods(routeNodes, newContext, resource.methods);
+            return attachResources(routeNodes, newContext, resources);
+          };
+
+          var returnPropContext = {};
+          attachMethods(routeNodes, returnPropContext, resource.methods);
+          attachResources(routeNodes, returnPropContext, resources);
+          return context[routeName][RETURN_PROPERTY] = returnPropContext;
+        } else {
+          return false;
+        }
       }
 
       // The route is only static text, we can easily add the next route.

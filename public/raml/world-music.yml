@@ -62,3 +62,5 @@ traits:
     type: member
     /{nestedId}:
       type: member
+/multi{var}{field}:
+  type: member
