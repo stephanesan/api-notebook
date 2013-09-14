@@ -12,9 +12,9 @@ var TEMPLATE_ONLY_REGEX = /^\{(\w+)\}$/;
 /**
  * Simple "template" function for working with the uri param variables.
  *
- * @param  {[type]} template [description]
- * @param  {[type]} context  [description]
- * @return {[type]}          [description]
+ * @param  {String} template
+ * @param  {Object} context
+ * @return {String}
  */
 var template = function (template, context) {
   return template.replace(TEMPLATE_REGEX, function (_, $0) {
@@ -58,13 +58,64 @@ var sanitizeAST = function (ast) {
 };
 
 /**
+ * List of all plain HTTP methods.
+ *
+ * @type {Object}
+ */
+var httpMethods = {
+  'get':    true,
+  'put':    true,
+  'post':   true,
+  'patch':  true,
+  'delete': true
+};
+
+/**
+ * Returns a function that can be used to make ajax requests.
+ *
+ * @param  {Object}   uri
+ * @return {Function}
+ */
+var httpRequest = function (uri, method) {
+  console.log(uri, method);
+
+  // Switches behaviour based on the HTTP method.
+  return function () {
+
+  };
+};
+
+/**
  * Generate the client object from a sanitized AST object.
  *
  * @param  {Object} ast
  * @return {Object}
  */
 var generateClient = function (ast) {
-  var uri = url.parse(ast.baseUri);
+  var uri = url.parse(ast.baseUri, true);
+
+  /**
+   * Attaches executable XHR methods to the context object.
+   *
+   * @param  {Array}  nodes
+   * @param  {Object} context
+   * @param  {Object} methods
+   * @return {Object}
+   */
+  var attachMethods = function (nodes, context, methods) {
+    var route = path.join.apply(null, [uri.path].concat(nodes));
+
+    // Iterate over all the possible methods and attach.
+    _.each(methods, function (method, verb) {
+      context[verb] = httpRequest(_.extend({}, uri, {
+        href:     url.resolve(uri.href, route),
+        path:     route + uri.search,
+        pathname: route
+      }), method);
+    });
+
+    return context;
+  };
 
   /**
    * The root client implementation is simply a function. This allows us to
@@ -76,27 +127,7 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var client = function (path, context) {
-    console.log(path, context);
-  };
-
-  /**
-   * Attaches executable XHR methods to the context object.
-   *
-   * @param  {Array}  nodes
-   * @param  {Object} context
-   * @param  {Object} methods
-   * @return {Object}
-   */
-  var attachMethods = function (nodes, context, methods) {
-    var path = App.Library.path.join.apply(null, [uri.path].concat(nodes));
-    // Iterate over all the possible methods and attach.
-    _.each(methods, function (method, verb) {
-      context[verb] = function () {
-        console.log(path, verb);
-      };
-    });
-
-    return context;
+    return attachMethods(template(path, context || {}), {}, httpMethods);
   };
 
   /**
