@@ -12,7 +12,7 @@ Sandbox.prototype.createFrame = function () {
   this.window = this.frame.contentWindow;
 };
 
-Sandbox.prototype.execute = function (code, cb) {
+Sandbox.prototype.execute = function (code, done) {
   var global = this.window;
 
   middleware.trigger('sandbox:context', {}, function (err, context) {
@@ -30,7 +30,7 @@ Sandbox.prototype.execute = function (code, cb) {
       window:  global
     }, function (err, exec) {
       delete global.console._notebookApi;
-      return cb && cb(null, exec);
+      return done && done(err, exec);
     });
   });
 };

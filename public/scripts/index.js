@@ -11,6 +11,7 @@ var App = global.App = require('./views/app');
 App._        = require('underscore');
 App.async    = require('async');
 App.Backbone = require('backbone');
+App.nextTick = process.nextTick;
 
 App.state       = require('./state/state');
 App.config      = require('./state/config');
@@ -112,16 +113,19 @@ App.start = function (el /*, config */, done) {
 
   return prepareState(config, function (err, config, postMessage) {
     // Load all the injected scripts before starting the app.
-    App.async.each(config.inject || [], function (script, done) {
-      return loadScript(script, done);
+    App.async.each(config.inject || [], function (script, cb) {
+      return loadScript(script, cb);
     }, function (err) {
       var app = new App().render().appendTo(el);
+
       // Set the config object after the app is started since it interacts with
       // different parts of the application.
       App.config.set(config);
+
       // Allows different parts of the application to kickstart requests.
       App.messages.trigger('ready');
       if (postMessage) { postMessage.trigger('rendered'); }
+
       // Passes the app instance to the callback function.
       return done && done(err, app);
     });

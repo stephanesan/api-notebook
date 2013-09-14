@@ -62,7 +62,7 @@ describe('Code Cell', function () {
           var spy = sinon.spy();
           view.execute = spy;
           fakeKey(editor, ENTER);
-          expect(spy.calledOnce).to.be.ok;
+          expect(spy).to.have.been.calledOnce;
         });
 
         it('New Line (`Shift-Enter`)', function () {
@@ -79,13 +79,13 @@ describe('Code Cell', function () {
           editor.setValue('more\nthan\none\nline');
           editor.setCursor({ line: 2, char: 0 });
           fakeKey(editor, UP);
-          expect(spy.calledOnce).to.not.be.ok;
+          expect(spy).to.not.have.been.calledOnce;
           expect(editor.getCursor().line).to.equal(1);
           fakeKey(editor, UP);
-          expect(spy.calledOnce).to.not.be.ok;
+          expect(spy).to.not.have.been.calledOnce;
           expect(editor.getCursor().line).to.equal(0);
           fakeKey(editor, UP);
-          expect(spy.calledOnce).to.be.ok;
+          expect(spy).to.have.been.calledOnce;
         });
 
         it('Browse Code Down (`Down`)', function () {
@@ -94,13 +94,13 @@ describe('Code Cell', function () {
           editor.setValue('more\nthan\none\nline');
           editor.setCursor({ line: 1, char: 0 });
           fakeKey(editor, DOWN);
-          expect(spy.calledOnce).to.not.be.ok;
+          expect(spy).to.not.have.been.calledOnce;
           expect(editor.getCursor().line).to.equal(2);
           fakeKey(editor, DOWN);
-          expect(spy.calledOnce).to.not.be.ok;
+          expect(spy).to.not.have.been.calledOnce;
           expect(editor.getCursor().line).to.equal(3);
           fakeKey(editor, DOWN);
-          expect(spy.calledOnce).to.be.ok;
+          expect(spy).to.have.been.calledOnce;
         });
       });
 
@@ -111,8 +111,8 @@ describe('Code Cell', function () {
 
           view.on('execute', function (view, data) {
             expect(data.result).to.equal(10);
-            expect(data.isError).to.equal(false);
-            expect(spy.calledOnce).to.be.ok;
+            expect(data.isError).to.be.false;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.equal(10);
             done();
@@ -127,9 +127,9 @@ describe('Code Cell', function () {
           var code = 'throw new Error(\'Testing\');';
 
           view.on('execute', function (view, data) {
-            expect(data.isError).to.equal(true);
+            expect(data.isError).to.be.true;
             expect(data.result.message).to.equal('Testing');
-            expect(spy.calledOnce).to.be.ok;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.not.exist;
             done();
@@ -149,9 +149,9 @@ describe('Code Cell', function () {
           ].join('\n');
 
           view.on('execute', function (view, data) {
-            expect(data.isError).to.equal(false);
+            expect(data.isError).to.be.false;
             expect(data.result).to.equal('Testing');
-            expect(spy.calledOnce).to.be.ok;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.equal('Testing');
             done();
@@ -171,9 +171,9 @@ describe('Code Cell', function () {
           ].join('\n');
 
           view.on('execute', function (view, data) {
-            expect(data.isError).to.equal(true);
+            expect(data.isError).to.be.true;
             expect(data.result.message).to.equal('Testing');
-            expect(spy.calledOnce).to.be.ok;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.not.exist;
             done();
@@ -184,14 +184,13 @@ describe('Code Cell', function () {
         });
 
         it('should have a failover system in case async is never resolved', function (done) {
-          var timeout = window.setTimeout;
-          var spy     = sinon.spy(view.resultCell, 'setResult');
-          var code    = 'var done = async();';
-          var clock   = sinon.useFakeTimers();
+          var spy   = sinon.spy(view.resultCell, 'setResult');
+          var code  = 'var done = async();';
+          var clock = sinon.useFakeTimers();
 
           view.on('execute', function (view, data) {
             clock.restore();
-            expect(spy.calledOnce).to.be.ok;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             done();
           });
@@ -199,20 +198,19 @@ describe('Code Cell', function () {
           editor.setValue(code);
           view.execute();
 
-          timeout(function () {
+          App.nextTick(function () {
             clock.tick(2000);
           }, 20);
         });
 
         it('should be able to change the timeout on the failover system', function (done) {
-          var timeout = window.setTimeout;
-          var spy     = sinon.spy(view.resultCell, 'setResult');
-          var code    = 'timeout = 5000;\nvar done = async();';
-          var clock   = sinon.useFakeTimers();
+          var spy   = sinon.spy(view.resultCell, 'setResult');
+          var code  = 'timeout = 5000;\nvar done = async();';
+          var clock = sinon.useFakeTimers();
 
           view.on('execute', function (view, data) {
             clock.restore();
-            expect(spy.calledOnce).to.be.ok;
+            expect(spy).to.have.been.calledOnce;
             expect(view.model.get('value')).to.equal(code);
             done();
           });
@@ -220,13 +218,11 @@ describe('Code Cell', function () {
           editor.setValue(code);
           view.execute();
 
-          timeout(function () {
+          App.nextTick(function () {
             clock.tick(2000);
-            timeout(function () {
-              expect(spy).to.not.have.been.called;
-              clock.tick(3000);
-            }, 20);
-          }, 20);
+            expect(spy).to.not.have.been.called;
+            clock.tick(3000);
+          });
         });
       });
 
@@ -240,8 +236,8 @@ describe('Code Cell', function () {
           view.on('text', textSpy);
 
           editor.setValue('abc /* testing');
-          expect(textSpy.calledOnce).to.be.ok;
-          expect(executeSpy.calledOnce).to.be.ok;
+          expect(textSpy).to.have.been.calledOnce;
+          expect(executeSpy).to.have.been.calledOnce;
           expect(editor.getValue()).to.equal('abc');
           expect(view.model.get('value')).to.equal('abc');
         });

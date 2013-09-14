@@ -32,8 +32,10 @@ var executePlugin = function (data, next, done) {
 
   context.async = function () {
     var timeout;
+
     // Sets the async flag to true so we won't call the callback immediately.
     async = true;
+
     // Add a fallback catch in case we are using the `async` function accidently
     // or not handling some edge case. This idea comes from `Mocha` async tests,
     // but here we just need to set `timeout = Infinity`.
@@ -44,13 +46,19 @@ var executePlugin = function (data, next, done) {
         );
       }, context.timeout);
     }
+
     // Return a function that can be executed to end the async operation inside
     // the cell. This is handy for all sorts of things, like ajax requests.
     return function (err, result) {
       // Clear the failure timeout.
       clearTimeout(timeout);
-      // Passes off to the middleware iteration since it already caters for
-      // this sort of async execution.
+
+      // Passes iteration off to the middleware since it already caters for
+      // async execution like this. This function accepts two parameters, like
+      // a normal async callback, but instead off passing it directly off to
+      // `done`, we need to transform it into the data format the result
+      // cell understands and pass `null` as the error since we don't have an
+      // execution error in this context (it came from the sandbox).
       exec.result  = err || result;
       exec.isError = !!err;
       return done(null, exec);

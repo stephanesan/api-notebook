@@ -70,7 +70,7 @@ CodeCell.prototype.getPrevCodeView = function () {
   }
 };
 
-CodeCell.prototype.execute = function (cb) {
+CodeCell.prototype.execute = function (done) {
   // Set the value as our own model for executing
   this.model.set('value', this.editor.getValue());
   // Make sure we have focus on the currently executing cell.
@@ -93,7 +93,7 @@ CodeCell.prototype.execute = function (cb) {
     // flag to indicate whether the the
     this.resultCell.setResult(data, this.sandbox.window);
     this.trigger('execute', this, data);
-    return cb && cb(data);
+    return done && done(err, data);
   }, this));
 
   return this;

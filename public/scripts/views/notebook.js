@@ -98,7 +98,7 @@ Notebook.prototype.appendTo = function () {
   return this;
 };
 
-Notebook.prototype.execute = function (cb) {
+Notebook.prototype.execute = function (done) {
   var that = this;
   this.execution = true;
 
@@ -108,13 +108,13 @@ Notebook.prototype.execute = function (cb) {
     // If no view is passed through, we must have hit the last view.
     if (!view) {
       that.execution = false;
-      return cb && cb();
+      return done && done();
     }
 
     view.focus().moveCursorToEnd();
 
     if (view.model.get('type') === 'code') {
-      view.execute(function (err, result) {
+      view.execute(function (err, data) {
         execution(that.getNextView(view));
       });
     } else {
