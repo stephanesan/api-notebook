@@ -1,7 +1,6 @@
-var _            = require('underscore');
-var Widget       = require('./widget');
-var Pos          = CodeMirror.Pos;
-var autocomplete = require('../codemirror/sandbox-completion');
+var _          = require('underscore');
+var Widget     = require('./widget');
+var completion = require('../codemirror/sandbox-completion');
 
 /**
  * The completion widget is a constructor function that is used with CodeMirror
@@ -18,7 +17,6 @@ var Completion = module.exports = function (cm, options) {
 
   this.cm      = cm;
   this.options = options || {};
-  this.options.closeOn = this.options.closeOn || /[^$_a-zA-Z0-9]/;
 
   this.cm.state.completionActive = this;
 
@@ -50,31 +48,28 @@ var Completion = module.exports = function (cm, options) {
       return that.removeWidget();
     }
 
-    var closeOn = that.options.closeOn;
+    var closeOn  = /[^$_a-zA-Z0-9 ]/;
+    var remove   = event.origin === '+delete';
+    var text     = event[remove ? 'removed' : 'text'].join('\n');
 
-    // Upon text insertion, check against the event given to use to decide if we
-    // need to create a new autocompletion widget.
-    if (event.origin === '+input' && closeOn.test(event.text.join('\n'))) {
+    // Check whether any of the character was a close character. If it was,
+    // close the widget and remove from the DOM.
+    if (closeOn.test(text)) {
       that.removeWidget();
+      // Save some additional processing by returning if the text is not a
+      // period (since we want to trigger completion here immediately).
+      if (text !== '.') { return; }
     }
 
-    // Any deletions should check against the removed text to see if we need to
-    // start a new autocompletion widget.
-    if (event.origin === '+delete' && closeOn.test(event.removed.join('\n'))) {
-      that.removeWidget();
-    }
-
-    // If the previous token is whitespace, trigger a new autocompletion widget.
-    if (/^ *$/.test(cm.getTokenAt(event.from).string)) {
-      that.removeWidget();
-    }
+    var nextPos  = event.from.ch + (remove ? 0 : 1);
+    var nextChar = cm.getLine(event.from.line).charAt(nextPos);
 
     // If completion is currently active, trigger a refresh event (filter the
     // current suggestions using updated character position information).
     // Otherwise, we need to show a fresh widget.
     if (that._completionActive) {
       that.refresh();
-    } else {
+    } else if (!nextChar || closeOn.test(nextChar)) {
       that.showWidget();
     }
   };
@@ -133,9 +128,11 @@ Completion.prototype.refresh = function (done) {
 Completion.prototype.showWidget = function () {
   this.removeWidget();
   this._completionActive = true;
-  autocomplete(this.cm, this.options, _.bind(function (err, data) {
+  completion(this.cm, this.options, _.bind(function (err, data) {
     if (this._completionActive && data) {
       this.widget = new Widget(this, data);
+    } else {
+      this._completionActive = false;
     }
   }, this));
 };
