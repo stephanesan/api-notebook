@@ -1,5 +1,7 @@
 var loadScript = require('../../lib/browser/load-script');
 
+var ASYNC_TIMEOUT = 2000;
+
 /**
  * Set the some additional context variables.
  *
@@ -10,8 +12,11 @@ var contextPlugin = function (context, next) {
   // Unfortunately it isn't as easy as this since we have lexical scoping issues
   // to the wrong window object. That would load the script in the wrong window.
   context.load    = function (src, done) {};
+  // The async function needs to be augmented right before execution so we can
+  // hook into the proper execution context and take advantage of the `done`
+  // middleware function.
   context.async   = function () {};
-  context.timeout = 2000;
+  context.timeout = ASYNC_TIMEOUT;
 
   return next();
 };
@@ -29,27 +34,28 @@ var executePlugin = function (data, next, done) {
   var context = data.context;
 
   context.async = function () {
-    var timeout;
+    // Sets the timeout to a working number.
+    var timeout = +context.timeout || ASYNC_TIMEOUT;
 
-    // Sets the async flag to true so we won't call the callback immediately.
+    // Sets the async flag to true so we don't trigger the callback immediately.
     async = true;
 
     // Add a fallback catch in case we are using the `async` function accidently
     // or not handling some edge case. This idea comes from `Mocha` async tests,
-    // but here we just need to set `timeout = Infinity`.
-    if (isFinite(context.timeout) && context.timeout > 0) {
-      timeout = setTimeout(function () {
+    // but we change the timeout by using `timeout = Infinity`.
+    if (isFinite(timeout) && timeout > 0) {
+      var fallback = setTimeout(function () {
         return done(
-          new Error('Timeout of ' + context.timeout + 'ms exceeded'), exec
+          new Error('Timeout of ' + timeout + 'ms exceeded'), exec
         );
-      }, context.timeout);
+      }, timeout);
     }
 
     // Return a function that can be executed to end the async operation inside
     // the cell. This is handy for all sorts of things, like ajax requests.
     return function (err, result) {
       // Clear the failure timeout.
-      clearTimeout(timeout);
+      clearTimeout(fallback);
 
       // Passes iteration off to the middleware since it already caters for
       // async execution like this. This function accepts two parameters, like

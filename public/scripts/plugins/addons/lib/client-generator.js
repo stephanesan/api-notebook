@@ -80,14 +80,15 @@ var httpRequest = function (uri, method) {
   return function () {
     var done;
 
+    // We know this code works, so bump up the execution timeout. This needs to
+    // be done before we call `async` so that it will use this value.
+    App._executeContext.timeout = Infinity;
+
     if (arguments.length > 1) {
       done = arguments[1];
     } else {
       done = App._executeContext.async();
     }
-
-    // We know this code works, so bump the execution timeout up
-    App._executeContext.timeout = Infinity;
 
     // Trigger ajax middleware resolution so other middleware can hook onto
     // these requests and augment.
