@@ -106,6 +106,11 @@ describe('Completion', function () {
       testAutocomplete('(123).to', 'toFixed')
     );
 
+    it(
+      'should work with arbitrary prefixed characters for the completion',
+      testAutocomplete('(wind', 'window')
+    );
+
     it('should not complete plain functions', function (done) {
       window.test = function () {};
       window.test.prop = 'test';
