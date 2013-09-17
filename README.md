@@ -35,7 +35,9 @@ In the case that you want this simple functionality still, but the initial scrip
 More advanced use case allows for programmatic creation of notebooks:
 
 ```javascript
-new Notebook(el, {
+// new Notebook(element, options);
+
+new Notebook(document.getElementById('notebook'), {
   id:      '123',
   content: '# Fallback Markdown Content',
   style: {
@@ -45,7 +47,7 @@ new Notebook(el, {
   alias: {
     $: window.jQuery
   }
-})
+});
 ```
 
 A list of all options can be viewed below:

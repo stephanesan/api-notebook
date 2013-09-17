@@ -83,9 +83,9 @@ var styles = {
 /**
  * Creates an embeddable version of the notebook for general consumption.
  *
- * @param  {Element|Function} el Pass an element or a function that accepts an
- *                               element as the only argument.
- * @param  {Object}   options
+ * @param  {Element|Function} el      Pass an element or a function that accepts
+ *                                    an element as the argument.
+ * @param  {Object}           options
  * @return {Notebook}
  */
 var Notebook = module.exports = function (el, options) {
