@@ -1,31 +1,3 @@
-/**
- * Middleware plugin architecture. Available middleware hooks:
- *
- * `completion:filter`   - Filter completion suggestions from being displayed.
- * `completion:variable` - Augment a variable name lookup with custom results.
- * `completion:context`  - Augment a context lookup which is used for the base
- *                         object of a property lookup.
- * `completion:property` - Augment a property name lookup with custom results.
- * `inspector:filter`    - Filter properties from displaying in the inspector.
- * `result:render`       - Render the result or error of a code cell execution.
- * `result:empty`        - Remove the result of a code cell execution.
- * `persistence:change`        - Every time the notebook contents change.
- * `persistence:serialize`     - Serialize the collection of cells into a format
- *                               that can be sent to the server.
- * `persistence:deserialize`   - Deserialize data from the server into an array
- *                               of cells the notebook collection can consume.
- * `persistence:authenticate`  - Triggers an authentication check of the user,
- *                               needs to return a user id that can be used to
- *                               decide if we are the owner of a notebook.
- * `persistence:authenticated` - Used to load an initial session, should not
- *                               trigger any sort of authentication.
- * `persistence:load`          - Load a notebook from somewhere.
- * `persistence:save`          - Save a notebook to somewhere.
- * `ajax`                - Submit an asynchonous ajax request that will be
- *                         responded with the ajax object.
- * `authenticate:oauth2` - Trigger the oauth2 authentication flow.
- * `sandbox:context`     - Provide additional context variables to the sandbox.
- */
 var _        = require('underscore');
 var Backbone = require('backbone');
 

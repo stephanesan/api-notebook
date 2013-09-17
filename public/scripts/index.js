@@ -1,5 +1,5 @@
 var bootstrap  = require('./bootstrap');
-var loadScript = require('load-script');
+var loadScript = require('./lib/browser/load-script');
 
 /**
  * The main application is aliased to the `window` for external access.

@@ -1,4 +1,4 @@
-var loadScript = require('load-script');
+var loadScript = require('../../lib/browser/load-script');
 
 /**
  * Set the some additional context variables.
@@ -9,9 +9,7 @@ var loadScript = require('load-script');
 var contextPlugin = function (context, next) {
   // Unfortunately it isn't as easy as this since we have lexical scoping issues
   // to the wrong window object. That would load the script in the wrong window.
-  context.require = loadScript;
-
-  // Helper properties for executing async code within a cell.
+  context.load    = function (src, done) {};
   context.async   = function () {};
   context.timeout = 2000;
 
@@ -66,7 +64,11 @@ var executePlugin = function (data, next, done) {
   };
 
   /* jshint evil: true */
-  data.window.eval('console._notebookApi.require = ' + context.require);
+  data.window.eval([
+    'console._notebookApi.load = function (src, done) {',
+    '  return (' + loadScript + ')(src, done || this.async());',
+    '};'
+  ].join('\n'));
 
   // Uses an asynchronous callback to clear the any possible stack trace
   // that would include implementation logic.

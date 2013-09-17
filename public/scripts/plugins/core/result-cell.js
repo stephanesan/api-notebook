@@ -10,9 +10,9 @@ module.exports = function (middleware) {
    * @param  {Function} next
    * @param  {Function} done
    */
-  middleware.core('result:empty', function (data, next, done) {
-    if (data.view instanceof Inspector) {
-      data.view.remove();
+  middleware.core('result:empty', function (view, next, done) {
+    if (view instanceof Inspector) {
+      view.remove();
       return done();
     }
 

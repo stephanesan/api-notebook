@@ -105,7 +105,8 @@ TextCell.prototype.focus = function () {
  * Set the value of the text cell. Switches between updating the CodeMirror view
  * and the Markdown rendered preview.
  *
- * @param {String} value
+ * @param  {String}   value
+ * @return {TextCell}
  */
 TextCell.prototype.setValue = function (value) {
   if (this.editor) {

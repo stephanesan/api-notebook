@@ -18,10 +18,7 @@ var ResultCell = module.exports = Cell.extend({
  * @param {Function} done
  */
 ResultCell.prototype._reset = function (done) {
-  middleware.trigger('result:empty', {
-    el:   this.el,
-    view: this._view
-  }, _.bind(function (err) {
+  middleware.trigger('result:empty', this._view, _.bind(function (err) {
     this.el.classList.add('result-pending');
     this.el.classList.remove('result-error');
 

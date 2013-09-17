@@ -131,8 +131,9 @@ CodeCell.prototype.execute = function (done) {
   this.trigger('beforeExecute', this);
 
   this.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-    if (err) {
-      return console && console.error(err.toString());
+    // Log any sandbox execution errors for the user to inspect.
+    if (err && console) {
+      console.error(err.toString());
     }
 
     if (data.isError) {

@@ -289,7 +289,8 @@ EditorCell.prototype.getValue = function () {
 /**
  * Sets the value of the current editor instance.
  *
- * @param {String} value
+ * @param  {String}     value
+ * @return {EditorCell}
  */
 EditorCell.prototype.setValue = function (value) {
   if (_.isString(value)) {
@@ -299,6 +300,8 @@ EditorCell.prototype.setValue = function (value) {
       this.model.set('value', value);
     }
   }
+
+  return this;
 };
 
 /**
