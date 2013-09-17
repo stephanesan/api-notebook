@@ -9,14 +9,18 @@ var extraKeys  = require('./lib/extra-keys');
 var controls   = require('../lib/controls').code;
 var middleware = require('../state/middleware');
 
-var filterCompletion = function () {
-  return this._completion.refresh();
-};
-
+/**
+ * Initialize a new code cell view.
+ *
+ * @type {Function}
+ */
 var CodeCell = module.exports = EditorCell.extend({
   className: 'cell cell-code'
 });
 
+/**
+ * Runs when the code cell is initialized.
+ */
 CodeCell.prototype.initialize = function () {
   EditorCell.prototype.initialize.apply(this, arguments);
   // Need a way of keeping the internal editor cell reference, since we can move
@@ -25,8 +29,18 @@ CodeCell.prototype.initialize = function () {
   this.sandbox    = this.options.sandbox;
 };
 
+/**
+ * Sets the editor model to fall back and initialize.
+ *
+ * @type {Function}
+ */
 CodeCell.prototype.EditorModel = require('../models/code-cell');
 
+/**
+ * Sets the options to be used by the CodeMirror instance when initialized.
+ *
+ * @type {Object}
+ */
 CodeCell.prototype.editorOptions = _.extend(
   {},
   EditorCell.prototype.editorOptions,
@@ -38,38 +52,72 @@ CodeCell.prototype.editorOptions = _.extend(
   }
 );
 
+/**
+ * Defines extra keys to be used by the editor for code cell.
+ *
+ * @type {Object}
+ */
 CodeCell.prototype.editorOptions.extraKeys = _.extend(
   {}, EditorCell.prototype.editorOptions.extraKeys, extraKeys(controls)
 );
 
+/**
+ * Attempt to save the current cell contents. However, we need to have a safe
+ * guard in place in case we have browsed to another cells contents and aren't
+ * editing our own model.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.save = function () {
   if (this._editorCid === this.model.cid) {
     this.model.set('value', this.editor.getValue());
   }
+
   return this;
 };
 
+/**
+ * Refreshes the code cell calculations. This includes things such as the length
+ * of the code cell, position in the nodebook collection, etc.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.refresh = function () {
   var prevCodeView = this.getPrevCodeView();
   this.startLine = _.result(prevCodeView, 'lastLine') + 1 || 1;
   this.lastLine  = this.startLine + this.editor.lastLine();
 
   this.resultCell.refresh();
-  EditorCell.prototype.refresh.call(this);
+  return EditorCell.prototype.refresh.call(this);
 };
 
+/**
+ * Returns the next code view in the notebook collection.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.getNextCodeView = function () {
   if (this.model.collection) {
     return _.result(this.model.collection.getNextCode(this.model), 'view');
   }
 };
 
+/**
+ * Returns the previous code view in the notebook collection.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.getPrevCodeView = function () {
   if (this.model.collection) {
     return _.result(this.model.collection.getPrevCode(this.model), 'view');
   }
 };
 
+/**
+ * Execute the code cell contents and render the result.
+ *
+ * @param {Function} done
+ */
 CodeCell.prototype.execute = function (done) {
   // Set the value as our own model for executing
   this.model.set('value', this.editor.getValue());
@@ -99,10 +147,11 @@ CodeCell.prototype.execute = function (done) {
     this.trigger('execute', this, data);
     return done && done(err, data);
   }, this));
-
-  return this;
 };
 
+/**
+ * Browse up to the previous code view contents.
+ */
 CodeCell.prototype.browseUp = function () {
   if (this.editor.doc.getCursor().line === 0) {
     return this.trigger('browseUp', this, this._editorCid);
@@ -111,6 +160,9 @@ CodeCell.prototype.browseUp = function () {
   CodeMirror.commands.goLineUp(this.editor);
 };
 
+/**
+ * Browse down to the next code view contents.
+ */
 CodeCell.prototype.browseDown = function () {
   if (this.editor.doc.getCursor().line === this.editor.doc.lastLine()) {
     return this.trigger('browseDown', this, this._editorCid);
@@ -119,15 +171,31 @@ CodeCell.prototype.browseDown = function () {
   CodeMirror.commands.goLineDown(this.editor);
 };
 
+/**
+ * Create a new line in the editor.
+ */
 CodeCell.prototype.newLine = function () {
   CodeMirror.commands.newlineAndIndent(this.editor);
 };
 
+/**
+ * Browse to the contents of any code cell.
+ *
+ * @param  {Object}   newModel
+ * @return {CodeCell}
+ */
 CodeCell.prototype.browseToCell = function (newModel) {
   this._editorCid = newModel.cid;
   this.setValue(newModel.get('value'));
+
+  return this;
 };
 
+/**
+ * Set up the editor instance and bindings.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
@@ -142,8 +210,6 @@ CodeCell.prototype.bindEditor = function () {
       context: data
     });
   }, this));
-
-  this.listenTo(state, 'change:showExtra', filterCompletion, this);
 
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     this.lastLine = this.startLine + cm.lastLine();
@@ -161,13 +227,22 @@ CodeCell.prototype.bindEditor = function () {
   return this;
 };
 
+/**
+ * Remove all editor instance data.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.unbindEditor = function () {
   this._completion.remove();
   delete this._completion;
-  this.stopListening(state, 'change:showExtra', filterCompletion);
-  EditorCell.prototype.unbindEditor.call(this);
+  return EditorCell.prototype.unbindEditor.call(this);
 };
 
+/**
+ * Render the code cell and append a result cell to contain result data.
+ *
+ * @return {CodeCell}
+ */
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
 

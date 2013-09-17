@@ -7,23 +7,34 @@ var controls    = require('../lib/controls').editor;
 var messages    = require('../state/messages');
 var persistence = require('../state/persistence');
 
+/**
+ * Create a generic editor cell instance view.
+ *
+ * @type {Function}
+ */
 var EditorCell = module.exports = Cell.extend();
 
-EditorCell.prototype.events = {
-  // Stop keys from bleeding through to the global key listener
-  'keydown': function (e) {
-    if (!CodeMirror.isModifierKey(e)) { e.stopPropagation(); }
-  }
-};
-
+/**
+ * Runs when we initialize the editor cell.
+ */
 EditorCell.prototype.initialize = function () {
   Cell.prototype.initialize.apply(this, arguments);
   this.model       = this.model || new this.EditorModel();
   this.btnControls = new BtnControls();
 };
 
+/**
+ * Sets a fallback model to initialize.
+ *
+ * @type {Function}
+ */
 EditorCell.prototype.EditorModel = require('../models/cell');
 
+/**
+ * Set the base editor options used in CodeMirror.
+ *
+ * @type {Object}
+ */
 EditorCell.prototype.editorOptions = {
   tabSize:        2,
   lineNumbers:    true,
@@ -32,27 +43,51 @@ EditorCell.prototype.editorOptions = {
   extraKeys:      extraKeys(controls)
 };
 
+/**
+ * Remove the editor cell.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.remove = function () {
   Cell.prototype.remove.call(this);
   messages.trigger('resize');
+
+  return this;
 };
 
+/**
+ * Moves the cells position in the notebook up by one cell.
+ */
 EditorCell.prototype.moveUp = function () {
   this.trigger('moveUp', this);
 };
 
+/**
+ * Moves the cells position in the notebook down by one cell.
+ */
 EditorCell.prototype.moveDown = function () {
   this.trigger('moveDown', this);
 };
 
+/**
+ * Navigate up to the previous cell with the cursor.
+ */
 EditorCell.prototype.navigateUp = function () {
   this.trigger('navigateUp', this);
 };
 
+/**
+ * Navigate down to the next cell with the cursor.
+ */
 EditorCell.prototype.navigateDown = function () {
   this.trigger('navigateDown', this);
 };
 
+/**
+ * Clones the editor cell and triggers a clone event with the cloned view.
+ *
+ * @return {EditorCell} Cloned view.
+ */
 EditorCell.prototype.clone = function () {
   var clone = new this.constructor(_.extend({}, this.options, {
     model: this.model.clone()
@@ -61,14 +96,25 @@ EditorCell.prototype.clone = function () {
   return clone;
 };
 
+/**
+ * Triggers a `switch` event to switch the cell mode.
+ */
 EditorCell.prototype.switch = function () {
   this.trigger('switch', this);
 };
 
+/**
+ * Append a new editor cell directly below the current cell.
+ */
 EditorCell.prototype.appendNew = function () {
   this.trigger('appendNew', this);
 };
 
+/**
+ * Focus the editor cell.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.focus = function () {
   // Set a hidden focus flag so we can use it to check in tests
   this._hasFocus = true;
@@ -78,10 +124,20 @@ EditorCell.prototype.focus = function () {
   return this;
 };
 
+/**
+ * Check whether the current cell has focus.
+ *
+ * @return {Boolean}
+ */
 EditorCell.prototype.hasFocus = function () {
   return this._hasFocus || (!!this.editor && this.editor.hasFocus());
 };
 
+/**
+ * Attempt to save the editor contents.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.save = function () {
   if (this.editor) {
     this.model.set('value', this.editor.getValue());
@@ -89,10 +145,22 @@ EditorCell.prototype.save = function () {
   return this;
 };
 
+/**
+ * Refresh the editor instance.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.refresh = function () {
   this.editor.refresh();
+
+  return this;
 };
 
+/**
+ * Set up bindings with the CodeMirror instance.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
     this.el.classList.add('active');
@@ -120,29 +188,42 @@ EditorCell.prototype.bindEditor = function () {
   return this;
 };
 
+/**
+ * Remove all bindings set up with the CodeMirror instance.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.unbindEditor = function () {
   this.stopListening(this.editor);
   return this;
 };
 
-EditorCell.prototype.removeEditor = function (copyDoc) {
+/**
+ * Remove the CodeMirror view from the DOM.
+ *
+ * @return {EditorCell}
+ */
+EditorCell.prototype.removeEditor = function () {
   var editor = this.editor;
-  var editorEl, doc;
 
   if (editor) {
     this.unbindEditor();
     delete this.editor;
-    if (copyDoc) { doc = editor.doc.copy(true); }
     // Remove the old CodeMirror instance from the DOM
-    editorEl = editor.getWrapperElement();
+    var editorEl = editor.getWrapperElement();
     if (editorEl && editorEl.parentNode) {
       editorEl.parentNode.removeChild(editorEl);
     }
   }
 
-  return doc;
+  return this;
 };
 
+/**
+ * Render a CodeMirror instance inside the view.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.renderEditor = function () {
   var doc, hasFocus;
 
@@ -179,6 +260,11 @@ EditorCell.prototype.renderEditor = function () {
   return this;
 };
 
+/**
+ * Render the editor cell and attach the controls.
+ *
+ * @return {EditorCell}
+ */
 EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
@@ -191,10 +277,20 @@ EditorCell.prototype.render = function () {
   return this;
 };
 
+/**
+ * Get the current value of the cell.
+ *
+ * @return {String}
+ */
 EditorCell.prototype.getValue = function () {
   return this.model.get('value');
 };
 
+/**
+ * Sets the value of the current editor instance.
+ *
+ * @param {String} value
+ */
 EditorCell.prototype.setValue = function (value) {
   if (_.isString(value)) {
     if (this.editor) {
@@ -203,9 +299,14 @@ EditorCell.prototype.setValue = function (value) {
       this.model.set('value', value);
     }
   }
-  return this;
 };
 
+/**
+ * Moves the CodeMirror cursor to the end of document, or end of the line.
+ *
+ * @param  {Number}     line
+ * @return {EditorCell}
+ */
 EditorCell.prototype.moveCursorToEnd = function (line) {
   if (!this.editor) { return this; }
 
@@ -213,11 +314,19 @@ EditorCell.prototype.moveCursorToEnd = function (line) {
     isNaN(line) ? this.editor.doc.lastLine() : line,
     Infinity
   );
+
   return this;
 };
 
+/**
+ * Appends the editor cell to an element.
+ *
+ * @param  {Node}       el
+ * @return {EditorCell}
+ */
 EditorCell.prototype.appendTo = function (el) {
   Cell.prototype.appendTo.call(this, el);
+
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible
   if (this.editor) {
@@ -226,6 +335,7 @@ EditorCell.prototype.appendTo = function (el) {
     // into the following event loop.
     setTimeout(function () { messages.trigger('resize'); }, 0);
   }
+
   return this;
 };
 

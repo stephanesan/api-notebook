@@ -2,7 +2,7 @@
 var Backbone = require('backbone');
 Backbone.$   = require('../../vendor/backbone.native').$;
 
-// Require codemirror instance
+// Require all CodeMirror functionality.
 require('codemirror');
 require('codemirror/addon/mode/overlay');
 require('codemirror/mode/gfm/gfm');

@@ -10,10 +10,12 @@ module.exports = function (middleware) {
    * @param  {Function} next
    * @param  {Function} done
    */
-  middleware.core('result:empty', function (data, next) {
-    if (data.data.inspector) {
-      data.data.inspector.remove();
+  middleware.core('result:empty', function (data, next, done) {
+    if (data.view instanceof Inspector) {
+      data.view.remove();
+      return done();
     }
+
     return next();
   });
 
@@ -24,7 +26,7 @@ module.exports = function (middleware) {
    * @param  {Function} next
    * @param  {Function} done
    */
-  middleware.core('result:render', function (data, next) {
+  middleware.core('result:render', function (data, next, done) {
     var options = {
       inspect: data.inspect,
       context: data.context
@@ -32,9 +34,9 @@ module.exports = function (middleware) {
 
     var inspector;
     if (!data.isError) {
-      inspector = data.data.inspector = new Inspector(options);
+      inspector = new Inspector(options);
     } else {
-      inspector = data.data.inspector = new ErrorInspector(options);
+      inspector = new ErrorInspector(options);
     }
 
     inspector.render().appendTo(data.el);
@@ -45,6 +47,6 @@ module.exports = function (middleware) {
       inspector.open();
     }
 
-    return next();
+    return done(null, inspector);
   });
 };

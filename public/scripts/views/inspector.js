@@ -7,10 +7,20 @@ var state      = require('../state/state');
 var messages   = require('../state/messages');
 var middleware = require('../state/middleware');
 
+/**
+ * Creates a new inspector view instance.
+ *
+ * @type {Function}
+ */
 var InspectorView = module.exports = View.extend({
   className: 'inspector'
 });
 
+/**
+ * Runs when a new instector instance is created.
+ *
+ * @param  {Object} options
+ */
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
     options, ['property', 'parent', 'inspect', 'internal']
@@ -21,11 +31,22 @@ InspectorView.prototype.initialize = function (options) {
   }
 };
 
+/**
+ * Stops events in their tracks.
+ *
+ * @param  {Object} e
+ */
 var stopEvent = function (e) {
   e.preventDefault();
   e.stopPropagation();
 };
 
+/**
+ * Listen to events in the view and stop them from propagating (since parent
+ * inspector views are listening to the same events).
+ *
+ * @type {Object}
+ */
 InspectorView.prototype.events = {
   'mouseup':   stopEvent,
   'mousedown': stopEvent,
@@ -35,30 +56,58 @@ InspectorView.prototype.events = {
   }
 };
 
+/**
+ * Open the inspector to view the children.
+ */
 InspectorView.prototype.open = function () {
   this.trigger('open', this);
   this.el.classList.add('open');
   messages.trigger('resize');
 };
 
+/**
+ * Closes the inspector instance and hides the children.
+ */
 InspectorView.prototype.close = function () {
   this.trigger('close', this);
   this.el.classList.remove('open');
   messages.trigger('resize');
 };
 
+/**
+ * Toggle the display of children.
+ */
 InspectorView.prototype.toggle = function () {
   this[this.el.classList.contains('open') ? 'close' : 'open']();
 };
 
-InspectorView.prototype.shouldExpand = function () {
+/**
+ * Returns whether the inspector is actually expandable.
+ *
+ * @return {Boolean}
+ */
+InspectorView.prototype.isExpandable = function () {
   return _.isObject(this.inspect);
 };
 
+/**
+ * Stringifies the inspected object for display.
+ *
+ * @return {String}
+ */
 InspectorView.prototype.stringifyPreview = function () {
   return stringify(this.inspect);
 };
 
+/**
+ * Render a child property view. Passes through all sorts of properties to help
+ * with rendering.
+ *
+ * @param  {String} property Inspected property name.
+ * @param  {*}      inspect  The object to inspect.
+ * @param  {String} internal A string representing the internal property.
+ * @return {InspectorView}
+ */
 InspectorView.prototype._renderChild = function (property, inspect, internal) {
   var inspector = new InspectorView({
     parent:   this,
@@ -68,11 +117,19 @@ InspectorView.prototype._renderChild = function (property, inspect, internal) {
   });
   this.children.push(inspector);
   inspector.render().appendTo(this.childrenEl);
+
   return this;
 };
 
+/**
+ * Render all child properties.
+ *
+ * @return {InspectorView}
+ */
 InspectorView.prototype.renderChildren = function () {
-  if (!this.shouldExpand(this.inspect)) { return this; }
+  // The element may not even be expandable. In which case, we can safely return
+  // early before doing any rendering.
+  if (!this.isExpandable(this.inspect)) { return this; }
 
   this._renderChildrenEl();
 
@@ -94,6 +151,11 @@ InspectorView.prototype.renderChildren = function () {
   return this;
 };
 
+/**
+ * Render the children element container.
+ *
+ * @return {InspectorView}
+ */
 InspectorView.prototype._renderChildrenEl = function () {
   var el = this.childrenEl = domify('<div class="children"></div>');
   this.el.appendChild(el);
@@ -101,6 +163,11 @@ InspectorView.prototype._renderChildrenEl = function () {
   return this;
 };
 
+/**
+ * Render all child properties of the currently inspected object.
+ *
+ * @return {InspectorView}
+ */
 InspectorView.prototype._renderChildren = function () {
   _.each(Object.getOwnPropertyNames(this.inspect).sort(), function (prop) {
     var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
@@ -124,6 +191,11 @@ InspectorView.prototype._renderChildren = function () {
   return this;
 };
 
+/**
+ * Render the inspector preview.
+ *
+ * @return {InspectorView}
+ */
 InspectorView.prototype.renderPreview = function () {
   var html    = '';
   var prefix  = '';
@@ -197,13 +269,18 @@ InspectorView.prototype.renderPreview = function () {
     }
   }, this));
 
-
   return this;
 };
 
-InspectorView.prototype.render = function (onDemand) {
+/**
+ * Renders the inspector view.
+ *
+ * @return {InspectorView}
+ */
+InspectorView.prototype.render = function () {
   View.prototype.render.call(this);
   this.renderPreview();
   this.renderChildren();
+
   return this;
 };

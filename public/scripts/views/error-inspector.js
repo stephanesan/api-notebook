@@ -4,8 +4,16 @@ var domify     = require('domify');
 var Inspector  = require('./inspector');
 var stackTrace = require('stacktrace-js');
 
+/**
+ * Create an instance of the inspector suited for rendering errors.
+ *
+ * @type {Function}
+ */
 var ErrorInspector = module.exports = Inspector.extend();
 
+/**
+ * Runs when a new error inspector instance is created.
+ */
 ErrorInspector.prototype.initialize = function () {
   Inspector.prototype.initialize.apply(this, arguments);
 
@@ -16,16 +24,31 @@ ErrorInspector.prototype.initialize = function () {
   delete this.inspect;
 };
 
-ErrorInspector.prototype.shouldExpand = function () {
+/**
+ * Returns whether the inspector should be expandable.
+ *
+ * @return {Boolean}
+ */
+ErrorInspector.prototype.isExpandable = function () {
   return !!this.stackTrace.length;
 };
 
+/**
+ * Returns the stringified preview. In this case, it will be the error message.
+ *
+ * @return {String}
+ */
 ErrorInspector.prototype.stringifyPreview = function () {
   return this._preview;
 };
 
+/**
+ * Render all child nodes.
+ *
+ * @return {ErrorInspector}
+ */
 ErrorInspector.prototype.renderChildren = function () {
-  if (!this.shouldExpand()) { return this; }
+  if (!this.isExpandable()) { return this; }
 
   this._renderChildrenEl();
 

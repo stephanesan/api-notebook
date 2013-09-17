@@ -3,9 +3,6 @@ var trim     = require('trim');
 var View     = require('./view');
 var Backbone = require('backbone');
 
-var router      = require('../state/router');
-var persistence = require('../state/persistence');
-
 var CodeView           = require('./code-cell');
 var TextView           = require('./text-cell');
 var EditorView         = require('./editor-cell');
@@ -15,11 +12,22 @@ var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
 var insertAfter = require('../lib/browser/insert-after');
+var persistence = require('../state/persistence');
 
+/**
+ * Create a new notebook instance.
+ *
+ * @type {Function}
+ */
 var Notebook = module.exports = View.extend({
   className: 'notebook'
 });
 
+/**
+ * Runs when a new notebook instance is created.
+ *
+ * @param  {Object} options
+ */
 Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
@@ -31,13 +39,23 @@ Notebook.prototype.initialize = function (options) {
   this.listenTo(persistence, 'resetNotebook', this.render);
 };
 
+/**
+ * Removes the notebook from the DOM.
+ *
+ * @return {Notebook}
+ */
 Notebook.prototype.remove = function () {
   persistence.reset();
   this.sandbox.remove();
   return View.prototype.remove.call(this);
 };
 
-Notebook.prototype.update = function () {
+/**
+ * Update the notebook contents and save to the persistence layer.
+ *
+ * @param {Function} done
+ */
+Notebook.prototype.update = function (done) {
   // If we are currently in an update operation, set a flag to remind
   // ourselves to process the data once we are free.
   if (this._updating) { return this._updateQueue = true; }
@@ -50,15 +68,30 @@ Notebook.prototype.update = function () {
       this._updateQueue = false;
       this.update();
     }
+
+    return done && done(err, notebook);
   }, this));
 };
 
+/**
+ * Updates the current users display status. E.g. Unauthorized users can't
+ * edit notebook cells.
+ *
+ * @return {Notebook}
+ */
 Notebook.prototype.updateUser = function () {
   this.collection.each(function (model) {
     model.view.renderEditor();
   });
+
+  return this;
 };
 
+/**
+ * Render the notebook view.
+ *
+ * @return {Notebook}
+ */
 Notebook.prototype.render = function () {
   this.stopListening(this.collection);
   this.collection.each(function (model) {
@@ -85,6 +118,11 @@ Notebook.prototype.render = function () {
   return this;
 };
 
+/**
+ * Append the notebook view to an element.
+ *
+ * @return {Notebook}
+ */
 Notebook.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
 
@@ -98,6 +136,11 @@ Notebook.prototype.appendTo = function () {
   return this;
 };
 
+/**
+ * Execute the entire notebook sequentially.
+ *
+ * @param  {Function} done
+ */
 Notebook.prototype.execute = function (done) {
   var that = this;
   this.execution = true;
@@ -121,20 +164,36 @@ Notebook.prototype.execute = function (done) {
       execution(that.getNextView(view));
     }
   })(this.collection.at(0).view);
-
-  return this;
 };
 
+/**
+ * Returns the next view in the notebook.
+ *
+ * @param  {Object} view
+ * @return {Object}
+ */
 Notebook.prototype.getNextView = function (view) {
   var model = this.collection.getNext(view.model);
   return model && model.view;
 };
 
+/**
+ * Returns the previous view in the notebook.
+ *
+ * @param  {Object} view
+ * @return {Object}
+ */
 Notebook.prototype.getPrevView = function (view) {
   var model = this.collection.getPrev(view.model);
   return model && model.view;
 };
 
+/**
+ * Refresh all notebook cells from the current view instance.
+ *
+ * @param  {Object}   view
+ * @return {Notebook}
+ */
 Notebook.prototype.refreshFromView = function (view) {
   do {
     view.refresh();
@@ -143,6 +202,13 @@ Notebook.prototype.refreshFromView = function (view) {
   return this;
 };
 
+/**
+ * Append a new code cell view instance.
+ *
+ * @param  {Node}     el
+ * @param  {String}   value
+ * @return {CodeView}
+ */
 Notebook.prototype.appendCodeView = function (el, value) {
   var view = new CodeView();
   this.appendView(view, el);
@@ -150,6 +216,13 @@ Notebook.prototype.appendCodeView = function (el, value) {
   return view;
 };
 
+/**
+ * Append a new text cell view instance.
+ *
+ * @param  {Node}     el
+ * @param  {String}   value
+ * @return {TextView}
+ */
 Notebook.prototype.appendTextView = function (el, value) {
   var view = new TextView();
   this.appendView(view, el);
@@ -157,6 +230,14 @@ Notebook.prototype.appendTextView = function (el, value) {
   return view;
 };
 
+/**
+ * Append any view to the notebook. Sets up a few listeners on every view
+ * instance and manages interactions between cells.
+ *
+ * @param  {Object}   view
+ * @param  {Node}     before
+ * @return {Notebook}
+ */
 Notebook.prototype.appendView = function (view, before) {
   if (view instanceof EditorView) {
     this.listenTo(view, 'navigateUp', function (view) {

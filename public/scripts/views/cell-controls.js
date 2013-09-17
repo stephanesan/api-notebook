@@ -4,6 +4,11 @@ var Backbone = require('backbone');
 var View     = require('./view');
 var controls = require('../lib/controls').editor;
 
+/**
+ * Displays the cell controls overlay menu.
+ *
+ * @type {Function}
+ */
 var ControlsView = module.exports = View.extend({
   className: 'cell-controls',
   events: {
@@ -32,6 +37,9 @@ ControlsView.prototype.toggleView = function (view) {
   this.delegateEvents(ControlsView.prototype.events);
 };
 
+/**
+ * Detach the controls from the DOM.
+ */
 ControlsView.prototype.detach = function () {
   if (this.editorView) {
     this.el.parentNode.removeChild(this.el);
@@ -39,6 +47,11 @@ ControlsView.prototype.detach = function () {
   delete this.editorView;
 };
 
+/**
+ * Render the controls overlay.
+ *
+ * @return {ControlsView}
+ */
 ControlsView.prototype.render = function () {
   var only = ['moveUp', 'moveDown', 'switch', 'clone', 'remove', 'appendNew'];
 

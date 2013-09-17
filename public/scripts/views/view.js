@@ -1,13 +1,28 @@
 var Backbone = require('backbone');
 
+/**
+ * Create a new view instance. This is the base view instance so any generic
+ * view methods or functionality should be added here.
+ *
+ * @type {Function}
+ */
 var View = module.exports = Backbone.View.extend();
 
+/**
+ * Render the view instance.
+ *
+ * @return {View}
+ */
 View.prototype.render = function () {
-  this._rendered    = true;
   this.el.innerHTML = '';
   return this;
 };
 
+/**
+ * Remove the view instance from the DOM.
+ *
+ * @return {View}
+ */
 View.prototype.remove = function () {
   // Trigger the `remove` event before actually removing the view since we may
   // need to append a new element afterward, etc. Also needs to be called before

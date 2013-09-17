@@ -10,10 +10,20 @@ var state       = require('../state/state');
 var messages    = require('../state/messages');
 var persistence = require('../state/persistence');
 
+/**
+ * Create a central application view.
+ *
+ * @type {Function}
+ */
 var App = module.exports = View.extend({
   className: 'application'
 });
 
+/**
+ * Keep track of all events that can be triggered from the DOM.
+ *
+ * @type {Object}
+ */
 App.prototype.events = {
   'click .modal-toggle':   'toggleShortcuts',
   'click .modal-backdrop': 'hideShortcuts',
@@ -22,7 +32,11 @@ App.prototype.events = {
   'click .notebook-auth':  'authNotebook'
 };
 
-App.prototype.initialize = function (options) {
+/**
+ * Runs when we create an instance of the applications. Starts listening for
+ * relevant events to respond to.
+ */
+App.prototype.initialize = function () {
   this.notebook = new Notebook();
 
   // Start up the history router, which will trigger the start of other
@@ -37,12 +51,22 @@ App.prototype.initialize = function (options) {
   this.listenTo(messages,    'keydown:Shift-/', this.toggleShortcuts, this);
 };
 
+/**
+ * Remove the application view from the DOM.
+ *
+ * @return {App}
+ */
 App.prototype.remove = function () {
   this.notebook.remove();
   Backbone.history.stop();
-  View.prototype.remove.call(this);
+  return View.prototype.remove.call(this);
 };
 
+/**
+ * Updates the template when the user or document owner changes.
+ *
+ * @return {App}
+ */
 App.prototype.updateUser = function () {
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
@@ -54,16 +78,27 @@ App.prototype.updateUser = function () {
 
   // Adding and removing some of these classes cause the container to resize.
   messages.trigger('resize');
+
+  return this;
 };
 
+/**
+ * Shows the shortcut modal.
+ */
 App.prototype.showShortcuts = function () {
   this.el.classList.add('modal-visible');
 };
 
+/**
+ * Hides the shortcut modal.
+ */
 App.prototype.hideShortcuts = function () {
   this.el.classList.remove('modal-visible');
 };
 
+/**
+ * Toggle the visibility of the shortcut modal window.
+ */
 App.prototype.toggleShortcuts = function () {
   if (this.el.classList.contains('modal-visible')) {
     this.hideShortcuts();
@@ -72,6 +107,11 @@ App.prototype.toggleShortcuts = function () {
   }
 };
 
+/**
+ * Render the applications `innerHTML`.
+ *
+ * @return {App}
+ */
 App.prototype.render = function () {
   this.notebook.render();
   View.prototype.render.call(this);
@@ -133,6 +173,11 @@ App.prototype.render = function () {
   return this;
 };
 
+/**
+ * Append the application view to an element.
+ *
+ * @return {App}
+ */
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   this.notebook.appendTo(this.el);
@@ -140,14 +185,23 @@ App.prototype.appendTo = function () {
   return this;
 };
 
+/**
+ * Runs the entire notebook sequentially.
+ */
 App.prototype.runNotebook = function () {
   this.notebook.execute();
 };
 
+/**
+ * Authenticate with the persistence layer.
+ */
 App.prototype.authNotebook = function () {
   persistence.authenticate();
 };
 
+/**
+ * Fork the current notebook in-memory.
+ */
 App.prototype.forkNotebook = function () {
   persistence.fork();
 };
