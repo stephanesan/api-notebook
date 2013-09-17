@@ -1,3 +1,11 @@
+/**
+ * Generates a ghost text widget that is used to render Chrome-style completion.
+ *
+ * @param  {Object} widget
+ * @param  {Object} data
+ * @param  {String} text
+ * @return {Ghost}
+ */
 var Ghost = module.exports = function (widget, data, text) {
   var that = this;
 
@@ -22,9 +30,9 @@ var Ghost = module.exports = function (widget, data, text) {
   ghostHint.className = 'CodeMirror-hint-ghost';
   ghostHint.appendChild(document.createTextNode(suffix));
 
-  // Abusing the bookmark feature since it's the only way without modifying
-  // CodeMirror source to achieve the effect we need here.
-  this.ghost = this.cm.setBookmark(this.data.to, {
+  // Abuse the bookmark feature of CodeMirror to achieve the desired completion
+  // effect without modifying source code.
+  this._ghost = this.cm.setBookmark(this.data.to, {
     widget:     ghostHint,
     insertLeft: true
   });
@@ -32,18 +40,31 @@ var Ghost = module.exports = function (widget, data, text) {
   this.cm.setCursor(this.data.to);
 };
 
+/**
+ * Accept the text string.
+ *
+ * @return {Ghost}
+ */
 Ghost.prototype.accept = function () {
   if (this.suffix && this.data) {
     this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
   }
 
-  this.remove();
+  return this.remove();
 };
 
+/**
+ * Remove the ghost suggestion.
+ *
+ * @return {Ghost}
+ */
 Ghost.prototype.remove = function () {
-  if (this.ghost) { this.ghost.clear(); }
+  if (this._ghost) { this._ghost.clear(); }
+
   this.cm.removeKeyMap(this.keyMap);
   delete this.ghost;
   delete this.suffix;
   delete this.widget.ghost;
+
+  return this;
 };

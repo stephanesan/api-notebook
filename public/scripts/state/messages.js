@@ -9,6 +9,7 @@ var Backbone = require('backbone');
  */
 var messages = module.exports = _.extend({}, Backbone.Events);
 
+// Window resizes are pushed into the messages object for simplied listening.
 messages.listenTo(Backbone.$(window), 'resize', _.throttle(function () {
   messages.trigger('window:resize');
 }, 100));

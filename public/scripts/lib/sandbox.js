@@ -1,17 +1,24 @@
 var _          = require('underscore');
 var middleware = require('../state/middleware');
 
+/**
+ * Creates a sandbox instance for executing arbitrary code.
+ *
+ * @return {Sandbox}
+ */
 var Sandbox = module.exports = function () {
-  this.createFrame();
-};
-
-Sandbox.prototype.createFrame = function () {
   this.frame = document.createElement('iframe');
   this.frame.style.display = 'none';
   document.body.appendChild(this.frame);
   this.window = this.frame.contentWindow;
 };
 
+/**
+ * Execute code in the sandbox environment.
+ *
+ * @param  {String}   code
+ * @param  {Function} done
+ */
 Sandbox.prototype.execute = function (code, done) {
   var global = this.window;
 
@@ -35,8 +42,15 @@ Sandbox.prototype.execute = function (code, done) {
   });
 };
 
+/**
+ * Remove the sandbox instance from the document.
+ *
+ * @return {Sandbox}
+ */
 Sandbox.prototype.remove = function () {
   this.frame.parentNode.removeChild(this.frame);
   delete this.frame;
   delete this.window;
+
+  return this;
 };

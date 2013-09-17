@@ -5,6 +5,14 @@ var correctToken = require('../codemirror/correct-token');
 var middleware   = require('../../state/middleware');
 var asyncFilter  = require('async').filter;
 
+/**
+ * Renders a completion suggestion list.
+ *
+ * @param  {Completion} completion
+ * @param  {Object}     data
+ * @param  {Function}   done
+ * @return {Widget}
+ */
 var Widget = module.exports = function (completion, data, done) {
   this.data       = data;
   this.completion = completion;
@@ -19,6 +27,12 @@ var Widget = module.exports = function (completion, data, done) {
   CodeMirror.signal(completion.cm, 'startCompletion', completion.cm);
 };
 
+/**
+ * Removes all widget data, including the currently display ghost and hint
+ * overlay.
+ *
+ * @return {Widget}
+ */
 Widget.prototype.remove = function () {
   this.removeGhost();
   this.removeHints();
@@ -26,10 +40,18 @@ Widget.prototype.remove = function () {
   CodeMirror.signal(this.completion.cm, 'endCompletion', this.completion.cm);
   delete this.keyMap;
   delete this.completion.widget;
+
+  return this;
 };
 
+/**
+ * Remove the hints overlay.
+ *
+ * @return {Widget}
+ */
 Widget.prototype.removeHints = function () {
-  if (this._refreshing || !this.hints) { return; }
+  if (this._refreshing || !this.hints) { return this; }
+
   // Remove all event listeners associated with the hints.
   this.completion.cm.off('scroll', this.onScroll);
   this.completion.cm.removeKeyMap(this.hintKeyMap);
@@ -38,14 +60,28 @@ Widget.prototype.removeHints = function () {
   delete this.hints;
   delete this.onScroll;
   delete this.hintKeyMap;
+
+  return this;
 };
 
+/**
+ * Remove the currently displayed ghost widget.
+ *
+ * @return {Widget}
+ */
 Widget.prototype.removeGhost = function () {
   if (!this.ghost) { return; }
 
   this.ghost.remove();
+
+  return this;
 };
 
+/**
+ * Refresh the completion widget displayed suggestions.
+ *
+ * @param  {Function} done
+ */
 Widget.prototype.refresh = function (done) {
   var that = this;
   var cm   = this.completion.cm;
@@ -64,6 +100,16 @@ Widget.prototype.refresh = function (done) {
 
   // Run an async filter on the data before we create the nodes
   asyncFilter(list, _.bind(this._filter, this), _.bind(function (results) {
+    // Remove the rendering flag now we have finished rendering the widget
+    delete this._refreshing;
+    CodeMirror.signal(cm, 'refreshCompletion', cm, results);
+
+    // If we have less than two available results, there is no reason to render
+    // the hints overlay menu.
+    if (results.length < 2) {
+      return this.ghost = new Ghost(this, this.data, results[0]);
+    }
+
     var text  = cm.getRange(this.data.from, this.data.to);
     var hints = this.hints = document.createElement('ul');
 
@@ -111,15 +157,6 @@ Widget.prototype.refresh = function (done) {
       }
     });
 
-    // Remove the rendering flag now we have finished rendering the widget
-    delete this._refreshing;
-    CodeMirror.signal(cm, 'refreshCompletion', cm, results);
-
-    if (results.length < 2) {
-      this.setActive(0);
-      return this.removeHints();
-    }
-
     hints.className = 'CodeMirror-hints';
     document.body.appendChild(hints);
 
@@ -145,6 +182,11 @@ Widget.prototype.refresh = function (done) {
   }, this));
 };
 
+/**
+ * Reposition the current hints overlay.
+ *
+ * @return {Widget}
+ */
 Widget.prototype.reposition = function () {
   if (this.onScroll) { this.completion.cm.off('scroll', this.onScroll); }
 
@@ -210,13 +252,28 @@ Widget.prototype.reposition = function () {
     that.hints.style.top  = newTop + 'px';
     that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
   });
+
+  return this;
 };
 
+/**
+ * Accept the currently highlighted suggestion.
+ *
+ * @return {Widget}
+ */
 Widget.prototype.accept = function () {
   this.ghost.accept();
   this.remove();
+
+  return this;
 };
 
+/**
+ * Filter the a string suggestion and decide whether it should be displayed.
+ *
+ * @param  {String}   string
+ * @param  {Function} done
+ */
 Widget.prototype._filter = function (string, done) {
   return middleware.trigger('completion:filter', {
     token:   this.data.token,
@@ -229,6 +286,11 @@ Widget.prototype._filter = function (string, done) {
   });
 };
 
+/**
+ * Sets an item in the widget menu to be displayed as active.
+ *
+ * @param {Number} i
+ */
 Widget.prototype.setActive = function (i) {
   var total = this.hints.childNodes.length;
   var node;
@@ -240,7 +302,7 @@ Widget.prototype.setActive = function (i) {
   // allows up to loop around the menu.
   if (i < 0) { i = total + i; }
 
-  if (!total)                  { return this.removeGhost(); }
+  if (!total) { return this.removeGhost(); }
   // Avoid reprocessing of the position if it's already set to that position.
   if (this.selectedHint === i) { return; }
 
@@ -256,7 +318,7 @@ Widget.prototype.setActive = function (i) {
 
   // Should always create new ghost nodes for any text changes. When the new
   // ghost is appended, trigger a reposition event to align the autocompletion
-  // with the text.
+  // with the text (This can be an issue on end of lines).
   this.removeGhost();
   this.ghost = new Ghost(this, this.data, node.textContent);
   this.reposition();
@@ -271,6 +333,11 @@ Widget.prototype.setActive = function (i) {
   }
 };
 
+/**
+ * Returns the amount of screen space the menu takes up in entries.
+ *
+ * @return {Number}
+ */
 Widget.prototype.screenAmount = function () {
   var amount = this.hints.clientHeight / this.hints.firstChild.offsetHeight;
   return Math.floor(amount) || 1;

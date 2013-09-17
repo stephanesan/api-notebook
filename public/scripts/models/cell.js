@@ -1,3 +1,8 @@
 var Backbone = require('backbone');
 
-var Entry = module.exports = Backbone.Model.extend();
+/**
+ * Plain cell model for use in the notebook collection.
+ *
+ * @type {Function}
+ */
+var Cell = module.exports = Backbone.Model.extend();
