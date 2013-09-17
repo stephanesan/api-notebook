@@ -90,12 +90,17 @@ var httpRequest = function (uri, method) {
       done = App._executeContext.async();
     }
 
-    // Trigger ajax middleware resolution so other middleware can hook onto
-    // these requests and augment.
-    App.middleware.trigger('ajax', {
+    var options = {
       url:  uri.href,
       type: method.method
-    }, done);
+    };
+
+    // Trigger ajax middleware resolution so other middleware can hook onto
+    // these requests and augment.
+    App.middleware.trigger('ajax', options, done);
+
+    // Return the XHR request.
+    return options.xhr;
   };
 };
 
