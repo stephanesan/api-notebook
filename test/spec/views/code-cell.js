@@ -199,7 +199,7 @@ describe('Code Cell', function () {
           view.execute();
 
           App.nextTick(function () {
-            clock.tick(2000);
+            clock.tick(2500);
           });
         });
 
@@ -221,7 +221,7 @@ describe('Code Cell', function () {
           App.nextTick(function () {
             clock.tick(2000);
             expect(spy).to.not.have.been.called;
-            clock.tick(3000);
+            clock.tick(3500);
           });
         });
       });

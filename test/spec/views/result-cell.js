@@ -30,8 +30,6 @@ describe('Result Cell', function () {
           expect(err).to.not.exist;
           expect(view.el.className).to.not.contain('result-error');
           expect(view.el.className).to.not.contain('result-pending');
-          expect(view.data.inspector).to.be.ok;
-          expect(view.el.childNodes[0]).to.equal(view.data.inspector.el);
           done();
         });
       });
@@ -44,8 +42,6 @@ describe('Result Cell', function () {
           expect(err).to.not.exist;
           expect(view.el.className).to.contain('result-error');
           expect(view.el.className).to.not.contain('result-pending');
-          expect(view.data.inspector).to.be.ok;
-          expect(view.el.childNodes[0]).to.equal(view.data.inspector.el);
           done();
         });
       });
