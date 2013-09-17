@@ -83,7 +83,9 @@ CodeCell.prototype.execute = function (done) {
   this.trigger('beforeExecute', this);
 
   this.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-    if (err) { throw err; }
+    if (err) {
+      return console && console.error(err.toString());
+    }
 
     if (data.isError) {
       this.model.unset('result');
@@ -95,7 +97,7 @@ CodeCell.prototype.execute = function (done) {
     // flag to indicate whether the the
     this.resultCell.setResult(data, this.sandbox.window);
     this.trigger('execute', this, data);
-    return done && done(null, data);
+    return done && done(err, data);
   }, this));
 
   return this;

@@ -200,7 +200,7 @@ describe('Code Cell', function () {
 
           App.nextTick(function () {
             clock.tick(2000);
-          }, 20);
+          });
         });
 
         it('should be able to change the timeout on the failover system', function (done) {
