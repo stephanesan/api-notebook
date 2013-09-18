@@ -1,6 +1,6 @@
 /* global describe, it */
 
-describe('Object Inspector', function () {
+describe('Inspector', function () {
   var Inspector = App.View.Inspector;
   var fixture   = document.getElementById('fixture');
 
@@ -125,6 +125,19 @@ describe('Object Inspector', function () {
           'window': /\{.*\}/,
           'document': /!doctype html/i
         });
+      });
+
+      it('should not render duplicate properties', function () {
+        var inspector = new Inspector({ inspect: document, context: window });
+        inspector.render();
+        inspector.trigger('open');
+
+        var properties = App._.map(inspector.children, function (child) {
+          // Element => Preview => Prefix => Property Name
+          return child.el.childNodes[1].childNodes[0].textContent;
+        });
+
+        expect(properties.length).to.equal(App._.uniq(properties).length);
       });
     });
 
