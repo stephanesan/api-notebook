@@ -84,7 +84,7 @@ describe('Gist Persistence Plugin', function () {
     server.respond();
   });
 
-  it('should load from a gist id', function () {
+  it('should load from a gist id', function (done) {
     App.persistence.set('id', id);
 
     server.respondWith(
@@ -102,5 +102,7 @@ describe('Gist Persistence Plugin', function () {
 
       return done();
     });
+
+    server.respond();
   });
 });
