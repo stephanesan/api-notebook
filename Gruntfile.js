@@ -120,13 +120,13 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('test-notebook', function () {
+  grunt.registerTask('notebook-url', function () {
     process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
   });
 
   grunt.registerTask(
-    'headless-test',
-    ['test-notebook', 'build', 'connect:test-server', 'shell:mocha-phantomjs']
+    'test',
+    ['notebook-url', 'build', 'connect:test-server', 'shell:mocha-phantomjs']
   );
 
   grunt.registerTask('build',   [
