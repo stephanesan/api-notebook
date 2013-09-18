@@ -169,7 +169,13 @@ InspectorView.prototype._renderChildrenEl = function () {
  * @return {InspectorView}
  */
 InspectorView.prototype._renderChildren = function () {
-  _.each(Object.getOwnPropertyNames(this.inspect).sort(), function (prop) {
+  // Convert to an object to remove duplicate property names. Chrome has a
+  // pretty major bug where all `document` keys are returned twice.
+  var propertyNames = _.keys(_.object(
+    Object.getOwnPropertyNames(this.inspect), true
+  )).sort();
+
+  _.each(propertyNames, function (prop) {
     var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
 
     // Even though we are iterating over our own property names, PhantomJS is
