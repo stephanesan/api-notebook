@@ -172,6 +172,12 @@ InspectorView.prototype._renderChildren = function () {
   _.each(Object.getOwnPropertyNames(this.inspect).sort(), function (prop) {
     var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
 
+    // Even though we are iterating over our own property names, PhantomJS is
+    // finding a way to return an `undefined` property descriptor.
+    if (_.isUndefined(descriptor)) { return; }
+
+    // Check for the existence of getters and setters, otherwise it's a regular
+    // property.
     if (_.isFunction(descriptor.get) || _.isFunction(descriptor.set)) {
       if (_.isFunction(descriptor.get)) {
         this._renderChild(prop, descriptor.get, '[[Getter]]');

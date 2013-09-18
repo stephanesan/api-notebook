@@ -58,7 +58,7 @@ module.exports = function (grunt) {
 
     shell: {
       'mocha-phantomjs': {
-        command: './node_modules/.bin/mocha-phantomjs ./test/index.html',
+        command: './node_modules/.bin/mocha-phantomjs test/browser/index.html',
         options: {
           stdout: true,
           stderr: true,

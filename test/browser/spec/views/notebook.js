@@ -1,4 +1,4 @@
-/* global App, afterEach, beforeEach, CustomEvent, describe, expect, it */
+/* global App, afterEach, beforeEach, describe, expect, it */
 
 describe('Notebook', function () {
   var Notebook = App.View.Notebook;
@@ -424,9 +424,7 @@ describe('Notebook', function () {
           };
 
           var simulateClick = function (element) {
-            element.dispatchEvent(new CustomEvent('mousedown', true, true));
-            element.dispatchEvent(new CustomEvent('mouseup', true, true));
-            element.dispatchEvent(new CustomEvent('click', true, true));
+            simulateEvent(element, 'click');
           };
 
           it('should exist as one instance', function () {

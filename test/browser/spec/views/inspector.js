@@ -123,7 +123,7 @@ describe('Object Inspector', function () {
       it('should render the `window`', function () {
         inputOutputChildren(window, {
           'window': /\{.*\}/,
-          'document': /\{.*\}/
+          'document': /!doctype html/i
         });
       });
     });

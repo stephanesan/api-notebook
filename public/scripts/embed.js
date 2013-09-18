@@ -16,12 +16,11 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  */
 var extend = function (obj /*, ...source */) {
   each(Array.prototype.slice.call(arguments, 1), function (source) {
-    // Stops primitives from going through the loop
-    if (source !== Object(source)) { return; }
-
-    each(source, function (prop, key) {
-      obj[key] = prop;
-    });
+    for (var prop in source) {
+      if (Object.prototype.hasOwnProperty.call(source, prop)) {
+        obj[prop] = source[prop];
+      }
+    }
   });
 
   return obj;

@@ -12,8 +12,7 @@ var BtnCellControls = module.exports = View.extend({
     type: 'button'
   },
   events: {
-    'mousedown':  'onClick',
-    'touchstart': 'onClick'
+    'click': 'onClick'
   }
 });
 
@@ -30,11 +29,10 @@ BtnCellControls.prototype.render = function () {
 /**
  * Trigger a `showControls` event when we click the button.
  *
- * @param  {Object} e
+ * @param {Object} e
  */
 BtnCellControls.prototype.onClick = function (e) {
   e.preventDefault();
   e.stopPropagation();
-  e.cancelBubble = true; // IE
   this.trigger('showControls', this);
 };

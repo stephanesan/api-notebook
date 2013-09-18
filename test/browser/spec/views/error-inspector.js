@@ -23,7 +23,11 @@ describe('Error Inspector', function () {
     };
 
     it('should inspect thrown errors', function () {
-      inputOutput(new Error('Test Message'), 'Error: Test Message');
+      try {
+        throw new Error('Test Message');
+      } catch (error) {
+        inputOutput(error, 'Error: Test Message');
+      }
     });
   });
 
