@@ -25,7 +25,7 @@ var Completion = module.exports = function (cm, options) {
    * to allow a small grace period in case we are clicking a widget suggestion.
    */
   this.onBlur = function () {
-    closeOnBlur = setTimeout(function () { that.removeWidget(); }, 100);
+    closeOnBlur = setTimeout(function () { that.removeWidget(); }, 20);
   };
 
   /**
@@ -48,7 +48,7 @@ var Completion = module.exports = function (cm, options) {
       return that.removeWidget();
     }
 
-    var closeOn  = /[^$_a-zA-Z0-9 ]/;
+    var closeOn  = /[^$_a-zA-Z0-9]/;
     var remove   = event.origin === '+delete';
     var text     = event[remove ? 'removed' : 'text'].join('\n');
 
@@ -81,7 +81,9 @@ var Completion = module.exports = function (cm, options) {
    * @param  {CodeMirror} cm
    */
   this.onCursorActivity = function (cm) {
-    if (closeOnCursor) { that.removeWidget(); }
+    if (closeOnCursor) {
+      return that.removeWidget();
+    }
 
     closeOnCursor = true;
   };
