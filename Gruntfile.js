@@ -57,8 +57,16 @@ module.exports = function (grunt) {
     },
 
     shell: {
-      'mocha-phantomjs': {
+      'mocha-browser': {
         command: './node_modules/.bin/mocha-phantomjs test/browser/index.html',
+        options: {
+          stdout: true,
+          stderr: true,
+          failOnError: true
+        }
+      },
+      'mocha-server': {
+        command: './node_modules/.bin/mocha test/server/spec',
         options: {
           stdout: true,
           stderr: true,
@@ -124,20 +132,16 @@ module.exports = function (grunt) {
     process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
   });
 
-  grunt.registerTask(
-    'test',
-    ['notebook-url', 'build', 'connect:test-server', 'shell:mocha-phantomjs']
-  );
-
-  grunt.registerTask('build',   [
-    'clean', 'copy', 'browserify', 'stylus'
+  grunt.registerTask('test-server', [
+    'shell:mocha-server'
   ]);
 
-  grunt.registerTask('check',   [
-    'jshint:all', 'headless-test'
+  grunt.registerTask('test-browser', [
+    'notebook-url', 'build', 'connect:test-server', 'shell:mocha-browser'
   ]);
 
-  grunt.registerTask('default', [
-    'build', 'watch'
-  ]);
+  grunt.registerTask('test',    ['test-browser', 'test-server']);
+  grunt.registerTask('build',   ['clean', 'copy', 'browserify', 'stylus']);
+  grunt.registerTask('check',   ['jshint:all', 'test']);
+  grunt.registerTask('default', ['build', 'watch']);
 };

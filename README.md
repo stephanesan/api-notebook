@@ -6,10 +6,10 @@
 # Install dependencies
 npm install
 bower install
-# Run tests in the browser (requires the server running for embed tests)
+# Running tests in the browser (requires the server running for embed tests)
 open test/index.html
-# Run headless tests
-grunt check
+# Run static check and headless tests
+grunt check && grunt test
 ```
 
 ## Environment Variables
