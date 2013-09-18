@@ -48,7 +48,7 @@ describe('Inspector', function () {
     });
 
     it('should inspect objects', function () {
-      inputOutput({ testing: true }, '{ "testing": true }');
+      inputOutput({ testing: true }, 'Object {"testing": true}');
     });
 
     it('should inspect functions', function () {
@@ -122,8 +122,21 @@ describe('Inspector', function () {
 
       it('should render the `window`', function () {
         inputOutputChildren(window, {
-          'window': /\{.*\}/,
-          'document': /!doctype html/i
+          'window': 'Window',
+          'document': 'HTMLDocument',
+          'Infinity': 'Infinity',
+          'navigator': 'Navigator',
+          'innerHeight': /^\d+$/
+        });
+      });
+
+      it('should inspect known list lengths', function () {
+        inputOutputChildren({
+          array: [],
+          nodes: document.getElementsByTagName('*')
+        }, {
+          'array': 'Array[0]',
+          'nodes': /^NodeList\[\d+\]$/
         });
       });
 
