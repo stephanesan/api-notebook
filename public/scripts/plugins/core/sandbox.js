@@ -72,6 +72,7 @@ var executePlugin = function (data, next, done) {
   /* jshint evil: true */
   data.window.eval([
     'console._notebookApi.load = function (src, done) {',
+    '  console._notebookApi.timeout = Infinity;', // Increase AJAX timeout.
     '  return (' + loadScript + ')(src, done || this.async());',
     '};'
   ].join('\n'));
