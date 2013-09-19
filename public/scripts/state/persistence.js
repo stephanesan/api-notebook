@@ -242,32 +242,30 @@ persistence.listenTo(persistence, 'change:userId change:ownerId', function () {
  * Any time the notebook changes, trigger the `persistence:change` middleware
  * handler.
  */
-persistence.listenTo(
-  persistence, 'changeNotebook changeContents', (function () {
-    var changing    = false;
-    var changeQueue = false;
+persistence.listenTo(persistence, 'change:contents', (function () {
+  var changing    = false;
+  var changeQueue = false;
 
-    return function change () {
-      // If we are already changing the data, but it has not yet been resolved,
-      // set a change queue flag to `true` to let ourselves know we have changes
-      // queued to sync once we finish the current operation.
-      if (changing) { return changeQueue = true; }
+  return function change () {
+    // If we are already changing the data, but it has not yet been resolved,
+    // set a change queue flag to `true` to let ourselves know we have changes
+    // queued to sync once we finish the current operation.
+    if (changing) { return changeQueue = true; }
 
-      changing = true;
-      middleware.trigger(
-        'persistence:change',
-        this.getMiddlewareData(),
-        _.bind(function (err, data) {
-          changing = false;
-          if (changeQueue) {
-            changeQueue = false;
-            change.call(this);
-          }
-        }, this)
-      );
-    };
-  })()
-);
+    changing = true;
+    middleware.trigger(
+      'persistence:change',
+      this.getMiddlewareData(),
+      _.bind(function (err, data) {
+        changing = false;
+        if (changeQueue) {
+          changeQueue = false;
+          change.call(this);
+        }
+      }, this)
+    );
+  };
+})());
 
 /**
  * Check with an external service whether a users session is authenticated. This

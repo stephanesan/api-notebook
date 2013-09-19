@@ -57,6 +57,8 @@ module.exports = function (middleware) {
       // Split each line of the metadata and set on the `data` export object.
       _.each(body.split('\n'), function (meta) {
         var parts = meta.split(': ');
+
+        // Ignore the line if we don't have a `title: data` combination.
         if (parts.length === 2) {
           data[parts[0]] = parts[1];
         }
