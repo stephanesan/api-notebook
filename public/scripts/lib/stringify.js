@@ -23,6 +23,10 @@ var getInternalName = (function () {
   }
 
   return function (object) {
+    // PhantomJS constructor are objects instead of functions.
+    if (typeof object.constructor === 'object') {
+      return Object.prototype.toString.call(object).slice(8, -1);
+    }
     // Caters for `Object.create(null)`.
     return object.constructor ? getName(object.constructor) : 'Object';
   };
@@ -88,7 +92,14 @@ var stringifyChild = function (object) {
   if (_.isObject(object)) {
     var internalName = getInternalName(object);
     var isList       = _.contains(
-      ['Array', 'NodeList', 'HTMLCollection'], internalName
+      [
+        'Array',
+        'NodeList',
+        'HTMLCollection',
+        // PhantomJS
+        'NodeListConstructor'
+      ],
+      internalName
     );
 
     return internalName + (isList ? '[' + object.length + ']' : '');
@@ -139,7 +150,7 @@ var stringifyObject = function (object) {
  * @return {String}
  */
 var stringifyError = function (error) {
-  // TIL DOMExceptions don't allow calling `toString` or string type coersion
+  // TIL DOMExceptions don't always allow calling `toString`.
   return Error.prototype.toString.call(error);
 };
 

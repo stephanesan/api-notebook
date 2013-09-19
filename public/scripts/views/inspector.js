@@ -99,7 +99,8 @@ InspectorView.prototype.stringifyPreview = function () {
   // If we have a parent object, render in the simplified format. Except for
   // functions, we still want the full output for functions.
   if (this.parent) {
-    if (_.isFunction(this.inspect)) {
+    // PhantomJS reports `NodeList` to be a function.
+    if (Object.prototype.toString.call(this.inspect) === '[object Function]') {
       return this.inspect.toString();
     } else {
       return stringify.stringifyChild(this.inspect);

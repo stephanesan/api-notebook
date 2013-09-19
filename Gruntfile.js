@@ -229,7 +229,7 @@ module.exports = function (grunt) {
 
   // Test the application in a headless environment.
   grunt.registerTask('test', [
-    'test-browser', 'test-server'
+    'check', 'test-browser', 'test-server'
   ]);
 
   // Deploy the application to heroku.
@@ -245,7 +245,7 @@ module.exports = function (grunt) {
 
   // Do a static check to make sure the code is correct.
   grunt.registerTask('check', [
-    'jshint:all', 'test'
+    'jshint:all'
   ]);
 
   // Build the application and watch for file changes.
