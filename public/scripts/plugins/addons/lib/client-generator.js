@@ -186,7 +186,11 @@ var generateClient = function (ast) {
             routeName = startText;
           }
 
-          context[routeName] = function () {
+          // The route is dynamic, so we set the route name to be a function
+          // which accepts the template arguments and creates a path fragment.
+          // We'll mix in any route already at the namespace so we can do
+          // things like use both `/{route}` and `/route`.
+          context[routeName] = _.extend(function () {
             var args = _.first(arguments, allTemplates.length);
 
             // Check the taken arguments length matches the expected number.
@@ -201,7 +205,7 @@ var generateClient = function (ast) {
             var routeNodes = nodes.concat(startText + args.join(''));
             attachMethods(routeNodes, newContext, resource.methods);
             return attachResources(routeNodes, newContext, resources);
-          };
+          }, context[routeName]);
 
           var returnPropContext = {};
           attachMethods(routeNodes, returnPropContext, resource.methods);

@@ -1,8 +1,8 @@
 #%RAML 0.2
 ---
-title: World Music API
+title: Example API
 version: v1
-baseUri: http://api.worldmusic.com
+baseUri: http://example.com
 resourceTypes:
   - base:
       get?:
@@ -51,16 +51,16 @@ traits:
       responses:
         401:
           description: Unauthorized
-/songs:
+# Test nested routes
+/collection:
   type: collection
-  /{songId}:
-    is: [ secured ]
-    type: member
-/test:
-  type: collection
-  /{testId}:
+  /{collectionId}:
     type: member
     /{nestedId}:
       type: member
-/multi{var}{field}:
+# Test a dynamic vs static route clash
+/{collection}:
+  type: collection
+# Test using variables with text
+/mixed{variable}{route}:
   type: member

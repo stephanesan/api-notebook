@@ -9,7 +9,7 @@ var clientGenerator = require('./lib/client-generator');
  * @type {Object}
  */
 var specMap = {
-  worldMusic: process.env.NOTEBOOK_URL + '/raml/world-music.yml'
+  example: process.env.NOTEBOOK_URL + '/raml/example.yml'
 };
 
 /**
