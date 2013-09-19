@@ -118,7 +118,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
         });
 
@@ -135,7 +135,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
         });
 
@@ -157,7 +157,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
         });
 
@@ -179,7 +179,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
         });
 
@@ -195,7 +195,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
 
           App.nextTick(function () {
@@ -215,7 +215,7 @@ describe('Code Cell', function () {
             done();
           });
 
-          editor.setValue(code);
+          view.setValue(code);
           view.execute();
 
           App.nextTick(function () {
@@ -223,6 +223,21 @@ describe('Code Cell', function () {
             expect(spy).to.not.have.been.called;
             clock.tick(3500);
           });
+        });
+
+        it('should have a built in script loader', function (done) {
+          // Load our fake testing file since I don't think there is a stub
+          // this test correctly.
+          var code   = 'load("../../build/test.js");';
+
+          view.on('execute', function () {
+            expect(view.sandbox.window.test).to.be.true;
+
+            return done();
+          });
+
+          view.setValue(code);
+          view.execute();
         });
       });
 
