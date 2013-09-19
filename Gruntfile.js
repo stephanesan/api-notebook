@@ -1,9 +1,11 @@
-var DEV        = process.env.NODE_ENV !== 'production';
-var PLUGIN_DIR = __dirname + '/public/scripts/plugins/addons';
-var BUILD_DIR  = __dirname + '/build';
-var DEPLOY_DIR = __dirname + '/deploy';
-var TEST_PORT  = 9876;
-var jsRegex    = /\.js$/;
+var DEV         = process.env.NODE_ENV !== 'production';
+var PLUGIN_DIR  = __dirname + '/public/scripts/plugins/addons';
+var BUILD_DIR   = __dirname + '/build';
+var DEPLOY_DIR  = __dirname + '/deploy';
+var TESTS_DIR   = __dirname + '/build/test';
+var FIXTURE_DIR = TESTS_DIR + '/fixtures';
+var TEST_PORT   = 9876;
+var jsRegex     = /\.js$/;
 
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
@@ -45,7 +47,7 @@ module.exports = function (grunt) {
             src: ['**/*.{html,yml}'],
             dest: 'build/'
           },
-          { src: 'public/test.js', dest: 'build/test.js' }
+          { src: 'public/test.js', dest: FIXTURE_DIR + '/test.js' }
         ]
       },
       deploy: {
@@ -142,6 +144,13 @@ module.exports = function (grunt) {
         options: {
           transform:  browserifyTransform,
           standalone: 'Notebook'
+        }
+      },
+      test: {
+        src: 'test/browser/common.js',
+        dest: TESTS_DIR + '/browser/common.js',
+        options: {
+          transform: browserifyTransform
         }
       }
     }, browserifyPlugins),

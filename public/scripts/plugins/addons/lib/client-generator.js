@@ -72,10 +72,10 @@ var httpMethods = _.chain(
 /**
  * Returns a function that can be used to make ajax requests.
  *
- * @param  {Object}   uri
+ * @param  {String}   url
  * @return {Function}
  */
-var httpRequest = function (uri, method) {
+var httpRequest = function (url, method) {
   // Switch behaviour based on the method data.
   return function () {
     var done;
@@ -91,7 +91,7 @@ var httpRequest = function (uri, method) {
     }
 
     var options = {
-      url:  uri.href,
+      url:  url,
       type: method.method
     };
 
@@ -122,16 +122,12 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var attachMethods = function (nodes, context, methods) {
-    // Use the `path` module to join the url parts together.
-    var route = path.join.apply(null, [uri.path].concat(nodes));
+    var route   = _.isArray(nodes) ? nodes.join('/') : nodes;
+    var fullUrl = url.resolve(uri.href, route);
 
     // Iterate over all the possible methods and attach.
     _.each(methods, function (method, verb) {
-      context[verb] = httpRequest(_.extend({}, uri, {
-        href:     url.resolve(uri.href, route),
-        path:     route + uri.search,
-        pathname: route
-      }), method);
+      context[verb] = httpRequest(fullUrl, method);
     });
 
     return context;

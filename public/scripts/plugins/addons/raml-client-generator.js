@@ -8,9 +8,7 @@ var clientGenerator = require('./lib/client-generator');
  *
  * @type {Object}
  */
-var specMap = {
-  example: process.env.NOTEBOOK_URL + '/raml/example.yml'
-};
+var specMap = {};
 
 /**
  * Simple map for tracking the return URLs against spec names. Allows names to
@@ -54,11 +52,16 @@ var Api = function (name /*, url */, done) {
 
   // Pass our url to the RAML parser for processing.
   ramlParser.loadFile(url).then(function (data) {
-    apiMap[name] = url;
-    Api[name]    = clientGenerator(data);
+    try {
+      apiMap[name] = url;
+      Api[name]    = clientGenerator(data);
+    } catch (e) {
+      return done(e);
+    }
+
     return done(null, Api[name]);
-  }, function (error) {
-    return done(error);
+  }, function (err) {
+    return done(err);
   });
 };
 
