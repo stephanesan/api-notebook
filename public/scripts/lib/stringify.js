@@ -95,9 +95,7 @@ var stringifyChild = function (object) {
       [
         'Array',
         'NodeList',
-        'HTMLCollection',
-        // PhantomJS
-        'NodeListConstructor'
+        'HTMLCollection'
       ],
       internalName
     );
@@ -150,7 +148,7 @@ var stringifyObject = function (object) {
  * @return {String}
  */
 var stringifyError = function (error) {
-  // TIL DOMExceptions don't always allow calling `toString`.
+  // TIL DOMExceptions don't allow calling `toString`.
   return Error.prototype.toString.call(error);
 };
 

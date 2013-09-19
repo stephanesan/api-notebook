@@ -28,10 +28,11 @@ var template = function (template, context) {
  * @return {Object}
  */
 var sanitizeAST = function (ast) {
-  // Merge the redundancy of arrays the easy of one property each.
+  // Merge the redundant objects that only have one property each.
   ast.traits        = _.extend.apply(_, ast.traits);
   ast.resourceTypes = _.extend.apply(_, ast.resourceTypes);
-  // Recurse through the resources and move the URIs to the key names.
+
+  // Recurse through the resources and move URIs to be the key names.
   ast.resources = (function flattenResources (resources) {
     var map = {};
     // Resources are provided as an object, we'll move them to be key based.
@@ -52,7 +53,8 @@ var sanitizeAST = function (ast) {
     // Returns the updated resources
     return map;
   })(ast.resources);
-  // Returns the AST object, everything has been modified in place.
+
+  // Returns the original AST object, everything has been changed in place.
   return ast;
 };
 
