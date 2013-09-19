@@ -1,6 +1,6 @@
 /* global describe, it, beforeEach, afterEach */
 
-describe('RAML Client Generator', function () {
+describe('RAML Client Generator Plugin', function () {
   var methods = ['get', 'post', 'put', 'patch', 'delete'];
   var sandbox;
 

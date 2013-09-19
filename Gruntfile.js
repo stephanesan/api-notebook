@@ -65,6 +65,18 @@ module.exports = function (grunt) {
     connect: {
       'test-server': {
         options: {
+          middleware: function (connect, options) {
+            var middlewares = [];
+            // Enables cross-domain requests.
+            middlewares.push(function (req, res, next) {
+              res.setHeader('Access-Control-Allow-Origin',  '*');
+              res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
+              return next();
+            });
+            // Serve the regular static directory.
+            middlewares.push(connect.static(options.base));
+            return middlewares;
+          },
           port: TEST_PORT,
           base: BUILD_DIR
         }
