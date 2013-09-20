@@ -13,8 +13,7 @@ describe('Code Cell', function () {
 
     beforeEach(function () {
       view = new Code();
-      view.model.view = view;
-      view.sandbox    = new App.Sandbox();
+      view.sandbox = new App.Sandbox();
       view.model.collection = {
         indexOf:     sinon.stub().returns(0),
         getNextCode: sinon.stub().returns(undefined),

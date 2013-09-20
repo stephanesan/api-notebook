@@ -20,6 +20,7 @@ var EditorCell = module.exports = Cell.extend();
 EditorCell.prototype.initialize = function () {
   Cell.prototype.initialize.apply(this, arguments);
   this.model       = this.model || new this.EditorModel();
+  this.model.view  = this;
   this.btnControls = new BtnControls();
 };
 

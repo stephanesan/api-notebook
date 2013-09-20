@@ -1,6 +1,7 @@
 /* global describe, it, beforeEach, afterEach */
 
 describe('RAML Client Generator Plugin', function () {
+  var fixture = document.getElementById('fixture');
   var methods = ['get', 'post', 'put', 'patch', 'delete'];
   var sandbox;
 
@@ -212,6 +213,77 @@ describe('RAML Client Generator Plugin', function () {
           'should respond to `mixed(123, 456).get()`',
           testRequest('.mixed(123, 456)', 'get', '/mixed123456')
         );
+      });
+    });
+
+    describe('Completion Support (using `@return`)', function () {
+      var view;
+
+      var testAutocomplete = function (text, done) {
+        return testCompletion(view.editor, text, done);
+      };
+
+      beforeEach(function () {
+        functionReturnPlugin.attach(App.middleware);
+
+        view = new App.View.CodeCell({
+          sandbox: sandbox
+        });
+
+        view.model.collection = {
+          indexOf:     sinon.stub().returns(0),
+          getNextCode: sinon.stub().returns(undefined),
+          getPrevCode: sinon.stub().returns(undefined)
+        };
+
+        view.render().appendTo(fixture);
+      });
+
+      afterEach(function () {
+        functionReturnPlugin.detach(App.middleware);
+
+        view.remove();
+        delete window.test;
+      });
+
+      it('should do autocomplete the root function', function (done) {
+        testAutocomplete('Api.example("/test").', function (results) {
+          expect(results).to.include.members(methods)
+
+          return done();
+        });
+      });
+
+      it('should autocomplete function properties', function (done) {
+        testAutocomplete('Api.example.collection.', function (results) {
+          expect(results).to.include.members(['get', 'post', 'collectionId']);
+
+          return done();
+        });
+      });
+
+      it('should autocomplete variable route', function (done) {
+        testAutocomplete('Api.example.collection(123).', function (results) {
+          expect(results).to.include.members(['get', 'post']);
+
+          return done();
+        });
+      });
+
+      it('should autocomplete nested variable routes', function (done) {
+        testAutocomplete('Api.example.collection.collectionId(123).nestedId(456).', function (results) {
+          expect(results).to.contain('get');
+
+          return done();
+        });
+      });
+
+      it('should autocomplete with combined text and variables', function (done) {
+        testAutocomplete('Api.example.mixed(123, 456).', function (results) {
+          expect(results).to.contain('get');
+
+          return done();
+        });
       });
     });
   });
