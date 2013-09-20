@@ -24,7 +24,7 @@ module.exports = function (middleware) {
     var ajaxTimeout;
 
     /**
-     * Wraps callback functions to remove data.
+     * Wraps callback functions to remove xhr data.
      *
      * @param  {Function} fn
      * @return {Function}
@@ -41,21 +41,30 @@ module.exports = function (middleware) {
 
     xhr.open(method, url, true);
 
+    // Sets request headers before we make the request.
+    _.each(options.headers, function (value, header) {
+      xhr.setRequestHeader(header, value);
+    });
+
+    // Enable hooking into the ajax request before we send it.
     if (options.beforeSend) {
       options.beforeSend(xhr);
     }
 
+    // Successful callback.
     xhr.onload = complete(function () {
       return next(null, xhr);
     });
 
+    // Failure callback.
     xhr.onerror = xhr.onabort = complete(function () {
       return next(new Error(xhr.statusText || 'Ajax request aborted'), xhr);
     });
 
+    // Send the ajax request.
     xhr.send(options.data);
 
-    // Set a request timeout
+    // Set a request timeout.
     ajaxTimeout = setTimeout(complete(function () {
       // Abort the current request.
       xhr.abort();

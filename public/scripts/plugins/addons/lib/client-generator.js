@@ -103,9 +103,10 @@ var httpRequest = function (nodes, method) {
     App._executeContext.timeout(Infinity);
 
     var options = {
-      url:    fullUrl,
-      data:   typeof data === 'object' ? JSON.stringify(data) : data,
-      method: method.method
+      url:     fullUrl,
+      data:    typeof data === 'object' ? JSON.stringify(data) : data,
+      method:  method.method,
+      headers: nodes.headers
     };
 
     // Trigger ajax middleware resolution so other middleware can hook onto
@@ -118,6 +119,69 @@ var httpRequest = function (nodes, method) {
 };
 
 /**
+ * Attach the query string helper.
+ *
+ * @param  {Array}  nodes
+ * @param  {Object} context
+ * @param  {Object} methods
+ * @return {Object}
+ */
+var attachQuery = function (nodes, context, methods) {
+  if ('query' in nodes) {
+    return context;
+  }
+
+  var routeNodes = _.extend([], nodes, {
+    query: null
+  });
+
+  context.query = function (query) {
+    // Compile the query as a string.
+    if (_.isObject(query)) {
+      query = qs.stringify(query);
+    }
+
+    routeNodes.query = query;
+    return attachMethods(routeNodes, {}, methods);
+  };
+
+  context.query[RETURN_PROPERTY] = attachMethods(routeNodes, {}, methods);
+
+  return context;
+};
+
+/**
+ * Attach the headers helper.
+ *
+ * @param  {Array}  nodes
+ * @param  {Object} context
+ * @param  {Object} methods
+ * @return {Object}
+ */
+var attachHeaders = function (nodes, context, methods) {
+  if ('headers' in nodes) {
+    return context;
+  }
+
+  var routeNodes = _.extend([], nodes, {
+    headers: null
+  });
+
+  context.headers = function (headers) {
+    if (typeof headers !== 'object') {
+      throw new Error('Ajax headers must be provided as an object');
+    }
+
+    routeNodes.headers = headers;
+    return attachMethods(routeNodes, {}, methods);
+  };
+
+  context.headers[RETURN_PROPERTY] = attachMethods(routeNodes, {}, methods);
+
+  return context;
+};
+
+/**
  * Attaches executable XHR methods to the context object.
  *
  * @param  {Array}  nodes
@@ -125,30 +189,19 @@ var httpRequest = function (nodes, method) {
  * @param  {Object} methods
  * @return {Object}
  */
-var attachMethods = function (nodes, context, methods, skip) {
+
+/* jshint -W003 */
+var attachMethods = function (nodes, context, methods) {
+  var newContext, routeNodes;
+
+  // Attach helpers.
+  attachQuery(nodes, context, methods);
+  attachHeaders(nodes, context, methods);
+
   // Iterate over all the possible methods and attach.
   _.each(methods, function (method, verb) {
     context[verb] = httpRequest(nodes, method);
   });
-
-  if (skip !== 'query' && !('query' in nodes)) {
-    // Returns a fresh object with only methods attached (since it would be
-    // wierd to call `query` in the middle of the chain).
-    var newContext = attachMethods(nodes, {}, methods, 'query');
-
-    // Attach a helper method for appending query strings.
-    context.query = function (query) {
-      // Compile the query as a string.
-      if (_.isObject(query)) {
-        query = qs.stringify(query);
-      }
-
-      nodes.query = query;
-      return newContext;
-    };
-
-    context.query[RETURN_PROPERTY] = newContext;
-  }
 
   return context;
 };
