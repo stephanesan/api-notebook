@@ -7,9 +7,7 @@ var path = App.Library.path;
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY  = '@return';
 var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
-
-// Catch commonly used regular expressions
-var TEMPLATE_REGEX = /\{(\w+)\}/g;
+var TEMPLATE_REGEX   = /\{(\w+)\}/g;
 
 /**
  * Simple "template" function for working with the uri param variables.
@@ -38,6 +36,7 @@ var sanitizeAST = function (ast) {
   // Recurse through the resources and move URIs to be the key names.
   ast.resources = (function flattenResources (resources) {
     var map = {};
+
     // Resources are provided as an object, we'll move them to be key based.
     _.each(resources, function (resource) {
       // Methods are implemented as arrays of objects too, but not recursively.
@@ -46,18 +45,18 @@ var sanitizeAST = function (ast) {
           _.pluck(resource.methods, 'method'), resource.methods
         );
       }
-      // Recursively resolves resources.
+
       if (resource.resources) {
         resource.resources = flattenResources(resource.resources);
       }
+
       // Remove the prefixed `/` from the relativeUri.
       map[resource.relativeUri.substr(1)] = resource;
     });
-    // Returns the updated resources
+
     return map;
   })(ast.resources);
 
-  // Returns the original AST object, everything has been changed in place.
   return ast;
 };
 
@@ -79,7 +78,14 @@ var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  // Switch behaviour based on the method data.
+  var fullUrl = url.resolve(
+    nodes.baseUri, nodes.join('/').replace(/^\/+/, '')
+  );
+
+  if (_.isString(nodes.query)) {
+    fullUrl = url.resolve(fullUrl, '?' + nodes.query);
+  }
+
   return function (data, done) {
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method === 'get' || method === 'head') {
@@ -87,20 +93,8 @@ var httpRequest = function (nodes, method) {
       done = arguments[0];
     }
 
-    done = done || App._executeContext.async();
-
-    // Resolve the full url upon execution to ensure all meta data is attached.
-    var fullUrl = url.resolve(
-      nodes.baseUri, nodes.join('/').replace(/^\/+/, '')
-    );
-
-    // Append the query string.
-    if (_.isString(nodes.query)) {
-      fullUrl = url.resolve(fullUrl, '?' + nodes.query);
-    }
-
-    // Since we know this code works, we can bump up the execution timeout.
     App._executeContext.timeout(Infinity);
+    done = done || App._executeContext.async();
 
     var options = {
       url:     fullUrl,
@@ -109,11 +103,9 @@ var httpRequest = function (nodes, method) {
       headers: nodes.headers
     };
 
-    // Trigger ajax middleware resolution so other middleware can hook onto
-    // these requests and augment.
+    // Trigger the ajax middleware so plugins can hook onto the requests.
     App.middleware.trigger('ajax', options, done);
 
-    // Return the XHR request.
     return options.xhr;
   };
 };
@@ -136,7 +128,6 @@ var attachQuery = function (nodes, context, methods) {
   });
 
   context.query = function (query) {
-    // Compile the query as a string.
     if (_.isObject(query)) {
       query = qs.stringify(query);
     }
@@ -194,7 +185,6 @@ var attachHeaders = function (nodes, context, methods) {
 var attachMethods = function (nodes, context, methods) {
   var newContext, routeNodes;
 
-  // Attach helpers.
   attachQuery(nodes, context, methods);
   attachHeaders(nodes, context, methods);
 
@@ -216,7 +206,6 @@ var attachMethods = function (nodes, context, methods) {
  * @return {Object}           Returns the passed in context object.
  */
 var attachResources = function attachResources (nodes, context, resources) {
-  // Iterate over all resource keys
   _.each(resources, function (resource, route) {
     var routeName  = route;
     var resources  = resource.resources;
@@ -225,19 +214,20 @@ var attachResources = function attachResources (nodes, context, resources) {
     var routeNodes = _.extend([], nodes);
     var allTemplates;
 
-    // Push the latest route into the path fragment list.
     routeNodes.push(route);
 
-    // The route contains any number of templates and text.
+    // The route can contain any number of templates and text.
     if (allTemplates = route.match(TEMPLATE_REGEX)) {
       var group      = allTemplates.join('');
       var startIndex = route.length - group.length;
+
       // The route must end with the template tags and have no intermediate
       // text between template tags.
       if (route.indexOf(group) === startIndex) {
         var startText = route.substr(0, startIndex);
-        // The route is only a template tag with no static text, use the
-        // template tag text.
+
+        // If the route is only a template tag with no static text, use the
+        // template tag text as the method name.
         if (startIndex === 0) {
           routeName = allTemplates[0].slice(1, -1);
         } else {
@@ -283,13 +273,12 @@ var attachResources = function attachResources (nodes, context, resources) {
       }
     }
 
-    // The route is only static text, we can easily add the next route.
+    // If the route is only static text we can easily add the next route.
     var newContext = context[routeName] || (context[routeName] = {});
     attachMethods(routeNodes, newContext, resource.methods);
     return attachResources(routeNodes, newContext, resources);
   });
 
-  // Chainability
   return context;
 };
 
@@ -315,8 +304,6 @@ var generateClient = function (ast) {
    */
   var client = function (path, context) {
     var route = template(path, context || {}).split('/');
-
-    // Extends a new array with root meta data and path fragment nodes.
     return attachMethods(_.extend([], nodes, route), {}, httpMethods);
   };
 
@@ -326,7 +313,6 @@ var generateClient = function (ast) {
   // Attach all the resources to the returned client function.
   attachResources(nodes, client, ast.resources);
 
-  // Returns the root of the DST.
   return client;
 };
 

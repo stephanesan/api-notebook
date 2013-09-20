@@ -32,16 +32,18 @@ module.exports = function (middleware) {
     var complete = function (fn) {
       return function () {
         clearTimeout(ajaxTimeout);
-        // Remove all xhr callbacks.
+
+        // Remove all xhr callbacks. No need to keep references to unused
+        // functions.
         xhr.onload = xhr.onerror = xhr.onabort = null;
-        // Call the function with the original arguments.
+
         return fn.apply(this, arguments);
       };
     };
 
     xhr.open(method, url, true);
 
-    // Sets request headers before we make the request.
+    // Sets all request headers before we make the request.
     _.each(options.headers, function (value, header) {
       xhr.setRequestHeader(header, value);
     });
@@ -61,14 +63,14 @@ module.exports = function (middleware) {
       return next(new Error(xhr.statusText || 'Ajax request aborted'), xhr);
     });
 
-    // Send the ajax request.
     xhr.send(options.data);
 
-    // Set a request timeout.
+    // Set a request timeout. Modern browsers can set a `timeout` property
+    // which works the same.
     ajaxTimeout = setTimeout(complete(function () {
-      // Abort the current request.
       xhr.abort();
-      // Call the `next` function with the timeout details.
+
+      // Calls the `next` function with the timeout details.
       return next(new Error('Ajax timeout of ' + timeout + 'ms exceeded'), xhr);
     }), timeout);
   });

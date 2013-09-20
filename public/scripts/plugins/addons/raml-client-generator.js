@@ -28,29 +28,24 @@ var apiMap = {};
 var Api = function (name /*, url */, done) {
   var url = specMap[name];
 
-  // Allows overloading the middle parameter with a url to load the RAML
-  // document from.
+  // Allows overloading the middle parameter with a url for the RAML loader.
   if (arguments.length > 1 && typeof arguments[1] !== 'function') {
     url  = specMap[name] = arguments[1];
     done = arguments[2];
   }
 
-  // Allows the request to run for as long as it needs.
   App._executeContext.timeout(Infinity);
-
-  // Allow a custom callback to be passed in, otherwise we should use the
-  // current cells async execution function.
   done = done || App._executeContext.async();
 
-  // Bypass reloading a RAML document if the name and URL already matches a
-  // loaded and generated client.
+  // Skip loading the document if the name and URL has already been processed.
   if (specMap[name] === apiMap[name]) {
     return process.nextTick(function () {
       return done(null, Api[name]);
     });
   }
 
-  // Pass our url to the RAML parser for processing.
+  // Pass our url to the RAML parser for processing and transform the promise
+  // back into a callback format.
   ramlParser.loadFile(url).then(function (data) {
     try {
       apiMap[name] = url;
@@ -72,7 +67,6 @@ var Api = function (name /*, url */, done) {
  * @param  {Function} next
  */
 var contextPlugin = function (context, next) {
-  // Alias the `Api` function.
   context.Api = Api;
 
   return next();
