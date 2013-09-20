@@ -93,9 +93,8 @@ var httpRequest = function (nodes, method) {
       fullUrl = url.resolve(fullUrl, '?' + nodes.query);
     }
 
-    // We know this code works, so bump up the execution timeout. This needs to
-    // be done before we call `async` so that it will use this value.
-    App._executeContext.timeout = Infinity;
+    // Since we know this code works, we can bump up the execution timeout.
+    App._executeContext.timeout(Infinity);
 
     var options = {
       url:  fullUrl,

@@ -36,7 +36,7 @@ var Api = function (name /*, url */, done) {
   }
 
   // Allows the request to run for as long as it needs.
-  App._executeContext.timeout = Infinity;
+  App._executeContext.timeout(Infinity);
 
   // Allow a custom callback to be passed in, otherwise we should use the
   // current cells async execution function.

@@ -16,7 +16,7 @@ var contextPlugin = function (context, next) {
   // hook into the proper execution context and take advantage of the `done`
   // middleware function.
   context.async   = function () {};
-  context.timeout = ASYNC_TIMEOUT;
+  context.timeout = function () {};
 
   return next();
 };
@@ -28,35 +28,66 @@ var contextPlugin = function (context, next) {
  * @param  {Function} next
  */
 var executePlugin = function (data, next, done) {
+  /* global App */
   var code    = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
   var async   = false;
   var exec    = {};
   var context = data.context;
+  var fallback;
 
-  context.async = function () {
-    // Sets the timeout to a working number.
-    var timeout = +context.timeout || ASYNC_TIMEOUT;
+  /**
+   * Completed code cell execution and removes left over content.
+   *
+   * @param {Error}  err
+   * @param {Object} data
+   */
+  var complete = function (err, data) {
+    clearTimeout(fallback);
+    delete App._executeContext;
+    return done(err, data);
+  };
 
-    // Sets the async flag to true so we don't trigger the callback immediately.
-    async = true;
+  /**
+   * Pass in a timeout function that can be used to reset the async timer.
+   *
+   * @param {Number} ms
+   */
+  var timeout = context.timeout = function (ms) {
+    var timeout = +ms;
+
+    // Clears the old timeout to set a new one.
+    clearTimeout(fallback);
+
+    // Break immediately if the timeout is an unknown number.
+    if (isNaN(timeout) || timeout < 0) {
+      return complete(new Error('Cannot use timeout of ' + ms + 'ms'));
+    }
 
     // Add a fallback catch in case we are using the `async` function accidently
     // or not handling some edge case. This idea comes from `Mocha` async tests,
     // but we change the timeout by using `timeout = Infinity`.
-    if (isFinite(timeout) && timeout > 0) {
-      var fallback = setTimeout(function () {
-        return done(
+    if (isFinite(timeout)) {
+      fallback = setTimeout(function () {
+        return complete(
           new Error('Timeout of ' + timeout + 'ms exceeded'), exec
         );
       }, timeout);
     }
+  };
+
+  /**
+   * Call the async function within a code cell to trigger async mode. It will
+   * return a function that should be used to end the async execution.
+   *
+   * @return {Function}
+   */
+  context.async = function () {
+    // Sets the async flag to true so we don't trigger the callback immediately.
+    async = true;
 
     // Return a function that can be executed to end the async operation inside
     // the cell. This is handy for all sorts of things, like ajax requests.
     return function (err, result) {
-      // Clear the failure timeout.
-      clearTimeout(fallback);
-
       // Passes iteration off to the middleware since it already caters for
       // async execution like this. This function accepts two parameters, like
       // a normal async callback, but instead off passing it directly off to
@@ -65,24 +96,24 @@ var executePlugin = function (data, next, done) {
       // execution error in this context (it came from the sandbox).
       exec.result  = err || result;
       exec.isError = !!err;
-      return done(null, exec);
+      return complete(null, exec);
     };
   };
 
   /* jshint evil: true */
   data.window.eval([
     'console._notebookApi.load = function (src, done) {',
-    '  console._notebookApi.timeout = Infinity;', // Increase AJAX timeout.
+    '  console._notebookApi.timeout(Infinity);', // Increase AJAX timeout.
     '  return (' + loadScript + ')(src, done || this.async());',
     '};'
   ].join('\n'));
 
   // Uses an asynchronous callback to clear the any possible stack trace
   // that would include implementation logic.
-  // TODO: Augment the stack trace to remove any existing implementation logic.
   process.nextTick(function () {
-    /* global App */
     App._executeContext = context;
+    // Sets up the initial timeout.
+    timeout(ASYNC_TIMEOUT);
     try {
       /* jshint evil: true */
       exec.result  = data.window.eval(code);
@@ -91,8 +122,7 @@ var executePlugin = function (data, next, done) {
       exec.result  = error;
       exec.isError = true;
     } finally {
-      delete App._executeContext;
-      return !async && done(null, exec);
+      return !async && complete(null, exec);
     }
   });
 };

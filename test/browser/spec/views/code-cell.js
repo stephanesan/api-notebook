@@ -204,7 +204,7 @@ describe('Code Cell', function () {
 
         it('should be able to change the timeout on the failover system', function (done) {
           var spy   = sinon.spy(view.resultCell, 'setResult');
-          var code  = 'timeout = 5000;\nvar done = async();';
+          var code  = 'timeout(5000);\nvar done = async();';
           var clock = sinon.useFakeTimers();
 
           view.on('execute', function (view, data) {
@@ -218,9 +218,9 @@ describe('Code Cell', function () {
           view.execute();
 
           App.nextTick(function () {
-            clock.tick(2000);
+            clock.tick(2500);
             expect(spy).to.not.have.been.called;
-            clock.tick(3500);
+            clock.tick(3000);
           });
         });
 
