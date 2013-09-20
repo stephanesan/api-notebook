@@ -4,7 +4,9 @@ var qs   = App.Library.querystring;
 var url  = App.Library.url;
 var path = App.Library.path;
 
-var RETURN_PROPERTY = '@return';
+var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
+var RETURN_PROPERTY  = '@return';
+var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
 
 // Catch commonly used regular expressions
 var TEMPLATE_REGEX = /\{(\w+)\}/g;
@@ -64,9 +66,7 @@ var sanitizeAST = function (ast) {
  *
  * @type {Object}
  */
-var httpMethods = _.chain(
-    ['get', 'head', 'put', 'post', 'patch', 'delete']
-  ).map(function (method) {
+var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
     return [method, {
       method: method
     }];
@@ -242,6 +242,13 @@ var attachResources = function attachResources (nodes, context, resources) {
           routeName = allTemplates[0].slice(1, -1);
         } else {
           routeName = startText;
+        }
+
+        // Don't add reserved methods to the context. This is done to avoid
+        // potentially confusing use cases. *Was it `get` to make the request
+        // or to set the path?*
+        if (_.has(RESERVED_METHODS, routeName)) {
+          return false;
         }
 
         // The route is dynamic, so we set the route name to be a function
