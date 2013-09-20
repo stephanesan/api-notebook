@@ -1,5 +1,6 @@
 /* global App */
 var _    = App._;
+var qs   = App.Library.querystring;
 var url  = App.Library.url;
 var path = App.Library.path;
 
@@ -78,21 +79,23 @@ var httpMethods = _.chain(
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  var fullUrl = url.resolve(nodes.baseUri, nodes.join('/'));
-
   // Switch behaviour based on the method data.
-  return function () {
-    var done;
+  return function (data, done) {
+    done = done || App._executeContext.async();
+
+    // Resolve the full url upon execution to ensure all meta data is attached.
+    var fullUrl = url.resolve(
+      nodes.baseUri, nodes.join('/').replace(/^\/+/, '')
+    );
+
+    // Append the query string.
+    if (_.isString(nodes.query)) {
+      fullUrl = url.resolve(fullUrl, '?' + nodes.query);
+    }
 
     // We know this code works, so bump up the execution timeout. This needs to
     // be done before we call `async` so that it will use this value.
     App._executeContext.timeout = Infinity;
-
-    if (arguments.length > 1) {
-      done = arguments[1];
-    } else {
-      done = App._executeContext.async();
-    }
 
     var options = {
       url:  fullUrl,
@@ -116,11 +119,30 @@ var httpRequest = function (nodes, method) {
  * @param  {Object} methods
  * @return {Object}
  */
-var attachMethods = function (nodes, context, methods) {
+var attachMethods = function (nodes, context, methods, skip) {
   // Iterate over all the possible methods and attach.
   _.each(methods, function (method, verb) {
     context[verb] = httpRequest(nodes, method);
   });
+
+  if (skip !== 'query' && !('query' in nodes)) {
+    // Returns a fresh object with only methods attached (since it would be
+    // wierd to call `query` in the middle of the chain).
+    var newContext = attachMethods(nodes, {}, methods, 'query');
+
+    // Attach a helper method for appending query strings.
+    context.query = function (query) {
+      // Compile the query as a string.
+      if (_.isObject(query)) {
+        query = qs.stringify(query);
+      }
+
+      nodes.query = query;
+      return newContext;
+    };
+
+    context.query[RETURN_PROPERTY] = newContext;
+  }
 
   return context;
 };

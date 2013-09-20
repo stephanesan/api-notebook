@@ -145,6 +145,16 @@ describe('RAML Client Generator Plugin', function () {
             );
           });
         });
+
+        it(
+          'should be able to attach query string parameters',
+          testRequest('("/test/route").query("test=true")', 'get', '/test/route?test=true')
+        );
+
+        it(
+          'should be able to attach query string as an object',
+          testRequest('("/test/route").query({ test: true })', 'get', '/test/route?test=true')
+        );
       });
     });
 
@@ -278,6 +288,21 @@ describe('RAML Client Generator Plugin', function () {
         it(
           'should respond to `mixed(123, 456).get()`',
           testRequest('.mixed(123, 456)', 'get', '/mixed123456')
+        );
+
+        it(
+          'should be able to attach query string parameters',
+          testRequest('.collection.query("test=true")', 'get', '/collection?test=true')
+        );
+
+        it(
+          'should be able to attach query string parameters with variable routes',
+          testRequest('.collection.collectionId(123).nestedId(456).query("test=true")', 'get', '/collection/123/456?test=true')
+        );
+
+        it(
+          'should be able to attach query string as an object',
+          testRequest('.collection.query({ test: true })', 'get', '/collection?test=true')
         );
       });
     });
