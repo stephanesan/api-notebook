@@ -9,6 +9,8 @@ resourceTypes:
         responses: &standardResponses
           200:
             description: OK
+      head?:
+        responses: *standardResponses
       put?:
         responses: *standardResponses
       patch?:
@@ -28,7 +30,9 @@ resourceTypes:
   - member:
       type: base
       get: {}
+      head: {}
       put: {}
+      post: {}
       patch: {}
       delete: {}
 traits:

@@ -1,8 +1,9 @@
 /* global describe, it, beforeEach, afterEach */
 
 describe('RAML Client Generator Plugin', function () {
-  var fixture = document.getElementById('fixture');
-  var methods = ['get', 'post', 'put', 'patch', 'delete'];
+  var fixture      = document.getElementById('fixture');
+  var methods      = ['get', 'head', 'post', 'put', 'patch', 'delete'];
+  var methodBodies = App._.omit(methods, ['get', 'head']);
   var sandbox;
 
   beforeEach(function () {
@@ -37,27 +38,55 @@ describe('RAML Client Generator Plugin', function () {
       server.restore();
     });
 
-    var testRequest = function (chain, method, route) {
+    var fakeRequest = function (execute, method, route, beforeRespond) {
       return function (done) {
-        server.respondWith(
-          method.toUpperCase(),
-          'http://example.com' + route,
-          [200, {
-            'Content-Type': 'application/json'
-          }, 'Example Response Text']
-        );
+        server.respondWith(function (request) {
+          var response = [
+            200,
+            {
+              'Content-Type': 'application/json'
+            },
+            'Example Response Text'
+          ];
 
-        sandbox.execute('Api.example' + chain + '.' + method + '();', function (err, exec) {
-          expect(err).to.not.exist;
+          if (beforeRespond) {
+            response = beforeRespond(response) || response;
+          }
+
+          // Only respond when the request matches.
+          if (request.method === method && request.url === 'http://example.com' + route) {
+            return request.respond.apply(request, response);
+          }
+        });
+
+        sandbox.execute(execute, function (err, exec) {
+          expect(exec.isError).to.be.false;
           expect(exec.result).to.include.keys('responseText', 'statusText');
-          expect(exec.result.statusText).to.equal('OK');
-          expect(exec.result.responseText).to.equal('Example Response Text');
-          return done();
+          return done(err, exec);
         });
 
         // Sandbox `execute` method is async.
         App.nextTick(function () {
           server.respond();
+        });
+      };
+    };
+
+    var testRequest = function (chain, method, route) {
+      return fakeRequest(
+        'Api.example' + chain + '.' + method + '();', method, route
+      );
+    };
+
+    var testRequestBody = function (chain, method, route, data) {
+      return function (done) {
+        return fakeRequest(
+          'Api.example' + chain + '.' + method + '();', method, route, function (response) {
+            response[2] = data;
+          }
+        )(function (err, exec) {
+          expect(exec.result.responseText).to.equal(data);
+          return done(err);
         });
       };
     };
@@ -85,50 +114,31 @@ describe('RAML Client Generator Plugin', function () {
             properRoute = route;
           }
 
-          return function (done) {
-            return testRequest(
-              '("' + route + '", ' + JSON.stringify(context) + ')', method, properRoute
-            )(done);
-          };
+          return testRequest(
+            '("' + route + '", ' + JSON.stringify(context) + ')', method, properRoute
+          );
         };
 
         it('should be able to create multiple request instances', function (done) {
-          server.respondWith(
-            'GET',
-            'http://example.com/test/route',
-            [200, {
-              'Content-Type': 'application/json'
-            }, 'Example Response Text']
-          );
-
           App.Library.async.series([
             App._.bind(sandbox.execute, sandbox, 'var test = Api.example("/test/route");'),
             // Creates a separate request object.
             App._.bind(sandbox.execute, sandbox, 'var another = Api.example("/another/route");'),
             // Tests the original request object.
-            function (next) {
-              sandbox.execute('test.get();', next);
-
-              // Sandbox async execution.
-              return App.nextTick(function () {
-                server.respond();
-              });
-            },
+            fakeRequest('test.get();', 'get', '/test/route'),
           ], function (err, results) {
-            expect(err).to.not.exist;
-
             App._.each(results, function (exec) {
               expect(exec.isError).to.be.false;
             });
 
-            return done();
+            return done(err);
           });
         });
 
         describe('Regular Strings', function () {
           App._.each(methods, function (method) {
             it(
-              'should make ' + method.toUpperCase() + ' requests',
+              'should make ' + method + ' requests',
               testFunctionRequest('/test/route', undefined, method)
             );
           });
@@ -137,11 +147,35 @@ describe('RAML Client Generator Plugin', function () {
         describe('Template Strings', function () {
           App._.each(methods, function (method) {
             it(
-              'should make ' + method.toUpperCase() + ' requests',
+              'should make ' + method + ' requests',
               testFunctionRequest('/{test}/{variable}/{test}', {
                 test: 'here',
                 variable: 'there'
               }, method, '/here/there/here')
+            );
+          });
+        });
+
+        describe('Custom Callbacks', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to pass custom callbacks to ' + method + ' requests',
+              fakeRequest(
+                'Api.example("/test/route").' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
+                method,
+                '/test/route'
+              )
+            );
+          });
+        });
+
+        describe('Custom Request Bodies', function () {
+          App._.each(methodBodies, function (method) {
+            it(
+              'should be able to pass custom request bodies with ' + method + ' requests',
+              testRequestBody(
+                '("/test/route")', method, '/test/route', 'Test data'
+              )
             );
           });
         });
@@ -161,95 +195,71 @@ describe('RAML Client Generator Plugin', function () {
     describe('Predefined Routes', function () {
       it('should have defined a normal route', function (done) {
         sandbox.execute('Api.example.collection;', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.result).to.be.a('function');
           expect(exec.result).to.include.keys('get', 'post');
-          return done();
+          return done(err);
         });
       });
 
       it('should handle route name clashes with variables', function (done) {
         sandbox.execute('Api.example.collection("test");', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.result).to.include.keys('get', 'post')
             .and.not.include.keys('put', 'patch', 'delete');
-          return done();
+          return done(err);
         });
       });
 
       it('should be able to nest routes', function (done) {
         sandbox.execute('Api.example.collection.collectionId;', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.result).to.be.a('function');
-          return done();
+          return done(err);
         });
       });
 
       it('should be able to nest routes under variable routes', function (done ){
         sandbox.execute('Api.example.collection.collectionId(123).nestedId;', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.result).to.be.a('function');
-          return done();
+          return done(err);
         });
       });
 
       it('should be able to add routes with combined text and variables', function (done) {
         sandbox.execute('Api.example.mixed;', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.result).to.be.a('function');
-          return done();
+          return done(err);
         });
       });
 
       it('should return an error when not passing the variable', function (done) {
         sandbox.execute('Api.example.collection.collectionId();', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.isError).to.be.true;
           expect(exec.result.message).to.include('Insufficient parameters');
-          return done();
+          return done(err);
         });
       });
 
       it('should return an error when passing insufficient parameters', function (done) {
         sandbox.execute('Api.example.mixed("test");', function (err, exec) {
-          expect(err).to.not.exist;
           expect(exec.isError).to.be.true;
           expect(exec.result.message).to.include('Insufficient parameters');
-          return done();
+          return done(err);
         });
       });
 
       describe('Making Requests', function () {
         it('should be able to create multiple request instances', function (done) {
-          server.respondWith(
-            'GET',
-            'http://example.com/collection/123/456',
-            [200, {
-              'Content-Type': 'application/json'
-            }, 'Example Response Text']
-          );
-
           App.Library.async.series([
             App._.bind(sandbox.execute, sandbox, 'var test = Api.example.collection.collectionId(123).nestedId(456);'),
             // Creates a separate request object.
             App._.bind(sandbox.execute, sandbox, 'var another = Api.example.collection.collectionId(987).nestedId(654);'),
             // Tests the original request object.
-            function (next) {
-              sandbox.execute('test.get();', next);
-
-              // Sandbox async execution.
-              return App.nextTick(function () {
-                server.respond();
-              });
-            },
+            fakeRequest('test.get();', 'get', '/collection/123/456')
           ], function (err, results) {
-            expect(err).to.not.exist;
-
             App._.each(results, function (exec) {
               expect(exec.isError).to.be.false;
             });
 
-            return done();
+            return done(err);
           });
         });
 
@@ -304,6 +314,30 @@ describe('RAML Client Generator Plugin', function () {
           'should be able to attach query string as an object',
           testRequest('.collection.query({ test: true })', 'get', '/collection?test=true')
         );
+
+        describe('Custom Callbacks', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to pass custom callbacks to ' + method + ' requests',
+              fakeRequest(
+                'Api.example.collection.collectionId(123).' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
+                method,
+                '/collection/123'
+              )
+            );
+          });
+        });
+
+        describe('Custom Request Bodies', function () {
+          App._.each(methodBodies, function (method) {
+            it(
+              'should be able to pass custom request bodies with ' + method + ' requests',
+              testRequestBody(
+                '.collection.collectionId(123)', method, '/collection/123', 'Test data'
+              )
+            );
+          });
+        });
       });
     });
 

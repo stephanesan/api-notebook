@@ -65,7 +65,7 @@ var sanitizeAST = function (ast) {
  * @type {Object}
  */
 var httpMethods = _.chain(
-    ['get', 'put', 'post', 'patch', 'delete']
+    ['get', 'head', 'put', 'post', 'patch', 'delete']
   ).map(function (method) {
     return [method, {
       method: method
@@ -81,6 +81,12 @@ var httpMethods = _.chain(
 var httpRequest = function (nodes, method) {
   // Switch behaviour based on the method data.
   return function (data, done) {
+    // No need to pass data through with `GET` or `HEAD` requests.
+    if (method === 'get' || method === 'head') {
+      data = null;
+      done = arguments[0];
+    }
+
     done = done || App._executeContext.async();
 
     // Resolve the full url upon execution to ensure all meta data is attached.
@@ -98,6 +104,7 @@ var httpRequest = function (nodes, method) {
 
     var options = {
       url:    fullUrl,
+      data:   typeof data === 'object' ? JSON.stringify(data) : data,
       method: method.method
     };
 

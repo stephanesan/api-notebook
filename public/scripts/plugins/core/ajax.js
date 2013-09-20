@@ -18,8 +18,8 @@ module.exports = function (middleware) {
    */
   middleware.core('ajax', function (options, next) {
     var url     = options.url;
-    var xhr     = new XMLHttpRequest();
     var method  = options.method || 'GET';
+    var xhr     = options.xhr = new XMLHttpRequest();
     var timeout = +options.timeout || AJAX_TIMEOUT;
     var ajaxTimeout;
 
