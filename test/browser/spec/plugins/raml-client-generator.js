@@ -92,6 +92,39 @@ describe('RAML Client Generator Plugin', function () {
           };
         };
 
+        it('should be able to create multiple request instances', function (done) {
+          server.respondWith(
+            'GET',
+            'http://example.com/test/route',
+            [200, {
+              'Content-Type': 'application/json'
+            }, 'Example Response Text']
+          );
+
+          App.Library.async.series([
+            App._.bind(sandbox.execute, sandbox, 'var test = Api.example("/test/route");'),
+            // Creates a separate request object.
+            App._.bind(sandbox.execute, sandbox, 'var another = Api.example("/another/route");'),
+            // Tests the original request object.
+            function (next) {
+              sandbox.execute('test.get();', next);
+
+              // Sandbox async execution.
+              return App.nextTick(function () {
+                server.respond();
+              });
+            },
+          ], function (err, results) {
+            expect(err).to.not.exist;
+
+            App._.each(results, function (exec) {
+              expect(exec.isError).to.be.false;
+            });
+
+            return done();
+          });
+        });
+
         describe('Regular Strings', function () {
           App._.each(methods, function (method) {
             it(
@@ -177,6 +210,39 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       describe('Making Requests', function () {
+        it('should be able to create multiple request instances', function (done) {
+          server.respondWith(
+            'GET',
+            'http://example.com/collection/123/456',
+            [200, {
+              'Content-Type': 'application/json'
+            }, 'Example Response Text']
+          );
+
+          App.Library.async.series([
+            App._.bind(sandbox.execute, sandbox, 'var test = Api.example.collection.collectionId(123).nestedId(456);'),
+            // Creates a separate request object.
+            App._.bind(sandbox.execute, sandbox, 'var another = Api.example.collection.collectionId(987).nestedId(654);'),
+            // Tests the original request object.
+            function (next) {
+              sandbox.execute('test.get();', next);
+
+              // Sandbox async execution.
+              return App.nextTick(function () {
+                server.respond();
+              });
+            },
+          ], function (err, results) {
+            expect(err).to.not.exist;
+
+            App._.each(results, function (exec) {
+              expect(exec.isError).to.be.false;
+            });
+
+            return done();
+          });
+        });
+
         it(
           'should respond to `collection.get()`',
           testRequest('.collection', 'get', '/collection')
