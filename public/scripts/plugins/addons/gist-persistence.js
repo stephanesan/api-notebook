@@ -35,8 +35,7 @@ var authenticatePlugin = function (data, next, done) {
     // Trigger an ajax request to get additional details from Github
     middleware.trigger('ajax', {
       url: 'https://api.github.com/applications/' + clientId + '/tokens/' +
-            accessToken,
-      dataType: 'json'
+            accessToken
     }, function (err, xhr) {
       data.userId = JSON.parse(xhr.responseText).user.id;
       return done();
@@ -67,7 +66,7 @@ var loadPlugin = function (data, next, done) {
 
   middleware.trigger('ajax', {
     url: 'https://api.github.com/gists/' + data.id,
-    type: 'GET'
+    method: 'GET'
   }, function (err, xhr) {
     var content = JSON.parse(xhr.responseText);
 
@@ -95,7 +94,7 @@ var savePlugin = function (data, next, done) {
   middleware.trigger('ajax', {
     url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : '') + '?' +
           'access_token=' + accessToken,
-    type: data.id ? 'PATCH' : 'POST',
+    method: data.id ? 'PATCH' : 'POST',
     data: JSON.stringify({
       files: {
         'notebook.md': {

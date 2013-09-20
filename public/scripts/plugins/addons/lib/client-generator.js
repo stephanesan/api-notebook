@@ -97,8 +97,8 @@ var httpRequest = function (nodes, method) {
     App._executeContext.timeout(Infinity);
 
     var options = {
-      url:  fullUrl,
-      type: method.method
+      url:    fullUrl,
+      method: method.method
     };
 
     // Trigger ajax middleware resolution so other middleware can hook onto

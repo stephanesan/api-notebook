@@ -17,41 +17,50 @@ module.exports = function (middleware) {
    * @param  {Function} next
    */
   middleware.core('ajax', function (options, next) {
-    // Prepare the timeout amount to catch long running requests.
+    var url     = options.url;
+    var xhr     = new XMLHttpRequest();
+    var method  = options.method || 'GET';
     var timeout = +options.timeout || AJAX_TIMEOUT;
     var ajaxTimeout;
 
-    var request = _.extend({}, options, {
-      success: function (content, status, xhr) {
+    /**
+     * Wraps callback functions to remove data.
+     *
+     * @param  {Function} fn
+     * @return {Function}
+     */
+    var complete = function (fn) {
+      return function () {
         clearTimeout(ajaxTimeout);
-        return next(null, xhr);
-      },
-      error: function (xhr) {
-        clearTimeout(ajaxTimeout);
-        return next(new Error(xhr.statusText || 'Ajax request aborted'), xhr);
-      }
+        // Remove all xhr callbacks.
+        xhr.onload = xhr.onerror = xhr.onabort = null;
+        // Call the function with the original arguments.
+        return fn.apply(this, arguments);
+      };
+    };
+
+    xhr.open(method, url, true);
+
+    if (options.beforeSend) {
+      options.beforeSend(xhr);
+    }
+
+    xhr.onload = complete(function () {
+      return next(null, xhr);
     });
 
-    if (!('processData' in options)) {
-      request.processData = (options.type === 'GET');
-    }
+    xhr.onerror = xhr.onabort = complete(function () {
+      return next(new Error(xhr.statusText || 'Ajax request aborted'), xhr);
+    });
 
-    if (typeof options.data === 'object' && options.type === 'GET') {
-      request.data = JSON.stringify(options.data);
-    }
-
-    // Using Backbone ajax functionality to submit the request.
-    var xhr = options.xhr = Backbone.$.ajax(request);
+    xhr.send(options.data);
 
     // Set a request timeout
-    ajaxTimeout = setTimeout(function () {
-      // Stops `Backbone.$.ajax` from also triggering an error which would
-      // contain less detail.
-      delete request.error;
+    ajaxTimeout = setTimeout(complete(function () {
       // Abort the current request.
       xhr.abort();
       // Call the `next` function with the timeout details.
       return next(new Error('Ajax timeout of ' + timeout + 'ms exceeded'), xhr);
-    }, timeout);
+    }), timeout);
   });
 };
