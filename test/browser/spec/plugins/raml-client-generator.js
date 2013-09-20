@@ -339,7 +339,7 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should do autocomplete the root function', function (done) {
         testAutocomplete('Api.example("/test").', function (results) {
-          expect(results).to.include.members(methods)
+          expect(results).to.include.members(methods.concat('query'));
 
           return done();
         });
@@ -347,7 +347,7 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete function properties', function (done) {
         testAutocomplete('Api.example.collection.', function (results) {
-          expect(results).to.include.members(['get', 'post', 'collectionId']);
+          expect(results).to.include.members(['get', 'post', 'collectionId', 'query']);
 
           return done();
         });
@@ -355,7 +355,7 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete variable route', function (done) {
         testAutocomplete('Api.example.collection(123).', function (results) {
-          expect(results).to.include.members(['get', 'post']);
+          expect(results).to.include.members(['get', 'post', 'query']);
 
           return done();
         });
@@ -363,7 +363,7 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete nested variable routes', function (done) {
         testAutocomplete('Api.example.collection.collectionId(123).nestedId(456).', function (results) {
-          expect(results).to.contain('get');
+          expect(results).to.include.members(['get', 'query']);
 
           return done();
         });
@@ -371,7 +371,15 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('Api.example.mixed(123, 456).', function (results) {
-          expect(results).to.contain('get');
+          expect(results).to.include.members(['get', 'query']);
+
+          return done();
+        });
+      });
+
+      it('should not repeat the query or other routes after using query', function (done) {
+        testAutocomplete('Api.example.collection.query("test=true").', function (results) {
+          expect(results).to.not.include.members(['collectionId', 'query']);
 
           return done();
         });
