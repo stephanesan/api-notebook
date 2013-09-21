@@ -12,6 +12,36 @@ var persistence = require('../state/persistence');
 var ENTER_KEY = 13;
 
 /**
+ * Helper function for removing old application contents and resizing the
+ * viewport container.
+ *
+ * @param  {Function} fn
+ * @return {Function}
+ */
+var changeNotebook = function (fn) {
+  return function () {
+    // Remove the old application contents/notebook.
+    if (this.contents) {
+      this.contents.remove();
+      delete this.contents;
+      delete this.notebook;
+    }
+
+    // Sets the new notebook contents.
+    this.contents = fn && fn.apply(this, arguments);
+
+    // If the function returned an object, assume it is a view and render it.
+    if (_.isObject(this.contents)) {
+      this.contents.render().appendTo(this.el);
+    }
+
+    // Resize the parent frame since we have added notebook contents.
+    messages.trigger('resize');
+    return this;
+  };
+};
+
+/**
  * Create a central application view.
  *
  * @type {Function}
@@ -57,8 +87,6 @@ App.prototype.events = {
  * relevant events to respond to.
  */
 App.prototype.initialize = function () {
-  this.notebook = new Notebook();
-
   // Start up the history router, which will trigger the start of other
   // subsystems such as persistence and authentication.
   Backbone.history.start({
@@ -67,13 +95,40 @@ App.prototype.initialize = function () {
 };
 
 /**
+ * Renders the regular notebook editor inside the application.
+ *
+ * @return {App}
+ */
+App.prototype.renderNotebook = changeNotebook(function () {
+  return this.notebook = new Notebook();
+});
+
+/**
+ * Renders the raw notebook viewer inside the application.
+ *
+ * @return {App}
+ */
+App.prototype.renderRaw = changeNotebook(function () {
+
+});
+
+/**
+ * Renders the raw notebook editor inside the application.
+ *
+ * @return {App}
+ */
+App.prototype.renderEdit = changeNotebook(function () {
+
+});
+
+/**
  * Remove the application view from the DOM.
  *
  * @return {App}
  */
 App.prototype.remove = function () {
-  this.notebook.remove();
   Backbone.history.stop();
+  changeNotebook().call(this);
   return View.prototype.remove.call(this);
 };
 
@@ -225,7 +280,6 @@ App.prototype.toggleShortcuts = function () {
  * @return {App}
  */
 App.prototype.render = function () {
-  this.notebook.render();
   View.prototype.render.call(this);
 
   this.el.appendChild(domify(
@@ -304,8 +358,7 @@ App.prototype.render = function () {
  */
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
-  this.notebook.appendTo(this.el);
-  messages.trigger('resize');
+  this.renderNotebook();
   return this;
 };
 
@@ -313,7 +366,7 @@ App.prototype.appendTo = function () {
  * Runs the entire notebook sequentially.
  */
 App.prototype.runNotebook = function () {
-  this.notebook.execute();
+  return this.notebook && this.notebook.execute();
 };
 
 /**
