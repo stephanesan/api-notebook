@@ -13,6 +13,7 @@ describe('Notebook', function () {
 
     beforeEach(function () {
       view = new Notebook();
+      App.persistence.reset();
     });
 
     it('should have a class', function () {

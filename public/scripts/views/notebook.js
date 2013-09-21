@@ -73,7 +73,6 @@ Notebook.prototype.initialize = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
-  persistence.reset();
   this.sandbox.remove();
   this.sandboxCompletion.detach(middleware);
 
