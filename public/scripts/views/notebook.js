@@ -36,7 +36,7 @@ var appendNewView = function (View) {
  * @type {Function}
  */
 var Notebook = module.exports = View.extend({
-  className: 'notebook'
+  className: 'notebook-view'
 });
 
 /**

@@ -41,7 +41,7 @@
 .notebook-banner p
   margin: 0
 
-.notebook .cell-result
+.notebook-view > .cell > .cell-result
   border-style: solid
   border-color: $color-result-border
   border-width: 1px 0 0 5px
@@ -63,13 +63,13 @@
     padding: 0.55em 0
     overflow: hidden
 
-.notebook > .cell
+.notebook-view > .cell
   border: 1px solid $color-cell-border
   margin: 1em 0
   position: relative
   min-height: 1.55em
 
-.notebook > .cell > .cell-result
+.notebook-view > .cell > .cell-result
   color: $color-result-text
   &.result-error
     color: $color-error-text
@@ -87,8 +87,16 @@
 
 .markdown
   padding: 16px
-  h1, h2, h3, h4, h5, h6, p, ul, ol
-    margin: 0 0 24px;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  ul,
+  ol
+    margin: 0 0 24px
 
 .notebook-toolbar
   border: solid 1px #CCC
@@ -111,3 +119,9 @@
       line-height: 28px
     button:last-child
       margin-right: 0
+
+.notebook-raw > pre
+  border: 0
+  padding: 0
+  white-space: pre-wrap
+  background-color: transparent

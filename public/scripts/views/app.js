@@ -33,7 +33,7 @@ var changeNotebook = function (fn) {
 
     // If the function returned an object, assume it is a view and render it.
     if (_.isObject(this.contents)) {
-      this.contents.render().appendTo(this.el);
+      this.contents.render().appendTo(this._contentsEl);
     }
 
     // Resize the parent frame since we have added notebook contents.
@@ -57,14 +57,17 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
-  'click .modal-toggle':   'toggleShortcuts',
-  'click .modal-backdrop': 'hideShortcuts',
-  'click .notebook-exec':  'runNotebook',
-  'click .notebook-fork':  'forkNotebook',
-  'click .notebook-clone': 'forkNotebook',
-  'click .notebook-auth':  'authNotebook',
-  'click .notebook-save':  'saveNotebook',
-  // Listen for `Enter` presses and blur the input instead.
+  'click .modal-toggle':    'toggleShortcuts',
+  'click .modal-backdrop':  'hideShortcuts',
+  'click .notebook-exec':   'runNotebook',
+  'click .notebook-fork':   'forkNotebook',
+  'click .notebook-clone':  'forkNotebook',
+  'click .notebook-auth':   'authNotebook',
+  'click .notebook-save':   'saveNotebook',
+  'click .toggle-raw':      'renderRaw',
+  'click .toggle-edit':     'renderEdit',
+  'click .toggle-notebook': 'renderNotebook',
+  // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
 
@@ -304,6 +307,12 @@ App.prototype.render = function () {
       'to save the notebook.</p>' +
     '</div>' +
 
+    '<div class="notebook-toggle">' +
+      '<button class="toggle-notebook">Notebook</button>' +
+      '<button class="toggle-edit">Edit</button>' +
+      '<button class="toggle-raw">Raw</button>' +
+    '</div>' +
+
     '<div class="modal-backdrop"></div>'
   ));
 
@@ -348,6 +357,11 @@ App.prototype.render = function () {
 
   // Trigger all the update methods.
   this.update();
+
+  // Append a content container which will hold the notebook view.
+  this._contentsEl = this.el.appendChild(domify(
+    '<div class="notebook"></div>'
+  ));
 
   return this;
 };
