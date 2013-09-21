@@ -24,6 +24,9 @@ var changeNotebook = function (fn) {
     // Remove the old application contents/notebook.
     if (this.contents) {
       this.contents.remove();
+      this.el.classList.remove(
+        'notebook-view-active', 'notebook-edit-active', 'notebook-raw-active'
+      );
       delete this.contents;
       delete this.notebook;
     }
@@ -104,6 +107,7 @@ App.prototype.initialize = function () {
  * @return {App}
  */
 App.prototype.renderNotebook = changeNotebook(function () {
+  this.el.classList.add('notebook-view-active');
   return this.notebook = new Notebook();
 });
 
@@ -113,6 +117,7 @@ App.prototype.renderNotebook = changeNotebook(function () {
  * @return {App}
  */
 App.prototype.renderRaw = changeNotebook(function () {
+  this.el.classList.add('notebook-raw-active');
   return new RawNotebook();
 });
 
@@ -122,6 +127,7 @@ App.prototype.renderRaw = changeNotebook(function () {
  * @return {App}
  */
 App.prototype.renderEdit = changeNotebook(function () {
+  this.el.classList.add('notebook-edit-active');
   return new EditNotebook();
 });
 
