@@ -110,8 +110,9 @@ Widget.prototype.refresh = function (done) {
 
     // If we have less than two available results, there is no reason to render
     // the hints overlay menu.
-    if (results.length === 1) {
-      return this.ghost = new Ghost(this, this.data, results[0]);
+    if (results.length < 2) {
+      this.ghost = new Ghost(this, this.data, results[0]);
+      return done && done();
     }
 
     var text  = cm.getRange(this.data.from, this.data.to);
@@ -194,6 +195,8 @@ Widget.prototype.refresh = function (done) {
       'change:window.height change:window.width',
       this.onResize = function () { that.reposition(); }
     );
+
+    return done && done();
   }, this));
 };
 

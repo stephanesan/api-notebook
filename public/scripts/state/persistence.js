@@ -347,7 +347,11 @@ persistence.listenTo(persistence, 'change:contents', (function () {
     middleware.trigger(
       'persistence:change',
       this.getMiddlewareData(),
-      _.bind(function (err, data) {
+      _.bind(function (err) {
+        if (err) {
+          console.error(err.toString());
+        }
+
         changing = false;
         if (changeQueue) {
           changeQueue = false;

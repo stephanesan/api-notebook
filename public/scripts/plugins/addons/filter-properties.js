@@ -30,8 +30,12 @@ var _hasOwnProperty = function (object, property) {
  * @return {Boolean}
  */
 var isObjectProperty = function (object, property) {
-  var obj = object;
-
+  /**
+   * Check whether the object has own property.
+   *
+   * @param  {String}  property
+   * @return {Boolean}
+   */
   var objectHasOwnProperty = function (property) {
     return _hasOwnProperty(object, property);
   };

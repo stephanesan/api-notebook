@@ -10,11 +10,8 @@ var ASYNC_TIMEOUT = 2000;
  */
 var contextPlugin = function (context, next) {
   // Unfortunately it isn't as easy as this since we have lexical scoping issues
-  // to the wrong window object. That would load the script in the wrong window.
-  context.load    = function (src, done) {};
-  // The async function needs to be augmented right before execution so we can
-  // hook into the proper execution context and take advantage of the `done`
-  // middleware function.
+  // with the wrong window object. It would load the script in the wrong window.
+  context.load    = function (/* src, done */) {};
   context.async   = function () {};
   context.timeout = function () {};
 

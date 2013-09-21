@@ -1,6 +1,5 @@
 var _           = require('underscore');
 var Backbone    = require('backbone');
-var router      = require('./router');
 var middleware  = require('./middleware');
 var persistence = require('./persistence');
 

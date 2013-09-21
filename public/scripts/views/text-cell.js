@@ -1,11 +1,9 @@
 var _            = require('underscore');
 var marked       = require('marked');
 var domify       = require('domify');
-var Backbone     = require('backbone');
 var EditorCell   = require('./editor-cell');
 var messages     = require('../state/messages');
 var stripInput   = require('../lib/codemirror/strip-input');
-var insertAfter  = require('../lib/browser/insert-after');
 var ownerProtect = require('./lib/owner-protect');
 
 /**

@@ -122,10 +122,9 @@ var completeArguments = function (cm, token, options, done) {
  * @param  {Function}   done
  */
 module.exports = function (cm, options, done) {
-  var cur     = cm.getCursor();
-  var token   = correctToken(cm, cur);
-  var results = [];
-  var type    = token.type;
+  var cur   = cm.getCursor();
+  var token = correctToken(cm, cur);
+  var type  = token.type;
 
   var cb = function (err, completion) {
     completion = completion || {};

@@ -5,6 +5,6 @@ var View = require('./view');
  *
  * @type {Function}
  */
-var CellView = module.exports = View.extend({
+module.exports = View.extend({
   className: 'cell'
 });

@@ -2,12 +2,13 @@ var _        = require('underscore');
 var domify   = require('domify');
 var Backbone = require('backbone');
 
-var View        = require('./view');
-var Notebook    = require('./notebook');
-var controls    = require('../lib/controls');
-var state       = require('../state/state');
-var messages    = require('../state/messages');
-var persistence = require('../state/persistence');
+var View         = require('./view');
+var Notebook     = require('./notebook');
+var RawNotebook  = require('./raw-notebook');
+var EditNotebook = require('./edit-notebook');
+var controls     = require('../lib/controls');
+var messages     = require('../state/messages');
+var persistence  = require('../state/persistence');
 
 var ENTER_KEY = 13;
 
@@ -109,7 +110,7 @@ App.prototype.renderNotebook = changeNotebook(function () {
  * @return {App}
  */
 App.prototype.renderRaw = changeNotebook(function () {
-
+  return new RawNotebook();
 });
 
 /**
@@ -118,7 +119,7 @@ App.prototype.renderRaw = changeNotebook(function () {
  * @return {App}
  */
 App.prototype.renderEdit = changeNotebook(function () {
-
+  return new EditNotebook();
 });
 
 /**

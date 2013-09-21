@@ -1,4 +1,5 @@
-var bootstrap  = require('./bootstrap');
+require('./bootstrap');
+
 var loadScript = require('./lib/browser/load-script');
 
 /**
