@@ -56,5 +56,45 @@ describe('App', function () {
         expect(App.persistence.get('title')).to.equal('Test Notebook');
       });
     });
+
+    describe('Switching Notebook Views', function () {
+      var contents = '```javascript\n\n```';
+
+      beforeEach(function () {
+        persistence.reset();
+        persistence.set('contents', contents);
+        view.render().appendTo(fixture);
+      });
+
+      it('should switch to a raw notebook viewer', function () {
+        simulateEvent(view.el.querySelector('.toggle-notebook-raw'), 'click');
+
+        expect(view.el.querySelector('pre').textContent).to.equal(contents);
+      });
+
+      describe('Raw Notebook Editor', function () {
+        var editor;
+
+        beforeEach(function () {
+          simulateEvent(view.el.querySelector('.toggle-notebook-edit'), 'click');
+
+          editor = view.el.querySelector('.CodeMirror').CodeMirror;
+        });
+
+        it('should switch to a raw notebook editor', function () {
+          expect(editor.getValue()).to.equal(contents);
+        });
+
+        it('should start with the editor focused', function () {
+          expect(editor.hasFocus()).to.be.true;
+        });
+
+        it('should update persistence when editing the raw notebook', function () {
+          editor.setValue('Simple test');
+
+          expect(persistence.get('contents')).to.equal('Simple test');
+        });
+      });
+    });
   });
 });

@@ -60,16 +60,17 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
-  'click .modal-toggle':    'toggleShortcuts',
-  'click .modal-backdrop':  'hideShortcuts',
-  'click .notebook-exec':   'runNotebook',
-  'click .notebook-fork':   'forkNotebook',
-  'click .notebook-clone':  'forkNotebook',
-  'click .notebook-auth':   'authNotebook',
-  'click .notebook-save':   'saveNotebook',
-  'click .toggle-raw':      'renderRaw',
-  'click .toggle-edit':     'renderEdit',
-  'click .toggle-notebook': 'renderNotebook',
+  'click .modal-toggle':   'toggleShortcuts',
+  'click .modal-backdrop': 'hideShortcuts',
+  'click .notebook-exec':  'runNotebook',
+  'click .notebook-fork':  'forkNotebook',
+  'click .notebook-clone': 'forkNotebook',
+  'click .notebook-auth':  'authNotebook',
+  'click .notebook-save':  'saveNotebook',
+  // Switch between application views.
+  'click .toggle-notebook-raw':      'renderRaw',
+  'click .toggle-notebook-edit':     'renderEdit',
+  'click .toggle-notebook-notebook': 'renderNotebook',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -314,9 +315,9 @@ App.prototype.render = function () {
     '</div>' +
 
     '<div class="notebook-toggle">' +
-      '<button class="toggle-notebook">Notebook</button>' +
-      '<button class="toggle-edit">Edit</button>' +
-      '<button class="toggle-raw">Raw</button>' +
+      '<button class="toggle-notebook-notebook">Notebook</button>' +
+      '<button class="toggle-notebook-edit">Edit</button>' +
+      '<button class="toggle-notebook-raw">Raw</button>' +
     '</div>' +
 
     '<div class="modal-backdrop"></div>'
