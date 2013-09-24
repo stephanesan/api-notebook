@@ -207,25 +207,22 @@ var httpRequest = function (nodes, method) {
     fullUrl = url.resolve(fullUrl, '?' + nodes.query);
   }
 
-  return function (data, done) {
+  return function (data) {
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method === 'get' || method === 'head') {
       data = null;
-      done = arguments[0];
     }
-
-    App._executeContext.timeout(Infinity);
-    done = done || App._executeContext.async();
 
     var options = {
       url:     fullUrl,
       data:    typeof data === 'object' ? JSON.stringify(data) : data,
+      async:   false,
       method:  method.method,
       headers: nodes.headers
     };
 
     // Trigger the ajax middleware so plugins can hook onto the requests.
-    App.middleware.trigger('ajax', options, done);
+    App.middleware.trigger('ajax', options);
 
     return options.xhr;
   };

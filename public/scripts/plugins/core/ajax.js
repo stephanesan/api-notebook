@@ -21,6 +21,7 @@ module.exports = function (middleware) {
     var method  = options.method || 'GET';
     var xhr     = options.xhr = new XMLHttpRequest();
     var timeout = +options.timeout || AJAX_TIMEOUT;
+    var async   = options.async === false ? false : true;
     var ajaxTimeout;
 
     /**
@@ -41,7 +42,7 @@ module.exports = function (middleware) {
       };
     };
 
-    xhr.open(method, url, true);
+    xhr.open(method, url, async);
 
     // Sets all request headers before we make the request.
     _.each(options.headers, function (value, header) {
@@ -63,8 +64,6 @@ module.exports = function (middleware) {
       return next(new Error(xhr.statusText || 'Ajax request aborted'), xhr);
     });
 
-    xhr.send(options.data);
-
     // Set a request timeout. Modern browsers can set a `timeout` property
     // which works the same.
     ajaxTimeout = setTimeout(complete(function () {
@@ -73,5 +72,7 @@ module.exports = function (middleware) {
       // Calls the `next` function with the timeout details.
       return next(new Error('Ajax timeout of ' + timeout + 'ms exceeded'), xhr);
     }), timeout);
+
+    xhr.send(options.data);
   });
 };
