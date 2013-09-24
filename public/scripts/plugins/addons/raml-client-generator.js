@@ -60,23 +60,26 @@ var fromPath = function (object, path, setter) {
 };
 
 /**
+ * The Api object is used in the execution context.
+ *
+ * @type {Object}
+ */
+var API = {};
+
+/**
  * Responsible for loading RAML documents and return API clients.
  *
  * @param {String}   name
  * @param {String}   [url]
  * @param {Function} done
  */
-var Api = function (name /*, url */, done) {
-  var url = fromPath(specMap, name);
-
-  // Allows overloading the middle parameter with a url for the RAML loader.
-  if (arguments.length > 1 && typeof arguments[1] !== 'function') {
-    url  = fromPath(specMap, name, arguments[1]);
-    done = arguments[2];
+API.createClient = function (name, url, done) {
+  if (!_.isString(name)) {
+    throw new Error('Provide a name for the generated client');
   }
 
   if (!_.isString(url)) {
-    throw new Error('No known url for ' + name + ' RAML document');
+    throw new Error('Provide a URL for the ' + name + ' RAML document');
   }
 
   App._executeContext.timeout(Infinity);
@@ -86,12 +89,12 @@ var Api = function (name /*, url */, done) {
   // back into a callback format.
   ramlParser.loadFile(url).then(function (data) {
     try {
-      fromPath(Api, name, clientGenerator(data));
+      fromPath(API, name, clientGenerator(data));
     } catch (e) {
       return done(e);
     }
 
-    return done(null, fromPath(Api, name));
+    return done(null, fromPath(API, name));
   }, function (err) {
     return done(err);
   });
@@ -104,7 +107,7 @@ var Api = function (name /*, url */, done) {
  * @param  {Function} next
  */
 var contextPlugin = function (context, next) {
-  context.Api = Api;
+  context.API = API;
 
   return next();
 };
