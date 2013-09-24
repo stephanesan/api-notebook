@@ -65,13 +65,17 @@ module.exports = function (middleware) {
     });
 
     // Set a request timeout. Modern browsers can set a `timeout` property
-    // which works the same.
-    ajaxTimeout = setTimeout(complete(function () {
-      xhr.abort();
+    // which works the same, but we'll use a timeout for consistency.
+    if (async) {
+      ajaxTimeout = setTimeout(complete(function () {
+        xhr.abort();
 
-      // Calls the `next` function with the timeout details.
-      return next(new Error('Ajax timeout of ' + timeout + 'ms exceeded'), xhr);
-    }), timeout);
+        // Calls the `next` function with the timeout details.
+        return next(
+          new Error('Ajax timeout of ' + timeout + 'ms exceeded'), xhr
+        );
+      }), timeout);
+    }
 
     xhr.send(options.data);
   });
