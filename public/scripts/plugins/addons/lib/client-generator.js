@@ -196,12 +196,10 @@ var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  var fullUrl = url.resolve(
-    nodes.baseUri, nodes.join('/').replace(/^\/+/, '')
-  );
+  var fullUrl = nodes.baseUri + '/' + nodes.join('/');
 
   if (_.isString(nodes.query)) {
-    fullUrl = url.resolve(fullUrl, '?' + nodes.query);
+    fullUrl += '?' + nodes.query;
   }
 
   return function (data) {
