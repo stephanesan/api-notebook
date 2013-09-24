@@ -76,7 +76,7 @@ var Api = function (name /*, url */, done) {
   }
 
   if (!_.isString(url)) {
-    throw new Error('No known url for that service');
+    throw new Error('No known url for ' + name + ' RAML document');
   }
 
   App._executeContext.timeout(Infinity);

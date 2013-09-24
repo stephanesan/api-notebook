@@ -18,6 +18,7 @@ var getInternalName = (function () {
     };
   } else {
     getName = function (fn) {
+      // Run a quick regular expression to get the function name and return.
       return (/function\s+(.{1,})\s*\(/).exec(fn)[1];
     };
   }
