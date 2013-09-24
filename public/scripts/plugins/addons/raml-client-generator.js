@@ -4,11 +4,12 @@ var clientGenerator = require('./lib/client-generator');
 
 /**
  * Simple map for requesting a predefined RAML document.
- * TODO: Enable injecting additional maps and decouple from the server.
  *
  * @type {Object}
  */
-var specMap = {};
+var specMap = {
+  'github': process.env.NOTEBOOK_URL + '/raml/github-v3/api-single.yml'
+};
 
 /**
  * Simple map for tracking the return URLs against spec names. Allows names to
