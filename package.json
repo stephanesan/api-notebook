@@ -19,7 +19,8 @@
     "async": "~0.2.9",
     "load-script": "0.0.2",
     "raml-parser": "git+ssh://git@github.com:restful-api-modeling-lang/javascript-parser",
-    "raml-examples": "git+ssh://git@github.com:restful-api-modeling-lang/examples"
+    "raml-examples": "git+ssh://git@github.com:restful-api-modeling-lang/examples",
+    "escape-regexp": "0.0.1"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.4.1",

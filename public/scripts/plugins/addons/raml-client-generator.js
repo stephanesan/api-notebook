@@ -75,6 +75,10 @@ var Api = function (name /*, url */, done) {
     done = arguments[2];
   }
 
+  if (!_.isString(url)) {
+    throw new Error('No known url for that service');
+  }
+
   App._executeContext.timeout(Infinity);
   done = done || App._executeContext.async();
 

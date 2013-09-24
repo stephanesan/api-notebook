@@ -298,7 +298,7 @@ persistence.listenTo(messages, 'ready', function () {
  */
 persistence.listenTo(persistence, 'change:id', function (model, id) {
   process.nextTick(function () {
-    Backbone.history.navigate(_.isEmpty(id) ? '' : id.toString());
+    Backbone.history.navigate(id == null ? '' : id.toString());
   });
 });
 

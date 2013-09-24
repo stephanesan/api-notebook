@@ -1,25 +1,131 @@
 /* global App */
-var _    = App._;
-var qs   = App.Library.querystring;
-var url  = App.Library.url;
-var path = App.Library.path;
+var _      = App._;
+var qs     = App.Library.querystring;
+var url    = App.Library.url;
+var path   = App.Library.path;
+var escape = require('escape-regexp');
 
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY  = '@return';
 var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
-var TEMPLATE_REGEX   = /\{(\w+)\}/g;
+
+/**
+ * Runs validation logic against uri parameters from the RAML spec. Throws an
+ * error with the validation issue when the validation fails.
+ *
+ * @param  {*}      value
+ * @param  {Object} param
+ * @return {Boolean}
+ */
+var validateParam = function (value, param) {
+  if (param.required === true && value == null) {
+    throw new ReferenceError(param.displayName + ' is not defined');
+  }
+
+  if (value != null) {
+    if (param.type === 'string') {
+      // Check the passed in value is a number.
+      if (!_.isString(value)) {
+        throw new TypeError('Expected a string, but got ' + value);
+      }
+
+      // Validate against the enum list.
+      if (_.isArray(param.enum) && !_.contains(param.enum, value)) {
+        throw new Error([
+          'Expected a value of ', param.enum.join(', '), ', but got ', value
+        ].join(''));
+      }
+
+      // Validate the string length against the minimum required length.
+      var minLength = param.minLength;
+      if (minLength === +minLength && value.length < minLength) {
+        throw new Error([
+          'Expected a minimum length of ', minLength,
+          ', but got a length of ', value.length
+        ].join(''));
+      }
+
+      // Validate the string length against the maximum allowed length.
+      var maxLength = param.maxLength;
+      if (maxLength === +maxLength && value.length > maxLength) {
+        throw new Error([
+          'Expected a maximum length of ', maxLength,
+          ', but got a length of ', value.length
+        ].join(''));
+      }
+
+      // Validate the string against the pattern.
+      if (_.isRegExp(param.pattern) && !param.pattern.test(value)) {
+        throw new Error('Expected the value to match ' + param.pattern);
+      }
+    } else if (param.type === 'integer' || param.type === 'number') {
+      if (param.type === 'number') {
+        // Validates that the value is a number and not `NaN`.
+        if (value !== +value) {
+          throw new TypeError('Expected a number, but got' + value);
+        }
+      } else {
+        // Validates that the value is an integer and not `NaN`.
+        if (value !== parseInt(value, 10)) {
+          throw new TypeError('Expected an integer, but got ' + value);
+        }
+      }
+
+      if (param.minimum === +param.minimum && value < param.minimum) {
+        throw new Error('Expected a value larger than ' + param.minimum +
+          ', but got ' + value);
+      }
+
+      if (param.maximum === +param.maximum && value > param.maximum) {
+        throw new Error('Expected a value smaller than ' + param.minimum +
+          ', but got ' + value);
+      }
+    } else if (param.type === 'date') {
+      // Validate that the value is a date.
+      if (!_.isDate(value)) {
+        throw new TypeError('Expected a date, but got ' + value);
+      }
+    } else if (param.type === 'boolean') {
+      // Validate the value is a boolean.
+      if (!_.isBoolean(value)) {
+        throw new TypeError('Expected a boolean, but got ' + value);
+      }
+    }
+  }
+
+  return true;
+};
 
 /**
  * Simple "template" function for working with the uri param variables.
  *
- * @param  {String} template
- * @param  {Object} context
+ * @param  {String}       template
+ * @param  {Object}       params
+ * @param  {Object|Array} context
  * @return {String}
  */
-var template = function (template, context) {
-  return template.replace(TEMPLATE_REGEX, function (_, $0) {
-    return context[$0];
+var template = function (string, params, context) {
+  var paramRegex = new RegExp('{(' + _.map(_.keys(params), function (param) {
+    return escape(param);
+  }).join('|') + ')}', 'g');
+
+  if (_.isArray(context)) {
+    var index = -1;
+
+    string = string.replace(paramRegex, function (match, param) {
+      validateParam(context[++index], params[param]);
+      return context[index] == null ? '' : context[index];
+    });
+
+    return string;
+  }
+
+  string = string.replace(paramRegex, function (match, param) {
+    validateParam(context[param], params[param]);
+    return context[param] == null ? '' : context[param];
   });
+
+  return string;
 };
 
 /**
@@ -56,6 +162,11 @@ var sanitizeAST = function (ast) {
 
     return map;
   })(ast.resources);
+
+  // Parse the root url and inject variables.
+  ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
+
+  console.log(ast);
 
   return ast;
 };
@@ -207,31 +318,27 @@ var attachMethods = function (nodes, context, methods) {
  */
 var attachResources = function attachResources (nodes, context, resources) {
   _.each(resources, function (resource, route) {
-    var routeName  = route;
-    var resources  = resource.resources;
+    var routeName = route;
+    var resources = resource.resources;
     // Use `extend` to clone the nodes since we attach meta data directly to
     // the nodes.
-    var routeNodes = _.extend([], nodes);
-    var allTemplates;
+    var routeNodes   = _.extend([], nodes);
+    var templateTags = resource.uriParameters && _.keys(resource.uriParameters);
 
     routeNodes.push(route);
 
-    // The route can contain any number of templates and text.
-    if (allTemplates = route.match(TEMPLATE_REGEX)) {
-      var group      = allTemplates.join('');
-      var startIndex = route.length - group.length;
-
-      // The route must end with the template tags and have no intermediate
-      // text between template tags.
-      if (route.indexOf(group) === startIndex) {
-        var startText = route.substr(0, startIndex);
+    if (templateTags && templateTags.length) {
+      // The route must end with template tags and have no intermediate text
+      // between template tags.
+      if (/^\w*(?:\{[^\{\}]+\})+$/.test(route)) {
+        var templateCount = templateTags.length;
 
         // If the route is only a template tag with no static text, use the
         // template tag text as the method name.
-        if (startIndex === 0) {
-          routeName = allTemplates[0].slice(1, -1);
+        if (templateCount === 1 && '{' + templateTags[0] + '}' === route) {
+          routeName = templateTags.pop();
         } else {
-          routeName = startText;
+          routeName = route.substr(0, route.indexOf('{'));
         }
 
         // Don't add reserved methods to the context. This is done to avoid
@@ -242,22 +349,14 @@ var attachResources = function attachResources (nodes, context, resources) {
         }
 
         // The route is dynamic, so we set the route name to be a function
-        // which accepts the template arguments and creates a path fragment.
-        // We'll mix in any route already at the namespace so we can do
-        // things like use both `/{route}` and `/route`.
+        // which accepts the template arguments and updates the path fragment.
+        // We'll extend any route already at the same namespace so we can do
+        // things like use both `/{route}` and `/route`, if needed.
         context[routeName] = _.extend(function () {
-          var args = _.first(arguments, allTemplates.length);
-
-          // Check the taken arguments length matches the expected number.
-          if (args.length < allTemplates.length) {
-            throw new Error(
-              'Insufficient parameters given for "' + route + '". ' +
-              'Expected ' + allTemplates.length + ', but got ' + args.length
-            );
-          }
-
-          // Change the last path fragment to the proper text.
-          routeNodes[routeNodes.length - 1] = startText + args.join('');
+          // Change the last path fragment to the proper template text.
+          routeNodes[routeNodes.length - 1] = template(
+            route, resource.uriParameters, _.toArray(arguments)
+          );
 
           var newContext = {};
           attachMethods(routeNodes, newContext, resource.methods);
