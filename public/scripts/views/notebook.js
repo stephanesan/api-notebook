@@ -297,6 +297,7 @@ Notebook.prototype.appendView = function (view, before) {
    */
   this.listenTo(view, 'appendNew', function (view) {
     this.appendCodeView(view.el).focus();
+    this.refreshFromView(view);
   });
 
   /**
