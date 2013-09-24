@@ -408,6 +408,133 @@ describe('RAML Client Generator Plugin', function () {
             );
           });
         });
+
+        describe('Validation Rules', function () {
+          // An object representation of the tests to run with pass and failure
+          // test cases.
+          var validationTest = {
+            string: {
+              basic: {
+                pass: ['test', undefined],
+                fail: [123]
+              },
+              enum: {
+                pass: ['test'],
+                fail: ['string', 123]
+              },
+              pattern: {
+                pass: ['test'],
+                fail: ['string', 123]
+              },
+              minLength: {
+                pass: ['string'],
+                fail: ['test', 123]
+              },
+              maxLength: {
+                pass: ['test'],
+                fail: ['string', 123]
+              },
+              required: {
+                pass: ['test'],
+                fail: [undefined, null, 123]
+              }
+            },
+            number: {
+              basic: {
+                pass: [123.5, undefined],
+                fail: ['123']
+              },
+              minimum: {
+                pass: [10.5],
+                fail: ['3', 3.5]
+              },
+              maximum: {
+                pass: [3.5],
+                fail: ['10', 10.5]
+              },
+              required: {
+                pass: [123.5],
+                fail: [undefined, null, '123']
+              }
+            },
+            integer: {
+              basic: {
+                pass: [123, undefined],
+                fail: ['123', 123.5]
+              },
+              minimum: {
+                pass: [10],
+                fail: ['3', 3, 7.5]
+              },
+              maximum: {
+                pass: [3],
+                fail: ['10', 2.5, 10]
+              },
+              required: {
+                pass: [123],
+                fail: [undefined, null, '123', 123.5]
+              }
+            },
+            date: {
+              basic: {
+                pass: [new Date(), undefined],
+                fail: [123456, '123456']
+              },
+              required: {
+                pass: [new Date()],
+                fail: [null, undefined, 123456, '123456']
+              }
+            },
+            boolean: {
+              basic: {
+                pass: [true, false, undefined],
+                fail: [1, 0, '', 'test']
+              },
+              required: {
+                pass: [true, false],
+                fail: [null, undefined, 1, 0, '', 'test']
+              }
+            }
+          };
+
+          var stringify = function (value) {
+            if (App._.isDate(value)) {
+              return 'new Date("' + value + '")';
+            }
+
+            return JSON.stringify(value);
+          };
+
+          App._.each(validationTest, function (tests, route) {
+            App._.each(tests, function (test, resource) {
+              App._.each(test.pass, function (value) {
+                it('should validate ' + resource + ' ' + route + ' with ' + stringify(value), function (done) {
+                  sandbox.execute(
+                    'API.example.validation.' + route + '.' + resource + '(' + stringify(value) + ');',
+                    function (err, exec) {
+                      expect(exec.isError).to.be.false;
+                      expect(exec.result).to.have.keys(methods.concat('query', 'headers'));
+                      return done(err);
+                    }
+                  );
+                });
+              });
+
+              App._.each(test.fail, function (value) {
+                it('should fail to validate ' + resource + ' ' + route + ' with ' + stringify(value), function (done) {
+                  sandbox.execute(
+                    'API.example.validation.' + route + '.' + resource + '(' + stringify(value) + ');',
+                    function (err, exec) {
+                      expect(exec.isError).to.be.true;
+                      expect(exec.result).to.be.an.instanceof(Error);
+                      return done(err);
+                    }
+                  );
+                });
+              });
+            });
+          });
+        });
       });
     });
 

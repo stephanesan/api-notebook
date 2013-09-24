@@ -39,14 +39,10 @@ traits:
   - paged:
       displayName: paged
       queryParameters:
-        start:
+        page:
+          type: integer
           displayName: start
-          description: The first page to return
-          type: number
-        pages:
-          displayName: pages
-          description: The number of pages to return
-          type: number
+          description: The page number to view
   - secured:
       displayName: secured
       headers:
@@ -68,3 +64,113 @@ traits:
 # Test using variables with text
 /mixed{variable}{route}:
   type: member
+# Test validation
+/validation:
+  /string:
+    /{basic}:
+      type: member
+      uriParameters:
+        basic:
+          type: string
+    /{enum}:
+      type: member
+      uriParameters:
+        enum:
+          type: string
+          enum: ['test']
+    /{pattern}:
+      type: member
+      uriParameters:
+        pattern:
+          type: string
+          pattern: "^test$"
+    /{minLength}:
+      type: member
+      uriParameters:
+        minLength:
+          type: string
+          minLength: 5
+    /{maxLength}:
+      type: member
+      uriParameters:
+        maxLength:
+          type: string
+          maxLength: 5
+    /{required}:
+      type: member
+      uriParameters:
+        required:
+          type: string
+          required: true
+  /number:
+    /{basic}:
+      type: member
+      uriParameters:
+        basic:
+          type: number
+    /{minimum}:
+      type: member
+      uriParameters:
+        minimum:
+          type: number
+          minimum: 5
+    /{maximum}:
+      type: member
+      uriParameters:
+        maximum:
+          type: number
+          maximum: 5
+    /{required}:
+      type: member
+      uriParameters:
+        required:
+          type: number
+          required: true
+  /integer:
+    /{basic}:
+      type: member
+      uriParameters:
+        basic:
+          type: integer
+    /{minimum}:
+      type: member
+      uriParameters:
+        minimum:
+          type: integer
+          minimum: 5
+    /{maximum}:
+      type: member
+      uriParameters:
+        maximum:
+          type: integer
+          maximum: 5
+    /{required}:
+      type: member
+      uriParameters:
+        required:
+          type: integer
+          required: true
+  /date:
+    /{basic}:
+      type: member
+      uriParameters:
+        basic:
+          type: date
+    /{required}:
+      type: member
+      uriParameters:
+        required:
+          type: date
+          required: true
+  /boolean:
+    /{basic}:
+      type: member
+      uriParameters:
+        basic:
+          type: boolean
+    /{required}:
+      type: member
+      uriParameters:
+        required:
+          type: boolean
+          required: true

@@ -23,18 +23,20 @@ var validateParam = function (value, param) {
     throw new ReferenceError(param.displayName + ' is not defined');
   }
 
+  var toString = JSON.stringify;
+
   if (value != null) {
     if (param.type === 'string') {
       // Check the passed in value is a number.
       if (!_.isString(value)) {
-        throw new TypeError('Expected a string, but got ' + value);
+        throw new TypeError('Expected a string, but got ' + toString(value));
       }
 
       // Validate against the enum list.
       if (_.isArray(param.enum) && !_.contains(param.enum, value)) {
         throw new Error([
           'Expected a value of', param.enum.join(', ') + ',',
-          'but got', value
+          'but got', toString(value)
         ].join(' '));
       }
 
@@ -57,40 +59,43 @@ var validateParam = function (value, param) {
       }
 
       // Validate the string against the pattern.
-      if (_.isRegExp(param.pattern) && !param.pattern.test(value)) {
-        throw new Error('Expected the value to match ' + param.pattern);
+      var pattern = param.pattern;
+      if (_.isString(pattern) && !(new RegExp(pattern).test(value))) {
+        throw new Error('Expected the value to match ' + pattern);
       }
     } else if (param.type === 'integer' || param.type === 'number') {
       if (param.type === 'number') {
         // Validates that the value is a number and not `NaN`.
         if (value !== +value) {
-          throw new TypeError('Expected a number, but got' + value);
+          throw new TypeError('Expected a number, but got' + toString(value));
         }
       } else {
         // Validates that the value is an integer and not `NaN`.
         if (value !== parseInt(value, 10)) {
-          throw new TypeError('Expected an integer, but got ' + value);
+          throw new TypeError(
+            'Expected an integer, but got ' + toString(value)
+          );
         }
       }
 
       if (param.minimum === +param.minimum && value < param.minimum) {
         throw new Error('Expected a value larger than ' + param.minimum +
-          ', but got ' + value);
+          ', but got ' + toString(value));
       }
 
       if (param.maximum === +param.maximum && value > param.maximum) {
         throw new Error('Expected a value smaller than ' + param.minimum +
-          ', but got ' + value);
+          ', but got ' + toString(value));
       }
     } else if (param.type === 'date') {
       // Validate that the value is a date.
       if (!_.isDate(value)) {
-        throw new TypeError('Expected a date, but got ' + value);
+        throw new TypeError('Expected a date, but got ' + toString(value));
       }
     } else if (param.type === 'boolean') {
       // Validate the value is a boolean.
       if (!_.isBoolean(value)) {
-        throw new TypeError('Expected a boolean, but got ' + value);
+        throw new TypeError('Expected a boolean, but got ' + toString(value));
       }
     }
   }
@@ -107,35 +112,29 @@ var validateParam = function (value, param) {
  * @return {String}
  */
 var template = function (string, params, context) {
-  // Nothing to parse.
-  if (!params) {
-    return string;
-  }
-
-  // Transform the params into a regular expression for matching.
-  var paramRegex = new RegExp('{(' + _.map(_.keys(params), function (param) {
-    return escape(param);
-  }).join('|') + ')}', 'g');
-
-  // If the context is an array, we need to replace by match indexes instead of
-  // param names.
+  // If the context is an array, we need to transform the replacements into
+  // index based positions for the uri template parser.
   if (_.isArray(context)) {
     var index = -1;
 
+    // Transform the params into a regular expression for matching.
+    var paramRegex = new RegExp('{(' + _.map(_.keys(params), function (param) {
+      return escape(param);
+    }).join('|') + ')}', 'g');
+
     string = string.replace(paramRegex, function (match, param) {
       validateParam(context[++index], params[param]);
-      return context[index] == null ? '' : context[index];
+      return '{' + index + '}';
     });
-
-    return string;
+  } else {
+    // Loop through all the params available and validate against the context
+    // before we pass it to the uri template parser.
+    _.each(params, function (validation, param) {
+      return validateParam(context[param], validation);
+    });
   }
 
-  string = string.replace(paramRegex, function (match, param) {
-    validateParam(context[param], params[param]);
-    return context[param] == null ? '' : context[param];
-  });
-
-  return string;
+  return parser.parse(string).expand(context);
 };
 
 /**
@@ -175,8 +174,6 @@ var sanitizeAST = function (ast) {
 
   // Parse the root url and inject variables.
   ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
-
-  // console.log(ast);
 
   return ast;
 };
@@ -416,7 +413,7 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var client = function (path, context) {
-    var route = parser.parse(path).expand(context || {}).split('/');
+    var route = template(path, {}, context || {}).split('/');
     return attachMethods(_.extend([], nodes, route), {}, httpMethods);
   };
 
