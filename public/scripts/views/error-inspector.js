@@ -1,6 +1,7 @@
 var _         = require('underscore');
 var trim      = require('trim');
 var domify    = require('domify');
+var type      = require('../lib/type');
 var Inspector = require('./inspector');
 
 /**
@@ -16,7 +17,7 @@ var ErrorInspector = module.exports = Inspector.extend();
 ErrorInspector.prototype.initialize = function () {
   Inspector.prototype.initialize.apply(this, arguments);
 
-  if (Object.prototype.toString.call(this.inspect) === '[object Error]') {
+  if (type(this.inspect) === 'error' && 'stack' in this.inspect) {
     this._stackTrace = _.map(this.inspect.stack.split('\n'), trim.left);
     this._preview    = this._stackTrace.shift();
 
