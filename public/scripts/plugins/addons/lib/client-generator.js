@@ -4,6 +4,7 @@ var qs     = App.Library.querystring;
 var url    = App.Library.url;
 var path   = App.Library.path;
 var escape = require('escape-regexp');
+var parser = require('uri-template');
 
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY  = '@return';
@@ -32,26 +33,27 @@ var validateParam = function (value, param) {
       // Validate against the enum list.
       if (_.isArray(param.enum) && !_.contains(param.enum, value)) {
         throw new Error([
-          'Expected a value of ', param.enum.join(', '), ', but got ', value
-        ].join(''));
+          'Expected a value of', param.enum.join(', ') + ',',
+          'but got', value
+        ].join(' '));
       }
 
       // Validate the string length against the minimum required length.
       var minLength = param.minLength;
       if (minLength === +minLength && value.length < minLength) {
         throw new Error([
-          'Expected a minimum length of ', minLength,
-          ', but got a length of ', value.length
-        ].join(''));
+          'Expected a minimum length of', minLength + ',',
+          'but got a length of', value.length
+        ].join(' '));
       }
 
       // Validate the string length against the maximum allowed length.
       var maxLength = param.maxLength;
       if (maxLength === +maxLength && value.length > maxLength) {
         throw new Error([
-          'Expected a maximum length of ', maxLength,
-          ', but got a length of ', value.length
-        ].join(''));
+          'Expected a maximum length of', maxLength + ',',
+          'but got a length of', value.length
+        ].join(' '));
       }
 
       // Validate the string against the pattern.
@@ -105,10 +107,18 @@ var validateParam = function (value, param) {
  * @return {String}
  */
 var template = function (string, params, context) {
+  // Nothing to parse.
+  if (!params) {
+    return string;
+  }
+
+  // Transform the params into a regular expression for matching.
   var paramRegex = new RegExp('{(' + _.map(_.keys(params), function (param) {
     return escape(param);
   }).join('|') + ')}', 'g');
 
+  // If the context is an array, we need to replace by match indexes instead of
+  // param names.
   if (_.isArray(context)) {
     var index = -1;
 
@@ -166,7 +176,7 @@ var sanitizeAST = function (ast) {
   // Parse the root url and inject variables.
   ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
 
-  console.log(ast);
+  // console.log(ast);
 
   return ast;
 };
@@ -353,6 +363,13 @@ var attachResources = function attachResources (nodes, context, resources) {
         // We'll extend any route already at the same namespace so we can do
         // things like use both `/{route}` and `/route`, if needed.
         context[routeName] = _.extend(function () {
+          if (arguments.length < templateCount) {
+            throw new Error([
+              'Insufficient parameters, expected at least',
+              templateCount, 'arguments'
+            ].join(' '));
+          }
+
           // Change the last path fragment to the proper template text.
           routeNodes[routeNodes.length - 1] = template(
             route, resource.uriParameters, _.toArray(arguments)
@@ -402,7 +419,7 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var client = function (path, context) {
-    var route = template(path, context || {}).split('/');
+    var route = parser.parse(path).expand(context || {}).split('/');
     return attachMethods(_.extend([], nodes, route), {}, httpMethods);
   };
 

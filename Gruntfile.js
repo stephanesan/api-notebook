@@ -184,7 +184,7 @@ module.exports = function (grunt) {
     watch: {
       html: {
         files: ['public/**/*.{html,yml}'],
-        tasks: ['newer:copy']
+        tasks: ['newer:copy:build']
       },
       lint: {
         files: ['<%= jshint.all.src %>'],

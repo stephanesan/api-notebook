@@ -258,7 +258,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       it('should be able to nest routes under variable routes', function (done ){
-        sandbox.execute('Api.example.collection.collectionId(123).nestedId;', function (err, exec) {
+        sandbox.execute('Api.example.collection.collectionId("123").nestedId;', function (err, exec) {
           expect(exec.result).to.be.a('function');
           return done(err);
         });
@@ -299,8 +299,8 @@ describe('RAML Client Generator Plugin', function () {
         );
 
         it(
-          'should respond to `collection.collectionId(123).get()`',
-          testRequest('.collection.collectionId(123)', 'get', '/collection/123')
+          'should respond to `collection.collectionId("123").get()`',
+          testRequest('.collection.collectionId("123")', 'get', '/collection/123')
         );
 
         it(
@@ -314,15 +314,15 @@ describe('RAML Client Generator Plugin', function () {
         );
 
         it(
-          'should respond to `collection.collectionId(123).nestedId(456).get()`',
+          'should respond to `collection.collectionId("123").nestedId("456").get()`',
           testRequest(
-            '.collection.collectionId(123).nestedId(456)', 'get', '/collection/123/456'
+            '.collection.collectionId("123").nestedId("456")', 'get', '/collection/123/456'
           )
         );
 
         it(
-          'should respond to `mixed(123, 456).get()`',
-          testRequest('.mixed(123, 456)', 'get', '/mixed123456')
+          'should respond to `mixed("123", "456").get()`',
+          testRequest('.mixed("123", "456")', 'get', '/mixed123456')
         );
 
         describe('Custom Query Strings', function () {
@@ -331,7 +331,7 @@ describe('RAML Client Generator Plugin', function () {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 testRequest(
-                  '.collection.collectionId(123).query("test=true")',
+                  '.collection.collectionId("123").query("test=true")',
                   method,
                   '/collection/123?test=true'
                 )
@@ -344,7 +344,7 @@ describe('RAML Client Generator Plugin', function () {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 testRequest(
-                  '.collection.collectionId(123).query({ test: true })',
+                  '.collection.collectionId("123").query({ test: true })',
                   method,
                   '/collection/123?test=true'
                 )
@@ -358,7 +358,7 @@ describe('RAML Client Generator Plugin', function () {
             it(
               'should be able to pass custom callbacks to ' + method + ' requests',
               fakeRequest(
-                'Api.example.collection.collectionId(123).' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
+                'Api.example.collection.collectionId("123").' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
                 method,
                 '/collection/123'
               )
@@ -371,7 +371,7 @@ describe('RAML Client Generator Plugin', function () {
             it(
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
-                '.collection.collectionId(123)', method, '/collection/123', 'Test data'
+                '.collection.collectionId("123")', method, '/collection/123', 'Test data'
               )
             );
           });
@@ -382,7 +382,7 @@ describe('RAML Client Generator Plugin', function () {
             it(
               'should be able to attach custom headers to ' + method + ' requests',
               testRequestHeaders(
-                '.collection.collectionId(123).headers({ "X-Test-Header": "Test" })',
+                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" })',
                 method,
                 '/collection/123',
                 {
@@ -398,7 +398,7 @@ describe('RAML Client Generator Plugin', function () {
             it(
               'should be able to attach custom headers and query to ' + method + ' requests',
               testRequestHeaders(
-                '.collection.collectionId(123).headers({ "X-Test-Header": "Test" }).query("test=true")',
+                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" }).query("test=true")',
                 method,
                 '/collection/123?test=true',
                 {
@@ -438,7 +438,6 @@ describe('RAML Client Generator Plugin', function () {
         functionReturnPlugin.detach(App.middleware);
 
         view.remove();
-        delete window.test;
       });
 
       it('should do autocomplete the root function', function (done) {
@@ -458,7 +457,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       it('should autocomplete variable route', function (done) {
-        testAutocomplete('Api.example.collection(123).', function (results) {
+        testAutocomplete('Api.example.collection("123").', function (results) {
           expect(results).to.include.members(['get', 'post', 'query', 'headers']);
 
           return done();
@@ -466,7 +465,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       it('should autocomplete nested variable routes', function (done) {
-        testAutocomplete('Api.example.collection.collectionId(123).nestedId(456).', function (results) {
+        testAutocomplete('Api.example.collection.collectionId("123").nestedId("456").', function (results) {
           expect(results).to.include.members(['get', 'query', 'headers']);
 
           return done();
@@ -474,7 +473,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       it('should autocomplete with combined text and variables', function (done) {
-        testAutocomplete('Api.example.mixed(123, 456).', function (results) {
+        testAutocomplete('Api.example.mixed("123", "456").', function (results) {
           expect(results).to.include.members(['get', 'query', 'headers']);
 
           return done();
