@@ -159,7 +159,8 @@ var template = function (string, params, context) {
  * @return {Object}
  */
 var sanitizeAST = function (ast) {
-  // Merge the redundant objects that only have one property each.
+  // Merge an array of objects into a single object using `_.extend` and
+  // `apply` (since `_.extend` accepts unlimited number of arguments).
   ast.traits          = _.extend.apply(_, ast.traits);
   ast.resourceTypes   = _.extend.apply(_, ast.resourceTypes);
   ast.securitySchemes = _.extend.apply(_, ast.securitySchemes);
@@ -462,6 +463,9 @@ var attachHeaders = function (nodes, context, methods) {
  * @return {Object}
  */
 
+// Disable JSHint throwing an error about `attachMethods` being used before it
+// was defined, since it is being used in `attachHeaders` and `attachQuery`.
+
 /* jshint -W003 */
 var attachMethods = function (nodes, context, methods) {
   var newContext, routeNodes;
@@ -476,6 +480,7 @@ var attachMethods = function (nodes, context, methods) {
 
   return context;
 };
+/* jshint +W003 */
 
 /**
  * Recurses through a resource object in the RAML AST, generating a dynamic
