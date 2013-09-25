@@ -111,6 +111,7 @@ var executePlugin = function (data, next, done) {
   // Uses an asynchronous callback to clear the any possible stack trace
   // that would include implementation logic.
   process.nextTick(function () {
+    App._executeWindow  = data.window;
     App._executeContext = context;
     // Sets up the initial timeout.
     timeout(ASYNC_TIMEOUT);

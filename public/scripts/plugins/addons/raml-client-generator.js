@@ -88,13 +88,16 @@ API.createClient = function (name, url, done) {
   // Pass our url to the RAML parser for processing and transform the promise
   // back into a callback format.
   ramlParser.loadFile(url).then(function (data) {
+    var client;
+
     try {
-      fromPath(API, name, clientGenerator(data));
+      client = clientGenerator(data);
+      fromPath(App._executeWindow, name, client);
     } catch (e) {
       return done(e);
     }
 
-    return done(null, fromPath(API, name));
+    return done(null, client);
   }, function (err) {
     return done(err);
   });
