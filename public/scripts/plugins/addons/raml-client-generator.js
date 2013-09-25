@@ -106,8 +106,8 @@ API.createClient = function (name, url, done) {
 /**
  * Alter the context to include the RAML client generator.
  *
- * @param  {Object}   data
- * @param  {Function} next
+ * @param {Object}   data
+ * @param {Function} next
  */
 var contextPlugin = function (context, next) {
   context.API = API;

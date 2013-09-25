@@ -190,6 +190,50 @@ var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
   }).object().value();
 
 /**
+ * Parse an XHR request for response headers and return as an object.
+ *
+ * @param  {Object} xhr
+ * @return {Object}
+ */
+var getReponseHeaders = function (xhr) {
+  var responseHeaders = {};
+
+  _.each(xhr.getAllResponseHeaders().split('\n'), function (header) {
+    header = header.split(':');
+
+    // Make sure we have both parts of the header.
+    if (header.length === 2) {
+      responseHeaders[header[0].toLowerCase()] = trim(header[1]);
+    }
+  });
+
+  return responseHeaders;
+};
+
+/**
+ * Check that the XHR request has a response body.
+ *
+ * @param  {Object}  xhr
+ * @return {Boolean}
+ */
+var hasBody = function (xhr) {
+  var contentLength = xhr.getResponseHeader('Content-Length');
+  var length        = !!contentLength && contentLength !== '0';
+  var encoding      = xhr.getResponseHeader('Transfer-Encoding') != null;
+  return encoding || length;
+};
+
+/**
+ * Return the xhr response mime type.
+ *
+ * @param  {Object} xhr
+ * @return {String}
+ */
+var getMime = function (xhr) {
+  return (xhr.getResponseHeader('Content-Type') || '').split(';')[0];
+};
+
+/**
  * Returns a function that can be used to make ajax requests.
  *
  * @param  {String}   url
@@ -221,21 +265,12 @@ var httpRequest = function (nodes, method) {
 
     var xhr             = options.xhr;
     var responseBody    = xhr.responseText;
-    var responseType    = xhr.getResponseHeader('Content-Type').split(';')[0];
-    var responseHeaders = {};
+    var responseType    = getMime(xhr);
+    var responseHeaders = getReponseHeaders(xhr);
 
-    if (responseType === 'application/json' && responseBody !== '') {
+    if (responseType === 'application/json' && hasBody(xhr)) {
       responseBody = JSON.parse(responseBody);
     }
-
-    _.each(xhr.getAllResponseHeaders().split('\n'), function (header) {
-      header = header.split(':');
-
-      // Make sure we have both parts of the header.
-      if (header.length === 2) {
-        responseHeaders[header[0]] = trim(header[1]);
-      }
-    });
 
     return {
       body:    responseBody,
