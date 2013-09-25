@@ -15,7 +15,7 @@ describe('Code Cell', function () {
       view = new Code();
       view.sandbox = new App.Sandbox();
       view.model.collection = {
-        indexOf:     sinon.stub().returns(0),
+        codeIndexOf: sinon.stub().returns(0),
         getNextCode: sinon.stub().returns(undefined),
         getPrevCode: sinon.stub().returns(undefined)
       };

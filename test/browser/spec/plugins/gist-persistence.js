@@ -64,6 +64,7 @@ describe('Gist Persistence Plugin', function () {
 
   it('should save to github ', function (done) {
     App.persistence.set('userId',   userId);
+    App.persistence.set('ownerId',  userId);
     App.persistence.set('contents', notebook);
 
     server.respondWith(

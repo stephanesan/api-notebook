@@ -61,7 +61,7 @@ describe('RAML Client Generator Plugin', function () {
 
         sandbox.execute(execute, function (err, exec) {
           expect(exec.isError).to.be.false;
-          expect(exec.result).to.include.keys('responseText', 'statusText');
+          expect(exec.result).to.include.keys('body', 'headers', 'status');
           return done(err, exec);
         });
 
@@ -553,7 +553,7 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         view.model.collection = {
-          indexOf:     sinon.stub().returns(0),
+          codeIndexOf: sinon.stub().returns(0),
           getNextCode: sinon.stub().returns(undefined),
           getPrevCode: sinon.stub().returns(undefined)
         };
