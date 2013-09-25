@@ -85,7 +85,7 @@ describe('RAML Client Generator Plugin', function () {
             response[2] = request.requestBody;
           }
         )(function (err, exec) {
-          expect(exec.result.responseText).to.equal(data);
+          expect(exec.result.body).to.equal(data);
           return done(err);
         });
       };
@@ -99,7 +99,7 @@ describe('RAML Client Generator Plugin', function () {
           }
         )(function (err, exec) {
           App._.each(headers, function (value, header) {
-            expect(exec.result.getResponseHeader(header)).to.equal(value);
+            expect(exec.result.getHeader(header)).to.equal(value);
           });
           return done(err);
         });

@@ -219,7 +219,7 @@ var getReponseHeaders = function (xhr) {
 
     // Make sure we have both parts of the header.
     if (header.length === 2) {
-      responseHeaders[header[0].toLowerCase()] = trim(header[1]);
+      responseHeaders[header[0]] = trim(header[1]);
     }
   });
 
@@ -280,16 +280,16 @@ var isFormData = function (mime) {
 };
 
 /**
- * Check whether the header object holds a header.
+ * Gets a header from the header object.
  *
  * @param  {Object}  headers
  * @param  {String}  header
  * @return {Boolean}
  */
-var hasHeader = function (headers, header) {
+var getHeader = function (headers, header) {
   header = header.toLowerCase();
 
-  return _.some(headers, function (value, name) {
+  return _.find(headers, function (value, name) {
     return name.toLowerCase() === header;
   });
 };
@@ -304,7 +304,10 @@ var httpRequest = function (nodes, method) {
   return function (data) {
     var query   = nodes.query || {};
     var headers = nodes.headers || {};
-    var fullUrl = nodes.baseUri + '/' + nodes.join('/');
+    var fullUrl = [
+      nodes.baseUri.replace(/\/+$/, ''),
+      nodes.join('/').replace(/^\/+/, '')
+    ].join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method.method === 'get' || method.method === 'head') {
@@ -357,7 +360,7 @@ var httpRequest = function (nodes, method) {
       }
 
       // Set the correct Content-Type header.
-      if (!hasHeader(headers, 'Content-Type')) {
+      if (getHeader(headers, 'Content-Type') == null) {
         headers['Content-Type'] = mime;
       }
 
@@ -390,9 +393,10 @@ var httpRequest = function (nodes, method) {
     }
 
     return {
-      body:    responseBody,
-      status:  xhr.status,
-      headers: responseHeaders
+      body:      responseBody,
+      status:    xhr.status,
+      headers:   responseHeaders,
+      getHeader: _.bind(getHeader, null, responseHeaders)
     };
   };
 };
