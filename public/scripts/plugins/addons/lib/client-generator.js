@@ -206,12 +206,15 @@ var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
   }).object().value();
 
 /**
- * Parse an XHR request for response headers and return as an object.
+ * Parse an XHR request for response headers and return as an object. Pass an
+ * additional flag to filter any potential duplicate headers (E.g. different
+ * cases).
  *
- * @param  {Object} xhr
+ * @param  {Object}  xhr
+ * @param  {Boolean} [filterDuplicates]
  * @return {Object}
  */
-var getReponseHeaders = function (xhr) {
+var getReponseHeaders = function (xhr, filterDuplicates) {
   var responseHeaders = {};
 
   _.each(xhr.getAllResponseHeaders().split('\n'), function (header) {
@@ -219,7 +222,9 @@ var getReponseHeaders = function (xhr) {
 
     // Make sure we have both parts of the header.
     if (header.length === 2) {
-      responseHeaders[header[0]] = trim(header[1]);
+      var name  = filterDuplicates ? header[0].toLowerCase() : header[0];
+      var value = trim(header[1]);
+      responseHeaders[name] = value;
     }
   });
 
@@ -256,6 +261,8 @@ var getMime = function (xhr) {
  * @return {Boolean}
  */
 var isJSON = function (mime) {
+  // https://github.com/senchalabs/connect/blob/
+  // 296398a001d97fd0e8dafa622fc75c874a06c3d6/lib/middleware/json.js#L78
   return (/^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i).test(mime);
 };
 
@@ -304,6 +311,7 @@ var httpRequest = function (nodes, method) {
   return function (data) {
     var query   = nodes.query || {};
     var headers = nodes.headers || {};
+    var mime    = getHeader(headers, 'Content-Type');
     var fullUrl = [
       nodes.baseUri.replace(/\/+$/, ''),
       nodes.join('/').replace(/^\/+/, '')
@@ -332,41 +340,35 @@ var httpRequest = function (nodes, method) {
       fullUrl += query ? '?' + query : '';
     }
 
-    // Iterate through the method types attempting to coerce to the expected
-    // data type. If it fails, we should just through an error.
-    _.every(method.body, function (body, mime) {
-      var canSerialize = ['[object Object]', '[object Array]'];
+    // Set the correct Content-Type header, if none exists. Kind of random if
+    // more than one exists - in that case I would suggest setting it yourself.
+    if (mime == null && method.body) {
+      headers['Content-Type'] = mime = _.keys(method.body).pop();
+    }
 
-      // If we were passed in data, attempt to sanitize it to the correct type.
-      if (_.contains(canSerialize, toString.call(data))) {
-        if (isJSON(mime)) {
-          data = JSON.stringify(data);
-        } else if (isUrlEncoded(mime)) {
-          data = qs.stringify(data);
-        } else if (isFormData(mime)) {
-          // Attempt to use the form data object. In the case it fails here, we
-          // may be able to move to another type.
-          try {
-            var formData = new FormData();
-            _.each(data, formData.append);
+    var canSerialize = ['[object Object]', '[object Array]'];
 
-            // Set the data to the form data instance.
-            data     = formData;
-            formData = null;
-          } catch (e) {
-            return true;
-          }
+    // If we were passed in data, attempt to sanitize it to the correct type.
+    if (_.contains(canSerialize, toString.call(data))) {
+      if (isJSON(mime)) {
+        data = JSON.stringify(data);
+      } else if (isUrlEncoded(mime)) {
+        data = qs.stringify(data);
+      } else if (isFormData(mime)) {
+        // Attempt to use the form data object. In the case it fails here, we
+        // may be able to move to another type.
+        try {
+          var formData = new FormData();
+          _.each(data, formData.append);
+
+          // Set the data to the form data instance.
+          data     = formData;
+          formData = null;
+        } catch (e) {
+          return true;
         }
       }
-
-      // Set the correct Content-Type header.
-      if (getHeader(headers, 'Content-Type') == null) {
-        headers['Content-Type'] = mime;
-      }
-
-      // Breaks the loop.
-      return false;
-    });
+    }
 
     var options = {
       url:     fullUrl,
@@ -385,8 +387,6 @@ var httpRequest = function (nodes, method) {
     var responseHeaders = getReponseHeaders(xhr);
 
     if (hasBody(xhr)) {
-      // https://github.com/senchalabs/connect/blob/
-      // 296398a001d97fd0e8dafa622fc75c874a06c3d6/lib/middleware/json.js#L78
       if (isJSON(responseType)) {
         responseBody = JSON.parse(responseBody);
       }
@@ -396,7 +396,7 @@ var httpRequest = function (nodes, method) {
       body:      responseBody,
       status:    xhr.status,
       headers:   responseHeaders,
-      getHeader: _.bind(getHeader, null, responseHeaders)
+      getHeader: _.bind(getHeader, null, getReponseHeaders(xhr, true))
     };
   };
 };
