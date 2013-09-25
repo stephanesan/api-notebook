@@ -145,8 +145,9 @@ var template = function (string, params, context) {
  */
 var sanitizeAST = function (ast) {
   // Merge the redundant objects that only have one property each.
-  ast.traits        = _.extend.apply(_, ast.traits);
-  ast.resourceTypes = _.extend.apply(_, ast.resourceTypes);
+  ast.traits          = _.extend.apply(_, ast.traits);
+  ast.resourceTypes   = _.extend.apply(_, ast.resourceTypes);
+  ast.securitySchemes = _.extend.apply(_, ast.securitySchemes);
 
   // Recurse through the resources and move URIs to be the key names.
   ast.resources = (function flattenResources (resources) {
@@ -219,7 +220,11 @@ var httpRequest = function (nodes, method) {
     // Trigger the ajax middleware so plugins can hook onto the requests.
     App.middleware.trigger('ajax', options);
 
-    return options.xhr;
+    var xhr = options.xhr;
+
+    return {
+      body: JSON.parse(xhr.responseText)
+    };
   };
 };
 
