@@ -1,8 +1,7 @@
 /* global App */
 var _      = App._;
 var qs     = App.Library.querystring;
-var url    = App.Library.url;
-var path   = App.Library.path;
+var trim   = require('trim');
 var escape = require('escape-regexp');
 var parser = require('uri-template');
 
@@ -220,10 +219,28 @@ var httpRequest = function (nodes, method) {
     // Trigger the ajax middleware so plugins can hook onto the requests.
     App.middleware.trigger('ajax', options);
 
-    var xhr = options.xhr;
+    var xhr             = options.xhr;
+    var responseBody    = xhr.responseText;
+    var responseType    = xhr.getResponseHeader('Content-Type').split(';')[0];
+    var responseHeaders = {};
+
+    if (responseType === 'application/json' && responseBody !== '') {
+      responseBody = JSON.parse(responseBody);
+    }
+
+    _.each(xhr.getAllResponseHeaders().split('\n'), function (header) {
+      header = header.split(':');
+
+      // Make sure we have both parts of the header.
+      if (header.length === 2) {
+        responseHeaders[header[0]] = trim(header[1]);
+      }
+    });
 
     return {
-      body: JSON.parse(xhr.responseText)
+      body:    responseBody,
+      status:  xhr.status,
+      headers: responseHeaders
     };
   };
 };
