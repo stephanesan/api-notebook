@@ -1,9 +1,10 @@
 /* global describe, it, beforeEach, afterEach */
 
 describe('RAML Client Generator Plugin', function () {
-  var fixture      = document.getElementById('fixture');
-  var methods      = ['get', 'head', 'post', 'put', 'patch', 'delete'];
-  var methodBodies = App._.without(methods, 'get', 'head');
+  var fixture              = document.getElementById('fixture');
+  var methodsWithoutBodies = ['get', 'head'];
+  var methodsWithBodies    = ['post', 'put', 'patch', 'delete'];
+  var methods              = methodsWithBodies.concat(methodsWithoutBodies);
   var sandbox;
 
   beforeEach(function () {
@@ -44,7 +45,7 @@ describe('RAML Client Generator Plugin', function () {
           var response = [
             200,
             {
-              'Content-Type': 'application/json'
+              'Content-Type': 'test/html'
             },
             'Example Response Text'
           ];
@@ -134,6 +135,27 @@ describe('RAML Client Generator Plugin', function () {
           );
         };
 
+        describe('Response Types', function () {
+          App._.each(methods, function (method) {
+            it('should parse JSON reponses with ' + method + ' requests', function (done) {
+              fakeRequest(
+                'example("/test/route").' + method + '()',
+                method,
+                '/test/route',
+                function (request, response) {
+                  response[1]['Content-Type'] = 'application/json';
+                  response[2] = JSON.stringify({
+                    method: method
+                  });
+                }
+              )(function (err, exec) {
+                expect(exec.result.body.method).to.equal(method);
+                return done(err);
+              });
+            });
+          });
+        });
+
         describe('Regular Strings', function () {
           App._.each(methods, function (method) {
             it(
@@ -173,6 +195,19 @@ describe('RAML Client Generator Plugin', function () {
               );
             });
           });
+
+          describe('With Request Initiator', function () {
+            App._.each(methodsWithoutBodies, function (method) {
+              it(
+                'should be able to attach query strings to ' + method + ' requests',
+                fakeRequest(
+                  'example("/test/route").get({ test: true })',
+                  method,
+                  '/collection/123?test=true'
+                )
+              );
+            });
+          });
         });
 
         describe('Custom Callbacks', function () {
@@ -180,7 +215,7 @@ describe('RAML Client Generator Plugin', function () {
             xit(
               'should be able to pass custom callbacks to ' + method + ' requests',
               fakeRequest(
-                'example("/test/route").' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
+                'example("/test/route").' + method + '(' + (App._.contains(methodsWithBodies, method) ? 'null, ' : '') + 'async())',
                 method,
                 '/test/route'
               )
@@ -189,7 +224,7 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Request Bodies', function () {
-          App._.each(methodBodies, function (method) {
+          App._.each(methodsWithBodies, function (method) {
             it(
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
@@ -325,6 +360,27 @@ describe('RAML Client Generator Plugin', function () {
           testRequest('.mixed("123", "456")', 'get', '/mixed123456')
         );
 
+        describe('Response Types', function () {
+          App._.each(methods, function (method) {
+            it('should parse JSON reponses with ' + method + ' requests', function (done) {
+              fakeRequest(
+                'example.collection.collectionId("123").' + method + '()',
+                method,
+                '/collection/123',
+                function (request, response) {
+                  response[1]['Content-Type'] = 'application/json';
+                  response[2] = JSON.stringify({
+                    method: method
+                  });
+                }
+              )(function (err, exec) {
+                expect(exec.result.body.method).to.equal(method);
+                return done(err);
+              });
+            });
+          });
+        });
+
         describe('Custom Query Strings', function () {
           describe('Strings', function () {
             App._.each(methods, function (method) {
@@ -351,6 +407,19 @@ describe('RAML Client Generator Plugin', function () {
               );
             });
           });
+
+          describe('With Request Initiator', function () {
+            App._.each(methodsWithoutBodies, function (method) {
+              it(
+                'should be able to attach query strings to ' + method + ' requests',
+                fakeRequest(
+                  'example.collection.collectionId("123").get({ test: true })',
+                  method,
+                  '/collection/123?test=true'
+                )
+              );
+            });
+          });
         });
 
         describe('Custom Callbacks', function () {
@@ -358,7 +427,7 @@ describe('RAML Client Generator Plugin', function () {
             xit(
               'should be able to pass custom callbacks to ' + method + ' requests',
               fakeRequest(
-                'example.collection.collectionId("123").' + method + '(' + (App._.contains(methodBodies, method) ? 'null, ' : '') + 'async())',
+                'example.collection.collectionId("123").' + method + '(' + (App._.contains(methodsWithBodies, method) ? 'null, ' : '') + 'async())',
                 method,
                 '/collection/123'
               )
@@ -367,7 +436,7 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Request Bodies', function () {
-          App._.each(methodBodies, function (method) {
+          App._.each(methodsWithBodies, function (method) {
             it(
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
@@ -409,94 +478,148 @@ describe('RAML Client Generator Plugin', function () {
           });
         });
 
-        describe('Validation Rules', function () {
-          // An object representation of the tests to run with pass and failure
-          // test cases.
-          var validationTest = {
-            string: {
-              basic: {
-                pass: ['test', undefined],
-                fail: [123]
-              },
-              enum: {
-                pass: ['test'],
-                fail: ['string', 123]
-              },
-              pattern: {
-                pass: ['test'],
-                fail: ['string', 123]
-              },
-              minLength: {
-                pass: ['string'],
-                fail: ['test', 123]
-              },
-              maxLength: {
-                pass: ['test'],
-                fail: ['string', 123]
-              },
-              required: {
-                pass: ['test'],
-                fail: [undefined, null, 123]
-              }
-            },
-            number: {
-              basic: {
-                pass: [123.5, undefined],
-                fail: ['123']
-              },
-              minimum: {
-                pass: [10.5],
-                fail: ['3', 3.5]
-              },
-              maximum: {
-                pass: [3.5],
-                fail: ['10', 10.5]
-              },
-              required: {
-                pass: [123.5],
-                fail: [undefined, null, '123']
-              }
-            },
-            integer: {
-              basic: {
-                pass: [123, undefined],
-                fail: ['123', 123.5]
-              },
-              minimum: {
-                pass: [10],
-                fail: ['3', 3, 7.5]
-              },
-              maximum: {
-                pass: [3],
-                fail: ['10', 2.5, 10]
-              },
-              required: {
-                pass: [123],
-                fail: [undefined, null, '123', 123.5]
-              }
-            },
-            date: {
-              basic: {
-                pass: [new Date(), undefined],
-                fail: [123456, '123456']
-              },
-              required: {
-                pass: [new Date()],
-                fail: [null, undefined, 123456, '123456']
-              }
-            },
-            boolean: {
-              basic: {
-                pass: [true, false, undefined],
-                fail: [1, 0, '', 'test']
-              },
-              required: {
-                pass: [true, false],
-                fail: [null, undefined, 1, 0, '', 'test']
-              }
-            }
-          };
+        describe('Serializing request bodies', function () {
+          describe('JSON', function () {
+            var testObject = JSON.stringify({
+              bool: true,
+              number: 123,
+              string: 'test'
+            });
 
+            App._.each(methodsWithBodies, function (method) {
+              it('should serialize JSON with ' + method + ' requests', function (done) {
+                fakeRequest(
+                  'example.body.json.' + method + '(' + testObject + ')',
+                  method,
+                  '/body/json',
+                  function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal(testObject);
+                  return done(err);
+                });
+              });
+            });
+          });
+
+          describe('URL Encoded Form Data', function () {
+            var test = {
+              bool: true,
+              number: 123,
+              string: 'test'
+            };
+
+            App._.each(methodsWithBodies, function (method) {
+              it('should URL encode with ' + method + ' requests', function (done) {
+                fakeRequest(
+                  'example.body.urlEncoded.' + method + '(' + JSON.stringify(test) + ')',
+                  method,
+                  '/body/urlEncoded',
+                  function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal(
+                    'bool=true&number=123&string=test'
+                  );
+                  return done(err);
+                });
+              });
+            });
+          });
+        });
+      });
+
+      describe('Validation Rules', function () {
+        // An object representation of the tests to run with pass and failure
+        // test cases.
+        var validationTest = {
+          string: {
+            basic: {
+              pass: ['test', undefined],
+              fail: [123]
+            },
+            enum: {
+              pass: ['test'],
+              fail: ['string', 123]
+            },
+            pattern: {
+              pass: ['test'],
+              fail: ['string', 123]
+            },
+            minLength: {
+              pass: ['string'],
+              fail: ['test', 123]
+            },
+            maxLength: {
+              pass: ['test'],
+              fail: ['string', 123]
+            },
+            required: {
+              pass: ['test'],
+              fail: [undefined, null, 123]
+            }
+          },
+          number: {
+            basic: {
+              pass: [123.5, undefined],
+              fail: ['123']
+            },
+            minimum: {
+              pass: [10.5],
+              fail: ['3', 3.5]
+            },
+            maximum: {
+              pass: [3.5],
+              fail: ['10', 10.5]
+            },
+            required: {
+              pass: [123.5],
+              fail: [undefined, null, '123']
+            }
+          },
+          integer: {
+            basic: {
+              pass: [123, undefined],
+              fail: ['123', 123.5]
+            },
+            minimum: {
+              pass: [10],
+              fail: ['3', 3, 7.5]
+            },
+            maximum: {
+              pass: [3],
+              fail: ['10', 2.5, 10]
+            },
+            required: {
+              pass: [123],
+              fail: [undefined, null, '123', 123.5]
+            }
+          },
+          date: {
+            basic: {
+              pass: [new Date(), undefined],
+              fail: [123456, '123456']
+            },
+            required: {
+              pass: [new Date()],
+              fail: [null, undefined, 123456, '123456']
+            }
+          },
+          boolean: {
+            basic: {
+              pass: [true, false, undefined],
+              fail: [1, 0, '', 'test']
+            },
+            required: {
+              pass: [true, false],
+              fail: [null, undefined, 1, 0, '', 'test']
+            }
+          }
+        };
+
+        describe('uriParameters', function () {
           var stringify = function (value) {
             if (App._.isDate(value)) {
               return 'new Date("' + value + '")';
@@ -524,6 +647,52 @@ describe('RAML Client Generator Plugin', function () {
                 it('should fail to validate ' + resource + ' ' + route + ' with ' + stringify(value), function (done) {
                   sandbox.execute(
                     'example.validation.' + route + '.' + resource + '(' + stringify(value) + ');',
+                    function (err, exec) {
+                      expect(exec.isError).to.be.true;
+                      expect(exec.result).to.be.an.instanceof(Error);
+                      return done(err);
+                    }
+                  );
+                });
+              });
+            });
+          });
+        });
+
+        describe('queryParameters', function () {
+          var stringify = function (value) {
+            if (App._.isDate(value)) {
+              return 'new Date("' + value + '")';
+            }
+
+            return JSON.stringify(value);
+          };
+
+          App._.each(validationTest, function (tests, route) {
+            App._.each(tests, function (test, resource) {
+              App._.each(test.pass, function (value) {
+                it('should validate ' + resource + ' ' + route + ' with ' + stringify(value), function (done) {
+                  // Build the query string.
+                  var query = {};
+                  query[resource] = value;
+                  query = App.Library.querystring.stringify(query);
+
+                  fakeRequest(
+                    'example.queryValidation.' + route + '.' + resource + '.get({' + resource + ': ' + stringify(value) + '})',
+                    'get',
+                    '/queryValidation/' + route + '/' + resource + '?' + query
+                  )(function (err, exec) {
+                    expect(exec.isError).to.be.false;
+                    expect(exec.result.status).to.equal(200);
+                    return done(err);
+                  });
+                });
+              });
+
+              App._.each(test.fail, function (value) {
+                it('should fail to validate ' + resource + ' ' + route + ' with ' + stringify(value), function (done) {
+                  sandbox.execute(
+                    'example.queryValidation.' + route + '.' + resource + '.get({' + resource + ': ' + stringify(value) + '});',
                     function (err, exec) {
                       expect(exec.isError).to.be.true;
                       expect(exec.result).to.be.an.instanceof(Error);
@@ -567,7 +736,7 @@ describe('RAML Client Generator Plugin', function () {
         view.remove();
       });
 
-      it('should do autocomplete the root function', function (done) {
+      it('should autocomplete the root function', function (done) {
         testAutocomplete('example("/test").', function (results) {
           expect(results).to.include.members(methods.concat('query', 'headers'));
 

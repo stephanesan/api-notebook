@@ -238,10 +238,7 @@ var getReponseHeaders = function (xhr, filterDuplicates) {
  * @return {Boolean}
  */
 var hasBody = function (xhr) {
-  var contentLength = xhr.getResponseHeader('Content-Length');
-  var length        = !!contentLength && contentLength !== '0';
-  var encoding      = xhr.getResponseHeader('Transfer-Encoding') != null;
-  return encoding || length;
+  return !!xhr.responseText.length;
 };
 
 /**
@@ -309,7 +306,7 @@ var getHeader = function (headers, header) {
  */
 var httpRequest = function (nodes, method) {
   return function (data) {
-    var query   = nodes.query || {};
+    var query   = nodes.query   || {};
     var headers = nodes.headers || {};
     var mime    = getHeader(headers, 'Content-Type');
     var fullUrl = [
@@ -342,7 +339,7 @@ var httpRequest = function (nodes, method) {
 
     // Set the correct Content-Type header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
-    if (mime == null && method.body) {
+    if (mime == null && typeof method.body === 'object') {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
@@ -355,18 +352,15 @@ var httpRequest = function (nodes, method) {
       } else if (isUrlEncoded(mime)) {
         data = qs.stringify(data);
       } else if (isFormData(mime)) {
-        // Attempt to use the form data object. In the case it fails here, we
-        // may be able to move to another type.
-        try {
-          var formData = new FormData();
-          _.each(data, formData.append);
+        // Attempt to use the form data object - available in newer browsers.
+        var formData = new FormData();
+        _.each(data, function (value, key) {
+          formData.append(key, value);
+        });
 
-          // Set the data to the form data instance.
-          data     = formData;
-          formData = null;
-        } catch (e) {
-          return true;
-        }
+        // Set the data to the form data instance.
+        data     = formData;
+        formData = null;
       }
     }
 
