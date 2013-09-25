@@ -5,6 +5,7 @@ var trim   = require('trim');
 var escape = require('escape-regexp');
 var parser = require('uri-template');
 
+var toString         = Object.prototype.toString;
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY  = '@return';
 var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
@@ -18,24 +19,26 @@ var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
  * @return {Boolean}
  */
 var validateParam = function (value, param) {
+  var stringify = JSON.stringify;
+
+  // Do an initial check for the required value and fail early.
   if (param.required === true && value == null) {
     throw new ReferenceError(param.displayName + ' is not defined');
   }
 
-  var toString = JSON.stringify;
-
+  // If it has a value, we can proceed with the rest of the checks.
   if (value != null) {
     if (param.type === 'string') {
       // Check the passed in value is a number.
       if (!_.isString(value)) {
-        throw new TypeError('Expected a string, but got ' + toString(value));
+        throw new TypeError('Expected a string, but got ' + stringify(value));
       }
 
       // Validate against the enum list.
       if (_.isArray(param.enum) && !_.contains(param.enum, value)) {
         throw new Error([
           'Expected a value of', param.enum.join(', ') + ',',
-          'but got', toString(value)
+          'but got', stringify(value)
         ].join(' '));
       }
 
@@ -66,38 +69,55 @@ var validateParam = function (value, param) {
       if (param.type === 'number') {
         // Validates that the value is a number and not `NaN`.
         if (value !== +value) {
-          throw new TypeError('Expected a number, but got' + toString(value));
+          throw new TypeError('Expected a number, but got' + stringify(value));
         }
       } else {
         // Validates that the value is an integer and not `NaN`.
         if (value !== parseInt(value, 10)) {
           throw new TypeError(
-            'Expected an integer, but got ' + toString(value)
+            'Expected an integer, but got ' + stringify(value)
           );
         }
       }
 
       if (param.minimum === +param.minimum && value < param.minimum) {
         throw new Error('Expected a value larger than ' + param.minimum +
-          ', but got ' + toString(value));
+          ', but got ' + stringify(value));
       }
 
       if (param.maximum === +param.maximum && value > param.maximum) {
         throw new Error('Expected a value smaller than ' + param.minimum +
-          ', but got ' + toString(value));
+          ', but got ' + stringify(value));
       }
     } else if (param.type === 'date') {
       // Validate that the value is a date.
       if (!_.isDate(value)) {
-        throw new TypeError('Expected a date, but got ' + toString(value));
+        throw new TypeError('Expected a date, but got ' + stringify(value));
       }
     } else if (param.type === 'boolean') {
       // Validate the value is a boolean.
       if (!_.isBoolean(value)) {
-        throw new TypeError('Expected a boolean, but got ' + toString(value));
+        throw new TypeError('Expected a boolean, but got ' + stringify(value));
       }
     }
   }
+
+  return true;
+};
+
+/**
+ * Pass a whole query params object through the param validation function.
+ *
+ * @param  {Object}  object
+ * @param  {Object}  params
+ * @return {Boolean}
+ */
+var validateParams = function (object, params) {
+  object = object || {};
+
+  _.each(params, function (validate, param) {
+    return validateParam(object[param], validate);
+  });
 
   return true;
 };
@@ -126,11 +146,7 @@ var template = function (string, params, context) {
       return '{' + index + '}';
     });
   } else {
-    // Loop through all the params available and validate against the context
-    // before we pass it to the uri template parser.
-    _.each(params, function (validation, param) {
-      return validateParam(context[param], validation);
-    });
+    validateParams(context, params);
   }
 
   return parser.parse(string).expand(context);
@@ -240,21 +256,52 @@ var getMime = function (xhr) {
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  var fullUrl = nodes.baseUri + '/' + nodes.join('/');
-
-  if (_.isString(nodes.query)) {
-    fullUrl += '?' + nodes.query;
-  }
-
   return function (data) {
+    var fullUrl = nodes.baseUri + '/' + nodes.join('/');
+
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method === 'get' || method === 'head') {
       data = null;
     }
 
+    // Pass the query parameters through validation and append to the url.
+    if (validateParams(nodes.query, method.queryParameters)) {
+      var query = qs.stringify(nodes.query);
+
+      if (query.length) { fullUrl += '?' + query; }
+    }
+
+    // If we were passed in data, attempt to sanitize it to the correct type.
+    if (toString.call(data) === '[object Object]') {
+      // Iterate through the method types attempting to coerce to the expected
+      // data type. If it fails, we should just through an error.
+      _.every(_.keys(method.body), function (body, mime) {
+        if (mime === 'application/json') {
+          data = JSON.stringify(data);
+        } else if (mime === 'application/x-www-form-urlencoded') {
+          data = qs.stringify(data);
+        } else if (mime === 'multipart/form-data') {
+          // Attempt to use the form data object. In the case it fails here, we
+          // may be able to move to another type.
+          try {
+            var formData = new FormData();
+            _.each(data, formData.append);
+
+            // Set the data to the form data instance.
+            data     = formData;
+            formData = null;
+          } catch (e) {
+            return true;
+          }
+        }
+
+        return false;
+      });
+    }
+
     var options = {
       url:     fullUrl,
-      data:    typeof data === 'object' ? JSON.stringify(data) : data,
+      data:    data,
       async:   false,
       method:  method.method,
       headers: nodes.headers
@@ -268,8 +315,12 @@ var httpRequest = function (nodes, method) {
     var responseType    = getMime(xhr);
     var responseHeaders = getReponseHeaders(xhr);
 
-    if (responseType === 'application/json' && hasBody(xhr)) {
-      responseBody = JSON.parse(responseBody);
+    if (hasBody(xhr)) {
+      // https://github.com/senchalabs/connect/blob/
+      // 296398a001d97fd0e8dafa622fc75c874a06c3d6/lib/middleware/json.js#L78
+      if (/^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i.test(responseType)) {
+        responseBody = JSON.parse(responseBody);
+      }
     }
 
     return {
@@ -298,8 +349,9 @@ var attachQuery = function (nodes, context, methods) {
   });
 
   context.query = function (query) {
-    if (_.isObject(query)) {
-      query = qs.stringify(query);
+    // Make sure the passed in `query` is an object for validation.
+    if (!_.isObject(query)) {
+      query = qs.parse(query);
     }
 
     routeNodes.query = query;
