@@ -88,6 +88,10 @@ Persistence.prototype.deserialize = function (done) {
  * @param {Function} done
  */
 Persistence.prototype.save = function (done) {
+  if (!this.isOwner()) {
+    return done(new Error('Not the current owner.'));
+  }
+
   middleware.trigger(
     'persistence:save',
     this.getMiddlewareData(),
@@ -153,7 +157,6 @@ Persistence.prototype.load = function (done) {
     }),
     _.bind(function (err, data) {
       this.set('id',       data.id);
-      this.set('userId',   data.userId);
       this.set('ownerId',  data.ownerId);
       this.set('contents', data.contents, { silent: true });
 
@@ -288,7 +291,10 @@ persistence.listenTo(messages, 'ready', function () {
       userId: null
     }), _.bind(function (err, data) {
       this.set('userId',  data.userId);
-      this.set('ownerId', data.userId);
+
+      if (!this.get('id') && !this.get('ownerId')) {
+        this.set('ownerId', data.userId);
+      }
     }, this)
   );
 });
