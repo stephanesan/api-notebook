@@ -250,6 +250,36 @@ var getMime = function (xhr) {
 };
 
 /**
+ * Check if the mime type matches JSON.
+ *
+ * @param  {String}  mime
+ * @return {Boolean}
+ */
+var isJSON = function (mime) {
+  return (/^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i).test(mime);
+};
+
+/**
+ * Check if the mime type matches url encoding.
+ *
+ * @param  {String}  mime
+ * @return {Boolean}
+ */
+var isUrlEncoded = function (mime) {
+  return mime === 'application/x-www-form-urlencoded';
+};
+
+/**
+ * Check if the mime type matches form data.
+ *
+ * @param  {String}  mime
+ * @return {Boolean}
+ */
+var isFormData = function (mime) {
+  return mime === 'multipart/form-data';
+};
+
+/**
  * Returns a function that can be used to make ajax requests.
  *
  * @param  {String}   url
@@ -257,7 +287,8 @@ var getMime = function (xhr) {
  */
 var httpRequest = function (nodes, method) {
   return function (data) {
-    var query   = nodes.query;
+    var query   = nodes.query || {};
+    var headers = nodes.headers || {};
     var fullUrl = nodes.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
@@ -266,22 +297,22 @@ var httpRequest = function (nodes, method) {
     }
 
     // Pass the query parameters through validation and append to the url.
-    if (validateParams(query, method.queryParameters) && query != null) {
+    if (validateParams(query, method.queryParameters)) {
       query = qs.stringify(query);
 
       fullUrl += query ? '?' + query : '';
     }
 
-    // If we were passed in data, attempt to sanitize it to the correct type.
-    if (toString.call(data) === '[object Object]') {
-      // Iterate through the method types attempting to coerce to the expected
-      // data type. If it fails, we should just through an error.
-      _.every(_.keys(method.body), function (body, mime) {
-        if (mime === 'application/json') {
+    // Iterate through the method types attempting to coerce to the expected
+    // data type. If it fails, we should just through an error.
+    _.every(method.body, function (body, mime) {
+      // If we were passed in data, attempt to sanitize it to the correct type.
+      if (toString.call(data) === '[object Object]') {
+        if (isJSON(mime)) {
           data = JSON.stringify(data);
-        } else if (mime === 'application/x-www-form-urlencoded') {
+        } else if (isUrlEncoded(mime)) {
           data = qs.stringify(data);
-        } else if (mime === 'multipart/form-data') {
+        } else if (isFormData(mime)) {
           // Attempt to use the form data object. In the case it fails here, we
           // may be able to move to another type.
           try {
@@ -295,17 +326,23 @@ var httpRequest = function (nodes, method) {
             return true;
           }
         }
+      }
 
-        return false;
-      });
-    }
+      // Set the correct Content-Type header.
+      if (!_.isString(headers['content-type'])) {
+        headers['content-type'] = mime;
+      }
+
+      // Breaks the loop.
+      return false;
+    });
 
     var options = {
       url:     fullUrl,
       data:    data,
       async:   false,
       method:  method.method,
-      headers: nodes.headers
+      headers: headers
     };
 
     // Trigger the ajax middleware so plugins can hook onto the requests.
@@ -319,7 +356,7 @@ var httpRequest = function (nodes, method) {
     if (hasBody(xhr)) {
       // https://github.com/senchalabs/connect/blob/
       // 296398a001d97fd0e8dafa622fc75c874a06c3d6/lib/middleware/json.js#L78
-      if (/^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i.test(responseType)) {
+      if (isJSON(responseType)) {
         responseBody = JSON.parse(responseBody);
       }
     }
