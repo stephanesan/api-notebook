@@ -257,6 +257,7 @@ var getMime = function (xhr) {
  */
 var httpRequest = function (nodes, method) {
   return function (data) {
+    var query   = nodes.query;
     var fullUrl = nodes.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
@@ -265,10 +266,10 @@ var httpRequest = function (nodes, method) {
     }
 
     // Pass the query parameters through validation and append to the url.
-    if (validateParams(nodes.query, method.queryParameters)) {
-      var query = qs.stringify(nodes.query);
+    if (validateParams(query, method.queryParameters) && query != null) {
+      query = qs.stringify(query);
 
-      if (query.length) { fullUrl += '?' + query; }
+      fullUrl += query ? '?' + query : '';
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
