@@ -280,6 +280,21 @@ var isFormData = function (mime) {
 };
 
 /**
+ * Check whether the header object holds a header.
+ *
+ * @param  {Object}  headers
+ * @param  {String}  header
+ * @return {Boolean}
+ */
+var hasHeader = function (headers, header) {
+  header = header.toLowerCase();
+
+  return _.some(headers, function (value, name) {
+    return name.toLowerCase() === header;
+  });
+};
+
+/**
  * Returns a function that can be used to make ajax requests.
  *
  * @param  {String}   url
@@ -292,8 +307,19 @@ var httpRequest = function (nodes, method) {
     var fullUrl = nodes.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
-    if (method === 'get' || method === 'head') {
+    if (method.method === 'get' || method.method === 'head') {
+      // If we passed in an argument, it should be set as the query string.
+      if (data != null) {
+        query = data;
+      }
+
+      // Unset the data object.
       data = null;
+    }
+
+    // Make sure the passed in `query` is an object for validation.
+    if (query != null && !_.isObject(query)) {
+      query = qs.parse(query);
     }
 
     // Pass the query parameters through validation and append to the url.
@@ -306,8 +332,10 @@ var httpRequest = function (nodes, method) {
     // Iterate through the method types attempting to coerce to the expected
     // data type. If it fails, we should just through an error.
     _.every(method.body, function (body, mime) {
+      var canSerialize = ['[object Object]', '[object Array]'];
+
       // If we were passed in data, attempt to sanitize it to the correct type.
-      if (toString.call(data) === '[object Object]') {
+      if (_.contains(canSerialize, toString.call(data))) {
         if (isJSON(mime)) {
           data = JSON.stringify(data);
         } else if (isUrlEncoded(mime)) {
@@ -329,8 +357,8 @@ var httpRequest = function (nodes, method) {
       }
 
       // Set the correct Content-Type header.
-      if (!_.isString(headers['content-type'])) {
-        headers['content-type'] = mime;
+      if (!hasHeader(headers, 'Content-Type')) {
+        headers['Content-Type'] = mime;
       }
 
       // Breaks the loop.
@@ -387,11 +415,6 @@ var attachQuery = function (nodes, context, methods) {
   });
 
   context.query = function (query) {
-    // Make sure the passed in `query` is an object for validation.
-    if (!_.isObject(query)) {
-      query = qs.parse(query);
-    }
-
     routeNodes.query = query;
     return attachMethods(routeNodes, {}, methods);
   };
