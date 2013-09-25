@@ -25,14 +25,14 @@ var Completion = module.exports = function (cm, options) {
    * to allow a small grace period in case we are clicking a widget suggestion.
    */
   this.onBlur = function () {
-    closeOnBlur = setTimeout(function () { that.removeWidget(); }, 20);
+    closeOnBlur = window.setTimeout(function () { that.removeWidget(); }, 20);
   };
 
   /**
    * On editor focus, we clear the current blur timeout.
    */
   this.onFocus = function () {
-    clearTimeout(closeOnBlur);
+    window.clearTimeout(closeOnBlur);
   };
 
   /**

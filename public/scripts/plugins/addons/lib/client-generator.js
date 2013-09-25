@@ -561,7 +561,7 @@ var attachResources = function attachResources (nodes, context, resources) {
 /**
  * Generate the client object from a sanitized AST object.
  *
- * @param  {Object} ast
+ * @param  {Object} ast Passed through `sanitizeAST`
  * @return {Object}
  */
 var generateClient = function (ast) {

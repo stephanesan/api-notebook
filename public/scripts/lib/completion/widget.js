@@ -171,7 +171,7 @@ Widget.prototype.refresh = function (done) {
     });
 
     CodeMirror.on(hints, 'mousedown', function () {
-      setTimeout(function () { cm.focus(); }, 20);
+      window.setTimeout(function () { cm.focus(); }, 20);
     });
 
     state.on(

@@ -340,7 +340,7 @@ EditorCell.prototype.appendTo = function (el) {
     this.refresh();
     // Since the CodeMirror refresh appears to be async, push the resize event
     // into the following event loop.
-    setTimeout(function () { messages.trigger('resize'); }, 0);
+    process.nextTick(function () { messages.trigger('resize'); }, 0);
   }
 
   return this;

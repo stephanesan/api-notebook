@@ -2,25 +2,6 @@
 var _               = App._;
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
-var NOTEBOOK_URL    = process.env.NOTEBOOK_URL;
-
-/**
- * Simple map for requesting a predefined RAML document.
- *
- * @type {Object}
- */
-var specMap = {
-  box:       NOTEBOOK_URL + '/raml/box-v2.0/api-single.yml',
-  github:    NOTEBOOK_URL + '/raml/github-v3/api-single.yml',
-  stripe:    NOTEBOOK_URL + '/raml/stripe-v1/stripe-v1-single.yml',
-  quizlet:   NOTEBOOK_URL + '/raml/Quizlet-v2.0/Quizlet.yml',
-  amazonS3:  NOTEBOOK_URL + '/raml/amazon_s3/amazon_s3-single.yml',
-  linkedIn:  NOTEBOOK_URL + '/raml/linkedin-v1/linkedin-v1-single.yml',
-  instagram: NOTEBOOK_URL + '/raml/instagram-v1/api-single.yml',
-  google: {
-    contacts: NOTEBOOK_URL + '/raml/google-contacts-v3.0/gc-v3-single.yml'
-  }
-};
 
 /**
  * Parse a path string to a reference on the object. Supports passing an

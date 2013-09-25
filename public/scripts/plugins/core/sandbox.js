@@ -42,7 +42,7 @@ var executePlugin = function (data, next, done) {
    * @param {Object} data
    */
   var complete = function (err, data) {
-    clearTimeout(fallback);
+    window.clearTimeout(fallback);
     delete App._executeContext;
     return done(err, data);
   };
@@ -55,8 +55,8 @@ var executePlugin = function (data, next, done) {
   var timeout = context.timeout = function (ms) {
     var timeout = +ms;
 
-    // Clears the old timeout to set a new one.
-    clearTimeout(fallback);
+    // Clears the old timeout before setting the new one.
+    window.clearTimeout(fallback);
 
     // Break immediately if the timeout is an unknown number.
     if (isNaN(timeout) || timeout < 0) {
@@ -67,7 +67,7 @@ var executePlugin = function (data, next, done) {
     // or not handling some edge case. This idea comes from `Mocha` async tests,
     // but we change the timeout by using `timeout = Infinity`.
     if (isFinite(timeout)) {
-      fallback = setTimeout(function () {
+      fallback = window.setTimeout(function () {
         return complete(
           new Error('Timeout of ' + timeout + 'ms exceeded'), exec
         );

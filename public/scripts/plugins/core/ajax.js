@@ -32,7 +32,7 @@ module.exports = function (middleware) {
      */
     var complete = function (fn) {
       return function () {
-        clearTimeout(ajaxTimeout);
+        window.clearTimeout(ajaxTimeout);
 
         // Remove all xhr callbacks. No need to keep references to unused
         // functions.
@@ -67,7 +67,7 @@ module.exports = function (middleware) {
     // Set a request timeout. Modern browsers can set a `timeout` property
     // which works the same, but we'll use a timeout for consistency.
     if (async) {
-      ajaxTimeout = setTimeout(complete(function () {
+      ajaxTimeout = window.setTimeout(complete(function () {
         xhr.abort();
 
         // Calls the `next` function with the timeout details.
