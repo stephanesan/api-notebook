@@ -31,7 +31,9 @@ describe('Authentication', function () {
       server.respondWith(
         'POST',
         /^https\:\/\/www.example.com\/oauth2\/token.+code=123/,
-        [200, {}, 'access_token=123456&token_type=bearer']
+        [200, {
+          'Content-Type': 'application/json'
+        }, '{"access_token":"123456","token_type":"bearer"}']
       );
 
       // Emulates waiting for the round-trip to the authentication server.
