@@ -22,6 +22,7 @@ var tokenKey = function (options) {
 var sanitizeOptions = function (data) {
   var options = _.extend({}, {
     scope:          [],
+    grant:          'code',
     validateOnly:   false,
     scopeSeparator: '+'
   }, data);
@@ -68,16 +69,85 @@ var validateToken = function (options, done) {
 };
 
 /**
+ * Format error response types to regular strings for displaying the clients.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.1.2.1
+ *
+ * @type {Object}
+ */
+var errorResponses = {
+  'invalid_request': [
+    'The request is missing a required parameter, includes an',
+    'invalid parameter value, includes a parameter more than',
+    'once, or is otherwise malformed.'
+  ].join(' '),
+  'invalid_client': [
+    'Client authentication failed (e.g., unknown client, no',
+    'client authentication included, or unsupported',
+    'authentication method).'
+  ].join(' '),
+  'invalid_grant': [
+    'The provided authorization grant (e.g., authorization',
+    'code, resource owner credentials) or refresh token is',
+    'invalid, expired, revoked, does not match the redirection',
+    'URI used in the authorization request, or was issued to',
+    'another client.'
+  ].join(' '),
+  'unauthorized_client': [
+    'The client is not authorized to request an authorization',
+    'code using this method.'
+  ].join(' '),
+  'unsupported_grant_type': [
+    'The authorization grant type is not supported by the',
+    'authorization server.'
+  ].join(' '),
+  'access_denied': [
+    'The resource owner or authorization server denied the request.'
+  ].join(' '),
+  'unsupported_response_type': [
+    'The authorization server does not support obtaining',
+    'an authorization code using this method.'
+  ].join(' '),
+  'invalid_scope': [
+    'The requested scope is invalid, unknown, or malformed.'
+  ].join(' '),
+  'server_error': [
+    'The authorization server encountered an unexpected',
+    'condition that prevented it from fulfilling the request.',
+    '(This error code is needed because a 500 Internal Server',
+    'Error HTTP status code cannot be returned to the client',
+    'via an HTTP redirect.)'
+  ].join(' '),
+  'temporarily_unavailable': [
+    'The authorization server is currently unable to handle',
+    'the request due to a temporary overloading or maintenance',
+    'of the server.'
+  ].join(' ')
+};
+
+/**
+ * Return the formatted error string.
+ *
+ * @param  {String} code
+ * @return {String}
+ */
+var errorResponseMap = function (code) {
+  return errorResponses[code] || code;
+};
+
+/**
  * Trigger the full server-side OAuth2 flow.
  *
  * @param {Object}   options
  * @param {Function} done
  */
-var oAuth2Flow = function (options, done) {
-  var width  = 500;
-  var height = 350;
-  var left   = (window.screen.availWidth - width) / 2;
-  var state  = ('' + Math.random()).substr(2);
+var oAuth2CodeFlow = function (options, done) {
+  var width       = 500;
+  var height      = 350;
+  var left        = (window.screen.availWidth - width) / 2;
+  var state       = ('' + Math.random()).substr(2);
+  var redirectUri = url.resolve(
+    global.location, '/authentication/oauth2.html'
+  );
 
   /**
    * Assigns a global variable that the oauth authentication window should
@@ -86,28 +156,45 @@ var oAuth2Flow = function (options, done) {
   global.authenticateOauth2 = function (href) {
     delete global.authenticateOauth2;
     // Parse the url and prepare to do an ajax request to get the acces token.
-    var uri = url.parse(href, true);
+    var query = url.parse(href, true).query;
 
-    if (uri.query.state !== state) {
-      return done(new Error('Oauth2 state mismatch.'));
+    if (query.error) {
+      return done(new Error(errorResponseMap(query.error)));
     }
 
-    if (!uri.query.code) {
-      return done(new Error('Oauth2 code missing.'));
+    if (query.state !== state) {
+      return done(new Error('OAuth2 state mismatch'));
+    }
+
+    if (!query.code) {
+      return done(new Error('OAuth2 code missing'));
     }
 
     App.middleware.trigger('ajax', {
       url: options.tokenUrl + '?' + qs.stringify({
-        'code':          uri.query.code,
+        'code':          query.code,
+        'grant_type':    'authorization_code',
+        'redirect_uri':  redirectUri,
         'client_id':     options.clientId,
         'client_secret': options.clientSecret
       }),
-      method: 'POST'
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      }
     }, function (err, xhr) {
-      if (err) { return done(err); }
+      if (err) {
+        return done(err);
+      }
 
-      var content = qs.parse(xhr.responseText);
-      var data    = {
+      var content = JSON.parse(xhr.responseText);
+
+      // Repond with the error body.
+      if (content.error) {
+        return done(new Error(errorResponseMap(content.error)));
+      }
+
+      var data = {
         scope:       options.scope,
         updated:     Date.now(),
         tokenType:   content.token_type,
@@ -117,8 +204,7 @@ var oAuth2Flow = function (options, done) {
       // Persist the key in localStorage.
       App.store.set(tokenKey(options), data);
 
-      // The returned body from the ajax request could provide an error string.
-      return done(content.error && new Error(content.error), _.extend(data, {
+      return done(null, _.extend(data, {
         xhr: xhr
       }));
     });
@@ -126,12 +212,11 @@ var oAuth2Flow = function (options, done) {
 
   // Stringify the query string data.
   var query  = qs.stringify({
-    'state':        state,
-    'scope':        options.scope,
-    'client_id':    options.clientId,
-    'redirect_uri': url.resolve(
-      global.location, '/authentication/oauth2.html'
-    )
+    'state':         state,
+    'scope':         options.scope,
+    'client_id':     options.clientId,
+    'redirect_uri':  redirectUri,
+    'response_type': 'code'
   });
 
   window.open(
@@ -139,6 +224,20 @@ var oAuth2Flow = function (options, done) {
     'authenticateOauth2', // Assigning a name stops overlapping windows.
     'left=' + left + ',top=100,width=' + width + ',height=' + height
   );
+};
+
+/**
+ * Function for simply proxy two parameters to a done function. Required since
+ * the function may not return parameters but when the middleware doesn't
+ * recieve two parameters in passes the previous data object back through.
+ *
+ * @param  {Function} done
+ * @return {Function}
+ */
+var proxyDone = function (done) {
+  return function (err, data) {
+    return done(err, data);
+  };
 };
 
 /**
@@ -155,6 +254,7 @@ module.exports = function (middleware) {
    *   `tokenUrl`         - "https://www.example.com/oauth2/token"
    *   `clientId`         - EXAMPLE_CLIENT_ID
    *   `clientSecret`     - EXAMPLE_CLIENT_SECRET *NOT RECOMMENDED*
+   *   `grant`            - "code"
    *   `scope`            - ["user", "read", "write"]
    *   `scopeSeparator`   - "+" *Github uses a comma*
    *   `validateUrl`      - "http://www.example.com/user/self" *No side effects*
@@ -176,13 +276,17 @@ module.exports = function (middleware) {
         }
 
         // Commit to the whole OAuth2 dance.
-        return oAuth2Flow(options, done);
+        if (options.grant === 'code') {
+          return oAuth2CodeFlow(options, done);
+        }
+
+        return done(new Error('Unsupported OAuth2 Grant Flow'));
       }
     );
   });
 
   /**
-   * Middleware for checking if the OAuth token is valid without actually
+   * Middleware for checking if the OAuth2 token is valid without actually
    * triggering the OAuth2 flow.
    *
    * @param {Object}   data
@@ -190,9 +294,19 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('authenticate:oauth2:validate', function (data, next, done) {
-    return validateToken(sanitizeOptions(data), function (err, auth) {
-      return done(err, auth);
-    });
+    return validateToken(sanitizeOptions(data), proxyDone(done));
+  });
+
+  /**
+   * Middleware for authenticating using the Oauth2 code grant flow.
+   * Reference: http://tools.ietf.org/html/rfc6749#section-4.1
+   *
+   * @param  {Object}   data
+   * @param  {Function} next
+   * @param  {Function} done
+   */
+  middleware.core('authenticate:oauth2:code', function (data, next, done) {
+    return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
   });
 
   /**

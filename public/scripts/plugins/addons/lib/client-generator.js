@@ -308,20 +308,22 @@ var getHeader = function (headers, header) {
 var sanitizeXHR = function (xhr) {
   if (!xhr) { return xhr; }
 
-  var responseBody    = xhr.responseText;
-  var responseType    = getMime(xhr.getResponseHeader('Content-Type'));
-  var responseHeaders = getReponseHeaders(xhr);
+  var mime    = getMime(xhr.getResponseHeader('Content-Type'));
+  var body    = xhr.responseText;
+  var headers = getReponseHeaders(xhr);
 
   if (hasBody(xhr)) {
-    if (isJSON(responseType)) {
-      responseBody = JSON.parse(responseBody);
+    if (isJSON(mime)) {
+      body = JSON.parse(body);
+    } else if (isUrlEncoded(mime)) {
+      body = qs.parse(body);
     }
   }
 
   return {
-    body:      responseBody,
+    body:      body,
     status:    xhr.status,
-    headers:   responseHeaders,
+    headers:   headers,
     getHeader: _.bind(getHeader, null, getReponseHeaders(xhr, true))
   };
 };

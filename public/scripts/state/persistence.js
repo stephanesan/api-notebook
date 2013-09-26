@@ -77,7 +77,7 @@ Persistence.prototype.deserialize = function (done) {
     }),
     _.bind(function (err, data) {
       this.set('title',    data.title || this.defaults.title);
-      this.set('notebook', data.notebook);
+      this.set('notebook', data.notebook, { silent: true });
 
       return done && done(err);
     }, this)

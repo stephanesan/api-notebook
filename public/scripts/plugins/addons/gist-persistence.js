@@ -123,7 +123,8 @@ var savePlugin = function (data, next, done) {
           content: data.contents
         }
       }
-    })
+    }),
+    authorizationUrl: AUTH_URL
   }, function (err, xhr) {
     if (err) {
       return done(err);
