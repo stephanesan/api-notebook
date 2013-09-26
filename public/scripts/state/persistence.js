@@ -13,7 +13,7 @@ var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
     title:      'New Notebook',
-    userId:     true, // User is authenticated until the `ready` hook is done.
+    userId:     null,
     ownerId:    null,
     originalId: null,
     notebook:   []
@@ -26,7 +26,7 @@ var Persistence = Backbone.Model.extend({
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  return this.get('ownerId') === this.get('userId');
+  return !this.isReady || this.get('ownerId') === this.get('userId');
 };
 
 /**
@@ -35,7 +35,7 @@ Persistence.prototype.isOwner = function () {
  * @return {Boolean}
  */
 Persistence.prototype.isAuthenticated = function () {
-  return this.has('userId');
+  return !this.isReady || this.has('userId');
 };
 
 /**
@@ -293,6 +293,10 @@ persistence.listenTo(messages, 'ready', function () {
       if (!this.get('id') && !this.get('ownerId')) {
         this.set('ownerId', data.userId);
       }
+
+      // Set an `isReady` flag on the persistence model. This is used to check
+      // if the user is authenticated and if the user is the owner.
+      this.isReady = true;
     }, this)
   );
 });
