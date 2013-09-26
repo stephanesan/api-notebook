@@ -13,7 +13,7 @@ var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
     title:      'New Notebook',
-    userId:     null,
+    userId:     true, // User is authenticated until the `ready` hook is done.
     ownerId:    null,
     originalId: null,
     notebook:   []
@@ -35,7 +35,7 @@ Persistence.prototype.isOwner = function () {
  * @return {Boolean}
  */
 Persistence.prototype.isAuthenticated = function () {
-  return !!this.get('userId');
+  return this.has('userId');
 };
 
 /**
