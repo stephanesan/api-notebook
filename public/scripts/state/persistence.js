@@ -5,9 +5,7 @@ var messages   = require('./messages');
 var middleware = require('./middleware');
 
 /**
- * Persistence is a static model that holds all persistence based data. Only
- * two flags should ever be set - `userId` and `notebook` - but more could be
- * set external to the module.
+ * Persistence is a static model that holds all persistent notebook data.
  *
  * @type {Function}
  */
@@ -192,7 +190,7 @@ Persistence.prototype.fork = function () {
 };
 
 /**
- * Exports a static instance of persistence.
+ * Export a static instance of the persistence model.
  *
  * @type {Object}
  */

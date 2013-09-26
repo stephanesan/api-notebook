@@ -245,11 +245,11 @@ var hasBody = function (xhr) {
 /**
  * Return the xhr response mime type.
  *
- * @param  {Object} xhr
+ * @param  {String} contentType
  * @return {String}
  */
-var getMime = function (xhr) {
-  return (xhr.getResponseHeader('Content-Type') || '').split(';')[0];
+var getMime = function (contentType) {
+  return (contentType || '').split(';')[0];
 };
 
 /**
@@ -309,7 +309,7 @@ var httpRequest = function (nodes, method) {
   return function (data) {
     var query   = nodes.query   || {};
     var headers = nodes.headers || {};
-    var mime    = getHeader(headers, 'Content-Type');
+    var mime    = getMime(getHeader(headers, 'Content-Type'));
     var fullUrl = [
       nodes.baseUri.replace(/\/+$/, ''),
       nodes.join('/').replace(/^\/+/, '')
@@ -340,7 +340,7 @@ var httpRequest = function (nodes, method) {
 
     // Set the correct Content-Type header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
-    if (mime == null && typeof method.body === 'object') {
+    if (!mime && typeof method.body === 'object') {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
@@ -378,7 +378,7 @@ var httpRequest = function (nodes, method) {
 
     var xhr             = options.xhr;
     var responseBody    = xhr.responseText;
-    var responseType    = getMime(xhr);
+    var responseType    = getMime(xhr.getResponseHeader('Content-Type'));
     var responseHeaders = getReponseHeaders(xhr);
 
     if (hasBody(xhr)) {
