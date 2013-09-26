@@ -26,7 +26,11 @@ var Persistence = Backbone.Model.extend({
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  return !this.isReady || this.get('ownerId') === this.get('userId');
+  if (!this.isReady || (!this.has('ownerId') && !this.has('userId'))) {
+    return true;
+  }
+
+  return this.get('ownerId') === this.get('userId');
 };
 
 /**

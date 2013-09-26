@@ -300,20 +300,45 @@ var getHeader = function (headers, header) {
 };
 
 /**
+ * Sanitize the XHR request into the desired format.
+ *
+ * @param  {XMLHttpRequest} xhr
+ * @return {Object}
+ */
+var sanitizeXHR = function (xhr) {
+  if (!xhr) { return xhr; }
+
+  var responseBody    = xhr.responseText;
+  var responseType    = getMime(xhr.getResponseHeader('Content-Type'));
+  var responseHeaders = getReponseHeaders(xhr);
+
+  if (hasBody(xhr)) {
+    if (isJSON(responseType)) {
+      responseBody = JSON.parse(responseBody);
+    }
+  }
+
+  return {
+    body:      responseBody,
+    status:    xhr.status,
+    headers:   responseHeaders,
+    getHeader: _.bind(getHeader, null, getReponseHeaders(xhr, true))
+  };
+};
+
+/**
  * Returns a function that can be used to make ajax requests.
  *
  * @param  {String}   url
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  return function (data) {
+  return function (data, done) {
+    var async   = !!done;
     var query   = nodes.query   || {};
     var headers = nodes.headers || {};
     var mime    = getMime(getHeader(headers, 'Content-Type'));
-    var fullUrl = [
-      nodes.baseUri.replace(/\/+$/, ''),
-      nodes.join('/').replace(/^\/+/, '')
-    ].join('/');
+    var fullUrl = nodes.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method.method === 'get' || method.method === 'head') {
@@ -368,31 +393,25 @@ var httpRequest = function (nodes, method) {
     var options = {
       url:     fullUrl,
       data:    data,
-      async:   false,
+      async:   async,
       method:  method.method,
       headers: headers
     };
 
-    // Trigger the ajax middleware so plugins can hook onto the requests.
-    App.middleware.trigger('ajax', options);
-
-    var xhr             = options.xhr;
-    var responseBody    = xhr.responseText;
-    var responseType    = getMime(xhr.getResponseHeader('Content-Type'));
-    var responseHeaders = getReponseHeaders(xhr);
-
-    if (hasBody(xhr)) {
-      if (isJSON(responseType)) {
-        responseBody = JSON.parse(responseBody);
-      }
+    if (async && !_.isFunction(done)) {
+      done = App._executeContext.async();
     }
 
-    return {
-      body:      responseBody,
-      status:    xhr.status,
-      headers:   responseHeaders,
-      getHeader: _.bind(getHeader, null, getReponseHeaders(xhr, true))
-    };
+    // Trigger the ajax middleware so plugins can hook onto the requests. If the
+    // function is async we need to register a callback for the middleware.
+    App.middleware.trigger('ajax', options, async && function (err, xhr) {
+      return done(err, sanitizeXHR(xhr));
+    });
+
+    // If the request was synchronous, return the sanitized XHR response data.
+    if (!async) {
+      return sanitizeXHR(options.xhr);
+    }
   };
 };
 
@@ -571,7 +590,7 @@ var attachResources = function attachResources (nodes, context, resources) {
  */
 var generateClient = function (ast) {
   var nodes = _.extend([], {
-    baseUri: ast.baseUri
+    baseUri: ast.baseUri.replace(/\/+$/, '')
   });
 
   /**
@@ -584,7 +603,10 @@ var generateClient = function (ast) {
    * @return {Object}
    */
   var client = function (path, context) {
-    var route = template(path, {}, context || {}).split('/');
+    var route = template(
+      path, {}, context || {}
+    ).replace(/^\/+/, '').split('/');
+
     return attachMethods(_.extend([], nodes, route), {}, httpMethods);
   };
 

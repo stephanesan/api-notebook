@@ -212,10 +212,10 @@ describe('RAML Client Generator Plugin', function () {
 
         describe('Custom Callbacks', function () {
           App._.each(methods, function (method) {
-            xit(
+            it(
               'should be able to pass custom callbacks to ' + method + ' requests',
               fakeRequest(
-                'example("/test/route").' + method + '(' + (App._.contains(methodsWithBodies, method) ? 'null, ' : '') + 'async())',
+                'example("/test/route").' + method + '(null, async())',
                 method,
                 '/test/route'
               )
@@ -427,7 +427,7 @@ describe('RAML Client Generator Plugin', function () {
             xit(
               'should be able to pass custom callbacks to ' + method + ' requests',
               fakeRequest(
-                'example.collection.collectionId("123").' + method + '(' + (App._.contains(methodsWithBodies, method) ? 'null, ' : '') + 'async())',
+                'example.collection.collectionId("123").' + method + '(null, async())',
                 method,
                 '/collection/123'
               )
