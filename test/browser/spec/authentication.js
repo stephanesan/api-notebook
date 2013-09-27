@@ -36,16 +36,13 @@ describe('Authentication', function () {
         }, '{"access_token":"123456","token_type":"bearer"}']
       );
 
-      // Emulates waiting for the round-trip to the authentication server.
+      expect(window.open.lastCall.args[0]).to.contain(authorizationUrl);
+      // Cheat and grab the state we passed through to the authentication server.
+      var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
+      window.authenticateOauth2('http://localhost:3000/?code=123&state=' + state);
+      // Respond to the request for the token
       App.nextTick(function () {
-        expect(window.open.lastCall.args[0]).to.contain(authorizationUrl);
-        // Cheat and grab the state we passed through to the authentication server.
-        var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
-        window.authenticateOauth2('http://localhost:3000/?code=123&state=' + state);
-        // Respond to the request for the token
-        App.nextTick(function () {
-          server.respond();
-        });
+        server.respond();
       });
     });
   });

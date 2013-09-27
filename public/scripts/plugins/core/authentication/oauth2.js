@@ -4,13 +4,24 @@ var qs  = require('querystring');
 var url = require('url');
 
 /**
+ * Generate a custom store for OAuth2 tokens.
+ *
+ * @type {Object}
+ */
+var oauth2Store = App.store.customStore('oauth2');
+
+/**
  * Return a unique key for storing the access token in localStorage.
  *
- * @param  {Object} options
+ * @param  {Object} data
  * @return {String}
  */
-var tokenKey = function (options) {
-  return 'oauth2[' + JSON.stringify(options.authorizationUrl) + ']';
+var tokenKey = function (data) {
+  if (!_.isString(data.authorizationUrl)) {
+    throw new Error('Authorization url must be provided for persistence');
+  }
+
+  return data.authorizationUrl;
 };
 
 /**
@@ -23,7 +34,6 @@ var sanitizeOptions = function (data) {
   var options = _.extend({}, {
     scope:          [],
     grant:          'code',
-    validateOnly:   false,
     scopeSeparator: '+'
   }, data);
 
@@ -41,11 +51,11 @@ var sanitizeOptions = function (data) {
  * @param {Function} done
  */
 var validateToken = function (options, done) {
-  if (!options.validateUrl || !App.store.has(tokenKey(options))) {
+  if (!options.validateUrl || !oauth2Store.has(tokenKey(options))) {
     return done();
   }
 
-  var auth = App.store.get(tokenKey(options));
+  var auth = oauth2Store.get(tokenKey(options));
 
   App.middleware.trigger('ajax:oauth2', {
     url:              options.validateUrl,
@@ -53,16 +63,16 @@ var validateToken = function (options, done) {
   }, function (err, xhr) {
     // Check if the response returned any type of error.
     if (err || Math.floor(xhr.status / 100) !== 2) {
-      App.store.unset(tokenKey(options));
+      oauth2Store.unset(tokenKey(options));
       return done(err);
     }
 
     // Bump the updated date.
     auth.updated = Date.now();
-    App.store.set(tokenKey(options), auth);
+    oauth2Store.set(tokenKey(options), auth);
 
     // Return the auth object extended with the ajax request.
-    return done(null, _.extend(auth, {
+    return done(null, _.extend({}, auth, {
       xhr: xhr
     }));
   });
@@ -202,9 +212,9 @@ var oAuth2CodeFlow = function (options, done) {
       };
 
       // Persist the key in localStorage.
-      App.store.set(tokenKey(options), data);
+      oauth2Store.set(tokenKey(options), data);
 
-      return done(null, _.extend(data, {
+      return done(null, _.extend({}, data, {
         xhr: xhr
       }));
     });
@@ -277,7 +287,7 @@ module.exports = function (middleware) {
 
         // Commit to the whole OAuth2 dance.
         if (options.grant === 'code') {
-          return oAuth2CodeFlow(options, done);
+          return middleware.trigger('authenticate:oauth2:code', options, done);
         }
 
         return done(new Error('Unsupported OAuth2 Grant Flow'));
@@ -321,13 +331,13 @@ module.exports = function (middleware) {
       throw new Error('An authorization url is required to be set');
     }
 
-    if (!App.store.has(tokenKey(data))) {
+    if (!oauth2Store.has(tokenKey(data))) {
       throw new Error('No access token is available for this endpoint');
     }
 
     // Add the access token to the request.
     var uri = url.parse(data.url, true);
-    uri.query.access_token = App.store.get(tokenKey(data)).accessToken;
+    uri.query.access_token = oauth2Store.get(tokenKey(data)).accessToken;
     data.url = url.format(uri);
     delete data.authorizationUrl;
 
