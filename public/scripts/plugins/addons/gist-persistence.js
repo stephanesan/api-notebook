@@ -46,10 +46,10 @@ var authenticatedUserId = function (done) {
 var authenticatePlugin = function (data, next, done) {
   App.middleware.trigger('authenticate:oauth2', {
     scope:            ['gist'],
-    scopeSeparator:   ',',
     clientId:         CLIENT_ID,
-    tokenUrl:         TOKEN_URL,
+    clientSecret:     '', // Replaced by proxy
     validateUrl:      VALID_URL,
+    accessTokenUrl:   TOKEN_URL,
     authorizationUrl: AUTH_URL
   }, function (err, auth) {
     if (err) {

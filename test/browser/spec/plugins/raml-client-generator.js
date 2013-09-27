@@ -721,6 +721,13 @@ describe('RAML Client Generator Plugin', function () {
           sandbox: sandbox
         });
 
+        view.notebook = {
+          sandbox: sandbox,
+          completionOptions: {
+            context: sandbox.window
+          }
+        };
+
         view.model.collection = {
           codeIndexOf: sinon.stub().returns(0),
           getNextCode: sinon.stub().returns(undefined),

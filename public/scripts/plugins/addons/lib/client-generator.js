@@ -2,6 +2,7 @@
 var _      = App._;
 var qs     = App.Library.querystring;
 var trim   = require('trim');
+var cases  = require('change-case');
 var escape = require('escape-regexp');
 var parser = require('uri-template');
 
@@ -9,6 +10,9 @@ var toString         = Object.prototype.toString;
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY  = '@return';
 var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
+
+// List of supported OAuth2 grant types in order of preference.
+var supportedOAuth2Grants = ['code'];
 
 /**
  * Runs validation logic against uri parameters from the RAML spec. Throws an
@@ -400,8 +404,12 @@ var httpRequest = function (nodes, method) {
       headers: headers
     };
 
-    if (async && !_.isFunction(done)) {
-      done = App._executeContext.async();
+    if (async) {
+      App._executeContext.timeout(Infinity);
+
+      if (!_.isFunction(done)) {
+        done = App._executeContext.async();
+      }
     }
 
     // Trigger the ajax middleware so plugins can hook onto the requests. If the
@@ -585,6 +593,71 @@ var attachResources = function attachResources (nodes, context, resources) {
 };
 
 /**
+ * Returns a function that can be used to authenticate with the API.
+ *
+ * @param  {Array}    nodes
+ * @param  {Object}   scheme
+ * @return {Function}
+ */
+var authenticateOAuth2 = function (nodes, scheme) {
+  var acceptedGrants = scheme.settings.authorizationGrants;
+
+  // Generate the default object that can be overridden by user input.
+  var defaults = {
+    grant:            _.intersection(supportedOAuth2Grants, acceptedGrants)[0],
+    scope:            scheme.settings.scopes,
+    accessTokenUrl:   scheme.settings.accessTokenUrl,
+    authorizationUrl: scheme.settings.authorizationUrl
+  };
+
+  return function (data, done) {
+    if (!_.isFunction(done)) {
+      done = App._executeContext.async();
+    }
+
+    // Generate the options using user data. We'll require at least the
+    // `clientId` and `clientSecret` be passed in with the data object.
+    var options = _.extend({}, defaults, data);
+
+    // Timeout after 10 minutes.
+    App._executeContext.timeout(10 * 60 * 1000);
+
+    App.middleware.trigger(
+      'authenticate:oauth2',
+      options,
+      function (err, auth) {
+        return done(err, auth);
+      }
+    );
+  };
+};
+
+/**
+ * Attaches all available security schemes to the context.
+ *
+ * @param  {Array}  nodes
+ * @param  {Object} context
+ * @param  {Object} schemes
+ * @return {Object}
+ */
+var attachSecuritySchemes = function (nodes, context, schemes) {
+  // Loop through the available schemes and attach the available schemes.
+  _.each(schemes, function (scheme, title) {
+    var methodName = 'authenticate' + cases.pascal(title);
+
+    if (scheme.type === 'OAuth 2.0') {
+      var acceptedGrants = scheme.settings.authorizationGrants;
+
+      if (_.intersection(acceptedGrants, supportedOAuth2Grants).length) {
+        context[methodName] = authenticateOAuth2(nodes, scheme);
+      }
+    }
+  });
+
+  return context;
+};
+
+/**
  * Generate the client object from a sanitized AST object.
  *
  * @param  {Object} ast Passed through `sanitizeAST`
@@ -617,6 +690,9 @@ var generateClient = function (ast) {
 
   // Attach all the resources to the returned client function.
   attachResources(nodes, client, ast.resources);
+
+  // Attach security scheme authentication to the root node.
+  attachSecuritySchemes(nodes, client, ast.securitySchemes);
 
   return client;
 };

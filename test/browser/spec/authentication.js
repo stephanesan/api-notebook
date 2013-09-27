@@ -19,8 +19,10 @@ describe('Authentication', function () {
       var authorizationUrl = 'https://www.example.com/oauth2/authorize';
 
       App.middleware.trigger('authenticate:oauth2', {
-        'tokenUrl':         tokenUrl,
-        'authorizationUrl': authorizationUrl
+        clientId:         '',
+        clientSecret:     '',
+        accessTokenUrl:   tokenUrl,
+        authorizationUrl: authorizationUrl
       }, function (err, auth) {
         expect(err).to.not.exist;
         expect(auth.accessToken).to.equal('123456');
@@ -30,7 +32,7 @@ describe('Authentication', function () {
 
       server.respondWith(
         'POST',
-        /^https\:\/\/www.example.com\/oauth2\/token.+code=123/,
+        'https://www.example.com/oauth2/token',
         [200, {
           'Content-Type': 'application/json'
         }, '{"access_token":"123456","token_type":"bearer"}']

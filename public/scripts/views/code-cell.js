@@ -7,7 +7,6 @@ var stripInput = require('../lib/codemirror/strip-input');
 var state      = require('../state/state');
 var extraKeys  = require('./lib/extra-keys');
 var controls   = require('../lib/controls').code;
-var middleware = require('../state/middleware');
 
 /**
  * Initialize a new code cell view.
@@ -26,7 +25,6 @@ CodeCell.prototype.initialize = function () {
   // Need a way of keeping the internal editor cell reference, since we can move
   // up and down between other statements.
   this._editorCid = this.model.cid;
-  this.sandbox    = this.options.sandbox;
 };
 
 /**
@@ -42,9 +40,7 @@ CodeCell.prototype.EditorModel = require('../models/code-cell');
  * @type {Object}
  */
 CodeCell.prototype.editorOptions = _.extend(
-  {},
-  EditorCell.prototype.editorOptions,
-  {
+  {}, EditorCell.prototype.editorOptions, {
     mode: 'javascript',
     lineNumberFormatter: function (line) {
       return String((this.view.startLine || 1) + line - 1);
@@ -127,7 +123,7 @@ CodeCell.prototype.execute = function (done) {
     this.moveCursorToEnd();
   }
 
-  this.sandbox.execute(this.getValue(), _.bind(function (err, data) {
+  this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
     // Log any sandbox execution errors for the user to inspect.
     if (err && console) {
       console.error(err.toString());
@@ -141,7 +137,7 @@ CodeCell.prototype.execute = function (done) {
 
     // Trigger `execute` and set the result, each of which need an additional
     // flag to indicate whether the the
-    this.resultCell.setResult(data, this.sandbox.window);
+    this.resultCell.setResult(data, this.notebook.sandbox.window);
     this.trigger('execute', this, data);
     return done && done(err, data);
   }, this));
@@ -197,18 +193,12 @@ CodeCell.prototype.browseToCell = function (newModel) {
 CodeCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
-  // Extends the context with additional inline completion results. Requires
-  // using `Object.create` since you can't extend an object with every property
-  // of the global object.
-  var context = Object.create(this.sandbox.window);
+  // Set up the autocompletion widget.
+  this._completion = new Completion(
+    this.editor, this.notebook.completionOptions
+  );
 
-  middleware.trigger('sandbox:context', context, _.bind(function (err, data) {
-    // Set up the autocompletion widget.
-    this._completion = new Completion(this.editor, {
-      context: data
-    });
-  }, this));
-
+  // Listen for code cells changes and update line numbers.
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     this.lastLine = this.startLine + cm.lastLine();
 

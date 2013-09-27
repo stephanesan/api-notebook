@@ -12,6 +12,7 @@ var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
 var insertAfter = require('../lib/browser/insert-after');
+var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
 
 /**
@@ -32,6 +33,8 @@ Notebook.prototype.initialize = function (options) {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
   this.collection = new NotebookCollection();
+
+  this.completionOptions = {};
 
   // When the user changes, we may have been given permission to do things like
   // edit the notebook. Hence, we need to rerender certain aspects of the app.
@@ -74,6 +77,25 @@ Notebook.prototype.updateUser = function () {
 };
 
 /**
+ * Refresh the completion context object, used by the completion helper in code
+ * cells to get completion results.
+ *
+ * @return {Notebook}
+ */
+Notebook.prototype.updateCompletion = function () {
+  // Extends the context with additional inline completion results. Requires
+  // using `Object.create` since you can't extend an object with every property
+  // of the global object.
+  var context = Object.create(this.sandbox.window);
+
+  middleware.trigger('sandbox:context', context, _.bind(function (err, data) {
+    this.completionOptions.context = data;
+  }, this));
+
+  return this;
+};
+
+/**
  * Render the notebook view.
  *
  * @return {Notebook}
@@ -100,6 +122,7 @@ Notebook.prototype.render = function () {
 
   // Focus the last cell and set the persistence layer to start updating again.
   this.collection.last().view.focus();
+  this.listenTo(this.collection, 'remove sort',        this.updateCompletion);
   this.listenTo(this.collection, 'remove sort change', this.update);
 
   return this;
@@ -130,14 +153,14 @@ Notebook.prototype.appendTo = function () {
  */
 Notebook.prototype.execute = function (done) {
   var that = this;
-  this.execution = true;
+  this._execution = true;
 
   // This chaining is a little awkward, but it allows the execution to work with
   // asynchronous callbacks.
   (function execution (view) {
     // If no view is passed through, we must have hit the last view.
     if (!view) {
-      that.execution = false;
+      that._execution = false;
       return done && done();
     }
 
@@ -339,9 +362,12 @@ Notebook.prototype.appendView = function (view, before) {
     // Listen to execution events from the child views, which may or may not
     // require new working cells to be appended to the console
     this.listenTo(view, 'execute', function (view) {
+      // Refresh all completion data when a cell is executed.
+      this.updateCompletion();
+
       // Need a flag here so we don't cause an infinite loop when running the
       // notebook
-      if (this.execution) { return; }
+      if (this._execution) { return; }
 
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
@@ -377,7 +403,7 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'linesChanged', this.refreshFromView);
   }
 
-  view.sandbox = this.sandbox;
+  view.notebook = this;
   this.collection.push(view.model);
 
   // Append the view to the end of the console

@@ -32,13 +32,12 @@ var tokenKey = function (data) {
  */
 var sanitizeOptions = function (data) {
   var options = _.extend({}, {
-    scope:          [],
-    grant:          'code',
-    scopeSeparator: '+'
+    scope: [],
+    grant: 'code'
   }, data);
 
   if (_.isObject(options.scope)) {
-    options.scope = _.toArray(options.scope).join(options.scopeSeparator);
+    options.scope = _.toArray(options.scope).join(' ');
   }
 
   return options;
@@ -137,11 +136,11 @@ var errorResponses = {
 /**
  * Return the formatted error string.
  *
- * @param  {String} code
+ * @param  {Object} data
  * @return {String}
  */
-var errorResponseMap = function (code) {
-  return errorResponses[code] || code;
+var erroredResponse = function (data) {
+  return errorResponses[data.error] || data.error || data.error_message;
 };
 
 /**
@@ -151,74 +150,31 @@ var errorResponseMap = function (code) {
  * @param {Function} done
  */
 var oAuth2CodeFlow = function (options, done) {
-  var width       = 500;
-  var height      = 350;
+  var errorPrefix = 'OAuth2 Code Grant: ';
+
+  if (!_.isString(options.clientId)) {
+    return done(new Error(errorPrefix + '"clientId" is missing'));
+  }
+
+  if (!_.isString(options.clientSecret)) {
+    return done(new Error(errorPrefix + '"clientSecret" is missing'));
+  }
+
+  if (!_.isString(options.accessTokenUrl)) {
+    return done(new Error(errorPrefix + '"accessTokenUrl" is missing'));
+  }
+
+  if (!_.isString(options.authorizationUrl)) {
+    return done(new Error(errorPrefix + '"authorizationUrl" is missing'));
+  }
+
+  var width       = 720;
+  var height      = 480;
   var left        = (window.screen.availWidth - width) / 2;
   var state       = ('' + Math.random()).substr(2);
   var redirectUri = url.resolve(
     global.location, '/authentication/oauth2.html'
   );
-
-  /**
-   * Assigns a global variable that the oauth authentication window should
-   * be able to access and send the callback data.
-   */
-  global.authenticateOauth2 = function (href) {
-    delete global.authenticateOauth2;
-    // Parse the url and prepare to do an ajax request to get the acces token.
-    var query = url.parse(href, true).query;
-
-    if (query.error) {
-      return done(new Error(errorResponseMap(query.error)));
-    }
-
-    if (query.state !== state) {
-      return done(new Error('OAuth2 state mismatch'));
-    }
-
-    if (!query.code) {
-      return done(new Error('OAuth2 code missing'));
-    }
-
-    App.middleware.trigger('ajax', {
-      url: options.tokenUrl + '?' + qs.stringify({
-        'code':          query.code,
-        'grant_type':    'authorization_code',
-        'redirect_uri':  redirectUri,
-        'client_id':     options.clientId,
-        'client_secret': options.clientSecret
-      }),
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json'
-      }
-    }, function (err, xhr) {
-      if (err) {
-        return done(err);
-      }
-
-      var content = JSON.parse(xhr.responseText);
-
-      // Repond with the error body.
-      if (content.error) {
-        return done(new Error(errorResponseMap(content.error)));
-      }
-
-      var data = {
-        scope:       options.scope,
-        updated:     Date.now(),
-        tokenType:   content.token_type,
-        accessToken: content.access_token
-      };
-
-      // Persist the key in localStorage.
-      oauth2Store.set(tokenKey(options), data);
-
-      return done(null, _.extend({}, data, {
-        xhr: xhr
-      }));
-    });
-  };
 
   // Stringify the query string data.
   var query  = qs.stringify({
@@ -229,11 +185,83 @@ var oAuth2CodeFlow = function (options, done) {
     'response_type': 'code'
   });
 
-  window.open(
+  var popup = window.open(
     options.authorizationUrl + '?' + query,
     'authenticateOauth2', // Assigning a name stops overlapping windows.
     'left=' + left + ',top=100,width=' + width + ',height=' + height
   );
+
+  // Catch the client closing the window before authentication is complete.
+  var closeInterval = window.setInterval(function () {
+    if (popup.closed) {
+      window.clearInterval(closeInterval);
+      return done(new Error(errorPrefix + 'Authentication Cancelled'));
+    }
+  }, 300);
+
+  /**
+   * Assigns a global variable that the oauth authentication window should
+   * be able to access and send the callback data.
+   */
+  global.authenticateOauth2 = function (href) {
+    // Stop potentially breaking calls.
+    delete global.authenticateOauth2;
+    window.clearInterval(closeInterval);
+
+    // Parse the url and prepare to do an ajax request to get the acces token.
+    var query = url.parse(href, true).query;
+
+    if (erroredResponse(query)) {
+      return done(new Error(errorPrefix + erroredResponse(query)));
+    }
+
+    if (query.state !== state) {
+      return done(new Error(errorPrefix + 'State mismatch'));
+    }
+
+    if (!query.code) {
+      return done(new Error(errorPrefix + 'Response code missing'));
+    }
+
+    App.middleware.trigger('ajax', {
+      url: options.accessTokenUrl,
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data: qs.stringify({
+        'code':          query.code,
+        'grant_type':    'authorization_code',
+        'redirect_uri':  redirectUri,
+        'client_id':     options.clientId,
+        'client_secret': options.clientSecret
+      })
+    }, function (err, xhr) {
+      if (err) {
+        return done(err);
+      }
+
+      var content = JSON.parse(xhr.responseText);
+
+      // Repond with the error body.
+      if (erroredResponse(content)) {
+        return done(new Error(errorPrefix + erroredResponse(content)));
+      }
+
+      var data = {
+        scope:       options.scope,
+        updated:     Date.now(),
+        tokenType:   content.token_type,
+        accessToken: content.access_token
+      };
+
+      // Persist the auth data in localStorage.
+      oauth2Store.set(tokenKey(options), data);
+
+      return done(null, data);
+    });
+  };
 };
 
 /**
@@ -260,13 +288,12 @@ module.exports = function (middleware) {
   /**
    * Trigger authentication via OAuth2 in the browser. Valid data properties:
    *
+   *   `accessTokenUrl`   - "https://www.example.com/oauth2/token"
    *   `authorizationUrl` - "https://www.example.com/oauth2/authorize"
-   *   `tokenUrl`         - "https://www.example.com/oauth2/token"
    *   `clientId`         - EXAMPLE_CLIENT_ID
    *   `clientSecret`     - EXAMPLE_CLIENT_SECRET *NOT RECOMMENDED*
    *   `grant`            - "code"
    *   `scope`            - ["user", "read", "write"]
-   *   `scopeSeparator`   - "+" *Github uses a comma*
    *   `validateUrl`      - "http://www.example.com/user/self" *No side effects*
    *
    * @param {Object}   data
@@ -328,11 +355,11 @@ module.exports = function (middleware) {
    */
   middleware.core('ajax:oauth2', function (data, next, done) {
     if (!data.authorizationUrl) {
-      throw new Error('An authorization url is required to be set');
+      throw new Error('An authorization url is required to make requests');
     }
 
     if (!oauth2Store.has(tokenKey(data))) {
-      throw new Error('No access token is available for this endpoint');
+      throw new Error('No access token is available for this API endpoint');
     }
 
     // Add the access token to the request.
