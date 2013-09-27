@@ -12,6 +12,8 @@ API.createClient('example', '/raml/example.yml');
 
 Running the above code will alias `window.example` to the generated API client.
 
+*The RAML spec must be served using CORS if it is on another domain.*
+
 ## Using the API Client
 
 The API is generated on the fly depending on the methods you call. This allows you to dynamically call different routes at different points in the code without conflicts.
