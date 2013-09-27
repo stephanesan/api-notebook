@@ -344,7 +344,7 @@ var httpRequest = function (nodes, method) {
     var query   = nodes.query   || {};
     var headers = nodes.headers || {};
     var mime    = getMime(getHeader(headers, 'Content-Type'));
-    var fullUrl = nodes.baseUri + '/' + nodes.join('/');
+    var fullUrl = nodes.config.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method.method === 'get' || method.method === 'head') {
@@ -361,6 +361,30 @@ var httpRequest = function (nodes, method) {
     if (query != null && !_.isObject(query)) {
       query = qs.parse(query);
     }
+
+    // Iterate through `securedBy` methods and accept the first one we are
+    // authenticated for.
+    _.some(method.securedBy || nodes.config.securedBy, function (secured) {
+      // No authentication required.
+      if (secured == null) {
+        return true;
+      }
+
+      var scheme = nodes.config.securitySchemes[secured];
+      var auth   = nodes.config.authentication[scheme.type];
+
+      // Authentication object available. Augment the request with the relevant
+      // parts.
+      if (_.isObject(auth)) {
+        if (scheme.type === 'OAuth 2.0') {
+          query.access_token = auth.accessToken;
+        }
+
+        return true;
+      }
+
+      return false;
+    });
 
     // Pass the query parameters through validation and append to the url.
     if (validateParams(query, method.queryParameters)) {
@@ -404,6 +428,7 @@ var httpRequest = function (nodes, method) {
       headers: headers
     };
 
+    // If the request is async, set the relevant function callbacks.
     if (async) {
       App._executeContext.timeout(Infinity);
 
@@ -600,16 +625,6 @@ var attachResources = function attachResources (nodes, context, resources) {
  * @return {Function}
  */
 var authenticateOAuth2 = function (nodes, scheme) {
-  var acceptedGrants = scheme.settings.authorizationGrants;
-
-  // Generate the default object that can be overridden by user input.
-  var defaults = {
-    grant:            _.intersection(supportedOAuth2Grants, acceptedGrants)[0],
-    scope:            scheme.settings.scopes,
-    accessTokenUrl:   scheme.settings.accessTokenUrl,
-    authorizationUrl: scheme.settings.authorizationUrl
-  };
-
   return function (data, done) {
     if (!_.isFunction(done)) {
       done = App._executeContext.async();
@@ -617,7 +632,7 @@ var authenticateOAuth2 = function (nodes, scheme) {
 
     // Generate the options using user data. We'll require at least the
     // `clientId` and `clientSecret` be passed in with the data object.
-    var options = _.extend({}, defaults, data);
+    var options = _.extend({}, scheme.settings, data);
 
     // Timeout after 10 minutes.
     App._executeContext.timeout(10 * 60 * 1000);
@@ -626,6 +641,10 @@ var authenticateOAuth2 = function (nodes, scheme) {
       'authenticate:oauth2',
       options,
       function (err, auth) {
+        // Set the nodes authentication details. This will be used by in the
+        // final http request.
+        nodes.config.authentication = nodes.config.authentication || {};
+        nodes.config.authentication[scheme.type] = auth;
         return done(err, auth);
       }
     );
@@ -664,8 +683,16 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
  * @return {Object}
  */
 var generateClient = function (ast) {
+  // Generate the root node array. Set properties directly on this array to be
+  // copied to the next execution part. In some cases we may need something to
+  // be automatically set on *all* instances, so we use `config` since objects
+  // are passed by reference.
   var nodes = _.extend([], {
-    baseUri: ast.baseUri.replace(/\/+$/, '')
+    config: {
+      baseUri:         ast.baseUri.replace(/\/+$/, ''),
+      securedBy:       ast.securedBy,
+      securitySchemes: ast.securitySchemes
+    }
   });
 
   /**

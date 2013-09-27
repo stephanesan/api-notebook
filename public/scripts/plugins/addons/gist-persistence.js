@@ -45,7 +45,7 @@ var authenticatedUserId = function (done) {
  */
 var authenticatePlugin = function (data, next, done) {
   App.middleware.trigger('authenticate:oauth2', {
-    scope:            ['gist'],
+    scopes:           ['gist'],
     clientId:         CLIENT_ID,
     clientSecret:     '', // Replaced by proxy
     validateUrl:      VALID_URL,

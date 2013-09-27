@@ -11,6 +11,13 @@ var url = require('url');
 var oauth2Store = App.store.customStore('oauth2');
 
 /**
+ * An array containing the supported grant types in preferred order.
+ *
+ * @type {Array}
+ */
+var supportedGrants = ['code'];
+
+/**
  * Return a unique key for storing the access token in localStorage.
  *
  * @param  {Object} data
@@ -32,13 +39,9 @@ var tokenKey = function (data) {
  */
 var sanitizeOptions = function (data) {
   var options = _.extend({}, {
-    scope: [],
-    grant: 'code'
+    scopes:              [],
+    authorizationGrants: ['code']
   }, data);
-
-  if (_.isObject(options.scope)) {
-    options.scope = _.toArray(options.scope).join(' ');
-  }
 
   return options;
 };
@@ -179,7 +182,7 @@ var oAuth2CodeFlow = function (options, done) {
   // Stringify the query string data.
   var query  = qs.stringify({
     'state':         state,
-    'scope':         options.scope,
+    'scope':         options.scopes.join(' '),
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'code'
@@ -250,7 +253,7 @@ var oAuth2CodeFlow = function (options, done) {
       }
 
       var data = {
-        scope:       options.scope,
+        scope:       options.scopes,
         updated:     Date.now(),
         tokenType:   content.token_type,
         accessToken: content.access_token
@@ -288,13 +291,13 @@ module.exports = function (middleware) {
   /**
    * Trigger authentication via OAuth2 in the browser. Valid data properties:
    *
-   *   `accessTokenUrl`   - "https://www.example.com/oauth2/token"
-   *   `authorizationUrl` - "https://www.example.com/oauth2/authorize"
-   *   `clientId`         - EXAMPLE_CLIENT_ID
-   *   `clientSecret`     - EXAMPLE_CLIENT_SECRET *NOT RECOMMENDED*
-   *   `grant`            - "code"
-   *   `scope`            - ["user", "read", "write"]
-   *   `validateUrl`      - "http://www.example.com/user/self" *No side effects*
+   *   `accessTokenUrl`      - "https://www.example.com/oauth2/token"
+   *   `authorizationUrl`    - "https://www.example.com/oauth2/authorize"
+   *   `clientId`            - EXAMPLE_CLIENT_ID
+   *   `clientSecret`        - EXAMPLE_CLIENT_SECRET
+   *   `authorizationGrants` - ["code"]
+   *   `scopes`              - ["user", "read", "write"]
+   *   `validateUrl`         - "http://www.example.com/user/self"
    *
    * @param {Object}   data
    * @param {Function} next
@@ -312,12 +315,20 @@ module.exports = function (middleware) {
           return done(err, auth);
         }
 
-        // Commit to the whole OAuth2 dance.
-        if (options.grant === 'code') {
-          return middleware.trigger('authenticate:oauth2:code', options, done);
+        // Use insection to get the accepted grant types in the order of the
+        // supported grant types (which are ordered by preference).
+        var grantType = _.intersection(
+          supportedGrants, options.authorizationGrants
+        )[0];
+
+        if (!grantType) {
+          return done(new Error('Unsupported OAuth2 Grant Flow'));
         }
 
-        return done(new Error('Unsupported OAuth2 Grant Flow'));
+        // Commit to the whole OAuth2 dance using the accepted grant type.
+        return middleware.trigger(
+          'authenticate:oauth2:' + grantType, options, done
+        );
       }
     );
   });
@@ -356,10 +367,6 @@ module.exports = function (middleware) {
   middleware.core('ajax:oauth2', function (data, next, done) {
     if (!data.authorizationUrl) {
       throw new Error('An authorization url is required to make requests');
-    }
-
-    if (!oauth2Store.has(tokenKey(data))) {
-      throw new Error('No access token is available for this API endpoint');
     }
 
     // Add the access token to the request.
