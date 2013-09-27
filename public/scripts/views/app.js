@@ -38,9 +38,13 @@ App.prototype.events = {
     e.preventDefault();
     e.srcElement.blur();
   },
-  // Updates the notebook title on `blur`.
+  // Update the notebook title when leaving the input.
   'focusout .notebook-title': function (e) {
-    persistence.set('title', e.srcElement.textContent);
+    persistence.set('title', e.srcElement.value);
+  },
+  // Pre-select the notebook title before input.
+  'click .notebook-title': function (e) {
+    e.srcElement.select();
   }
 };
 
@@ -102,7 +106,7 @@ App.prototype.updateUser = function () {
  */
 App.prototype.updateTitle = function () {
   var title = persistence.get('title');
-  this.el.querySelector('.notebook-title').textContent = title;
+  this.el.querySelector('.notebook-title').value = title;
 };
 
 /**
@@ -151,9 +155,9 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="notebook-header-primary">' +
-        '<h1 class="notebook-title" contenteditable>' +
+        '<input class="notebook-title" value="' +
           persistence.get('title') +
-        '</h1>' +
+        '">' +
       '</div>' +
     '</header>' +
 
