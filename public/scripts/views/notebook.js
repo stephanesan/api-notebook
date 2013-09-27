@@ -223,6 +223,11 @@ Notebook.prototype.appendCodeView = function (el, value) {
   var view = new CodeView();
   this.appendView(view, el);
   view.setValue(value).moveCursorToEnd();
+  // Remove the history of the editor, stops the user from accidently undoing
+  // the initially loaded content and ending up with an empty cell.
+  if (view.editor) {
+    view.editor.doc.clearHistory();
+  }
   return view;
 };
 
@@ -360,13 +365,13 @@ Notebook.prototype.appendView = function (view, before) {
   // Listening to another set of events for `code` cells
   if (view instanceof CodeView) {
     // Listen to execution events from the child views, which may or may not
-    // require new working cells to be appended to the console
+    // require new working cells to be appended to the notebook.
     this.listenTo(view, 'execute', function (view) {
       // Refresh all completion data when a cell is executed.
       this.updateCompletion();
 
-      // Need a flag here so we don't cause an infinite loop when running the
-      // notebook
+      // Need a flag here so we don't cause an infinite loop when executing the
+      // notebook contents. (E.g. Hitting the last cell and adding a new cell).
       if (this._execution) { return; }
 
       if (this.el.lastChild === view.el) {

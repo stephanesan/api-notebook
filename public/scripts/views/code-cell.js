@@ -199,10 +199,10 @@ CodeCell.prototype.bindEditor = function () {
   );
 
   // Listen for code cells changes and update line numbers.
-  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
-    this.lastLine = this.startLine + cm.lastLine();
+  this.listenTo(this, 'change', _.bind(function (view, data) {
+    this.lastLine = this.startLine + view.editor.lastLine();
 
-    var commentBlock = stripInput('/*', cm, data);
+    var commentBlock = stripInput('/*', view.editor, data);
 
     // When the comment block check doesn't return false, it means we want to
     // start a new comment block

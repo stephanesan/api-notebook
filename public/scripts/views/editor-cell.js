@@ -164,14 +164,22 @@ EditorCell.prototype.refresh = function () {
  */
 EditorCell.prototype.bindEditor = function () {
   this.listenTo(this.editor, 'focus', _.bind(function () {
-    this.el.classList.add('active');
     delete this._hasFocus;
+
+    if (this._triggerBlur) {
+      window.clearTimeout(this._triggerBlur);
+      return this._triggerBlur = null;
+    }
+
     this.trigger('focus', this);
+    this.el.classList.add('active');
   }, this));
 
   this.listenTo(this.editor, 'blur', _.bind(function () {
-    this.el.classList.remove('active');
-    this.trigger('blur', this);
+    this._triggerBlur = window.setTimeout(_.bind(function () {
+      this.el.classList.remove('active');
+      this.trigger('blur', this);
+    }, this), 20);
   }, this));
 
   // Save the value of the model every time a change happens
@@ -184,6 +192,8 @@ EditorCell.prototype.bindEditor = function () {
       messages.trigger('resize');
       this.trigger('linesChanged', this);
     }
+
+    this.trigger('change', this, data);
   }, this));
 
   return this;
@@ -196,6 +206,7 @@ EditorCell.prototype.bindEditor = function () {
  */
 EditorCell.prototype.unbindEditor = function () {
   this.stopListening(this.editor);
+  window.clearTimeout(this._triggerBlur);
   return this;
 };
 

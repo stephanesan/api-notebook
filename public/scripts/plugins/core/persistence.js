@@ -110,10 +110,13 @@ module.exports = function (middleware) {
     }, [{
       type:  'text',
       value: ''
-    }]).filter(function (cell) {
-      // Remove the suffixed new line from all cells.
+    }]).filter(function (cell, index, notebook) {
       cell.value = cell.value.slice(
-        cell.type === 'text' && cell.value.charAt(0) === '\n' ? 1 : 0, -1
+        // Text cells will start with a new line.
+        cell.type === 'text' && cell.value.charAt(0) === '\n' ? 1  : 0,
+        // Text cells will have a trailing new line (if they aren't the last
+        // cell in the whole notebook).
+        cell.type === 'text' && index !== notebook.length - 1 ? -2 : -1
       );
 
       // Removes empty text cells.

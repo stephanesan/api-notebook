@@ -58,15 +58,16 @@ TextCell.prototype.editorOptions = _.extend(
 TextCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
-  this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
-    var endCommentBlock = stripInput('*/', cm, data);
+  this.listenTo(this, 'change', _.bind(function (view, data) {
+    var endCommentBlock = stripInput('*/', view.editor, data);
     if (endCommentBlock !== false) {
       return this.trigger('code', this, endCommentBlock);
     }
   }, this));
 
-  this.listenTo(this.editor, 'blur', _.bind(function (cm) {
-    this._hasFocus = false;
+  // Listen to itself since editor cells have a built in protection here.
+  this.listenTo(this, 'blur', _.bind(function () {
+    delete this._hasFocus;
     this.renderEditor();
   }, this));
 
