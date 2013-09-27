@@ -31,15 +31,15 @@ module.exports = function (middleware) {
 
     // Appends the notebook contents as Markdown.
     data.contents += _.chain(data.notebook)
-      // Remove empty cells from the end of the notebook.
-      .reduceRight(function (notebook, cell) {
-        if (hasContent || !/^\s+$/.test(cell.value)) {
+      .slice()
+      .reverse()
+      .filter(function (cell) {
+        if (!hasContent && !/^\s*$/.test(cell.value)) {
           hasContent = true;
-          notebook.push(cell);
         }
 
-        return notebook;
-      }, [])
+        return hasContent;
+      })
       .reverse()
       .map(function (cell) {
         if (cell.type === 'text') { return cell.value; }
