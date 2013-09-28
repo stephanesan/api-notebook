@@ -45,10 +45,16 @@ module.exports = function (grunt) {
           {
             expand: true,
             cwd: 'public',
-            src: ['**/*.{html,yml}'],
+            src: ['*.html', 'raml/*.yml', 'authentication/**'],
             dest: 'build/'
           },
-          { src: 'public/test.js', dest: FIXTURE_DIR + '/test.js' }
+          { src: 'public/test.js', dest: FIXTURE_DIR + '/test.js' },
+          {
+            expand: true,
+            cwd: 'public/fontello/font',
+            src: '*',
+            dest: 'build/font'
+          }
         ]
       },
       deploy: {
@@ -174,6 +180,7 @@ module.exports = function (grunt) {
         options: {
           'include css': true,
           import: [
+            'nib',
             'includes/colors.styl'
           ]
         }

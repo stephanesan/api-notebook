@@ -1,36 +1,35 @@
 .cell-controls
+  top: 0
+  left: 100%
+  z-index: 100
   position: absolute
-  top: -89px
-  right: -172px
-  border: 1px solid #eee
-  border-radius: 5px
-
-  font-size: .75em
-  background: #333
-  color: #fff
+  margin-top: 14px
+  margin-left: 10px
   padding: 3px 0px
+  color: #fff
+  font-size: 0.75em
+  border: 1px solid #eee
+  background: #333
+  border-radius: 5px
+  transform: translateY(-50%)
   transition: 0.3s ease opacity
-  z-index: 1000
-  white-space: nowrap
-
-.cell-controls:before
-  content: ''
-  position: absolute
-  top: 50%
-  left: -20px
-
-  margin-top: -10px
-  border: 10px solid transparent
-  border-right-color: #333
+  &:after
+    content: ""
+    position: absolute
+    top: 50%
+    left: -20px
+    margin-top: -10px
+    border: 10px solid transparent
+    border-right-color: #333
 
 @media only screen and (max-width: 70em)
   .cell-controls
-    right: 35px
+    left: auto
+    right: 37px
 
-  .cell-controls:before
+  .cell-controls:after
     left: auto
     right: -20px
-
     border-left-color: #333
     border-right-color: transparent
 
@@ -39,21 +38,19 @@
   width: 12.5em
   height: 2.5em
   margin: 2px 5px
-  border: 0
-
+  border: 1px solid transparent
+  border-radius: 3px
   background: transparent
   color: #fff
   line-height: 22px
   padding: 0 7px
   text-align: left
-
   &:hover
-    outline: 1px solid $color-cell-controls-button-outline
+    border-color: $color-cell-controls-button-outline
 
 .cell-controls button i
-  position: relative
   top: -1px
-
+  position: relative
   margin-right: 3px
 
 .cell-controls span
@@ -62,23 +59,23 @@
   color: $color-cell-controls-keycode
 
 .btn-show-cell-controls
-  z-index: 10
   position: absolute
-  top: -1px
-  right: -1px
+  top: 0
+  right: 0
+  z-index: 10
   width: 27px
   height: @width
-  margin-bottom: -1px;
-  padding: 0 0 2px;
-  border: 1px solid #ccc;
-  background: transparent
+  padding: 0 0 2px
   color: #aaa
-  cursor: pointer
   font-size: 1.5em
-  line-height: 0
   text-align: center
+  line-height: 1
+  cursor: pointer
+  border: 2px solid $color-cell-border
+  background: #fff
   .user-not-owner &
     display: none
 
 .cell-text.active .btn-show-cell-controls
   color: #fff
+  background-color: #000

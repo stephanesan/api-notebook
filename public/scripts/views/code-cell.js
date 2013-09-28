@@ -1,4 +1,5 @@
 var _            = require('underscore');
+var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
@@ -15,6 +16,15 @@ var ownerProtect = require('./lib/owner-protect');
 var CodeCell = module.exports = EditorCell.extend({
   className: 'cell cell-code'
 });
+
+/**
+ * Bind events to the DOM view.
+ *
+ * @type {Object}
+ */
+CodeCell.prototype.events = {
+  'click .comment': 'documentation'
+};
 
 /**
  * Runs when the code cell is initialized.
@@ -173,6 +183,13 @@ CodeCell.prototype.newLine = ownerProtect(function () {
 });
 
 /**
+ * Insert a text cell above the current code cell.
+ */
+CodeCell.prototype.documentation = function () {
+  this.trigger('documentation', this);
+};
+
+/**
  * Browse to the contents of any code cell.
  *
  * @param  {Object}   newModel
@@ -237,6 +254,10 @@ CodeCell.prototype.render = function () {
   // Every code cell has an associated result
   this.resultCell = new ResultCell({ model: this.model });
   this.resultCell.render().appendTo(this.el);
+
+  this.el.appendChild(
+    domify('<span class="comment icon-comment"></span>')
+  );
 
   return this;
 };
