@@ -16,6 +16,26 @@ var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
 
 /**
+ * Generates a generic function for appending new view instances.
+ *
+ * @param  {Backbone.View} View
+ * @return {Function}
+ */
+var appendNewView = function (View) {
+  return function (el, value) {
+    var view = new View();
+    this.appendView(view, el);
+    view.setValue(value || '').moveCursorToEnd();
+    // Remove the history of the editor, stops the user from accidently undoing
+    // the initially loaded content and ending up with an empty cell.
+    if (view.editor) {
+      view.editor.doc.clearHistory();
+    }
+    return view;
+  };
+};
+
+/**
  * Create a new notebook instance.
  *
  * @type {Function}
@@ -217,36 +237,13 @@ Notebook.prototype.refreshFromView = function (view) {
 
 /**
  * Append a new code cell view instance.
- *
- * @param  {Node}     el
- * @param  {String}   value
- * @return {CodeView}
  */
-Notebook.prototype.appendCodeView = function (el, value) {
-  var view = new CodeView();
-  this.appendView(view, el);
-  view.setValue(value).moveCursorToEnd();
-  // Remove the history of the editor, stops the user from accidently undoing
-  // the initially loaded content and ending up with an empty cell.
-  if (view.editor) {
-    view.editor.doc.clearHistory();
-  }
-  return view;
-};
+Notebook.prototype.appendCodeView = appendNewView(CodeView);
 
 /**
  * Append a new text cell view instance.
- *
- * @param  {Node}     el
- * @param  {String}   value
- * @return {TextView}
  */
-Notebook.prototype.appendTextView = function (el, value) {
-  var view = new TextView();
-  this.appendView(view, el);
-  view.setValue(value).moveCursorToEnd();
-  return view;
-};
+Notebook.prototype.appendTextView = appendNewView(TextView);
 
 /**
  * Append any view to the notebook. Sets up a few listeners on every view
