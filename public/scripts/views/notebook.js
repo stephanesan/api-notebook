@@ -34,7 +34,9 @@ Notebook.prototype.initialize = function (options) {
   this.controls   = new CellControls().render();
   this.collection = new NotebookCollection();
 
+  // Set up autocompletion environment.
   this.completionOptions = {};
+  this.updateCompletion();
 
   // When the user changes, we may have been given permission to do things like
   // edit the notebook. Hence, we need to rerender certain aspects of the app.
