@@ -4,6 +4,38 @@ var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
 
 /**
+ * Override the RAML parser read file functionality and replace with middleware.
+ *
+ * @param  {String} file
+ * @return {String}
+ */
+ramlParser.readFile = function (file) {
+  var error, status, data;
+
+  App.middleware.trigger('ajax', {
+    url:     file,
+    async:   false,
+    headers: {
+      'Accept': 'application/raml+yaml, */*'
+    }
+  }, function (err, xhr) {
+    data   = xhr.responseText;
+    error  = err;
+    status = xhr.status;
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  if (Math.floor(status / 100) !== 2) {
+    throw new Error('Failed to load RAML document at "' + file + '"');
+  }
+
+  return data;
+};
+
+/**
  * Parse a path string to a reference on the object. Supports passing an
  * optional setter.
  *
