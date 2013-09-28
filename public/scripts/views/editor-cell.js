@@ -207,6 +207,7 @@ EditorCell.prototype.bindEditor = function () {
 EditorCell.prototype.unbindEditor = function () {
   this.stopListening(this.editor);
   window.clearTimeout(this._triggerBlur);
+  this._triggerBlur = null;
   return this;
 };
 
