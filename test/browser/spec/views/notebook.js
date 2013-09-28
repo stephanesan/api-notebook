@@ -274,16 +274,20 @@ describe('Notebook', function () {
           expect(view.collection.length).to.equal(5);
           expect(view.collection.at(4).get('type')).to.equal('text');
 
-          setTimeout(function () {
+          App.nextTick(function () {
+            expect(view.collection.at(4).view.editor.hasFocus()).to.be.true;
+
             var input = document.createElement('input');
             fixture.appendChild(input);
             input.focus();
             fixture.removeChild(input);
 
-            expect(view.collection.length).to.equal(6);
-            expect(view.collection.at(5).get('type')).to.equal('code');
-            done();
-          }, 0);
+            setTimeout(function () {
+              expect(view.collection.length).to.equal(6);
+              expect(view.collection.at(5).get('type')).to.equal('code');
+              return done();
+            }, 20);
+          });
         });
       });
 
