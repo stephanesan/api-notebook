@@ -194,6 +194,10 @@ var oAuth2CodeFlow = function (options, done) {
     'left=' + left + ',top=100,width=' + width + ',height=' + height
   );
 
+  if (!_.isObject(popup)) {
+    return done(new Error(errorPrefix + 'Popup window blocked'));
+  }
+
   // Catch the client closing the window before authentication is complete.
   var closeInterval = window.setInterval(function () {
     if (popup.closed) {

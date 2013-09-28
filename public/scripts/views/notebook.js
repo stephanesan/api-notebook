@@ -164,9 +164,10 @@ Notebook.prototype.execute = function (done) {
       return done && done();
     }
 
-    view.focus().moveCursorToEnd();
-
+    // Only execute code cells, skips other cell types.
     if (view.model.get('type') === 'code') {
+      view.focus().moveCursorToEnd();
+
       view.execute(function (err, data) {
         execution(that.getNextView(view));
       });
@@ -377,7 +378,7 @@ Notebook.prototype.appendView = function (view, before) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
       } else {
-        this.getNextView(view).moveCursorToEnd(0).focus();
+        this.getNextView(view).moveCursorToEnd().focus();
       }
     });
 
