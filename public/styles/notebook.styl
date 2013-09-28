@@ -69,10 +69,12 @@
   margin: 1em 0
   position: relative
   min-height: 1.55em
-  > .CodeMirror
-    border: 2px solid $color-cell-border
 
-.notebook-view > .cell > .cell-result
+.notebook-view > .cell > .markdown,
+.notebook-view > .cell > .CodeMirror
+  border: 2px solid $color-cell-border
+
+.notebook-view > .cell-code > .cell-result
   color: $color-result-text
   &.result-error
     color: $color-error-text
@@ -90,19 +92,19 @@
   margin-top: -0.5em
   font-family: monospace
 
-.cell-text .comment-close
+.cell-text > .comment-close
   left: auto
   right: -20px
 
 .markdown
   padding: 16px
+  p,
   h1,
   h2,
   h3,
   h4,
   h5,
   h6,
-  p,
   ul,
   ol
     margin: 0 0 24px
