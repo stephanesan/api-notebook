@@ -124,7 +124,9 @@ var savePlugin = function (data, next, done) {
         }
       }
     }),
-    authorizationUrl: AUTH_URL
+    oauth2: {
+      authorizationUrl: AUTH_URL
+    }
   }, function (err, xhr) {
     if (err) {
       return done(err);

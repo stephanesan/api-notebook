@@ -344,6 +344,7 @@ var httpRequest = function (nodes, method) {
     var query   = nodes.query   || {};
     var headers = nodes.headers || {};
     var mime    = getMime(getHeader(headers, 'Content-Type'));
+    var request = 'ajax';
     var fullUrl = nodes.config.baseUri + '/' + nodes.join('/');
 
     // No need to pass data through with `GET` or `HEAD` requests.
@@ -361,30 +362,6 @@ var httpRequest = function (nodes, method) {
     if (query != null && !_.isObject(query)) {
       query = qs.parse(query);
     }
-
-    // Iterate through `securedBy` methods and accept the first one we are
-    // authenticated for.
-    _.some(method.securedBy || nodes.config.securedBy, function (secured) {
-      // No authentication required.
-      if (secured == null) {
-        return true;
-      }
-
-      var scheme = nodes.config.securitySchemes[secured];
-      var auth   = nodes.config.authentication[scheme.type];
-
-      // Authentication object available. Augment the request with the relevant
-      // parts.
-      if (_.isObject(auth)) {
-        if (scheme.type === 'OAuth 2.0') {
-          query.access_token = auth.accessToken;
-        }
-
-        return true;
-      }
-
-      return false;
-    });
 
     // Pass the query parameters through validation and append to the url.
     if (validateParams(query, method.queryParameters)) {
@@ -428,6 +405,30 @@ var httpRequest = function (nodes, method) {
       headers: headers
     };
 
+    // Iterate through `securedBy` methods and accept the first one we are
+    // already authenticated for.
+    _.some(method.securedBy || nodes.config.securedBy, function (secured) {
+      // Skip unauthorized requests since we'll be doing that anyway if the
+      // rest of the secure methods fail to exist.
+      if (secured == null) {
+        return false;
+      }
+
+      var scheme        = nodes.config.securitySchemes[secured];
+      var authenticated = nodes.config.authentication[scheme.type];
+
+      if (authenticated) {
+        if (scheme.type === 'OAuth 2.0') {
+          request        = 'ajax:oauth2';
+          options.oauth2 = nodes.config.securitySchemes[secured].settings;
+        }
+
+        return true;
+      }
+
+      return false;
+    });
+
     // If the request is async, set the relevant function callbacks.
     if (async) {
       App._executeContext.timeout(Infinity);
@@ -439,7 +440,7 @@ var httpRequest = function (nodes, method) {
 
     // Trigger the ajax middleware so plugins can hook onto the requests. If the
     // function is async we need to register a callback for the middleware.
-    App.middleware.trigger('ajax', options, async && function (err, xhr) {
+    App.middleware.trigger(request, options, async && function (err, xhr) {
       return done(err, sanitizeXHR(xhr));
     });
 
@@ -644,7 +645,7 @@ var authenticateOAuth2 = function (nodes, scheme) {
         // Set the nodes authentication details. This will be used by in the
         // final http request.
         nodes.config.authentication = nodes.config.authentication || {};
-        nodes.config.authentication[scheme.type] = auth;
+        nodes.config.authentication[scheme.type] = true;
         return done(err, auth);
       }
     );

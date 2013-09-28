@@ -25,7 +25,7 @@ var supportedGrants = ['code'];
  */
 var tokenKey = function (data) {
   if (!_.isString(data.authorizationUrl)) {
-    throw new Error('Authorization url must be provided for persistence');
+    throw new Error('OAuth2: "authorizationUrl" is missing');
   }
 
   return data.authorizationUrl;
@@ -60,8 +60,8 @@ var validateToken = function (options, done) {
   var auth = oauth2Store.get(tokenKey(options));
 
   App.middleware.trigger('ajax:oauth2', {
-    url:              options.validateUrl,
-    authorizationUrl: options.authorizationUrl
+    url:    options.validateUrl,
+    oauth2: options
   }, function (err, xhr) {
     // Check if the response returned any type of error.
     if (err || Math.floor(xhr.status / 100) !== 2) {
@@ -69,8 +69,6 @@ var validateToken = function (options, done) {
       return done(err);
     }
 
-    // Bump the updated date.
-    auth.updated = Date.now();
     oauth2Store.set(tokenKey(options), auth);
 
     // Return the auth object extended with the ajax request.
@@ -249,19 +247,25 @@ var oAuth2CodeFlow = function (options, done) {
         return done(err);
       }
 
-      var content = JSON.parse(xhr.responseText);
+      var response = JSON.parse(xhr.responseText);
 
       // Repond with the error body.
-      if (erroredResponse(content)) {
-        return done(new Error(errorPrefix + erroredResponse(content)));
+      if (erroredResponse(response)) {
+        return done(new Error(errorPrefix + erroredResponse(response)));
       }
 
       var data = {
-        scope:       options.scopes,
-        updated:     Date.now(),
-        tokenType:   content.token_type,
-        accessToken: content.access_token
+        scopes:      options.scopes,
+        accessToken: response.access_token
       };
+
+      if (response.token_type) {
+        data.tokenType = response.token_type;
+      }
+
+      if (+response.expires_in) {
+        data.expires = Date.now() + (response.expires_in * 1000);
+      }
 
       // Persist the auth data in localStorage.
       oauth2Store.set(tokenKey(options), data);
@@ -369,15 +373,29 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('ajax:oauth2', function (data, next, done) {
-    if (!data.authorizationUrl) {
-      throw new Error('An authorization url is required to make requests');
+    if (!_.isObject(data.oauth2) || !data.oauth2.authorizationUrl) {
+      throw new Error('OAuth2 XHR: "authorizationUrl" is missing');
     }
 
-    // Add the access token to the request.
-    var uri = url.parse(data.url, true);
-    uri.query.access_token = oauth2Store.get(tokenKey(data)).accessToken;
-    data.url = url.format(uri);
-    delete data.authorizationUrl;
+    var auth = oauth2Store.get(tokenKey(data.oauth2));
+
+    if (_.isObject(auth)) {
+      if (auth.tokenType === 'bearer') {
+        data.headers = _.extend({
+          'Authorization': 'Bearer ' + auth.accessToken
+        }, data.headers);
+      } else {
+        // Add the access token to the request.
+        var uri = url.parse(data.url, true);
+        uri.query.access_token = auth.accessToken;
+
+        // Update ajax data.
+        data.url = url.format(uri);
+        data.headers = _.extend({
+          'Cache-Control': 'no-store'
+        }, data.headers);
+      }
+    }
 
     // Trigger the regular ajax method.
     return middleware.trigger('ajax', data, done);
