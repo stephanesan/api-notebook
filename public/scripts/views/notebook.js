@@ -142,8 +142,7 @@ Notebook.prototype.render = function () {
     this.appendCodeView();
   }
 
-  // Focus the last cell and set the persistence layer to start updating again.
-  this.collection.last().view.focus();
+  // Start listening for changes again.
   this.listenTo(this.collection, 'remove sort',        this.updateCompletion);
   this.listenTo(this.collection, 'remove sort change', this.update);
 
