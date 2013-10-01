@@ -169,9 +169,10 @@ module.exports = function (middleware) {
    * @param  {Function} next
    */
   middleware.core('completion:filter', function (data, next, done) {
-    var str    = data.token.string;
-    var longer = data.string.length >= str.length;
+    var value  = data.result.value;
+    var string = data.token.string;
+    var length = value.length >= string.length;
 
-    return done(null, longer && data.string.substr(0, str.length) === str);
+    return done(null, length && value.substr(0, string.length) === string);
   });
 };

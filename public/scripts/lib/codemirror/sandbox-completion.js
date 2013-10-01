@@ -33,9 +33,35 @@ var getToken = function (cm, cur) {
  */
 var completeResults = function (done) {
   return function (err, data) {
+    // Sorts the keys and maps to an object that the widget can understand.
+    var results = _.map(_.keys(data.results), function (key) {
+      if (!_.isObject(data.results[key])) {
+        return {
+          display: key,
+          value:   key
+        };
+      }
+
+      return {
+        display: key,
+        value:   data.results[key].value,
+        special: data.results[key].special
+      };
+    }).sort(function (a, b) {
+      if (a.special && b.special) {
+        return a.display > b.display ? 1 : -1;
+      } else if (a.special) {
+        return 1;
+      } else if (b.special) {
+        return -1;
+      }
+
+      return a.display > b.display ? 1 : -1;
+    });
+
     return done(err, {
       context: data.context,
-      results: _.keys(data.results).sort()
+      results: results
     });
   };
 };
@@ -239,9 +265,9 @@ module.exports = function (cm, options, done) {
 
   var cb = function (err, completion) {
     return done(err, {
-      list:    completion.results,
       token:   token,
       context: completion.context,
+      results: completion.results,
       to:      new Pos(cur.line, token.end),
       from:    new Pos(cur.line, token.start)
     });

@@ -259,7 +259,6 @@ InspectorView.prototype.renderPreview = function () {
   // Run filter middleware to check if the property should be filtered from
   // the basic display.
   middleware.trigger('inspector:filter', {
-    filter:     true,
     parent:     parent,
     property:   this.property,
     internal:   this.internal,

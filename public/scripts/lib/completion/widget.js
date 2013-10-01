@@ -84,7 +84,7 @@ Widget.prototype.removeGhost = function () {
 Widget.prototype.refresh = function (done) {
   var that = this;
   var cm   = this.completion.cm;
-  var list = this.data.list;
+  var list = this.data.results;
 
   // Removes the previous ghost and hints before we start rendering the new
   // display widgets.
@@ -114,25 +114,36 @@ Widget.prototype.refresh = function (done) {
 
     // Loop through each of the results and append an item to the hints list
     _.each(results, function (result, index) {
-      var el = hints.appendChild(document.createElement('li'));
-      el.hintId    = index;
-      el.className = 'CodeMirror-hint';
+      var el      = hints.appendChild(document.createElement('li'));
+      var isMatch = (result.display === result.value);
+      var indexOf, hint;
+
+      el.hintId      = index;
+      el.className   = 'CodeMirror-hint';
+      el.ghostResult = result;
 
       // Do Blink-style bolding of the completed text
-      var indexOf = result.indexOf(text);
-      if (indexOf > -1) {
-        var prefix = result.substr(0, indexOf);
-        var match  = result.substr(indexOf, text.length);
-        var suffix = result.substr(indexOf + text.length);
+      if (isMatch && (indexOf = result.display.indexOf(text)) > -1) {
+        var prefix = result.display.substr(0, indexOf);
+        var match  = result.display.substr(indexOf, text.length);
+        var suffix = result.display.substr(indexOf + text.length);
 
-        var highlight = document.createElement('span');
-        highlight.className = 'CodeMirror-hint-match';
-        highlight.appendChild(document.createTextNode(match));
+        hint = document.createElement('span');
+        hint.className = 'CodeMirror-hint-match';
+        hint.appendChild(document.createTextNode(match));
         el.appendChild(document.createTextNode(prefix));
-        el.appendChild(highlight);
+        el.appendChild(hint);
         el.appendChild(document.createTextNode(suffix));
       } else {
-        el.appendChild(document.createTextNode(result));
+        hint = document.createTextNode(result.display);
+
+        // Italicize special properties to make them distinct from regular
+        // completion results.
+        if (result.special) {
+          hint.className = 'CodeMirror-hint-special';
+        }
+
+        el.appendChild(hint);
       }
     });
 
@@ -187,7 +198,9 @@ Widget.prototype.refresh = function (done) {
  * @return {Widget}
  */
 Widget.prototype.reposition = function () {
-  if (this.onScroll) { this.completion.cm.off('scroll', this.onScroll); }
+  if (this.onScroll) {
+    this.completion.cm.off('scroll', this.onScroll);
+  }
 
   var cm    = this.completion.cm;
   var pos   = cm.cursorCoords(this.data.from);
@@ -273,11 +286,15 @@ Widget.prototype.accept = function () {
  * @param  {String}   string
  * @param  {Function} done
  */
-Widget.prototype._filter = function (string, done) {
+Widget.prototype._filter = function (result, done) {
+  // Don't ever filter special properties.
+  if (result.special === true) {
+    return done(true);
+  }
+
   return middleware.trigger('completion:filter', {
     token:   this.data.token,
-    string:  string,
-    filter:  true,
+    result:  result,
     context: this.data.context
   }, function (err, filter) {
     if (err) { throw err; }
@@ -319,7 +336,7 @@ Widget.prototype.setActive = function (i) {
   // ghost is appended, trigger a reposition event to align the autocompletion
   // with the text (This can be an issue on end of lines).
   this.removeGhost();
-  this.ghost = new Ghost(this, this.data, node.textContent);
+  this.ghost = new Ghost(this, this.data, node.ghostResult);
   this.reposition();
 
   if (node.offsetTop < this.hints.scrollTop) {
