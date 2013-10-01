@@ -45,7 +45,6 @@ App.CodeMirror = {
 App.View = {
   View:           require('./views/view'),
   Notebook:       require('./views/notebook'),
-  RawNotebook:    require('./views/raw-notebook'),
   EditNotebook:   require('./views/edit-notebook'),
   Inspector:      require('./views/inspector'),
   ErrorInspector: require('./views/error-inspector'),

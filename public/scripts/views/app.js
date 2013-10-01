@@ -4,7 +4,6 @@ var Backbone = require('backbone');
 
 var View         = require('./view');
 var Notebook     = require('./notebook');
-var RawNotebook  = require('./raw-notebook');
 var EditNotebook = require('./edit-notebook');
 var controls     = require('../lib/controls');
 var messages     = require('../state/messages');
@@ -24,9 +23,7 @@ var changeNotebook = function (fn) {
     // Remove the old application contents/notebook.
     if (this.contents) {
       this.contents.remove();
-      this.el.classList.remove(
-        'notebook-view-active', 'notebook-edit-active', 'notebook-raw-active'
-      );
+      this.el.classList.remove('notebook-view-active', 'notebook-edit-active');
       delete this.contents;
       delete this.notebook;
     }
@@ -68,9 +65,8 @@ App.prototype.events = {
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
   // Switch between application views.
-  'click .toggle-notebook-raw':      'renderRaw',
-  'click .toggle-notebook-edit':     'renderEdit',
-  'click .toggle-notebook-notebook': 'renderNotebook',
+  'click .toggle-notebook-edit': 'renderEdit',
+  'click .toggle-notebook-view': 'renderNotebook',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -110,16 +106,6 @@ App.prototype.initialize = function () {
 App.prototype.renderNotebook = changeNotebook(function () {
   this.el.classList.add('notebook-view-active');
   return this.notebook = new Notebook();
-});
-
-/**
- * Renders the raw notebook viewer inside the application.
- *
- * @return {App}
- */
-App.prototype.renderRaw = changeNotebook(function () {
-  this.el.classList.add('notebook-raw-active');
-  return new RawNotebook();
 });
 
 /**
@@ -314,12 +300,6 @@ App.prototype.render = function () {
       'to save the notebook.</p>' +
     '</div>' +
 
-    '<div class="notebook-toggle">' +
-      '<button class="toggle-notebook-notebook">Notebook</button>' +
-      '<button class="toggle-notebook-edit">Edit</button>' +
-      '<button class="toggle-notebook-raw">Raw</button>' +
-    '</div>' +
-
     '<div class="modal-backdrop"></div>'
   ));
 
@@ -365,9 +345,17 @@ App.prototype.render = function () {
   // Trigger all the update methods.
   this.update();
 
-  // Append a content container which will hold the notebook view.
-  this._contentsEl = this.el.appendChild(domify(
-    '<div class="notebook"></div>'
+  this.el.appendChild(domify(
+    '<div class="notebook">' +
+      '<div class="notebook-toggle clearfix">' +
+        '<button class="toggle-notebook-view">Done</button>' +
+        '<button class="toggle-notebook-edit">Edit as Markdown</button>' +
+      '</div>' +
+    '</div>'
+  ));
+
+  this._contentsEl = this.el.lastChild.appendChild(domify(
+    '<div class="notebook-content"></div>'
   ));
 
   return this;

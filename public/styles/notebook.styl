@@ -4,11 +4,27 @@
   margin: 1em auto
 
 .notebook
-  padding: 1em 2em
   border: 1px solid #ccc
   border-top: 0
   border-radius: 0 0 5px 5px
   background: #fff
+  > .notebook-toggle
+    > button
+      float: right
+      color: #333
+      font-size: 13px
+      border: 0
+      padding: 0.4em 0.6em
+      background: transparent
+    > button:hover,
+    > button:focus
+      text-decoration: underline
+    .notebook-view-active & > .toggle-notebook-view
+      display: none
+    .notebook-edit-active & > .toggle-notebook-edit
+      display: none
+  > .notebook-content
+    padding: 0.5em 2em
 
 .notebook-header
   padding: 1em 2em
