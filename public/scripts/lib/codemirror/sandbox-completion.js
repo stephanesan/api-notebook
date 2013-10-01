@@ -25,6 +25,22 @@ var getToken = function (cm, cur) {
 };
 
 /**
+ * Proxy the return objects for the property and variable middleware and turn
+ * it into something actionable for the widget display.
+ *
+ * @param  {Function} done
+ * @return {Function}
+ */
+var completeResults = function (done) {
+  return function (err, data) {
+    return done(err, {
+      context: data.context,
+      results: _.keys(data.results).sort()
+    });
+  };
+};
+
+/**
  * Complete variable completion suggestions.
  *
  * @param  {CodeMirror} cm
@@ -39,12 +55,7 @@ var completeVariable = function (cm, token, context, done) {
     editor:  cm,
     context: context,
     results: {}
-  }, function (err, data) {
-    return done(err, {
-      context: data.context,
-      results: _.keys(data.results).sort()
-    });
-  });
+  }, completeResults(done));
 };
 
 /**
@@ -208,12 +219,7 @@ var completeProperty = function (cm, token, context, done) {
       editor:  cm,
       context: context,
       results: {}
-    }, function (err, data) {
-      return done(err, {
-        context: data.context,
-        results: _.keys(data.results).sort()
-      });
-    });
+    }, completeResults(done));
   });
 };
 
