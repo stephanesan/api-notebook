@@ -1,13 +1,13 @@
-var RETURN_PROP = '@return';
+var ARGUMENTS_PROP = '@arguments';
 
 /**
- * Filters `@return` from showing up in the inspector view.
+ * Filters `@arguments` from showing up in the inspector view.
  *
  * @param {Object}   data
  * @param {Function} next
  */
 var inspectorFilterPlugin = function (data, next, done) {
-  if (typeof data.parent === 'function' && data.property === RETURN_PROP) {
+  if (typeof data.parent === 'function' && data.property === ARGUMENTS_PROP) {
     return done(null, false);
   }
 
@@ -15,16 +15,16 @@ var inspectorFilterPlugin = function (data, next, done) {
 };
 
 /**
- * Augments the completion context to take into account the `@return` property.
+ * Augments the completion function with arguments.
  *
  * @param {Object}   data
  * @param {Function} next
  * @param {Function} done
  */
-var completionFunctionPlugin = function (data, next, done) {
+var completionArgumentsPlugin = function (data, next, done) {
   // Completes the return property in functions, when available.
-  if (RETURN_PROP in data.fn) {
-    return done(null, data.fn[RETURN_PROP]);
+  if (ARGUMENTS_PROP in data.fn) {
+    return done(null, data.fn[ARGUMENTS_PROP]);
   }
 
   return next();
@@ -36,8 +36,8 @@ var completionFunctionPlugin = function (data, next, done) {
  * @type {Object}
  */
 var plugins = {
-  'inspector:filter':    inspectorFilterPlugin,
-  'completion:function': completionFunctionPlugin
+  'inspector:filter':     inspectorFilterPlugin,
+  'completion:arguments': completionArgumentsPlugin
 };
 
 /**
