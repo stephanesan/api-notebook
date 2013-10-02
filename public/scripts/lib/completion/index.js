@@ -60,9 +60,6 @@ var Completion = module.exports = function (cm, options) {
     // the widget when there is no previous character.
     if (!prevChar || closeOn.test(text)) {
       that.removeWidget();
-      // Save some additional processing by returning if the previous character
-      // is not a period (since we want to trigger completion immediately).
-      if (prevChar !== '.') { return; }
     }
 
     var nextChar = line.charAt(prevPos + 1);

@@ -204,6 +204,10 @@ var getPropertyContext = function (cm, token) {
 var getPropertyObject = function (cm, token, context, done) {
   var tokens = getPropertyContext(cm, token);
 
+  if (!tokens.length) {
+    return done(null, context);
+  }
+
   middleware.trigger('completion:context', {
     token:   tokens.pop(),
     editor:  cm,
@@ -249,6 +253,43 @@ var completeProperty = function (cm, token, context, done) {
   });
 };
 
+var completeArguments = function (cm, token, context, done) {
+  var cur       = cm.getCursor();
+  var prevToken = getToken(cm, new Pos(cur.line, token.start));
+
+  if (isWhitespaceToken(prevToken)) {
+    prevToken = getToken(cm, new Pos(cur.line, prevToken.start));
+  }
+
+  getPropertyObject(cm, prevToken, context, function (err, context) {
+    if (!context || !_.isFunction(context[prevToken.string])) {
+      return done();
+    }
+
+    middleware.trigger('completion:arguments', {
+      fn:      context[prevToken.string],
+      name:    prevToken.string,
+      editor:  cm,
+      context: context
+    }, function (err, args) {
+      // No arguments provided.
+      if (!args.length) {
+        return done();
+      }
+
+      // Sanitize the arguments for rendering as a result.
+      return done(null, {
+        results: [{
+          display: 'Arguments',
+          value:   args.join(', ') + ')',
+          special: true
+        }],
+        context: context
+      });
+    });
+  });
+};
+
 /**
  * Trigger the completion module by passing in the current codemirror instance.
  *
@@ -264,6 +305,8 @@ module.exports = function (cm, options, done) {
   var type    = token.type;
 
   var cb = function (err, completion) {
+    completion = completion || {};
+
     return done(err, {
       token:   token,
       context: completion.context,
@@ -272,6 +315,10 @@ module.exports = function (cm, options, done) {
       from:    new Pos(cur.line, token.start)
     });
   };
+
+  if (type === null && token.string === '(') {
+    return completeArguments(cm, token, context, cb);
+  }
 
   if (type === 'keyword' || type === 'variable') {
     return completeVariable(cm, token, context, cb);

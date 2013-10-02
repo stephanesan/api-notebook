@@ -68,16 +68,17 @@ var getPropertyNames = function (obj) {
 /**
  * Registers all the core plugins for the completion widgets.
  *
- * @param  {Object} middleware
+ * @param {Object} middleware
  */
 module.exports = function (middleware) {
   /**
    * Completes the completion variable suggestions.
    *
-   * @param  {Object}   data
-   * @param  {Function} next
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
    */
-  middleware.core('completion:variable', function (data, next) {
+  middleware.core('completion:variable', function (data, next, done) {
     var token = data.token;
 
     _.extend(data.results, varsToObject(token.state.localVars));
@@ -92,18 +93,19 @@ module.exports = function (middleware) {
     _.extend(data.results, varsToObject(token.state.globalVars));
     _.extend(data.results, getPropertyNames(data.context), keywords);
 
-    return next();
+    return done();
   });
 
   /**
    * Augments the property completion data with all property names.
    *
-   * @param  {Object}   data
-   * @param  {Function} next
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
    */
-  middleware.core('completion:property', function (data, next) {
+  middleware.core('completion:property', function (data, next, done) {
     _.extend(data.results, getPropertyNames(data.context));
-    return next();
+    return done();
   });
 
   /**
@@ -111,10 +113,11 @@ module.exports = function (middleware) {
    * the global scope and coerces other types detected by CodeMirror (such as
    * strings and numbers) into the correct representation.
    *
-   * @param  {Object}   data
-   * @param  {Function} next
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
    */
-  middleware.core('completion:context', function (data, next) {
+  middleware.core('completion:context', function (data, next, done) {
     var token  = data.token;
     var type   = token.type;
     var string = token.string;
@@ -123,6 +126,7 @@ module.exports = function (middleware) {
       var context = data[type === 'variable' ? 'global' : 'context'];
       // Lookup the property on the current context
       data.context = context[string];
+
       // If the variable/property is a constructor function, we can provide
       // some additional context by looking at the `prototype` property. Normal
       // functions have no built in way of inferring the return value.
@@ -133,40 +137,42 @@ module.exports = function (middleware) {
           data.context = null;
         }
       }
-      return next();
+
+      return done();
     }
 
     if (type === 'string') {
       data.context = String(string);
-      return next();
+      return done();
     }
 
     if (type === 'number') {
       data.context = Number(string);
-      return next();
+      return done();
     }
 
     if (type === 'string-2') {
       var parts = token.string.split('/');
       data.context = new RegExp(parts[1].replace('\\', '\\\\'), parts[2]);
-      return next();
+      return done();
     }
 
     if (type === 'atom' && (string === 'true' || string === 'false')) {
       data.context = Boolean(string);
-      return next();
+      return done();
     }
 
     data.context = null;
-    return next();
+    return done();
   });
 
   /**
    * Filter autocompletion suggestions. Checks the given suggestion is actually
    * the start of the current token.
    *
-   * @param  {Object}   data
-   * @param  {Function} next
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
    */
   middleware.core('completion:filter', function (data, next, done) {
     var value  = data.result.value;
@@ -174,5 +180,21 @@ module.exports = function (middleware) {
     var length = value.length >= string.length;
 
     return done(null, length && value.substr(0, string.length) === string);
+  });
+
+  /**
+   * Provides completion suggestions for a function definition.
+   *
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.core('completion:arguments', function (data, next, done) {
+    // TODO: Refactor into its own module.
+    if (data.fn === data.context.addEventListener) {
+      return done(null, ['"name"', 'function (event) {}', 'true']);
+    }
+
+    return done(null, []);
   });
 };

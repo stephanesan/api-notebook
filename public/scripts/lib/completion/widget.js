@@ -275,7 +275,6 @@ Widget.prototype.reposition = function () {
  */
 Widget.prototype.accept = function () {
   this.ghost.accept();
-  this.remove();
 
   return this;
 };
