@@ -82,6 +82,8 @@ Widget.prototype.removeGhost = function () {
  * @param  {Function} done
  */
 Widget.prototype.refresh = function (done) {
+  if (!this.data.results) { return; }
+
   var that = this;
   var cm   = this.completion.cm;
   var list = this.data.results;
@@ -96,11 +98,6 @@ Widget.prototype.refresh = function (done) {
   this.data.to     = cm.getCursor();
   this.data.token  = correctToken(cm, this.data.to);
   this._refreshing = true;
-
-  // Break when we have no list to filter.
-  if (!list || !list.length) {
-    return;
-  }
 
   // Run an async filter on the data before we create the nodes
   asyncFilter(list, _.bind(this._filter, this), _.bind(function (results) {
@@ -120,7 +117,7 @@ Widget.prototype.refresh = function (done) {
     // Loop through each of the results and append an item to the hints list
     _.each(results, function (result, index) {
       var el      = hints.appendChild(document.createElement('li'));
-      var isMatch = (result.display === result.value);
+      var isMatch = (result.name === result.value);
       var indexOf, hint;
 
       el.hintId      = index;
@@ -128,10 +125,10 @@ Widget.prototype.refresh = function (done) {
       el.ghostResult = result;
 
       // Do Blink-style bolding of the completed text
-      if (isMatch && (indexOf = result.display.indexOf(text)) > -1) {
-        var prefix = result.display.substr(0, indexOf);
-        var match  = result.display.substr(indexOf, text.length);
-        var suffix = result.display.substr(indexOf + text.length);
+      if (isMatch && (indexOf = result.name.indexOf(text)) > -1) {
+        var prefix = result.name.substr(0, indexOf);
+        var match  = result.name.substr(indexOf, text.length);
+        var suffix = result.name.substr(indexOf + text.length);
 
         hint = document.createElement('span');
         hint.className = 'CodeMirror-hint-match';
@@ -140,7 +137,7 @@ Widget.prototype.refresh = function (done) {
         el.appendChild(hint);
         el.appendChild(document.createTextNode(suffix));
       } else {
-        hint = document.createTextNode(result.display);
+        hint = document.createTextNode(result.name);
 
         // Italicize special properties to make them distinct from regular
         // completion results.

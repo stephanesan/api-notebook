@@ -37,26 +37,26 @@ var completeResults = function (done) {
     var results = _.map(_.keys(data.results), function (key) {
       if (!_.isObject(data.results[key])) {
         return {
-          display: key,
-          value:   key
+          name:  key,
+          value: key
         };
       }
 
       return {
-        display: key,
+        name:    key,
         value:   data.results[key].value,
         special: data.results[key].special
       };
     }).sort(function (a, b) {
       if (a.special && b.special) {
-        return a.display > b.display ? 1 : -1;
+        return a.value > b.value ? 1 : -1;
       } else if (a.special) {
         return 1;
       } else if (b.special) {
         return -1;
       }
 
-      return a.display > b.display ? 1 : -1;
+      return a.value > b.value ? 1 : -1;
     });
 
     return done(err, {
@@ -214,7 +214,9 @@ var getPropertyObject = function (cm, token, context, done) {
     global:  context,
     context: context
   }, function again (err, data) {
-    if (err) { return done(err, data.context); }
+    if (err) {
+      return done(err, data.context);
+    }
 
     // Do some post processing work to correct primitive type references.
     if (typeof data.context === 'string') {
@@ -223,6 +225,34 @@ var getPropertyObject = function (cm, token, context, done) {
       data.context = Number.prototype;
     } else if (typeof data.context === 'boolean') {
       data.context = Boolean.prototype;
+    }
+
+    if (data.token && (data.token.isFunction || data.token.type === 'immed')) {
+      // Check that the property is also a function, otherwise we should skip it
+      // and leave it up to the user to work out.
+      if (!_.isFunction(data.context)) {
+        data.context = null;
+        return again(err, data);
+      }
+
+      return middleware.trigger('completion:function', {
+        fn:        data.context,
+        name:      data.token.string,
+        editor:    cm,
+        construct: !!data.token.isConstructor,
+        context:   context
+      }, function (err, context) {
+        data.token   = tokens.pop();
+        data.context = context;
+
+        // Immediately invoked functions should skip the context processing
+        // step. It's also possible that this token was the last to process.
+        if (data.token && data.token.type !== 'immed') {
+          return middleware.trigger('completion:context', data, again);
+        }
+
+        return again(err, data);
+      });
     }
 
     if (_.isObject(data.context) && tokens.length) {
@@ -267,10 +297,9 @@ var completeArguments = function (cm, token, context, done) {
     }
 
     middleware.trigger('completion:arguments', {
-      fn:      context[prevToken.string],
-      name:    prevToken.string,
-      editor:  cm,
-      context: context
+      fn:     context[prevToken.string],
+      name:   prevToken.string,
+      editor: cm
     }, function (err, args) {
       // No arguments provided.
       if (!args.length) {

@@ -83,7 +83,7 @@ var isFunctionProperty = function (fn, property) {
  * @param  {Function} next
  */
 var completionFilterPlugin = function (data, next, done) {
-  var value   = data.value;
+  var value   = data.result.value;
   var context = data.context;
 
   if (typeof context === 'object' && isObjectProperty(context, value)) {

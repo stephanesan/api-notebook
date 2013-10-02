@@ -21,21 +21,10 @@ var inspectorFilterPlugin = function (data, next, done) {
  * @param  {Function} next
  * @param  {Function} done
  */
-var completionContextPlugin = function (data, next, done) {
-  var token = data.token;
-  var type  = token.type;
-
-  if (type === 'immed' && typeof data.context === 'function') {
-    data.context = data.context[RETURN_PROP];
-    return done();
-  }
-
-  if (token.isFunction && (type === 'variable' || type === 'property')) {
-    var property = data.context[token.string];
-    if (typeof property === 'function' && RETURN_PROP in property) {
-      data.context = property[RETURN_PROP];
-      return done();
-    }
+var completionFunctionPlugin = function (data, next, done) {
+  // Completes the return property in functions, when available.
+  if (RETURN_PROP in data.fn) {
+    return done(null, data.fn[RETURN_PROP]);
   }
 
   return next();
@@ -47,8 +36,8 @@ var completionContextPlugin = function (data, next, done) {
  * @type {Object}
  */
 var plugins = {
-  'inspector:filter':   inspectorFilterPlugin,
-  'completion:context': completionContextPlugin
+  'inspector:filter':    inspectorFilterPlugin,
+  'completion:function': completionFunctionPlugin
 };
 
 /**

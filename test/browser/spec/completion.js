@@ -26,7 +26,7 @@ describe('Completion', function () {
           expect(results).to.not.contain(unexpected);
         }
 
-        done();
+        return done();
       });
     };
   };

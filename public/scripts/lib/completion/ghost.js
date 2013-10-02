@@ -35,7 +35,7 @@ var Ghost = module.exports = function (widget, data, result) {
   // Creates the ghost element to be styled.
   var ghostHint = document.createElement('span');
   ghostHint.className = 'CodeMirror-hint-ghost';
-  ghostHint.appendChild(document.createTextNode(this.display = text));
+  ghostHint.appendChild(document.createTextNode(this.text = text));
 
   // Abuse the bookmark feature of CodeMirror to achieve the desired completion
   // effect without modifying source code.
@@ -51,8 +51,8 @@ var Ghost = module.exports = function (widget, data, result) {
  * @return {Ghost}
  */
 Ghost.prototype.accept = function () {
-  if (this.display && this.data) {
-    this.cm.replaceRange(this.display, this.data.to, this.data.to);
+  if (this.text && this.data) {
+    this.cm.replaceRange(this.text, this.data.to, this.data.to);
   }
 
   return this.remove();

@@ -126,18 +126,6 @@ module.exports = function (middleware) {
       var context = data[type === 'variable' ? 'global' : 'context'];
       // Lookup the property on the current context
       data.context = context[string];
-
-      // If the variable/property is a constructor function, we can provide
-      // some additional context by looking at the `prototype` property. Normal
-      // functions have no built in way of inferring the return value.
-      if (token.isFunction) {
-        if (token.isConstructor && typeof data.context === 'function') {
-          data.context = data.context.prototype;
-        } else {
-          data.context = null;
-        }
-      }
-
       return done();
     }
 
@@ -183,7 +171,7 @@ module.exports = function (middleware) {
   });
 
   /**
-   * Provides completion suggestions for a function definition.
+   * Provides completion suggestions for a functions arguments.
    *
    * @param {Object}   data
    * @param {Function} next
@@ -196,5 +184,29 @@ module.exports = function (middleware) {
     }
 
     return done(null, []);
+  });
+
+  /**
+   * Provides completion middleware for resolving the returned context of a
+   * function.
+   *
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.core('completion:function', function (data, next, done) {
+    // If the variable/property is a constructor function, we can provide
+    // some additional context by looking at the `prototype` property.
+    if (data.construct) {
+      return done(null, data.fn.prototype);
+    }
+
+    // TODO: Refactor to a more generalised module.
+    if (data.fn === data.context.Array) {
+      return done(null, []);
+    }
+
+    // Intentionally return an empty context for functions.
+    return done(null, null);
   });
 };
