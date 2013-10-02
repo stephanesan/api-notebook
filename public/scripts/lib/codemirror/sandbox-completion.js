@@ -216,7 +216,7 @@ var getPropertyObject = function (cm, token, context, done) {
   }, function again (err, data) {
     if (err) { return done(err, data.context); }
 
-    // Do some post processing work to correct primitive types
+    // Do some post processing work to correct primitive type references.
     if (typeof data.context === 'string') {
       data.context = String.prototype;
     } else if (typeof data.context === 'number') {

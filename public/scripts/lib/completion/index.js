@@ -48,21 +48,23 @@ var Completion = module.exports = function (cm, options) {
       return that.removeWidget();
     }
 
-    var closeOn  = /[^$_a-zA-Z0-9]/;
-    var remove   = event.origin === '+delete';
-    var text     = event[remove ? 'removed' : 'text'].join('\n');
-    var line     = cm.getLine(event.from.line);
-    var prevPos  = event.from.ch + (remove ? -1 : 0);
-    var prevChar = line.charAt(prevPos);
+    var closeOn = /[^$_a-zA-Z0-9]/;
+    var remove  = event.origin === '+delete';
+    var text    = event[remove ? 'removed' : 'text'].join('\n');
+    var line    = cm.getLine(event.from.line);
+    var curPos  = event.from.ch + (remove ? -1 : 0);
+    var curChar = line.charAt(curPos);
 
     // Checks whether any of the characters are a close character. If they are,
     // close the widget and remove from the DOM. However, we should also close
     // the widget when there is no previous character.
-    if (!prevChar || closeOn.test(text)) {
+    if (!curChar || closeOn.test(curChar) || closeOn.test(text)) {
+      that.removeWidget();
+    } else if (curPos > 0 && closeOn.test(line.charAt(curPos - 1))) {
       that.removeWidget();
     }
 
-    var nextChar = line.charAt(prevPos + 1);
+    var nextChar = line.charAt(curPos + 1);
 
     // If completion is currently active, trigger a refresh event (filter the
     // current suggestions using updated character position information).

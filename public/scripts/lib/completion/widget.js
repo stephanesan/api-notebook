@@ -97,6 +97,11 @@ Widget.prototype.refresh = function (done) {
   this.data.token  = correctToken(cm, this.data.to);
   this._refreshing = true;
 
+  // Break when we have no list to filter.
+  if (!list || !list.length) {
+    return;
+  }
+
   // Run an async filter on the data before we create the nodes
   asyncFilter(list, _.bind(this._filter, this), _.bind(function (results) {
     // Remove the rendering flag now we have finished rendering the widget
