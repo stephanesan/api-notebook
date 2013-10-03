@@ -502,9 +502,10 @@ var completeArguments = function (cm, token, context, done) {
     }
 
     middleware.trigger('completion:arguments', {
-      fn:     context[prevToken.string],
-      name:   prevToken.string,
-      editor: cm
+      fn:      context[prevToken.string],
+      name:    prevToken.string,
+      editor:  cm,
+      context: context
     }, function (err, args) {
       // No arguments provided.
       if (!args.length) {
