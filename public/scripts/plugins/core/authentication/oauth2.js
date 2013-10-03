@@ -174,7 +174,7 @@ var oAuth2CodeFlow = function (options, done) {
   var left        = (window.screen.availWidth - width) / 2;
   var state       = ('' + Math.random()).substr(2);
   var redirectUri = url.resolve(
-    global.location, '/authentication/oauth2.html'
+    global.location.href, '/authentication/oauth2.html'
   );
 
   // Stringify the query string data.
