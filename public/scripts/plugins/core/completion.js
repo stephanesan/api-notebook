@@ -147,8 +147,15 @@ module.exports = function (middleware) {
       return done();
     }
 
-    if (type === 'atom' && (string === 'true' || string === 'false')) {
-      data.context = Boolean(string);
+    if (type === 'atom') {
+      if (string === 'true' || string === 'false') {
+        data.context = Boolean(string);
+      } else if (string === 'null') {
+        data.context = null;
+      } else if (string === 'undefined') {
+        data.context = undefined;
+      }
+
       return done();
     }
 

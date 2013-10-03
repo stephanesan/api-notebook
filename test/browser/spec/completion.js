@@ -185,6 +185,28 @@ describe('Completion', function () {
       testAutocomplete('test[property.nested.test].', 'substr')(done);
     });
 
+    it('should complete sequential square bracket properties', function (done) {
+      window.test = {
+        test: {
+          again: 'test'
+        }
+      };
+
+      testAutocomplete('test["test"]["again"].', 'substr')(done);
+    });
+
+    it('should complete nested square bracket properties', function (done) {
+      window.test = {
+        test: 'test'
+      };
+
+      window.property = {
+        nested: 'test'
+      };
+
+      testAutocomplete('test[property["nested"]].', 'substr')(done);
+    });
+
     describe('Whitespace', function () {
       it(
         'should ignore whitespace after variable',

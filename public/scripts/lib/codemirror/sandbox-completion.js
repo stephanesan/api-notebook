@@ -86,101 +86,90 @@ var completeVariable = function (cm, token, context, done) {
 };
 
 /**
- * Checks whether the tokens can be statically resolved accurately.
+ * Returns the current token, taking into account if the current token is
+ * whitespace.
  *
- * @param  {Array}   tokens
- * @return {Boolean}
+ * @param  {Object} token
+ * @return {Object}
  */
-var allowResolve = function (tokens) {
-  return _.every(tokens, function (token) {
-    return !token.isFunction;
-  });
+var eatSpace = function (cm, line, token) {
+  if (isWhitespaceToken(token)) {
+    return getToken(cm, new Pos(line, token.start));
+  }
+
+  return token;
 };
 
 /**
- * Collects information about the current token context by traversing through
- * the CodeMirror editor. Currently it's pretty simplistic and only works over
- * a single line.
+ * Similar to `eatSpace`, but also takes moves the current token.
+ *
+ * @param  {Object} token
+ * @return {Object}
+ */
+var eatSpaceAndMove = function (cm, line, token) {
+  return eatSpace(cm, line, getToken(cm, new Pos(line, token.start)));
+};
+
+/**
+ * Get the full property path to a property token.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
  * @return {Array}
  */
-var getPropertyContext = function (cm, token) {
-  // Since JavaScript allows any number of spaces between properties and
-  // parens, we will need to eat the additional spaces.
-  var eatSpace = function (token) {
-    if (token.type === null && /^ +$/.test(token.string)) {
-      return getToken(cm, new Pos(cur.line, token.start));
-    }
-
-    return token;
-  };
-
-  // Like `eatSpace`, but also moves to the previous token at the same time.
-  var eatSpaceAndMove = function (token) {
-    return eatSpace(getToken(cm, new Pos(cur.line, token.start)));
-  };
-
-  var cur     = cm.getCursor();
-  var tprop   = eatSpace(token);
+var getPropertyPath = function (cm, token) {
+  var line    = cm.getCursor().line;
+  var tprop   = token;
   var context = [];
-  var level, prev, subContext;
 
-  while (tprop.type === 'property') {
-    tprop = eatSpaceAndMove(tprop);
-    if (tprop.string !== '.') { return []; }
-    tprop = eatSpaceAndMove(tprop);
+  /**
+   * Mix in to with a token indicate an invalid/unexpected token.
+   *
+   * @type {Object}
+   */
+  var invalidToken = {
+    type:   'invalid',
+    string: null
+  };
 
-    while (tprop.string === ']') {
-      level = 1;
-      prev  = tprop;
+  /**
+   * Eats the current token and whitespace.
+   *
+   * @param  {Object} token
+   * @return {Object}
+   */
+  var eatToken = function (token) {
+    return eatSpaceAndMove(cm, line, token);
+  };
 
-      do {
-        tprop = getToken(cm, new Pos(cur.line, tprop.start));
-        if (tprop.string === ']') {
-          level++;
-        } else if (tprop.string === '[') {
-          level--;
-        }
-      } while (level > 0 && tprop.start > 0);
-
-      // Keep track of the open token to confirm the location in the bracket
-      // resolution.
-      var startToken = tprop;
-      tprop = eatSpaceAndMove(tprop);
-
-      // Only kick into bracket notation mode when the preceding token is a
-      // property, variable, string, etc. Only things you can't use it on are
-      // `undefined` and `null` (and syntax, of course).
-      if (tprop.type !== null && tprop.type !== 'atom') {
-        prev       = eatSpaceAndMove(prev);
-        subContext = getPropertyContext(cm, prev);
-        subContext.unshift(prev);
-
-        var startPos = eatSpaceAndMove(subContext[subContext.length - 1]).start;
-
-        // Ensures that the only tokens being resolved can be done statically.
-        if (startPos === startToken.start && allowResolve(subContext)) {
-          context.push({
-            start:  subContext[subContext.length - 1].start,
-            end:    subContext[0].end,
-            tokens: subContext,
-            state:  prev.state,
-            type:   'dynamic-property'
-          });
-        } else {
-          return [];
-        }
-      }
+  /**
+   * Check whether the token can be resolved using the property recursion loop.
+   *
+   * @param  {Object}  tprop
+   * @return {Boolear}
+   */
+  var canResolve = function (tprop) {
+    if (!_.contains([null, 'keyword', 'invalid'], tprop.type)) {
+      return true;
     }
 
+    return tprop.type === null && _.contains([')', ']', '.'], tprop.string);
+  };
+
+  /**
+   * Resolves regular property notation.
+   *
+   * @param  {Object} tprop
+   * @return {Object}
+   */
+  var resolveProperty = function (tprop) {
+    // Resolve function/paren syntax.
     while (tprop.string === ')') {
-      level = 1;
-      prev  = tprop; // Keep track in case this isn't a function after all
+      var level = 1;
+      var prev  = tprop;
 
       do {
-        tprop = getToken(cm, new Pos(cur.line, tprop.start));
+        tprop = getToken(cm, new Pos(line, tprop.start));
         if (tprop.string === ')') {
           level++;
         } else if (tprop.string === '(') {
@@ -189,7 +178,7 @@ var getPropertyContext = function (cm, token) {
       // While still in parens *and not at the beginning of the line*
       } while (level > 0 && tprop.start > 0);
 
-      tprop = eatSpaceAndMove(tprop);
+      tprop = eatToken(tprop);
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
@@ -208,8 +197,10 @@ var getPropertyContext = function (cm, token) {
       // that instead. If the last token is a space though, we need to move
       // back a little further.
       } else {
-        tprop      = eatSpaceAndMove(prev);
-        subContext = getPropertyContext(cm, tprop);
+        tprop = eatToken(prev);
+
+        var subContext = getPropertyPath(cm, tprop);
+
         // The subcontext has a new keyword, but a function was not found, set
         // the last property to be a constructor and function
         if (subContext.hasNew) {
@@ -222,77 +213,150 @@ var getPropertyContext = function (cm, token) {
     }
 
     context.push(tprop);
+
+    return eatToken(tprop);
+  };
+
+  /**
+   * Resolves square bracket notation.
+   *
+   * @param  {Object} tprop
+   * @return {Object}
+   */
+  var resolveDynamicProperty = function (tprop) {
+    var level = 1;
+    var prev  = tprop;
+
+    do {
+      tprop = getToken(cm, new Pos(line, tprop.start));
+      if (tprop.string === ']') {
+        level++;
+      } else if (tprop.string === '[') {
+        level--;
+      }
+    } while (level > 0 && tprop.start > 0);
+
+    // Keep track of the open token to confirm the location in the bracket
+    // resolution.
+    var startToken = tprop;
+    tprop = eatToken(tprop);
+
+    // Only kick into bracket notation mode when the preceding token is a
+    // property, variable, string, etc. Only things you can't use it on are
+    // `undefined` and `null` (and syntax, of course).
+    if (canResolve(tprop) && tprop.string !== '.') {
+      prev = eatToken(prev);
+
+      var subContext = getPropertyPath(cm, prev);
+      var startPos   = eatToken(subContext[subContext.length - 1]).start;
+
+      // Ensures that the only tokens being resolved can be done statically.
+      if (startPos === startToken.start) {
+        context.push({
+          start:  subContext[subContext.length - 1].start,
+          end:    subContext[0].end,
+          tokens: subContext,
+          state:  prev.state,
+          type:   'dynamic-property'
+        });
+      } else {
+        return _.extend(tprop, invalidToken);
+      }
+    }
+
+    return tprop;
+  };
+
+  while (canResolve(tprop)) {
+    // Skip over period notation.
+    if (tprop.string === '.') {
+      tprop = eatToken(tprop);
+    }
+
+    if (tprop.string === ']') {
+      tprop = resolveDynamicProperty(tprop);
+    } else {
+      tprop = resolveProperty(tprop);
+    }
   }
 
   // Using the new keyword doesn't actually require parens to invoke, so we need
-  // to do a quick special case check here
-  if (tprop.type === 'variable') {
-    prev = eatSpaceAndMove(tprop);
-
-    // Sets whether the variable is actually a constructor function
-    if (prev.type === 'keyword' && prev.string === 'new') {
-      context.hasNew = true;
-      // Try to set a function to be a constructor function
-      _.some(context, function (tprop) {
-        if (!tprop.isFunction) { return; }
-        // Remove the `hasNew` flag and set the function to be a constructor
-        delete context.hasNew;
-        return tprop.isConstructor = true;
-      });
-    }
+  // to do a quick special case check here.
+  if (tprop.type === 'keyword' && tprop.string === 'new') {
+    context.hasNew = true;
+    // Try to set a function to be a constructor function
+    _.some(context, function (tprop) {
+      if (!tprop.isFunction) { return; }
+      // Remove the `hasNew` flag and set the function to be a constructor
+      delete context.hasNew;
+      return tprop.isConstructor = true;
+    });
   }
 
   return context;
 };
 
 /**
- * Gets the property context for completing a property by looping through each
- * of the context tokens. Provides some additional help by moving primitives to
- * their prototype objects so it can continue autocompletion.
+ * Collects information about the current token context by traversing through
+ * the CodeMirror editor. Currently it's pretty simplistic and only works over
+ * a single line.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
- * @param  {Object}     context
- * @param  {Function}   done
+ * @return {Array}
  */
-var getPropertyObject = function (cm, token, context, done) {
-  // Resolve all dynamic properties first.
-  var tokens = async.map(getPropertyContext(cm, token), function (token, cb) {
+var getPropertyContext = function (cm, token) {
+  if (token.type !== 'property') {
+    return [];
+  }
+
+  var line  = cm.getCursor().line;
+  var tprop = eatSpaceAndMove(cm, line, token);
+
+  if (tprop.type !== null || tprop.string !== '.') {
+    return [];
+  }
+
+  return getPropertyPath(cm, eatSpaceAndMove(cm, line, tprop));
+};
+
+/**
+ * Resolve the property lookup tokens.
+ *
+ * @param {CodeMirror} cm
+ * @param {Object}     token
+ * @param {Object}     context
+ * @param {Function}   done
+ */
+var getPropertyLookup = function (cm, tokens, context, done) {
+  // Resolve dynamic and invalid properties first.
+  async.map(tokens, function (token, cb) {
     // Dynamic property calculations are run inline before we resolve the whole
     // object.
     if (token.type === 'dynamic-property') {
-      var line  = cm.getCursor().line;
-      var tprop = getToken(cm, new Pos(line, token.end));
-
-      // Properties and variables need to be resolved using the property lookup
-      // algorithm.
-      if (tprop.type === 'property' || tprop.type === 'variable') {
-        return getPropertyObject(cm, tprop, context, function (err, context) {
+      return getPropertyLookup(
+        cm,
+        token.tokens,
+        context,
+        function (err, context) {
           var string;
 
           try {
-            string = '' + context[tprop.string];
+            string = '' + context;
           } catch (e) {
-            return cb(new Error('Resolution impossible'));
+            return cb(new Error('Property resolution impossible'));
           }
+
+          // Remove the tokens lookup array.
+          delete token.tokens;
 
           // Returns a valid token for the rest of the resolution.
           return cb(err, _.extend(token, {
             type:   'property',
             string: string
           }));
-        });
-      }
-
-      if (tprop.type === 'string') {
-        token.string = tprop.string.slice(1, -1);
-      } else {
-        token.string = tprop.string;
-      }
-
-      return cb(null, _.extend(token, {
-        type: 'property'
-      }));
+        }
+      );
     }
 
     return cb(null, token);
@@ -313,20 +377,11 @@ var getPropertyObject = function (cm, token, context, done) {
       global:  context,
       context: context
     }, function again (err, data) {
+      var token = data.token;
+
       if (err) {
         return done(err, data.context);
       }
-
-      // Do some post processing work to correct primitive type references.
-      if (typeof data.context === 'string') {
-        data.context = String.prototype;
-      } else if (typeof data.context === 'number') {
-        data.context = Number.prototype;
-      } else if (typeof data.context === 'boolean') {
-        data.context = Boolean.prototype;
-      }
-
-      var token = data.token;
 
       if (token && (token.isFunction || token.type === 'immed')) {
         // Check that the property is also a function, otherwise we should
@@ -364,6 +419,36 @@ var getPropertyObject = function (cm, token, context, done) {
       return done(null, data.context);
     });
   });
+};
+
+/**
+ * Gets the property context for completing a property by looping through each
+ * of the context tokens. Provides some additional help by moving primitives to
+ * their prototype objects so it can continue autocompletion.
+ *
+ * @param {CodeMirror} cm
+ * @param {Object}     token
+ * @param {Object}     context
+ * @param {Function}   done
+ */
+var getPropertyObject = function (cm, token, context, done) {
+  return getPropertyLookup(
+    cm,
+    getPropertyContext(cm, token),
+    context,
+    function (err, context) {
+      // Do some post processing work to correct primitive type references.
+      if (typeof context === 'string') {
+        context = String.prototype;
+      } else if (typeof context === 'number') {
+        context = Number.prototype;
+      } else if (typeof context === 'boolean') {
+        context = Boolean.prototype;
+      }
+
+      return done(err, context);
+    }
+  );
 };
 
 /**
