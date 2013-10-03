@@ -23,7 +23,7 @@ var TextCell = module.exports = EditorCell.extend({
  */
 TextCell.prototype.events = _.extend({}, EditorCell.prototype.events, {
   'click': function () {
-    if (!this._hasFocus) {
+    if (!this.hasFocus()) {
       this.focus();
     }
   }
