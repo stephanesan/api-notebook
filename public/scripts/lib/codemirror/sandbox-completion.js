@@ -178,7 +178,14 @@ var getPropertyPath = function (cm, token) {
       // While still in parens *and not at the beginning of the line*
       } while (level > 0 && tprop.start > 0);
 
+      // No support for resolving across multiple lines.. yet.
+      if (level > 0) {
+        context.push(_.extend(tprop, invalidToken));
+        return tprop;
+      }
+
       tprop = eatToken(tprop);
+
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
@@ -255,6 +262,10 @@ var getPropertyPath = function (cm, token) {
     // `undefined` and `null` (and syntax, of course).
     if (canResolve(tprop) && tprop.string !== '.') {
       prev = eatToken(prev);
+
+      if (prev.string === '[') {
+        return _.extend(prev, invalidToken);
+      }
 
       var subContext = getPropertyPath(cm, prev);
       var startPos   = eatToken(subContext[subContext.length - 1]).start;
@@ -347,6 +358,14 @@ var getPropertyContext = function (cm, token) {
  * @param {Function}   done
  */
 var getPropertyLookup = function (cm, tokens, context, done) {
+  var invalid = _.some(tokens, function (token) {
+    return token.type === 'invalid';
+  });
+
+  if (invalid) {
+    return done(new Error('Completion is not possible'));
+  }
+
   // Resolve dynamic and invalid properties first.
   async.map(tokens, function (token, cb) {
     // Dynamic property calculations are run inline before we resolve the whole
@@ -357,12 +376,14 @@ var getPropertyLookup = function (cm, tokens, context, done) {
         token.tokens,
         context,
         function (err, context) {
+          if (err) {  return cb(err); }
+
           var string;
 
           try {
             string = '' + context;
           } catch (e) {
-            return cb(new Error('Property resolution impossible'));
+            return cb(new Error('Property resolution is impossible'));
           }
 
           // Remove the tokens lookup array.
@@ -380,14 +401,10 @@ var getPropertyLookup = function (cm, tokens, context, done) {
     return cb(null, token);
   }, function (err, tokens) {
     // Resolution is not possible.
-    if (err) {
-      return done(null, null);
-    }
+    if (err) { return done(err); }
 
     // No tokens exist, which means we are doing a lookup at the global level.
-    if (!tokens.length) {
-      return done(null, context);
-    }
+    if (!tokens.length) { return done(null, context); }
 
     middleware.trigger('completion:context', {
       token:   tokens.pop(),

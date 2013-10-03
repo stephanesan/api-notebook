@@ -105,9 +105,12 @@ Widget.prototype.refresh = function (done) {
     delete this._refreshing;
     CodeMirror.signal(cm, 'refreshCompletion', cm, results);
 
+    // Break completion if we have no suggestions.
+    if (results.length === 0) { return; }
+
     // If we have less than two available results, there is no reason to render
     // the hints overlay menu.
-    if (results.length < 2) {
+    if (results.length === 1) {
       return this.ghost = new Ghost(this, this.data, results[0]);
     }
 

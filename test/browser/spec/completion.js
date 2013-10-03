@@ -18,12 +18,16 @@ describe('Completion', function () {
   var testAutocomplete = function (text, expected, unexpected) {
     return function (done) {
       testCompletion(editor, text, function (results) {
-        if (expected) {
-          expect(results).to.contain(expected);
-        }
+        try {
+          if (expected) {
+            expect(results).to.contain(expected);
+          }
 
-        if (unexpected) {
-          expect(results).to.not.contain(unexpected);
+          if (unexpected) {
+            expect(results).to.not.contain(unexpected);
+          }
+        } catch (e) {
+          return done(e);
         }
 
         return done();
@@ -118,6 +122,17 @@ describe('Completion', function () {
       testAutocomplete('test().', null, 'prop')(done);
     });
 
+    it('should not complete invalid with multiline parens', function (done) {
+      window.test = function () {};
+
+      // Catch case where it switches to "global mode"
+      testAutocomplete('test(\n"test").', null, 'window')(function (err) {
+        if (err) { done(err); }
+        // Catching case where it assumes the value on the inside of the paren
+        testAutocomplete('test(\n"string").', null, 'substr')(done);
+      });
+    });
+
     it(
       'should complete as soon as the property period is entered',
       testAutocomplete('window.', 'window')
@@ -193,6 +208,12 @@ describe('Completion', function () {
       };
 
       testAutocomplete('test["test"]["again"].', 'substr')(done);
+    });
+
+    it('should not complete empty bracket notation', function (done) {
+      window.test = [1, 2, 3];
+
+      testAutocomplete('test[].', null, 'concat')(done);
     });
 
     it('should complete nested square bracket properties', function (done) {
