@@ -123,6 +123,68 @@ describe('Completion', function () {
       testAutocomplete('window.', 'window')
     );
 
+    it('should complete numbers in the square brackets', function (done) {
+      window.test = ['string'];
+
+      testAutocomplete('test[0].', 'substr')(done);
+    });
+
+    it('should complete strings in the square brackets', function (done) {
+      window.test = {
+        string: 'test'
+      };
+
+      testAutocomplete('test["string"].', 'substr')(done);
+    });
+
+    it('should complete booleans in the square brackets', function (done) {
+      window.test = {
+        'true': 'test'
+      };
+
+      testAutocomplete('test[true].', 'substr')(done);
+    });
+
+    it('should complete undefined in the square brackets', function (done) {
+      window.test = {
+        'undefined': 'test'
+      };
+
+      testAutocomplete('test[undefined].', 'substr')(done);
+    });
+
+    it('should complete a regex in the square brackets', function (done) {
+      window.test = {
+        '/./': 'test'
+      };
+
+      testAutocomplete('test[/./].', 'substr')(done);
+    });
+
+    it('should complete basic variables in the square brackets', function (done) {
+      window.test = {
+        test: 'test'
+      };
+
+      window.variable = 'test';
+
+      testAutocomplete('test[variable].', 'substr')(done);
+    });
+
+    it('should complete properties in the square brackets', function (done) {
+      window.test = {
+        test: 'test'
+      };
+
+      window.property = {
+        nested: {
+          test: 'test'
+        }
+      };
+
+      testAutocomplete('test[property.nested.test].', 'substr')(done);
+    });
+
     describe('Whitespace', function () {
       it(
         'should ignore whitespace after variable',
@@ -153,6 +215,12 @@ describe('Completion', function () {
         'should ignore whitespace at the beginning and end of parens',
         testAutocomplete('(    123    ).to', 'toFixed')
       );
+
+      it('should ignore whitespace with square brackets', function (done) {
+        window.test = ['string'];
+
+        testAutocomplete('test  [ 0  ].', 'substr')(done);
+      });
     });
   });
 

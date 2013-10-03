@@ -55,7 +55,9 @@ var getPropertyNames = function (obj) {
   addProp = function (property) {
     // Avoid any property that is not a valid JavaScript literal variable,
     // since the autocompletion result wouldn't be valid JavaScript
-    if (isValidVariableName(property)) { props[property] = true; }
+    if (isValidVariableName(property)) {
+      props[property] = true;
+    }
   };
 
   do {
@@ -124,13 +126,13 @@ module.exports = function (middleware) {
 
     if (type === 'variable' || type === 'property') {
       var context = data[type === 'variable' ? 'global' : 'context'];
-      // Lookup the property on the current context
+      // Lookup the property on the current context object.
       data.context = context[string];
       return done();
     }
 
     if (type === 'string') {
-      data.context = String(string);
+      data.context = string.slice(1, -1);
       return done();
     }
 

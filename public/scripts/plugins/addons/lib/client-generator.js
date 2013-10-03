@@ -392,10 +392,13 @@ var httpRequest = function (nodes, method) {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
-    var canSerialize = ['[object Object]', '[object Array]'];
+    var canSerialize = {
+      '[object Array]':  true,
+      '[object Object]': true
+    };
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (_.contains(canSerialize, toString.call(data))) {
+    if (canSerialize[toString.call(data)]) {
       if (isJSON(mime)) {
         data = JSON.stringify(data);
       } else if (isUrlEncoded(mime)) {

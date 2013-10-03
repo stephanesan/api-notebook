@@ -1,5 +1,6 @@
 var _            = require('underscore');
 var Pos          = CodeMirror.Pos;
+var async        = require('async');
 var middleware   = require('../../state/middleware');
 var correctToken = require('./correct-token');
 
@@ -85,6 +86,18 @@ var completeVariable = function (cm, token, context, done) {
 };
 
 /**
+ * Checks whether the tokens can be statically resolved accurately.
+ *
+ * @param  {Array}   tokens
+ * @return {Boolean}
+ */
+var allowResolve = function (tokens) {
+  return _.every(tokens, function (token) {
+    return !token.isFunction;
+  });
+};
+
+/**
  * Collects information about the current token context by traversing through
  * the CodeMirror editor. Currently it's pretty simplistic and only works over
  * a single line.
@@ -94,45 +107,89 @@ var completeVariable = function (cm, token, context, done) {
  * @return {Array}
  */
 var getPropertyContext = function (cm, token) {
-  var cur     = cm.getCursor();
-  var tprop   = token;
-  var context = [];
-  var level, prev, subContext, eatSpace;
-
-  // Since JavaScript allows any number of spaces between properties and parens,
-  // we will need to eat the additional spaces.
-  eatSpace = function () {
-    var token = getToken(cm, new Pos(cur.line, tprop.start));
-
+  // Since JavaScript allows any number of spaces between properties and
+  // parens, we will need to eat the additional spaces.
+  var eatSpace = function (token) {
     if (token.type === null && /^ +$/.test(token.string)) {
-      token = getToken(cm, new Pos(cur.line, token.start));
+      return getToken(cm, new Pos(cur.line, token.start));
     }
 
     return token;
   };
 
+  // Like `eatSpace`, but also moves to the previous token at the same time.
+  var eatSpaceAndMove = function (token) {
+    return eatSpace(getToken(cm, new Pos(cur.line, token.start)));
+  };
+
+  var cur     = cm.getCursor();
+  var tprop   = eatSpace(token);
+  var context = [];
+  var level, prev, subContext;
+
   while (tprop.type === 'property') {
-    tprop = eatSpace(tprop);
+    tprop = eatSpaceAndMove(tprop);
     if (tprop.string !== '.') { return []; }
-    tprop = eatSpace(tprop);
+    tprop = eatSpaceAndMove(tprop);
+
+    while (tprop.string === ']') {
+      level = 1;
+      prev  = tprop;
+
+      do {
+        tprop = getToken(cm, new Pos(cur.line, tprop.start));
+        if (tprop.string === ']') {
+          level++;
+        } else if (tprop.string === '[') {
+          level--;
+        }
+      } while (level > 0 && tprop.start > 0);
+
+      // Keep track of the open token to confirm the location in the bracket
+      // resolution.
+      var startToken = tprop;
+      tprop = eatSpaceAndMove(tprop);
+
+      // Only kick into bracket notation mode when the preceding token is a
+      // property, variable, string, etc. Only things you can't use it on are
+      // `undefined` and `null` (and syntax, of course).
+      if (tprop.type !== null && tprop.type !== 'atom') {
+        prev       = eatSpaceAndMove(prev);
+        subContext = getPropertyContext(cm, prev);
+        subContext.unshift(prev);
+
+        var startPos = eatSpaceAndMove(subContext[subContext.length - 1]).start;
+
+        // Ensures that the only tokens being resolved can be done statically.
+        if (startPos === startToken.start && allowResolve(subContext)) {
+          context.push({
+            start:  subContext[subContext.length - 1].start,
+            end:    subContext[0].end,
+            tokens: subContext,
+            state:  prev.state,
+            type:   'dynamic-property'
+          });
+        } else {
+          return [];
+        }
+      }
+    }
 
     while (tprop.string === ')') {
       level = 1;
       prev  = tprop; // Keep track in case this isn't a function after all
+
       do {
         tprop = getToken(cm, new Pos(cur.line, tprop.start));
-        switch (tprop.string) {
-        case ')':
+        if (tprop.string === ')') {
           level++;
-          break;
-        case '(':
+        } else if (tprop.string === '(') {
           level--;
-          break;
         }
       // While still in parens *and not at the beginning of the line*
-      } while (level > 0 && tprop.start);
+      } while (level > 0 && tprop.start > 0);
 
-      tprop = eatSpace(tprop);
+      tprop = eatSpaceAndMove(tprop);
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       if (tprop.type === 'variable' || tprop.type === 'property') {
@@ -141,20 +198,17 @@ var getPropertyContext = function (cm, token) {
       // return another function that is immediately invoked.
       } else if (tprop.string === ')') {
         context.push({
-          start: tprop.end,
-          end: tprop.end,
+          start:  tprop.end,
+          end:    tprop.end,
           string: '',
-          state: tprop.state,
-          type: 'immed'
+          state:  tprop.state,
+          type:   'immed'
         });
       // Set `tprop` to be the token inside the parens and start working from
       // that instead. If the last token is a space though, we need to move
       // back a little further.
       } else {
-        tprop = getToken(cm, new Pos(cur.line, prev.start));
-        if (isWhitespaceToken(tprop)) {
-          tprop = getToken(cm, new Pos(cur.line, tprop.start));
-        }
+        tprop      = eatSpaceAndMove(prev);
         subContext = getPropertyContext(cm, tprop);
         // The subcontext has a new keyword, but a function was not found, set
         // the last property to be a constructor and function
@@ -173,7 +227,7 @@ var getPropertyContext = function (cm, token) {
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here
   if (tprop.type === 'variable') {
-    prev = eatSpace(tprop);
+    prev = eatSpaceAndMove(tprop);
 
     // Sets whether the variable is actually a constructor function
     if (prev.type === 'keyword' && prev.string === 'new') {
@@ -183,7 +237,7 @@ var getPropertyContext = function (cm, token) {
         if (!tprop.isFunction) { return; }
         // Remove the `hasNew` flag and set the function to be a constructor
         delete context.hasNew;
-        return (tprop.isConstructor = true);
+        return tprop.isConstructor = true;
       });
     }
   }
@@ -202,65 +256,113 @@ var getPropertyContext = function (cm, token) {
  * @param  {Function}   done
  */
 var getPropertyObject = function (cm, token, context, done) {
-  var tokens = getPropertyContext(cm, token);
+  // Resolve all dynamic properties first.
+  var tokens = async.map(getPropertyContext(cm, token), function (token, cb) {
+    // Dynamic property calculations are run inline before we resolve the whole
+    // object.
+    if (token.type === 'dynamic-property') {
+      var line  = cm.getCursor().line;
+      var tprop = getToken(cm, new Pos(line, token.end));
 
-  if (!tokens.length) {
-    return done(null, context);
-  }
+      // Properties and variables need to be resolved using the property lookup
+      // algorithm.
+      if (tprop.type === 'property' || tprop.type === 'variable') {
+        return getPropertyObject(cm, tprop, context, function (err, context) {
+          var string;
 
-  middleware.trigger('completion:context', {
-    token:   tokens.pop(),
-    editor:  cm,
-    global:  context,
-    context: context
-  }, function again (err, data) {
-    if (err) {
-      return done(err, data.context);
-    }
+          try {
+            string = '' + context[tprop.string];
+          } catch (e) {
+            return cb(new Error('Resolution impossible'));
+          }
 
-    // Do some post processing work to correct primitive type references.
-    if (typeof data.context === 'string') {
-      data.context = String.prototype;
-    } else if (typeof data.context === 'number') {
-      data.context = Number.prototype;
-    } else if (typeof data.context === 'boolean') {
-      data.context = Boolean.prototype;
-    }
-
-    if (data.token && (data.token.isFunction || data.token.type === 'immed')) {
-      // Check that the property is also a function, otherwise we should skip it
-      // and leave it up to the user to work out.
-      if (!_.isFunction(data.context)) {
-        data.context = null;
-        return again(err, data);
+          // Returns a valid token for the rest of the resolution.
+          return cb(err, _.extend(token, {
+            type:   'property',
+            string: string
+          }));
+        });
       }
 
-      return middleware.trigger('completion:function', {
-        fn:        data.context,
-        name:      data.token.string,
-        editor:    cm,
-        construct: !!data.token.isConstructor,
-        context:   context
-      }, function (err, context) {
-        data.token   = tokens.pop();
-        data.context = context;
+      if (tprop.type === 'string') {
+        token.string = tprop.string.slice(1, -1);
+      } else {
+        token.string = tprop.string;
+      }
 
-        // Immediately invoked functions should skip the context processing
-        // step. It's also possible that this token was the last to process.
-        if (data.token && data.token.type !== 'immed') {
-          return middleware.trigger('completion:context', data, again);
+      return cb(null, _.extend(token, {
+        type: 'property'
+      }));
+    }
+
+    return cb(null, token);
+  }, function (err, tokens) {
+    // Resolution is not possible.
+    if (err) {
+      return done(null, null);
+    }
+
+    // No tokens exist, which means we are doing a lookup at the global level.
+    if (!tokens.length) {
+      return done(null, context);
+    }
+
+    middleware.trigger('completion:context', {
+      token:   tokens.pop(),
+      editor:  cm,
+      global:  context,
+      context: context
+    }, function again (err, data) {
+      if (err) {
+        return done(err, data.context);
+      }
+
+      // Do some post processing work to correct primitive type references.
+      if (typeof data.context === 'string') {
+        data.context = String.prototype;
+      } else if (typeof data.context === 'number') {
+        data.context = Number.prototype;
+      } else if (typeof data.context === 'boolean') {
+        data.context = Boolean.prototype;
+      }
+
+      var token = data.token;
+
+      if (token && (token.isFunction || token.type === 'immed')) {
+        // Check that the property is also a function, otherwise we should
+        // skip it and leave it up to the user to work out.
+        if (!_.isFunction(data.context)) {
+          data.context = null;
+          return again(err, data);
         }
 
-        return again(err, data);
-      });
-    }
+        return middleware.trigger('completion:function', {
+          fn:        data.context,
+          name:      token.string,
+          editor:    cm,
+          construct: !!token.isConstructor,
+          context:   context
+        }, function (err, context) {
+          data.token   = tokens.pop();
+          data.context = context;
 
-    if (_.isObject(data.context) && tokens.length) {
-      data.token = tokens.pop();
-      return middleware.trigger('completion:context', data, again);
-    }
+          // Immediately invoked functions should skip the context processing
+          // step. It's also possible that this token was the last to process.
+          if (data.token && data.token.type !== 'immed') {
+            return middleware.trigger('completion:context', data, again);
+          }
 
-    return done(null, data.context);
+          return again(err, data);
+        });
+      }
+
+      if (_.isObject(data.context) && tokens.length) {
+        data.token = tokens.pop();
+        return middleware.trigger('completion:context', data, again);
+      }
+
+      return done(null, data.context);
+    });
   });
 };
 
