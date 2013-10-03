@@ -143,17 +143,27 @@ var getPropertyPath = function (cm, token) {
   };
 
   /**
-   * Check whether the token can be resolved using the property recursion loop.
+   * Check whether the token can be resolved in the property recursion loop.
    *
    * @param  {Object}  tprop
-   * @return {Boolear}
+   * @return {Boolean}
    */
   var canResolve = function (tprop) {
+    return tprop.string === '.' || canAccess(tprop);
+  };
+
+  /**
+   * Check whether the token is a possible access token (can read a value).
+   *
+   * @param  {Object}  tprop
+   * @return {Boolean}
+   */
+  var canAccess = function (tprop) {
     if (!_.contains([null, 'keyword', 'invalid'], tprop.type)) {
       return true;
     }
 
-    return tprop.type === null && _.contains([')', ']', '.'], tprop.string);
+    return tprop.type === null && _.contains([')', ']'], tprop.string);
   };
 
   /**
@@ -201,8 +211,7 @@ var getPropertyPath = function (cm, token) {
           type:   'immed'
         });
       // Set `tprop` to be the token inside the parens and start working from
-      // that instead. If the last token is a space though, we need to move
-      // back a little further.
+      // that instead.
       } else {
         tprop = eatToken(prev);
 
@@ -260,7 +269,7 @@ var getPropertyPath = function (cm, token) {
     // Only kick into bracket notation mode when the preceding token is a
     // property, variable, string, etc. Only things you can't use it on are
     // `undefined` and `null` (and syntax, of course).
-    if (canResolve(tprop) && tprop.string !== '.') {
+    if (canAccess(tprop)) {
       prev = eatToken(prev);
 
       if (prev.string === '[') {
@@ -490,12 +499,8 @@ var completeProperty = function (cm, token, context, done) {
 };
 
 var completeArguments = function (cm, token, context, done) {
-  var cur       = cm.getCursor();
-  var prevToken = getToken(cm, new Pos(cur.line, token.start));
-
-  if (isWhitespaceToken(prevToken)) {
-    prevToken = getToken(cm, new Pos(cur.line, prevToken.start));
-  }
+  var line      = cm.getCursor().line;
+  var prevToken = eatSpaceAndMove(cm, line, token);
 
   getPropertyObject(cm, prevToken, context, function (err, context) {
     if (!context || !_.isFunction(context[prevToken.string])) {
