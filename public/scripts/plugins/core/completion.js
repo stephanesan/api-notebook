@@ -65,6 +65,19 @@ var getPropertyNames = function (obj) {
     }
   };
 
+  // Sanitize the object to a type that we can grab keys from.
+  if (!_.isObject(obj)) {
+    if (typeof obj === 'string') {
+      obj = String.prototype;
+    } else if (typeof obj === 'number') {
+      obj = Number.prototype;
+    } else if (typeof obj === 'boolean') {
+      obj = Boolean.prototype;
+    } else {
+      return props;
+    }
+  }
+
   do {
     _.each(Object.getOwnPropertyNames(obj), addProp);
   } while (obj = Object.getPrototypeOf(obj));

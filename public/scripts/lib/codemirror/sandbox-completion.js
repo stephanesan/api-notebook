@@ -414,14 +414,14 @@ var getPropertyLookup = function (cm, tokens, context, done) {
     }, function again (err, data) {
       var token = data.token;
 
-      if (err) {
-        return done(err, data.context);
-      }
+      // Break the context lookup.
+      if (err) { return done(err, null); }
 
       if (token && (token.isFunction || token.type === 'immed')) {
         // Check that the property is also a function, otherwise we should
         // skip it and leave it up to the user to work out.
         if (!_.isFunction(data.context)) {
+          data.token   = null;
           data.context = null;
           return again(err, data);
         }
@@ -446,7 +446,7 @@ var getPropertyLookup = function (cm, tokens, context, done) {
         });
       }
 
-      if (_.isObject(data.context) && tokens.length) {
+      if (tokens.length && data.context != null) {
         data.token = tokens.pop();
         return middleware.trigger('completion:context', data, again);
       }
@@ -467,23 +467,7 @@ var getPropertyLookup = function (cm, tokens, context, done) {
  * @param {Function}   done
  */
 var getPropertyObject = function (cm, token, context, done) {
-  return getPropertyLookup(
-    cm,
-    getPropertyContext(cm, token),
-    context,
-    function (err, context) {
-      // Do some post processing work to correct primitive type references.
-      if (typeof context === 'string') {
-        context = String.prototype;
-      } else if (typeof context === 'number') {
-        context = Number.prototype;
-      } else if (typeof context === 'boolean') {
-        context = Boolean.prototype;
-      }
-
-      return done(err, context);
-    }
-  );
+  return getPropertyLookup(cm, getPropertyContext(cm, token), context, done);
 };
 
 /**

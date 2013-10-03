@@ -134,6 +134,11 @@ describe('Completion', function () {
     });
 
     it(
+      'should not complete made up functions',
+      testAutocomplete('"test".fake().', null, 'substr')
+    );
+
+    it(
       'should complete as soon as the property period is entered',
       testAutocomplete('window.', 'window')
     );
