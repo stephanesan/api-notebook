@@ -71,8 +71,15 @@ app.all('*', function (req, res) {
     }
   });
 
+  var proxy = request(data);
+
+  // Send the proxy error to the client.
+  proxy.on('error', function (err) {
+    res.send(500, err.message);
+  });
+
   // Pipe the request data directly into the proxy request and back to the
   // response object. This avoids having to buffer content bodies in cases where
-  // they could be exepectedly large and unneeded.
-  req.pipe(request(data)).pipe(res);
+  // they could be unexepectedly large or slow.
+  req.pipe(proxy).pipe(res);
 });
