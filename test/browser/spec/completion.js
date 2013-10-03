@@ -207,6 +207,11 @@ describe('Completion', function () {
       testAutocomplete('test[property["nested"]].', 'substr')(done);
     });
 
+    it(
+      'should complete array literals',
+      testAutocomplete('[1, 2, 3].con', 'concat')
+    );
+
     describe('Whitespace', function () {
       it(
         'should ignore whitespace after variable',

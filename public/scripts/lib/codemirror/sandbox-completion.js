@@ -241,6 +241,15 @@ var getPropertyPath = function (cm, token) {
     var startToken = tprop;
     tprop = eatToken(tprop);
 
+    // Resolve the contents of the brackets as a text string.
+    var string = cm.doc.getRange({
+      ch:   startToken.start,
+      line: line
+    }, {
+      ch:   prev.end,
+      line: line
+    });
+
     // Only kick into bracket notation mode when the preceding token is a
     // property, variable, string, etc. Only things you can't use it on are
     // `undefined` and `null` (and syntax, of course).
@@ -255,6 +264,7 @@ var getPropertyPath = function (cm, token) {
         context.push({
           start:  subContext[subContext.length - 1].start,
           end:    subContext[0].end,
+          string: string,
           tokens: subContext,
           state:  prev.state,
           type:   'dynamic-property'
@@ -262,6 +272,14 @@ var getPropertyPath = function (cm, token) {
       } else {
         return _.extend(tprop, invalidToken);
       }
+    } else if (tprop.type === null && tprop.string !== '.') {
+      context.push({
+        start:  startToken.start,
+        end:    prev.end,
+        string: string,
+        state:  prev.state,
+        type:   'array'
+      });
     }
 
     return tprop;

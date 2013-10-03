@@ -52,9 +52,14 @@ var getPropertyNames = function (obj) {
   var props = {};
   var addProp;
 
+  /**
+   * Adds the property to the property names object. Skips any property names
+   * that aren't valid JavaScript literals since completion should not display
+   * invalid JavaScript suggestions.
+   *
+   * @param {String} property
+   */
   addProp = function (property) {
-    // Avoid any property that is not a valid JavaScript literal variable,
-    // since the autocompletion result wouldn't be valid JavaScript
     if (isValidVariableName(property)) {
       props[property] = true;
     }
@@ -128,6 +133,11 @@ module.exports = function (middleware) {
       var context = data[type === 'variable' ? 'global' : 'context'];
       // Lookup the property on the current context object.
       data.context = context[string];
+      return done();
+    }
+
+    if (type === 'array') {
+      data.context = Array.prototype;
       return done();
     }
 
