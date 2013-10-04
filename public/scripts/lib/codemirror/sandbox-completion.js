@@ -388,9 +388,11 @@ var getPropertyLookup = function (cm, tokens, options, done) {
     return token.type === 'invalid';
   });
 
-  if (invalid) {
-    return done(new Error('Completion is not possible'));
-  }
+  // If any invalid tokens exist, fail completion.
+  if (invalid) { return done(new Error('Completion is not possible')); }
+
+  // No tokens exist, which means we are doing a lookup at the global level.
+  if (!tokens.length) { return done(null, options.global); }
 
   // Resolve dynamic and invalid properties first.
   async.map(tokens, function (token, cb) {
@@ -428,9 +430,6 @@ var getPropertyLookup = function (cm, tokens, options, done) {
   }, function (err, tokens) {
     // Resolution is not possible.
     if (err) { return done(err); }
-
-    // No tokens exist, which means we are doing a lookup at the global level.
-    if (!tokens.length) { return done(null, options.global); }
 
     middleware.trigger('completion:context', _.extend({
       token:   tokens.pop(),
@@ -513,19 +512,19 @@ var completeProperty = function (cm, token, context, done) {
 };
 
 var completeArguments = function (cm, token, options, done) {
-  var line      = cm.getCursor().line;
-  var prevToken = eatSpaceAndMove(cm, line, token);
+  var prev   = eatSpaceAndMove(cm, token);
+  var tokens = getPropertyPath(cm, prev);
 
-  getPropertyObject(cm, prevToken, options, function (err, context) {
-    if (!context || !_.isFunction(context[prevToken.string])) {
+  getPropertyLookup(cm, tokens, options, function (err, context) {
+    if (!_.isFunction(context)) {
       return done();
     }
 
-    middleware.trigger('completion:arguments', _.extend({
-      fn:     context[prevToken.string],
-      name:   prevToken.string,
-      editor: cm
-    }, options), function (err, args) {
+    middleware.trigger('completion:arguments', {
+      fn:     context,
+      editor: cm,
+      global: options.global
+    }, function (err, args) {
       // No arguments provided.
       if (!args.length) {
         return done();
