@@ -23,7 +23,6 @@ var prototypeResolve = function (options, prototype) {
  * @return {*}
  */
 module.exports = function (options) {
-  var fn     = options.fn;
   var global = options.global;
 
   if (!options.construct) {
@@ -43,28 +42,6 @@ module.exports = function (options) {
      * Functions below this point require arguments to be 100% useful, but for
      * the most part it won't hurt to display basic suggestions.
      */
-
-    /**
-     * Functions that return arrays.
-     *
-     * @type {Array}
-     */
-    var arrayTypes = [
-      // Arrays.
-      global.Array,
-      global.Array.prototype.map,
-      global.Array.prototype.sort,
-      global.Array.prototype.slice,
-      global.Array.prototype.splice,
-      global.Array.prototype.concat,
-      global.Array.prototype.filter,
-      global.Array.prototype.reverse,
-      // Regular Expressions.
-      global.RegExp.prototype.exec,
-      // Objects.
-      global.Object.keys,
-      global.Object.getOwnPropertyNames
-    ];
 
     /**
      * Functions that return strings.
@@ -151,6 +128,28 @@ module.exports = function (options) {
     ];
 
     /**
+     * Functions that return arrays.
+     *
+     * @type {Array}
+     */
+    var arrayTypes = [
+      // Arrays.
+      global.Array,
+      global.Array.prototype.map,
+      global.Array.prototype.sort,
+      global.Array.prototype.slice,
+      global.Array.prototype.splice,
+      global.Array.prototype.concat,
+      global.Array.prototype.filter,
+      global.Array.prototype.reverse,
+      // Regular Expressions.
+      global.RegExp.prototype.exec,
+      // Objects.
+      global.Object.keys,
+      global.Object.getOwnPropertyNames
+    ];
+
+    /**
      * Functions that return object values.
      *
      * @type {Array}
@@ -166,10 +165,6 @@ module.exports = function (options) {
       global.Object.getOwnPropertyDescriptor
     ];
 
-    if (_.contains(arrayTypes, fn)) {
-      return [];
-    }
-
     if (_.contains(stringTypes, options.fn)) {
       return '';
     }
@@ -182,8 +177,12 @@ module.exports = function (options) {
       return false;
     }
 
+    if (_.contains(arrayTypes, options.fn)) {
+      return new options.global.Array();
+    }
+
     if (_.contains(objectTypes, options.fn)) {
-      return {};
+      return new options.global.Object();
     }
   }
 

@@ -151,7 +151,7 @@ module.exports = function (middleware) {
     }
 
     if (type === 'array') {
-      data.context = Array.prototype;
+      data.context = new data.global.Array();
       return done();
     }
 
@@ -167,7 +167,9 @@ module.exports = function (middleware) {
 
     if (type === 'string-2') {
       var parts = token.string.split('/');
-      data.context = new RegExp(parts[1].replace('\\', '\\\\'), parts[2]);
+      data.context = new data.global.RegExp(
+        parts[1].replace('\\', '\\\\'), parts[2]
+      );
       return done();
     }
 
