@@ -1,4 +1,5 @@
-var _ = require('underscore');
+var _         = require('underscore');
+var fnReturns = require('./lib/function-returns');
 
 /**
  * Reserved keyword list (http://mdn.io/reserved)
@@ -211,7 +212,7 @@ module.exports = function (middleware) {
    */
   middleware.core('completion:arguments', function (data, next, done) {
     // TODO: Refactor into its own module.
-    if (data.fn === data.context.addEventListener) {
+    if (data.fn === data.global.addEventListener) {
       return done(null, ['"name"', 'function (event) {}', 'true']);
     }
 
@@ -233,12 +234,7 @@ module.exports = function (middleware) {
       return done(null, data.fn.prototype);
     }
 
-    // TODO: Refactor to a more generalised module.
-    if (data.fn === data.context.Array) {
-      return done(null, []);
-    }
-
-    // Intentionally return an empty context for functions.
-    return done(null, null);
+    // Intentionally returns an empty context for functions.
+    return done(null, fnReturns(data));
   });
 };

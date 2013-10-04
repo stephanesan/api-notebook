@@ -129,6 +129,50 @@ var completeVariable = function (cm, token, options, done) {
 };
 
 /**
+ * Resolves tokens properly before use.
+ *
+ * @param {CodeMirror} cm
+ * @param {Array}      tokens
+ * @param {Object}     options
+ * @param {Function}   done
+ */
+var resolveTokens = function (cm, tokens, options, done) {
+  async.map(tokens, function (token, cb) {
+    // Dynamic property calculations are run inline before we resolve the whole
+    // object.
+    if (token.type === 'dynamic-property') {
+      return getPropertyLookup(
+        cm,
+        token.tokens,
+        options,
+        function (err, context) {
+          if (err) {  return cb(err); }
+
+          var string;
+
+          try {
+            string = '' + context;
+          } catch (e) {
+            return cb(new Error('Property resolution is impossible'));
+          }
+
+          // Remove the tokens lookup array.
+          delete token.tokens;
+
+          // Returns a valid token for the rest of the resolution.
+          return cb(err, _.extend(token, {
+            type:   'property',
+            string: string
+          }));
+        }
+      );
+    }
+
+    return cb(null, token);
+  }, done);
+};
+
+/**
  * Get the full property path to a property token.
  *
  * @param  {CodeMirror} cm
@@ -376,13 +420,73 @@ var getPropertyContext = function (cm, token) {
 };
 
 /**
- * Resolve the property lookup tokens.
+ * Run property lookup middleware. *Please note: This assumes resolved tokens.*
  *
  * @param {CodeMirror} cm
- * @param {Object}     token
+ * @param {Array}      tokens
  * @param {Object}     options
  * @param {Function}   done
  */
+var doPropertyLookup = function (cm, tokens, options, done) {
+  middleware.trigger('completion:context', _.extend({
+    token:   tokens.pop(),
+    editor:  cm
+  }, options), function again (err, data) {
+    var token = data.token;
+
+    // Break the context lookup.
+    if (err) { return done(err, null); }
+
+    if (token && (token.isFunction || token.type === 'immed')) {
+      // Check that the property is also a function, otherwise we should
+      // skip it and leave it up to the user to work out.
+      if (!_.isFunction(data.context)) {
+        data.token   = null;
+        data.context = null;
+        return again(err, data);
+      }
+
+      return middleware.trigger('completion:function', _.extend({
+        fn:        data.context,
+        name:      token.string,
+        editor:    cm,
+        construct: !!token.isConstructor
+      }, options), function (err, context) {
+        data.token   = tokens.pop();
+        data.context = context;
+
+        // Immediately invoked functions should skip the context processing
+        // step. It's also possible that this token was the last to process.
+        if (data.token && data.token.type !== 'immed') {
+          return middleware.trigger('completion:context', data, again);
+        }
+
+        return again(err, data);
+      });
+    }
+
+    if (tokens.length && data.context != null) {
+      data.token = tokens.pop();
+      return middleware.trigger('completion:context', data, again);
+    }
+
+    return done(null, data.context);
+  });
+};
+
+/**
+ * Resolve the property lookup tokens.
+ *
+ * @param {CodeMirror} cm
+ * @param {Array}      tokens
+ * @param {Object}     options
+ * @param {Function}   done
+ */
+
+// Property lookup is used within the token resolution function. This option is
+// set to stop JSHint nagging me about it.
+
+/* jshint -W003 */
 var getPropertyLookup = function (cm, tokens, options, done) {
   var invalid = _.some(tokens, function (token) {
     return token.type === 'invalid';
@@ -394,89 +498,14 @@ var getPropertyLookup = function (cm, tokens, options, done) {
   // No tokens exist, which means we are doing a lookup at the global level.
   if (!tokens.length) { return done(null, options.global); }
 
-  // Resolve dynamic and invalid properties first.
-  async.map(tokens, function (token, cb) {
-    // Dynamic property calculations are run inline before we resolve the whole
-    // object.
-    if (token.type === 'dynamic-property') {
-      return getPropertyLookup(
-        cm,
-        token.tokens,
-        options,
-        function (err, context) {
-          if (err) {  return cb(err); }
-
-          var string;
-
-          try {
-            string = '' + context;
-          } catch (e) {
-            return cb(new Error('Property resolution is impossible'));
-          }
-
-          // Remove the tokens lookup array.
-          delete token.tokens;
-
-          // Returns a valid token for the rest of the resolution.
-          return cb(err, _.extend(token, {
-            type:   'property',
-            string: string
-          }));
-        }
-      );
-    }
-
-    return cb(null, token);
-  }, function (err, tokens) {
-    // Resolution is not possible.
+  // Run the property lookup functionality.
+  resolveTokens(cm, tokens, options, function (err, tokens) {
     if (err) { return done(err); }
 
-    middleware.trigger('completion:context', _.extend({
-      token:   tokens.pop(),
-      editor:  cm
-    }, options), function again (err, data) {
-      var token = data.token;
-
-      // Break the context lookup.
-      if (err) { return done(err, null); }
-
-      if (token && (token.isFunction || token.type === 'immed')) {
-        // Check that the property is also a function, otherwise we should
-        // skip it and leave it up to the user to work out.
-        if (!_.isFunction(data.context)) {
-          data.token   = null;
-          data.context = null;
-          return again(err, data);
-        }
-
-        return middleware.trigger('completion:function', _.extend({
-          fn:        data.context,
-          name:      token.string,
-          editor:    cm,
-          construct: !!token.isConstructor
-        }, options), function (err, context) {
-          data.token   = tokens.pop();
-          data.context = context;
-
-          // Immediately invoked functions should skip the context processing
-          // step. It's also possible that this token was the last to process.
-          if (data.token && data.token.type !== 'immed') {
-            return middleware.trigger('completion:context', data, again);
-          }
-
-          return again(err, data);
-        });
-      }
-
-      if (tokens.length && data.context != null) {
-        data.token = tokens.pop();
-        return middleware.trigger('completion:context', data, again);
-      }
-
-      return done(null, data.context);
-    });
+    return doPropertyLookup(cm, tokens, options, done);
   });
 };
+/* jshint +W003 */
 
 /**
  * Gets the property context for completing a property by looping through each
@@ -511,33 +540,53 @@ var completeProperty = function (cm, token, context, done) {
   });
 };
 
+/**
+ * Provides completion suggestions for function arguments.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @param  {Object}     context
+ * @param  {Function}   done
+ */
 var completeArguments = function (cm, token, options, done) {
-  var prev   = eatSpaceAndMove(cm, token);
-  var tokens = getPropertyPath(cm, prev);
+  var tokens = getPropertyPath(cm, eatSpaceAndMove(cm, token));
 
-  getPropertyLookup(cm, tokens, options, function (err, context) {
-    if (!_.isFunction(context)) {
+  resolveTokens(cm, tokens, options, function (err, tokens) {
+    if (err || !tokens.length) {
+      return done(err);
+    }
+
+    var lastToken = tokens.shift();
+
+    if (lastToken.type !== 'property' && lastToken.type !== 'variable') {
       return done();
     }
 
-    middleware.trigger('completion:arguments', {
-      fn:     context,
-      editor: cm,
-      global: options.global
-    }, function (err, args) {
-      // No arguments provided.
-      if (!args.length) {
-        return done();
+    getPropertyLookup(cm, tokens, options, function (err, context) {
+      if (err || !_.isFunction(context[lastToken.string])) {
+        return done(err);
       }
 
-      // Sanitize the arguments for rendering as a result.
-      return done(null, {
-        results: [{
-          display: 'Arguments',
-          value:   args.join(', ') + ')',
-          special: true
-        }],
+      middleware.trigger('completion:arguments', _.extend({
+        fn:     context[lastToken.string],
+        editor: cm
+      }, options, {
         context: context
+      }), function (err, args) {
+        // No arguments provided.
+        if (!args.length) {
+          return done();
+        }
+
+        // Sanitize the arguments for rendering as a result.
+        return done(null, {
+          results: [{
+            display: 'Arguments',
+            value:   args.join(', ') + ')',
+            special: true
+          }],
+          context: context
+        });
       });
     });
   });
