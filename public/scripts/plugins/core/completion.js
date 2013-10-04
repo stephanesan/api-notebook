@@ -228,13 +228,6 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('completion:function', function (data, next, done) {
-    // If the variable/property is a constructor function, we can provide
-    // some additional context by looking at the `prototype` property.
-    if (data.construct) {
-      return done(null, data.fn.prototype);
-    }
-
-    // Intentionally returns an empty context for functions.
     return done(null, fnReturns(data));
   });
 };

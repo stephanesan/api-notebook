@@ -265,7 +265,7 @@ Persistence.prototype.fork = function () {
  *
  * @type {Object}
  */
-var persistence = module.exports = window.persistence = new Persistence();
+var persistence = module.exports = new Persistence();
 
 /**
  * Simple function used as a safeguard to block any accidental recursion with
