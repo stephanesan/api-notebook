@@ -18,11 +18,36 @@ var isWhitespaceToken = function (token) {
  * Returns the token at a given position.
  *
  * @param  {CodeMirror}     cm
- * @param  {CodeMirror.Pos} cur
+ * @param  {CodeMirror.Pos} pos
  * @return {Object}
  */
-var getToken = function (cm, cur) {
-  return cm.getTokenAt(cur);
+var getToken = function (cm, pos) {
+  return cm.getTokenAt(pos);
+};
+
+/**
+ * Returns the current token, taking into account if the current token is
+ * whitespace.
+ *
+ * @param  {Object} token
+ * @return {Object}
+ */
+var eatSpace = function (cm, line, token) {
+  if (isWhitespaceToken(token)) {
+    return getToken(cm, new Pos(line, token.start));
+  }
+
+  return token;
+};
+
+/**
+ * Similar to `eatSpace`, but also takes moves the current token.
+ *
+ * @param  {Object} token
+ * @return {Object}
+ */
+var eatSpaceAndMove = function (cm, line, token) {
+  return eatSpace(cm, line, getToken(cm, new Pos(line, token.start)));
 };
 
 /**
@@ -83,31 +108,6 @@ var completeVariable = function (cm, token, context, done) {
     context: context,
     results: {}
   }, completeResults(done));
-};
-
-/**
- * Returns the current token, taking into account if the current token is
- * whitespace.
- *
- * @param  {Object} token
- * @return {Object}
- */
-var eatSpace = function (cm, line, token) {
-  if (isWhitespaceToken(token)) {
-    return getToken(cm, new Pos(line, token.start));
-  }
-
-  return token;
-};
-
-/**
- * Similar to `eatSpace`, but also takes moves the current token.
- *
- * @param  {Object} token
- * @return {Object}
- */
-var eatSpaceAndMove = function (cm, line, token) {
-  return eatSpace(cm, line, getToken(cm, new Pos(line, token.start)));
 };
 
 /**
