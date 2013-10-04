@@ -114,6 +114,10 @@ var loadPlugin = function (data, next, done) {
  * @param {Function} done
  */
 var savePlugin = function (data, next, done) {
+  if (!data.isAuthenticated()) {
+    return next();
+  }
+
   App.middleware.trigger('ajax:oauth2', {
     url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
     method: data.id ? 'PATCH' : 'POST',
