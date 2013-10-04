@@ -138,11 +138,6 @@ describe('Completion', function () {
       testAutocomplete('"test".fake().', null, 'substr')
     );
 
-    it(
-      'should complete as soon as the property period is entered',
-      testAutocomplete('window.', 'window')
-    );
-
     it('should complete numbers in the square brackets', function (done) {
       window.test = ['string'];
 
@@ -237,6 +232,43 @@ describe('Completion', function () {
       'should complete array literals',
       testAutocomplete('[1, 2, 3].con', 'concat')
     );
+
+    it(
+      'should not complete square brackets that can\'t be done statically',
+      testAutocomplete('window[1 + 2 + 3].w', null, 'window')
+    );
+
+    describe('Multiple Lines', function () {
+      it(
+        'should complete properties across multiple lines',
+        testAutocomplete('document\n.getEle', 'getElementById')
+      );
+
+      it(
+        'should complete properties across multiple lines with whitespace',
+        testAutocomplete('document \n\t.getEle', 'getElementById')
+      );
+
+      it(
+        'should complete properties over multiple parts and lines',
+        testAutocomplete('document\n  .\t\n getEl', 'getElementById')
+      );
+
+      it(
+        'should complete square brackets over multiple lines',
+        testAutocomplete('window\n["Date"]\n.', 'now')
+      );
+
+      it(
+        'should complete square brackets over multiple lines with whitespace',
+        testAutocomplete('window \n\t[ "Date"  ].\n\tn', 'now')
+      );
+
+      it(
+        'should complete arrays over multiple lines',
+        testAutocomplete('[\n1, 2, 3\n].', 'concat')
+      );
+    });
 
     describe('Whitespace', function () {
       it(

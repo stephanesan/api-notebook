@@ -12,18 +12,44 @@ var correctToken = require('./correct-token');
  * @return {Boolean}
  */
 var isWhitespaceToken = function (token) {
-  return token.type === null && /^ *$/.test(token.string);
+  return token.type === null && /^\s*$/.test(token.string);
+};
+
+/**
+ * Returns the previous token in the editor, taking care to take into account
+ * new lines.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @return {Object}
+ */
+var getPrevToken = function (cm, token) {
+  // Get the last token of the previous line. If we are at the beginning of the
+  // editor already, return `null`.
+  if (token.pos.ch === 0) {
+    if (token.pos.line > 0) {
+      return getToken(cm, {
+        ch:   Infinity,
+        line: token.pos.line - 1
+      });
+    } else {
+      return null;
+    }
+  }
+
+  return getToken(cm, token.pos);
 };
 
 /**
  * Returns the current token position, removing potential whitespace tokens.
  *
- * @param  {Object} token
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
  * @return {Object}
  */
 var eatSpace = function (cm, token) {
-  if (isWhitespaceToken(token)) {
-    return getToken(cm, token.pos);
+  while (token && isWhitespaceToken(token)) {
+    token = getPrevToken(cm, token);
   }
 
   return token;
@@ -32,11 +58,15 @@ var eatSpace = function (cm, token) {
 /**
  * Similar to `eatSpace`, but also takes moves the current token position.
  *
- * @param  {Object} token
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
  * @return {Object}
  */
 var eatSpaceAndMove = function (cm, token) {
-  return eatSpace(cm, getToken(cm, token.pos));
+  // No token, break.
+  if (!token) { return token; }
+
+  return eatSpace(cm, getPrevToken(cm, token));
 };
 
 /**
@@ -165,15 +195,15 @@ var getPropertyPath = function (cm, token) {
       var level = 1;
       var prev  = token;
 
-      do {
-        token = getToken(cm, token.pos);
+      // While still in parens *and not at the beginning of the editor*
+      while (token && level > 0) {
+        token = getPrevToken(cm, token);
         if (token.string === ')') {
           level++;
         } else if (token.string === '(') {
           level--;
         }
-      // While still in parens *and not at the beginning of the line*
-      } while (level > 0 && token.start > 0);
+      }
 
       // No support for resolving across multiple lines.. yet.
       if (level > 0) {
@@ -183,23 +213,9 @@ var getPropertyPath = function (cm, token) {
 
       token = eatToken(token);
 
-      // Do a simple additional check to see if we are trying to use a type
-      // surrounded by parens. E.g. `(123).toString()`.
-      if (token.type === 'variable' || token.type === 'property') {
-        token.isFunction = true;
-      // This case is a little tricky to work with since a function could
-      // return another function that is immediately invoked.
-      } else if (token.string === ')') {
-        context.push({
-          start:  token.end,
-          end:    token.end,
-          string: '',
-          state:  token.state,
-          type:   'immed'
-        });
       // Set `token` to be the token inside the parens and start working from
       // that instead.
-      } else {
+      if (!token || (token.type === null && token.string !== ')')) {
         token = eatToken(prev);
 
         var subContext = getPropertyPath(cm, token);
@@ -212,6 +228,20 @@ var getPropertyPath = function (cm, token) {
             token.isConstructor = true;
           }
         }
+      // Do a simple additional check to see if we are trying to use a type
+      // surrounded by parens. E.g. `(123).toString()`.
+      } else if (token.type === 'variable' || token.type === 'property') {
+        token.isFunction = true;
+      // This case is a little tricky to work with since a function could
+      // return another function that is immediately invoked.
+      } else if (token.string === ')') {
+        context.push({
+          start:  token.end,
+          end:    token.end,
+          string: '',
+          state:  token.state,
+          type:   'immed'
+        });
       }
     }
 
@@ -230,14 +260,14 @@ var getPropertyPath = function (cm, token) {
     var level = 1;
     var prev  = token;
 
-    do {
-      token = getToken(cm, token.pos);
+    while (token && level > 0) {
+      token = getPrevToken(cm, token);
       if (token.string === ']') {
         level++;
       } else if (token.string === '[') {
         level--;
       }
-    } while (level > 0 && token.start > 0);
+    }
 
     // Keep track of the open token to confirm the location in the bracket
     // resolution.
@@ -256,11 +286,12 @@ var getPropertyPath = function (cm, token) {
     // Only kick into bracket notation mode when the preceding token is a
     // property, variable, string, etc. Only things you can't use it on are
     // `undefined` and `null` (and syntax, of course).
-    if (canAccess(token)) {
+    if (token && canAccess(token)) {
       prev = eatToken(prev);
 
       if (prev.string === '[') {
-        return _.extend(prev, invalidToken);
+        context.push(_.extend(prev, invalidToken));
+        return token;
       }
 
       var subContext = getPropertyPath(cm, prev);
@@ -277,9 +308,10 @@ var getPropertyPath = function (cm, token) {
           type:   'dynamic-property'
         });
       } else {
-        return _.extend(token, invalidToken);
+        context.push(_.extend(token, invalidToken));
+        return token;
       }
-    } else if (token.type === null && token.string !== '.') {
+    } else if (!token || token.type === null) {
       context.push({
         start:  startToken.start,
         end:    prev.end,
@@ -292,7 +324,7 @@ var getPropertyPath = function (cm, token) {
     return token;
   };
 
-  while (canResolve(token)) {
+  while (token && canResolve(token)) {
     // Skip over period notation.
     if (token.string === '.') {
       token = eatToken(token);
@@ -307,7 +339,7 @@ var getPropertyPath = function (cm, token) {
 
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here.
-  if (token.type === 'keyword' && token.string === 'new') {
+  if (token && token.type === 'keyword' && token.string === 'new') {
     context.hasNew = true;
     // Try to set a function to be a constructor function
     _.some(context, function (token) {
