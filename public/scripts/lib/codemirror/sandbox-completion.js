@@ -428,6 +428,8 @@ var getPropertyContext = function (cm, token) {
  * @param {Function}   done
  */
 var doPropertyLookup = function (cm, tokens, options, done) {
+  var prevContext = options.context;
+
   middleware.trigger('completion:context', _.extend({
     token:   tokens.pop(),
     editor:  cm
@@ -437,7 +439,7 @@ var doPropertyLookup = function (cm, tokens, options, done) {
     // Break the context lookup.
     if (err) { return done(err, null); }
 
-    if (token && (token.isFunction || token.type === 'immed')) {
+    if (token && token.isFunction) {
       // Check that the property is also a function, otherwise we should
       // skip it and leave it up to the user to work out.
       if (!_.isFunction(data.context)) {
@@ -451,9 +453,11 @@ var doPropertyLookup = function (cm, tokens, options, done) {
         name:      token.string,
         editor:    cm,
         construct: !!token.isConstructor
-      }, options), function (err, context) {
+      }, options, {
+        context: prevContext
+      }), function (err, context) {
         data.token   = tokens.pop();
-        data.context = context;
+        data.context = prevContext = context;
 
         // Immediately invoked functions should skip the context processing
         // step. It's also possible that this token was the last to process.
@@ -466,10 +470,12 @@ var doPropertyLookup = function (cm, tokens, options, done) {
     }
 
     if (tokens.length && data.context != null) {
-      data.token = tokens.pop();
+      data.token  = tokens.pop();
+      prevContext = data.context;
       return middleware.trigger('completion:context', data, again);
     }
 
+    prevContext = null;
     return done(null, data.context);
   });
 };
