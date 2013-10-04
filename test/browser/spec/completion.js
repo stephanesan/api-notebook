@@ -222,14 +222,14 @@ describe('Completion', function () {
 
     it('should complete nested square bracket properties', function (done) {
       window.test = {
-        test: 'test'
+        test: 42
       };
 
       window.property = {
         nested: 'test'
       };
 
-      testAutocomplete('test[property["nested"]].', 'substr')(done);
+      testAutocomplete('test[property["nested"]].', 'toFixed')(done);
     });
 
     it(
@@ -276,8 +276,68 @@ describe('Completion', function () {
 
     describe('Function Returns', function () {
       it(
+        'should work with square brackets',
+        testAutocomplete('Date["now"]().', 'toFixed')
+      );
+
+      it(
         'should work as expected with new in parens',
         testAutocomplete('(new Date).getHours().', 'toFixed')
+      );
+
+      it(
+        'should work as expected with string literals',
+        testAutocomplete('"test".substr(0).', 'substr')
+      );
+
+      it(
+        'should work as expected with numbers',
+        testAutocomplete('(5).toFixed().', 'substr')
+      );
+
+      it(
+        'should work as expected with booleans',
+        testAutocomplete('true.toString().', 'substr')
+      );
+
+      it(
+        'should work with the math object',
+        testAutocomplete('Math.random().', 'toFixed')
+      );
+
+      it(
+        'should work with root number functions',
+        testAutocomplete('parseInt(10).', 'toFixed')
+      );
+
+      it(
+        'should work with root string functions',
+        testAutocomplete('escape(" ").', 'substr')
+      );
+
+      it(
+        'should work with nested array returns',
+        testAutocomplete('[].concat(1).concat(2).', 'concat')
+      );
+
+      it(
+        'should work with nested regex returns',
+        testAutocomplete('(/./).exec("go").', 'concat')
+      );
+
+      it(
+        'should work with odd nested parens',
+        testAutocomplete('(Array.isArray)(false).', 'toString')
+      );
+
+      it(
+        'should work with rediculous nested parens',
+        testAutocomplete('(((Array.isArray)))(false).', 'toString')
+      );
+
+      it(
+        'should work with nested square bracket notation',
+        testAutocomplete('Math["random"]()["toFixed"]().', 'substr')
       );
     });
 

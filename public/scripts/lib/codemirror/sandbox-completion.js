@@ -203,16 +203,6 @@ var getPropertyPath = function (cm, token) {
   };
 
   /**
-   * Check whether the token can be resolved in the property recursion loop.
-   *
-   * @param  {Object}  token
-   * @return {Boolean}
-   */
-  var canResolve = function (token) {
-    return token.string === '.' || canAccess(token);
-  };
-
-  /**
    * Check whether the token is a possible access token (can read a value).
    *
    * @param  {Object}  token
@@ -233,59 +223,7 @@ var getPropertyPath = function (cm, token) {
    * @return {Object}
    */
   var resolveProperty = function (token) {
-    // Resolve function/paren syntax.
-    while (token.string === ')') {
-      var level = 1;
-      var prev  = token;
-
-      // While still in parens *and not at the beginning of the editor*
-      while (token && level > 0) {
-        token = getPrevToken(cm, token);
-        if (token.string === ')') {
-          level++;
-        } else if (token.string === '(') {
-          level--;
-        }
-      }
-
-      // No support for resolving across multiple lines.. yet.
-      if (level > 0) {
-        context.push(_.extend(token, invalidToken));
-        return token;
-      }
-
-      token = eatToken(token);
-
-      // Set `token` to be the token inside the parens and start working from
-      // that instead.
-      if (!token || (token.type === null && token.string !== ')')) {
-        var subContext = getPropertyPath(cm, eatToken(prev));
-
-        // Ensure that the subcontext has correctly set the `new` flag.
-        if (subContext.hasNew && subContext.length) {
-          subContext[subContext.length - 1].isFunction    = true;
-          subContext[subContext.length - 1].isConstructor = true;
-        }
-
-        context.push.apply(context, subContext);
-        return false;
-      // Do a simple additional check to see if we are trying to use a type
-      // surrounded by parens. E.g. `(123).toString()`.
-      } else if (token.type === 'variable' || token.type === 'property') {
-        token.isFunction = true;
-      // This case is a little tricky to work with since a function could
-      // return another function that is immediately invoked.
-      } else if (token.string === ')') {
-        context.push(_.extend({}, token, {
-          type:       'immed',
-          string:     null,
-          isFunction: true
-        }));
-      }
-    }
-
     context.push(token);
-
     return eatToken(token);
   };
 
@@ -326,31 +264,32 @@ var getPropertyPath = function (cm, token) {
     // property, variable, string, etc. Only things you can't use it on are
     // `undefined` and `null` (and syntax, of course).
     if (token && canAccess(token)) {
-      prev = eatToken(prev);
-
-      if (prev.string === '[') {
-        context.push(_.extend(prev, invalidToken));
+      if (eatToken(prev).string === '[') {
+        context.push(_.extend(token, invalidToken));
         return token;
       }
 
-      var subContext = getPropertyPath(cm, prev);
+      var subContext = getPropertyPath(cm, eatToken(prev));
       var startPos   = eatToken(subContext[subContext.length - 1]).start;
 
       // Ensures that the only tokens being resolved can be done statically.
       if (startPos === startToken.start) {
-        context.push({
+        context.push(_.extend(prev, {
           start:  subContext[subContext.length - 1].start,
           end:    subContext[0].end,
           string: string,
           tokens: subContext,
           state:  prev.state,
           type:   'dynamic-property'
-        });
+        }));
       } else {
         context.push(_.extend(token, invalidToken));
-        return token;
       }
-    } else if (!token || token.type === null) {
+
+      return token;
+    }
+
+    if (!token || token.type === null) {
       context.push({
         start:  startToken.start,
         end:    prev.end,
@@ -363,16 +302,96 @@ var getPropertyPath = function (cm, token) {
     return token;
   };
 
-  while (token && canResolve(token)) {
+  /**
+   * Resolves any other token types.
+   *
+   * @param  {Object} token
+   * @return {Object}
+   */
+  var resolveOther = function (token) {
+    context.push(token);
+    return eatToken(token);
+  };
+
+  /**
+   * Resolves the closing parenthesis to a possible function or context change.
+   *
+   * @param  {[type]} token [description]
+   * @return {[type]}       [description]
+   */
+  var resolvePossibleFunction = function (token) {
+    var level = 1;
+    var prev  = token;
+
+    // While still in parens *and not at the beginning of the editor*
+    while (token && level > 0) {
+      token = getPrevToken(cm, token);
+      if (token.string === ')') {
+        level++;
+      } else if (token.string === '(') {
+        level--;
+      }
+    }
+
+    // No support for resolving across multiple lines.. yet.
+    if (level > 0) {
+      context.push(_.extend(token, invalidToken));
+      return token;
+    }
+
+    token = eatToken(token);
+
+    // Resolves as a function argument.
+    if (token && canAccess(token)) {
+      // If the previous token was a function (E.g. the closing paren) it must
+      // be an immediately invoked property.
+      if (prev.isFunction) {
+        context.push(_.extend(prev, {
+          type:       'immed',
+          string:     null,
+          isFunction: true
+        }));
+      }
+
+      token.isFunction = true;
+      return token;
+    }
+
+    // Set `token` to be the token inside the parens and start working from
+    // that instead.
+    if (!token || (token.type === null && token.string !== ')')) {
+      var subContext = getPropertyPath(cm, eatToken(prev));
+
+      // Ensure that the subcontext has correctly set the `new` flag.
+      if (subContext.hasNew && subContext.length) {
+        subContext[subContext.length - 1].isFunction    = true;
+        subContext[subContext.length - 1].isConstructor = true;
+      }
+
+      context.push.apply(context, subContext);
+      return false;
+    }
+
+    return eatToken(token);
+  };
+
+  while (token && (token.string === '.' || canAccess(token))) {
     // Skip over period notation.
-    if (token.string === '.') {
+    if (token.type === null && token.string === '.') {
       token = eatToken(token);
     }
 
     if (token.string === ']') {
       token = resolveDynamicProperty(token);
-    } else {
+    } else if (token.string === ')') {
+      token = resolvePossibleFunction(token);
+    } else if (token.type === 'property') {
       token = resolveProperty(token);
+    } else if (canAccess(token)) {
+      token = resolveOther(token);
+    } else {
+      token = _.extend(token, invalidToken);
+      context.push(token);
     }
   }
 
