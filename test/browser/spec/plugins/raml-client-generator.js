@@ -722,6 +722,7 @@ describe('RAML Client Generator Plugin', function () {
         view.notebook = {
           sandbox: sandbox,
           completionOptions: {
+            global:  sandbox.window,
             context: sandbox.window
           }
         };

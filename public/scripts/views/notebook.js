@@ -51,7 +51,9 @@ Notebook.prototype.initialize = function (options) {
   this.collection = new NotebookCollection();
 
   // Set up autocompletion environment.
-  this.completionOptions = {};
+  this.completionOptions = {
+    global: this.sandbox.window
+  };
   this.updateCompletion();
 
   // When the user changes, we may have been given permission to do things like

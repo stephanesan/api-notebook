@@ -116,17 +116,16 @@ var completeResults = function (done) {
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
- * @param  {Object}     context
+ * @param  {Object}     options
  * @param  {Function}   done
  */
-var completeVariable = function (cm, token, context, done) {
+var completeVariable = function (cm, token, options, done) {
   // Trigger the completion middleware to run
-  middleware.trigger('completion:variable', {
+  middleware.trigger('completion:variable', _.extend({
     token:   token,
     editor:  cm,
-    context: context,
     results: {}
-  }, completeResults(done));
+  }, options), completeResults(done));
 };
 
 /**
@@ -381,10 +380,10 @@ var getPropertyContext = function (cm, token) {
  *
  * @param {CodeMirror} cm
  * @param {Object}     token
- * @param {Object}     context
+ * @param {Object}     options
  * @param {Function}   done
  */
-var getPropertyLookup = function (cm, tokens, context, done) {
+var getPropertyLookup = function (cm, tokens, options, done) {
   var invalid = _.some(tokens, function (token) {
     return token.type === 'invalid';
   });
@@ -401,7 +400,7 @@ var getPropertyLookup = function (cm, tokens, context, done) {
       return getPropertyLookup(
         cm,
         token.tokens,
-        context,
+        options,
         function (err, context) {
           if (err) {  return cb(err); }
 
@@ -431,14 +430,12 @@ var getPropertyLookup = function (cm, tokens, context, done) {
     if (err) { return done(err); }
 
     // No tokens exist, which means we are doing a lookup at the global level.
-    if (!tokens.length) { return done(null, context); }
+    if (!tokens.length) { return done(null, options.global); }
 
-    middleware.trigger('completion:context', {
+    middleware.trigger('completion:context', _.extend({
       token:   tokens.pop(),
-      editor:  cm,
-      global:  context,
-      context: context
-    }, function again (err, data) {
+      editor:  cm
+    }, options), function again (err, data) {
       var token = data.token;
 
       // Break the context lookup.
@@ -453,13 +450,12 @@ var getPropertyLookup = function (cm, tokens, context, done) {
           return again(err, data);
         }
 
-        return middleware.trigger('completion:function', {
+        return middleware.trigger('completion:function', _.extend({
           fn:        data.context,
           name:      token.string,
           editor:    cm,
-          construct: !!token.isConstructor,
-          context:   context
-        }, function (err, context) {
+          construct: !!token.isConstructor
+        }, options), function (err, context) {
           data.token   = tokens.pop();
           data.context = context;
 
@@ -490,11 +486,11 @@ var getPropertyLookup = function (cm, tokens, context, done) {
  *
  * @param {CodeMirror} cm
  * @param {Object}     token
- * @param {Object}     context
+ * @param {Object}     options
  * @param {Function}   done
  */
-var getPropertyObject = function (cm, token, context, done) {
-  return getPropertyLookup(cm, getPropertyContext(cm, token), context, done);
+var getPropertyObject = function (cm, token, options, done) {
+  return getPropertyLookup(cm, getPropertyContext(cm, token), options, done);
 };
 
 /**
@@ -516,21 +512,20 @@ var completeProperty = function (cm, token, context, done) {
   });
 };
 
-var completeArguments = function (cm, token, context, done) {
+var completeArguments = function (cm, token, options, done) {
   var line      = cm.getCursor().line;
   var prevToken = eatSpaceAndMove(cm, line, token);
 
-  getPropertyObject(cm, prevToken, context, function (err, context) {
+  getPropertyObject(cm, prevToken, options, function (err, context) {
     if (!context || !_.isFunction(context[prevToken.string])) {
       return done();
     }
 
-    middleware.trigger('completion:arguments', {
-      fn:      context[prevToken.string],
-      name:    prevToken.string,
-      editor:  cm,
-      context: context
-    }, function (err, args) {
+    middleware.trigger('completion:arguments', _.extend({
+      fn:     context[prevToken.string],
+      name:   prevToken.string,
+      editor: cm
+    }, options), function (err, args) {
       // No arguments provided.
       if (!args.length) {
         return done();
@@ -559,7 +554,6 @@ var completeArguments = function (cm, token, context, done) {
 module.exports = function (cm, options, done) {
   var cur     = cm.getCursor();
   var token   = correctToken(cm, cur);
-  var context = options.context || global;
   var results = [];
   var type    = token.type;
 
@@ -576,15 +570,15 @@ module.exports = function (cm, options, done) {
   };
 
   if (type === null && token.string === '(') {
-    return completeArguments(cm, token, context, cb);
+    return completeArguments(cm, token, options, cb);
   }
 
   if (type === 'keyword' || type === 'variable') {
-    return completeVariable(cm, token, context, cb);
+    return completeVariable(cm, token, options, cb);
   }
 
   if (type === 'property') {
-    return completeProperty(cm, token, context, cb);
+    return completeProperty(cm, token, options, cb);
   }
 
   return done();
