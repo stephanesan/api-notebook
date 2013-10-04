@@ -16,6 +16,45 @@ var prototypeResolve = function (options, prototype) {
 };
 
 /**
+ * An object of all date prototype properties that can be used with no side
+ * effects.
+ *
+ * @type {Array}
+ */
+var dateProperties = [
+  'toString',
+  'toDateString',
+  'toTimeString',
+  'toLocaleString',
+  'toLocaleDateString',
+  'toLocaleTimeString',
+  'valueOf',
+  'getTime',
+  'getFullYear',
+  'getUTCFullYear',
+  'getMonth',
+  'getUTCMonth',
+  'getDate',
+  'getUTCDate',
+  'getDay',
+  'getUTCDay',
+  'getHours',
+  'getUTCHours',
+  'getMinutes',
+  'getUTCMinutes',
+  'getSeconds',
+  'getUTCSeconds',
+  'getMilliseconds',
+  'getUTCMilliseconds',
+  'getTimezoneOffset',
+  'toGMTString',
+  'toUTCString',
+  'getYear',
+  'toISOString',
+  'toJSON'
+];
+
+/**
  * Resolves native function return values. Accepts a data object from the
  * `completion:function` middleware.
  *
@@ -25,7 +64,7 @@ var prototypeResolve = function (options, prototype) {
 module.exports = function (options) {
   var global = options.global;
 
-  if (!options.construct) {
+  if (!options.isConstructor) {
     if (_.isNumber(options.context)) {
       return prototypeResolve(options, Number.prototype);
     }
@@ -36,6 +75,15 @@ module.exports = function (options) {
 
     if (_.isBoolean(options.context)) {
       return prototypeResolve(options, Boolean.prototype);
+    }
+
+    if (_.isDate(options.context)) {
+      return prototypeResolve(options, _.pick(Date.prototype, dateProperties));
+    }
+
+    // Because, why not?
+    if (options.fn === global.Date.now) {
+      return Date.now();
     }
 
     /**
@@ -63,7 +111,8 @@ module.exports = function (options) {
       global.Array.prototype.toString,
       global.Error.prototype.toString,
       global.RegExp.prototype.toString,
-      global.Object.prototype.toString
+      global.Object.prototype.toString,
+      global.Object.prototype.toLocaleString
     ];
 
     /**
@@ -100,7 +149,10 @@ module.exports = function (options) {
       global.Math.atan2,
       global.Math.floor,
       global.Math.round,
-      global.Math.random
+      global.Math.random,
+      // Date functions.
+      global.Date.UTC,
+      global.Date.parse
     ];
 
     /**
@@ -189,7 +241,7 @@ module.exports = function (options) {
   // If the variable/property is a constructor function, we can provide
   // some additional context by looking at the `prototype` property. This will
   // only run when all other completion options have failed.
-  if (options.construct) {
+  if (options.isConstructor) {
     return options.fn.prototype;
   }
 

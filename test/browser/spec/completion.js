@@ -7,6 +7,7 @@ describe('Completion', function () {
     editor = new CodeMirror(document.body, {
       mode: 'javascript'
     });
+
     new App.CodeMirror.Completion(editor, {
       global:  window,
       context: window
@@ -270,6 +271,13 @@ describe('Completion', function () {
       it(
         'should complete arrays over multiple lines',
         testAutocomplete('[\n1, 2, 3\n].', 'concat')
+      );
+    });
+
+    describe('Function Returns', function () {
+      it(
+        'should work as expected with new in parens',
+        testAutocomplete('(new Date).getHours().', 'toFixed')
       );
     });
 

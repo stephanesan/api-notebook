@@ -259,18 +259,16 @@ var getPropertyPath = function (cm, token) {
       // Set `token` to be the token inside the parens and start working from
       // that instead.
       if (!token || (token.type === null && token.string !== ')')) {
-        token = eatToken(prev);
+        var subContext = getPropertyPath(cm, eatToken(prev));
 
-        var subContext = getPropertyPath(cm, token);
-
-        // The subcontext has a new keyword, but a function was not found, set
-        // the last property to be a constructor and function
-        if (subContext.hasNew) {
-          if (token.type === 'variable' || token.type === 'property') {
-            token.isFunction    = true;
-            token.isConstructor = true;
-          }
+        // Ensure that the subcontext has correctly set the `new` flag.
+        if (subContext.hasNew && subContext.length) {
+          subContext[subContext.length - 1].isFunction    = true;
+          subContext[subContext.length - 1].isConstructor = true;
         }
+
+        context.push.apply(context, subContext);
+        return false;
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
       } else if (token.type === 'variable' || token.type === 'property') {
@@ -278,13 +276,11 @@ var getPropertyPath = function (cm, token) {
       // This case is a little tricky to work with since a function could
       // return another function that is immediately invoked.
       } else if (token.string === ')') {
-        context.push({
-          start:  token.end,
-          end:    token.end,
-          string: '',
-          state:  token.state,
-          type:   'immed'
-        });
+        context.push(_.extend({}, token, {
+          type:       'immed',
+          string:     null,
+          isFunction: true
+        }));
       }
     }
 
@@ -384,9 +380,11 @@ var getPropertyPath = function (cm, token) {
   // to do a quick special case check here.
   if (token && token.type === 'keyword' && token.string === 'new') {
     context.hasNew = true;
-    // Try to set a function to be a constructor function
+
+    // Try to set the first function to be the constructor function.
     _.some(context, function (token) {
       if (!token.isFunction) { return; }
+
       // Remove the `hasNew` flag and set the function to be a constructor
       delete context.hasNew;
       return token.isConstructor = true;
@@ -449,10 +447,10 @@ var doPropertyLookup = function (cm, tokens, options, done) {
       }
 
       return middleware.trigger('completion:function', _.extend({
-        fn:        data.context,
-        name:      token.string,
-        editor:    cm,
-        construct: !!token.isConstructor
+        fn:            data.context,
+        name:          token.string,
+        editor:        cm,
+        isConstructor: !!token.isConstructor
       }, options, {
         context: prevContext
       }), function (err, context) {
