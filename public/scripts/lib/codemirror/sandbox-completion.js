@@ -2,6 +2,7 @@ var _            = require('underscore');
 var Pos          = CodeMirror.Pos;
 var async        = require('async');
 var middleware   = require('../../state/middleware');
+var getToken     = require('./get-token');
 var correctToken = require('./correct-token');
 
 /**
@@ -15,39 +16,27 @@ var isWhitespaceToken = function (token) {
 };
 
 /**
- * Returns the token at a given position.
- *
- * @param  {CodeMirror}     cm
- * @param  {CodeMirror.Pos} pos
- * @return {Object}
- */
-var getToken = function (cm, pos) {
-  return cm.getTokenAt(pos);
-};
-
-/**
- * Returns the current token, taking into account if the current token is
- * whitespace.
+ * Returns the current token position, removing potential whitespace tokens.
  *
  * @param  {Object} token
  * @return {Object}
  */
-var eatSpace = function (cm, line, token) {
+var eatSpace = function (cm, token) {
   if (isWhitespaceToken(token)) {
-    return getToken(cm, new Pos(line, token.start));
+    return getToken(cm, token.pos);
   }
 
   return token;
 };
 
 /**
- * Similar to `eatSpace`, but also takes moves the current token.
+ * Similar to `eatSpace`, but also takes moves the current token position.
  *
  * @param  {Object} token
  * @return {Object}
  */
-var eatSpaceAndMove = function (cm, line, token) {
-  return eatSpace(cm, line, getToken(cm, new Pos(line, token.start)));
+var eatSpaceAndMove = function (cm, token) {
+  return eatSpace(cm, getToken(cm, token.pos));
 };
 
 /**
@@ -118,8 +107,6 @@ var completeVariable = function (cm, token, context, done) {
  * @return {Array}
  */
 var getPropertyPath = function (cm, token) {
-  var line    = cm.getCursor().line;
-  var tprop   = token;
   var context = [];
 
   /**
@@ -133,143 +120,143 @@ var getPropertyPath = function (cm, token) {
   };
 
   /**
-   * Eats the current token and whitespace.
+   * Eats the current token and any whitespace.
    *
    * @param  {Object} token
    * @return {Object}
    */
   var eatToken = function (token) {
-    return eatSpaceAndMove(cm, line, token);
+    return eatSpaceAndMove(cm, token);
   };
 
   /**
    * Check whether the token can be resolved in the property recursion loop.
    *
-   * @param  {Object}  tprop
+   * @param  {Object}  token
    * @return {Boolean}
    */
-  var canResolve = function (tprop) {
-    return tprop.string === '.' || canAccess(tprop);
+  var canResolve = function (token) {
+    return token.string === '.' || canAccess(token);
   };
 
   /**
    * Check whether the token is a possible access token (can read a value).
    *
-   * @param  {Object}  tprop
+   * @param  {Object}  token
    * @return {Boolean}
    */
-  var canAccess = function (tprop) {
-    if (!_.contains([null, 'keyword', 'invalid'], tprop.type)) {
+  var canAccess = function (token) {
+    if (!_.contains([null, 'keyword', 'invalid'], token.type)) {
       return true;
     }
 
-    return tprop.type === null && _.contains([')', ']'], tprop.string);
+    return token.type === null && _.contains([')', ']'], token.string);
   };
 
   /**
    * Resolves regular property notation.
    *
-   * @param  {Object} tprop
+   * @param  {Object} token
    * @return {Object}
    */
-  var resolveProperty = function (tprop) {
+  var resolveProperty = function (token) {
     // Resolve function/paren syntax.
-    while (tprop.string === ')') {
+    while (token.string === ')') {
       var level = 1;
-      var prev  = tprop;
+      var prev  = token;
 
       do {
-        tprop = getToken(cm, new Pos(line, tprop.start));
-        if (tprop.string === ')') {
+        token = getToken(cm, token.pos);
+        if (token.string === ')') {
           level++;
-        } else if (tprop.string === '(') {
+        } else if (token.string === '(') {
           level--;
         }
       // While still in parens *and not at the beginning of the line*
-      } while (level > 0 && tprop.start > 0);
+      } while (level > 0 && token.start > 0);
 
       // No support for resolving across multiple lines.. yet.
       if (level > 0) {
-        context.push(_.extend(tprop, invalidToken));
-        return tprop;
+        context.push(_.extend(token, invalidToken));
+        return token;
       }
 
-      tprop = eatToken(tprop);
+      token = eatToken(token);
 
       // Do a simple additional check to see if we are trying to use a type
       // surrounded by parens. E.g. `(123).toString()`.
-      if (tprop.type === 'variable' || tprop.type === 'property') {
-        tprop.isFunction = true;
+      if (token.type === 'variable' || token.type === 'property') {
+        token.isFunction = true;
       // This case is a little tricky to work with since a function could
       // return another function that is immediately invoked.
-      } else if (tprop.string === ')') {
+      } else if (token.string === ')') {
         context.push({
-          start:  tprop.end,
-          end:    tprop.end,
+          start:  token.end,
+          end:    token.end,
           string: '',
-          state:  tprop.state,
+          state:  token.state,
           type:   'immed'
         });
-      // Set `tprop` to be the token inside the parens and start working from
+      // Set `token` to be the token inside the parens and start working from
       // that instead.
       } else {
-        tprop = eatToken(prev);
+        token = eatToken(prev);
 
-        var subContext = getPropertyPath(cm, tprop);
+        var subContext = getPropertyPath(cm, token);
 
         // The subcontext has a new keyword, but a function was not found, set
         // the last property to be a constructor and function
         if (subContext.hasNew) {
-          if (tprop.type === 'variable' || tprop.type === 'property') {
-            tprop.isFunction    = true;
-            tprop.isConstructor = true;
+          if (token.type === 'variable' || token.type === 'property') {
+            token.isFunction    = true;
+            token.isConstructor = true;
           }
         }
       }
     }
 
-    context.push(tprop);
+    context.push(token);
 
-    return eatToken(tprop);
+    return eatToken(token);
   };
 
   /**
    * Resolves square bracket notation.
    *
-   * @param  {Object} tprop
+   * @param  {Object} token
    * @return {Object}
    */
-  var resolveDynamicProperty = function (tprop) {
+  var resolveDynamicProperty = function (token) {
     var level = 1;
-    var prev  = tprop;
+    var prev  = token;
 
     do {
-      tprop = getToken(cm, new Pos(line, tprop.start));
-      if (tprop.string === ']') {
+      token = getToken(cm, token.pos);
+      if (token.string === ']') {
         level++;
-      } else if (tprop.string === '[') {
+      } else if (token.string === '[') {
         level--;
       }
-    } while (level > 0 && tprop.start > 0);
+    } while (level > 0 && token.start > 0);
 
     // Keep track of the open token to confirm the location in the bracket
     // resolution.
-    var startToken = tprop;
-    tprop = eatToken(tprop);
+    var startToken = token;
+    token = eatToken(token);
 
     // Resolve the contents of the brackets as a text string.
     var string = cm.doc.getRange({
       ch:   startToken.start,
-      line: line
+      line: startToken.pos.line
     }, {
       ch:   prev.end,
-      line: line
+      line: prev.pos.line
     });
 
     // Only kick into bracket notation mode when the preceding token is a
     // property, variable, string, etc. Only things you can't use it on are
     // `undefined` and `null` (and syntax, of course).
-    if (canAccess(tprop)) {
+    if (canAccess(token)) {
       prev = eatToken(prev);
 
       if (prev.string === '[') {
@@ -290,9 +277,9 @@ var getPropertyPath = function (cm, token) {
           type:   'dynamic-property'
         });
       } else {
-        return _.extend(tprop, invalidToken);
+        return _.extend(token, invalidToken);
       }
-    } else if (tprop.type === null && tprop.string !== '.') {
+    } else if (token.type === null && token.string !== '.') {
       context.push({
         start:  startToken.start,
         end:    prev.end,
@@ -302,32 +289,32 @@ var getPropertyPath = function (cm, token) {
       });
     }
 
-    return tprop;
+    return token;
   };
 
-  while (canResolve(tprop)) {
+  while (canResolve(token)) {
     // Skip over period notation.
-    if (tprop.string === '.') {
-      tprop = eatToken(tprop);
+    if (token.string === '.') {
+      token = eatToken(token);
     }
 
-    if (tprop.string === ']') {
-      tprop = resolveDynamicProperty(tprop);
+    if (token.string === ']') {
+      token = resolveDynamicProperty(token);
     } else {
-      tprop = resolveProperty(tprop);
+      token = resolveProperty(token);
     }
   }
 
   // Using the new keyword doesn't actually require parens to invoke, so we need
   // to do a quick special case check here.
-  if (tprop.type === 'keyword' && tprop.string === 'new') {
+  if (token.type === 'keyword' && token.string === 'new') {
     context.hasNew = true;
     // Try to set a function to be a constructor function
-    _.some(context, function (tprop) {
-      if (!tprop.isFunction) { return; }
+    _.some(context, function (token) {
+      if (!token.isFunction) { return; }
       // Remove the `hasNew` flag and set the function to be a constructor
       delete context.hasNew;
-      return tprop.isConstructor = true;
+      return token.isConstructor = true;
     });
   }
 
@@ -348,14 +335,13 @@ var getPropertyContext = function (cm, token) {
     return [];
   }
 
-  var line  = cm.getCursor().line;
-  var tprop = eatSpaceAndMove(cm, line, token);
+  token = eatSpaceAndMove(cm, token);
 
-  if (tprop.type !== null || tprop.string !== '.') {
+  if (token.type !== null || token.string !== '.') {
     return [];
   }
 
-  return getPropertyPath(cm, eatSpaceAndMove(cm, line, tprop));
+  return getPropertyPath(cm, eatSpaceAndMove(cm, token));
 };
 
 /**
