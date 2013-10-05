@@ -27,6 +27,7 @@ export GITHUB_CLIENT_SECRET=""
 To deploy to Heroku, you will need to add some environment variables:
 
 ```
+export DEPLOY_NOTEBOOK_URL=""
 export DEPLOY_GITHUB_CLIENT_ID=""
 export DEPLOY_GITHUB_CLIENT_SECRET=""
 ```
