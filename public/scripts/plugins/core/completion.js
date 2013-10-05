@@ -213,11 +213,6 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('completion:arguments', function (data, next, done) {
-    // TODO: Refactor into its own module.
-    if (data.fn === data.global.addEventListener) {
-      return done(null, ['"name"', 'function (event) {}', 'true']);
-    }
-
     return done(null, []);
   });
 
