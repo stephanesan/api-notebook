@@ -145,6 +145,5 @@ Completion.prototype.showWidget = function () {
  * Removes the currently display widget.
  */
 Completion.prototype.removeWidget = function () {
-  this._completionActive = false;
   if (this.widget) { this.widget.remove(); }
 };

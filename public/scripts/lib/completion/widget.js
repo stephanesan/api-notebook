@@ -35,6 +35,7 @@ var Widget = module.exports = function (completion, data, done) {
 Widget.prototype.remove = function () {
   this.removeGhost();
   this.removeHints();
+  this.completion._completionActive = false;
   this.completion.cm.removeKeyMap(this.keyMap);
   CodeMirror.signal(this.completion.cm, 'endCompletion', this.completion.cm);
   delete this.keyMap;
