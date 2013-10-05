@@ -144,9 +144,8 @@ module.exports = function (middleware) {
     var string = token.string;
 
     if (type === 'variable' || type === 'property') {
-      var context = data[type === 'variable' ? 'global' : 'context'];
       // Lookup the property on the current context object.
-      data.context = context[string];
+      data.context = data.context[string];
       return done();
     }
 
