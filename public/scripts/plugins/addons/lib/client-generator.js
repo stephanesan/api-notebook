@@ -325,10 +325,9 @@ var sanitizeXHR = function (xhr) {
   }
 
   return {
-    body:      body,
-    status:    xhr.status,
-    headers:   headers,
-    getHeader: _.bind(getHeader, null, getReponseHeaders(xhr, true))
+    body:    body,
+    status:  xhr.status,
+    headers: headers
   };
 };
 
