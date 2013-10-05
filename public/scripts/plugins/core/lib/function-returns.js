@@ -125,6 +125,8 @@ module.exports = function (options) {
       global.Number,
       global.parseInt,
       global.parseFloat,
+      global.setTimeout,
+      global.setInterval,
       // Arrays.
       global.Array.prototype.push,
       global.Array.prototype.indexOf,
@@ -162,7 +164,9 @@ module.exports = function (options) {
      */
     var booleanTypes = [
       // Built-in functions.
+      global.isNaN,
       global.Boolean,
+      global.isFinite,
       // Arrays.
       global.Array.isArray,
       global.Array.prototype.some,

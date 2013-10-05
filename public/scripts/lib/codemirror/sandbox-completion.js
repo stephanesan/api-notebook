@@ -70,6 +70,20 @@ var eatSpaceAndMove = function (cm, token) {
 };
 
 /**
+ * Check whether the token is a possible accessor token (can read a result).
+ *
+ * @param  {Object}  token
+ * @return {Boolean}
+ */
+var canAccess = function (token) {
+  if (!_.contains([null, 'keyword', 'invalid'], token.type)) {
+    return true;
+  }
+
+  return token.type === null && _.contains([')', ']'], token.string);
+};
+
+/**
  * Proxy the return objects for the property and variable middleware and turn
  * it into something actionable for the widget display.
  *
@@ -200,20 +214,6 @@ var getPropertyPath = function (cm, token) {
    */
   var eatToken = function (token) {
     return eatSpaceAndMove(cm, token);
-  };
-
-  /**
-   * Check whether the token is a possible access token (can read a value).
-   *
-   * @param  {Object}  token
-   * @return {Boolean}
-   */
-  var canAccess = function (token) {
-    if (!_.contains([null, 'keyword', 'invalid'], token.type)) {
-      return true;
-    }
-
-    return token.type === null && _.contains([')', ']'], token.string);
   };
 
   /**
@@ -359,13 +359,18 @@ var getPropertyPath = function (cm, token) {
 
     // Set `token` to be the token inside the parens and start working from
     // that instead.
-    if (!token || (token.type === null && token.string !== ')')) {
+    if (!token || token.type === null) {
       var subContext = getPropertyPath(cm, eatToken(prev));
+
+      // The context could be being invoked as a function.
+      if (prev.isFunction && subContext.length) {
+        subContext[0].isFunction = true;
+      }
 
       // Ensure that the subcontext has correctly set the `new` flag.
       if (subContext.hasNew && subContext.length) {
-        subContext[subContext.length - 1].isFunction    = true;
-        subContext[subContext.length - 1].isConstructor = true;
+        subContext[0].isFunction    = true;
+        subContext[0].isConstructor = true;
       }
 
       context.push.apply(context, subContext);

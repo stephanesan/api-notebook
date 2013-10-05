@@ -110,6 +110,11 @@ describe('Completion', function () {
     );
 
     it(
+      'nested constructor should work without parens',
+      testAutocomplete('(new window.Date).get', 'getMonth')
+    );
+
+    it(
       'should work with parens around the value',
       testAutocomplete('(123).to', 'toFixed')
     );
@@ -326,13 +331,13 @@ describe('Completion', function () {
       );
 
       it(
-        'should work with odd nested parens',
-        testAutocomplete('(Array.isArray)(false).', 'toString')
+        'should work with odd nested function parens',
+        testAutocomplete('("test".substr)(0).', 'substr')
       );
 
       it(
-        'should work with rediculous nested parens',
-        testAutocomplete('(((Array.isArray)))(false).', 'toString')
+        'should work with rediculous nested function parens',
+        testAutocomplete('((("test".substr)))(((0))).', 'substr')
       );
 
       it(
