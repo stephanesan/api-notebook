@@ -1,6 +1,8 @@
-var _          = require('underscore');
-var Widget     = require('./widget');
-var completion = require('../codemirror/sandbox-completion');
+var _            = require('underscore');
+var Widget       = require('./widget');
+var Tooltip      = require('./tooltip');
+var completion   = require('../codemirror/sandbox-completion');
+var argumentsDoc = require('../codemirror/sandbox-tooltip');
 
 /**
  * The completion widget is a constructor function that is used with CodeMirror
@@ -83,6 +85,8 @@ var Completion = module.exports = function (cm, options) {
    * @param  {CodeMirror} cm
    */
   this.onCursorActivity = function (cm) {
+    that.showTooltip();
+
     if (closeOnCursor) {
       return that.removeWidget();
     }
@@ -104,6 +108,7 @@ var Completion = module.exports = function (cm, options) {
  */
 Completion.prototype.remove = function () {
   this.removeWidget();
+  this.removeTooltip();
   delete this.cm.state.completionActive;
   this.cm.off('blur',           this.onBlur);
   this.cm.off('focus',          this.onFocus);
@@ -145,5 +150,26 @@ Completion.prototype.showWidget = function () {
  * Removes the currently display widget.
  */
 Completion.prototype.removeWidget = function () {
-  if (this.widget) { this.widget.remove(); }
+  if (this.widget) {
+    this.widget.remove();
+  }
+};
+
+/**
+ * Show an overlay tooltip with relevant documentation.
+ */
+Completion.prototype.showTooltip = function () {
+  this.removeTooltip();
+
+  argumentsDoc(this.cm, this.options, _.bind(function (err, data) {
+    if (data) {
+      this.tooltip = new Tooltip(this, data);
+    }
+  }, this));
+};
+
+Completion.prototype.removeTooltip = function () {
+  if (this.tooltip) {
+    this.tooltip.remove();
+  }
 };

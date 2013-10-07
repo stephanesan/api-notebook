@@ -6,7 +6,7 @@
   "dependencies": {
     "underscore": "~1.5.2",
     "backbone": "~1.0.0",
-    "codemirror": "~3.15.0",
+    "codemirror": "~3.18.0",
     "trim": "0.0.1",
     "express": "~3.3.8",
     "request": "~2.26.0",

@@ -10,10 +10,9 @@ var asyncFilter  = require('async').filter;
  *
  * @param  {Completion} completion
  * @param  {Object}     data
- * @param  {Function}   done
  * @return {Widget}
  */
-var Widget = module.exports = function (completion, data, done) {
+var Widget = module.exports = function (completion, data) {
   this.data       = data;
   this.completion = completion;
 
@@ -23,7 +22,7 @@ var Widget = module.exports = function (completion, data, done) {
     'Esc': _.bind(function () { this.remove(); }, this)
   });
 
-  this.refresh(done);
+  this.refresh();
 };
 
 /**
