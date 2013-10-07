@@ -1,7 +1,7 @@
 /* global describe, it */
 
 describe('Completion', function () {
-  var editor;
+  var editor, completion;
 
   beforeEach(function () {
     editor = new CodeMirror(document.body, {
@@ -12,10 +12,15 @@ describe('Completion', function () {
       global:  window,
       context: window
     });
+
+    // Requires the built-in Tern.js description completion data.
+    completion = App.CodeMirror.sandboxCompletion(window);
+    completion.attach(App.middleware);
   });
 
   afterEach(function () {
     delete window.test;
+    completion.detach(App.middleware);
     document.body.removeChild(editor.getWrapperElement());
   });
 
@@ -131,16 +136,15 @@ describe('Completion', function () {
       testAutocomplete('test().', null, 'prop')(done);
     });
 
-    it('should not complete invalid with multiline parens', function (done) {
-      window.test = function () {};
+    it(
+      'should not complete global variables with multiline parens',
+      testAutocomplete('test(\n"test").', null, 'window')
+    );
 
-      // Catch case where it switches to "global mode"
-      testAutocomplete('test(\n"test").', null, 'window')(function (err) {
-        if (err) { done(err); }
-        // Catching case where it assumes the value on the inside of the paren
-        testAutocomplete('test(\n"string").', null, 'substr')(done);
-      });
-    });
+    it(
+      'should not assume the wrong context with multiline parens',
+      testAutocomplete('test(\n"string").', null, 'substr')
+    );
 
     it(
       'should not complete made up functions',
@@ -317,7 +321,7 @@ describe('Completion', function () {
 
       it(
         'should work with root string functions',
-        testAutocomplete('escape(" ").', 'substr')
+        testAutocomplete('encodeURI(" ").', 'substr')
       );
 
       it(

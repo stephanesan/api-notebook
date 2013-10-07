@@ -86,6 +86,13 @@ module.exports = function (global) {
         return done(null, data.context.prototype);
       }
 
+      // This may be a little dodgy, but as long as someone hasn't extended the
+      // native prototype object with something that has side-effects, we'll be
+      // fine.
+      if (!_.isObject(data.parent)) {
+        return done(null, data.context.call(data.parent));
+      }
+
       // Use the documentation to detect the return types.
       middleware.trigger('completion:describe', data, function (err, describe) {
         if (err || !_.isObject(describe) || !/^fn\(/.test(describe['!type'])) {
