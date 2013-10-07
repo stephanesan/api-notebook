@@ -461,6 +461,10 @@ var doPropertyLookup = function (cm, tokens, options, done) {
     // Break the context lookup.
     if (err) { return done(err, null); }
 
+    // Update the parent context property.
+    data.parent = prevContext;
+
+    // Function context lookups occur after the property lookup.
     if (token && token.isFunction) {
       // Check that the property is also a function, otherwise we should
       // skip it and leave it up to the user to work out.
@@ -471,13 +475,9 @@ var doPropertyLookup = function (cm, tokens, options, done) {
       }
 
       return middleware.trigger('completion:function', _.extend({
-        fn:            data.context,
         name:          token.string,
-        editor:        cm,
         isConstructor: !!token.isConstructor
-      }, options, {
-        context: prevContext
-      }), function (err, context) {
+      }, data), function (err, context) {
         data.token   = tokens.pop();
         data.context = prevContext = context;
 
@@ -497,7 +497,6 @@ var doPropertyLookup = function (cm, tokens, options, done) {
       return middleware.trigger('completion:context', data, again);
     }
 
-    prevContext = null;
     return done(null, data.context);
   });
 };
@@ -554,17 +553,18 @@ var getPropertyObject = function (cm, token, options, done) {
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
- * @param  {Object}     context
+ * @param  {Object}     options
  * @param  {Function}   done
  */
-var completeProperty = function (cm, token, context, done) {
-  getPropertyObject(cm, token, context, function (err, context) {
-    middleware.trigger('completion:property', {
+var completeProperty = function (cm, token, options, done) {
+  getPropertyObject(cm, token, options, function (err, context) {
+    middleware.trigger('completion:property', _.extend({
       token:   token,
       editor:  cm,
-      context: context,
       results: {}
-    }, completeResults(done));
+    }, options, {
+      context: context
+    }), completeResults(done));
   });
 };
 
@@ -596,10 +596,10 @@ var completeArguments = function (cm, token, options, done) {
       }
 
       middleware.trigger('completion:arguments', _.extend({
-        fn:     context[lastToken.string],
-        editor: cm
+        context: context[lastToken.string],
+        editor:  cm
       }, options, {
-        context: context
+        parent: context
       }), function (err, args) {
         // No arguments provided.
         if (!args.length) {

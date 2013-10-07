@@ -1,5 +1,4 @@
-var _         = require('underscore');
-var fnReturns = require('./lib/function-returns');
+var _ = require('underscore');
 
 /**
  * Reserved keyword list (http://mdn.io/reserved)
@@ -44,14 +43,42 @@ var isValidVariableName = function (name) {
 };
 
 /**
+ * Sadly we need to do some additional processing for primitive types and ensure
+ * they will use the primitive prototype from the correct global context. This
+ * is because primitives lose their prototypes when brought through iframes,
+ * regardless of the origin.
+ *
+ * @param  {*}      object
+ * @param  {Object} global
+ * @return {Object}
+ */
+var mapObject = function (object, global) {
+  // Sadly we need to do some additional help for primitives since the
+  // prototype is lost between the iframe and main frame.
+  if (typeof object === 'string') {
+    return global.String.prototype;
+  }
+
+  if (typeof object === 'number') {
+    return global.Number.prototype;
+  }
+
+  if (typeof object === 'boolean') {
+    return global.Boolean.prototype;
+  }
+
+  return object;
+};
+
+/**
  * Returns a flat object of all valid JavaScript literal property names.
  *
  * @param  {Object} obj
+ * @param  {Object} global
  * @return {Object}
  */
-var getPropertyNames = function (obj) {
+var getPropertyNames = function (obj, global) {
   var props = {};
-  var addProp;
 
   /**
    * Adds the property to the property names object. Skips any property names
@@ -60,23 +87,16 @@ var getPropertyNames = function (obj) {
    *
    * @param {String} property
    */
-  addProp = function (property) {
+  var addProp = function (property) {
     if (isValidVariableName(property)) {
       props[property] = true;
     }
   };
 
-  // Sanitize the object to a type that we can grab keys from.
-  if (!_.isObject(obj)) {
-    if (typeof obj === 'string') {
-      obj = String.prototype;
-    } else if (typeof obj === 'number') {
-      obj = Number.prototype;
-    } else if (typeof obj === 'boolean') {
-      obj = Boolean.prototype;
-    } else {
-      return props;
-    }
+  // Sanitize the object to a type that we can grab keys from. If it still isn't
+  // an object after being sanitized, break before we try to get keys.
+  if (!_.isObject(obj = mapObject(obj, global))) {
+    return props;
   }
 
   do {
@@ -112,7 +132,8 @@ module.exports = function (middleware) {
     }
 
     _.extend(data.results, varsToObject(token.state.globalVars));
-    _.extend(data.results, getPropertyNames(data.context), keywords);
+    _.extend(data.results, keywords);
+    _.extend(data.results, getPropertyNames(data.context, data.global));
 
     return done();
   });
@@ -125,7 +146,7 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('completion:property', function (data, next, done) {
-    _.extend(data.results, getPropertyNames(data.context));
+    _.extend(data.results, getPropertyNames(data.context, data.global));
     return done();
   });
 
@@ -133,6 +154,11 @@ module.exports = function (middleware) {
    * Corrects the completion lookup context. Looks up variables/properties in
    * the global scope and coerces other types detected by CodeMirror (such as
    * strings and numbers) into the correct representation.
+   *
+   * Important: Needs to use the `global` property when recreating objects so
+   * that middleware will continue to get the correct context. Otherwise you
+   * will be switching global contexts to the main frame and there will be
+   * discrepancies.
    *
    * @param {Object}   data
    * @param {Function} next
@@ -143,8 +169,13 @@ module.exports = function (middleware) {
     var type   = token.type;
     var string = token.string;
 
-    if (type === 'variable' || type === 'property') {
-      // Lookup the property on the current context object.
+    if (type === 'variable') {
+      data.context = data.context[string];
+      return done();
+    }
+
+    if (type === 'property') {
+      data.context = mapObject(data.context, data.global);
       data.context = data.context[string];
       return done();
     }
@@ -155,12 +186,12 @@ module.exports = function (middleware) {
     }
 
     if (type === 'string') {
-      data.context = string.slice(1, -1);
+      data.context = data.global.String(string.slice(1, -1));
       return done();
     }
 
     if (type === 'number') {
-      data.context = Number(string);
+      data.context = data.global.Number(string);
       return done();
     }
 
@@ -174,7 +205,7 @@ module.exports = function (middleware) {
 
     if (type === 'atom') {
       if (string === 'true' || string === 'false') {
-        data.context = Boolean(string);
+        data.context = data.global.Boolean(string);
       } else if (string === 'null') {
         data.context = null;
       } else if (string === 'undefined') {
@@ -224,6 +255,7 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('completion:function', function (data, next, done) {
-    return done(null, fnReturns(data));
+    // Intentionally return `null` as the data object.
+    return done(null, null);
   });
 };

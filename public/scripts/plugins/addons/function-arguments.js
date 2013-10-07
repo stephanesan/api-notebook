@@ -23,8 +23,8 @@ var inspectorFilterPlugin = function (data, next, done) {
  */
 var completionArgumentsPlugin = function (data, next, done) {
   // Completes the return property in functions, when available.
-  if (ARGUMENTS_PROP in data.fn) {
-    return done(null, data.fn[ARGUMENTS_PROP]);
+  if (ARGUMENTS_PROP in data.context) {
+    return done(null, data.context[ARGUMENTS_PROP]);
   }
 
   return next();
