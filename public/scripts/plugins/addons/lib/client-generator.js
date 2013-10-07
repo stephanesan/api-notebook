@@ -163,6 +163,10 @@ var template = function (string, params, context) {
  * @return {Object}
  */
 var sanitizeAST = function (ast) {
+  if (!_.isString(ast.baseUri)) {
+    throw new Error('A baseUri is required');
+  }
+
   // Merge an array of objects into a single object using `_.extend` and
   // `apply` (since `_.extend` accepts unlimited number of arguments).
   ast.traits          = _.extend.apply(_, ast.traits);
