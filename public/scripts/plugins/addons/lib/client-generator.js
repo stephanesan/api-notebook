@@ -253,6 +253,32 @@ var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
   }).object().value();
 
 /**
+ * Map of methods to their tooltip description objects.
+ *
+ * @type {Object}
+ */
+var methodDescription = {
+  'get': {
+    '!type': 'fn(query?: object, async?: ?)'
+  },
+  'head': {
+    '!type': 'fn(query?: object, async?: ?)'
+  },
+  'put': {
+    '!type': 'fn(body?: ?, async?: ?)'
+  },
+  'post': {
+    '!type': 'fn(body?: ?, async?: ?)'
+  },
+  'patch': {
+    '!type': 'fn(body?: ?, async?: ?)'
+  },
+  'delete': {
+    '!type': 'fn(body?: ?, async?: ?)'
+  }
+};
+
+/**
  * Parse an XHR request for response headers and return as an object. Pass an
  * additional flag to filter any potential duplicate headers (E.g. different
  * cases).
@@ -581,6 +607,9 @@ var attachMethods = function (nodes, context, methods) {
   // Iterate over all the possible methods and attach.
   _.each(methods, function (method, verb) {
     context[verb] = httpRequest(nodes, method);
+    context[verb][DESCRIPTION_PROPERTY] = _.extend(
+      toDescriptionObject(method), methodDescription[verb]
+    );
   });
 
   return context;
