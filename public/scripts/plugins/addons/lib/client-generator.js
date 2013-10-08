@@ -7,13 +7,13 @@ var escape   = require('escape-regexp');
 var parser   = require('uri-template');
 var fromPath = require('../../../lib/from-path');
 
-var toString         = Object.prototype.toString;
-var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
-var RETURN_PROPERTY  = '@return';
-var RESERVED_METHODS = _.object(HTTP_METHODS.concat('headers', 'query'), true);
-
-// List of supported OAuth2 grant types in order of preference.
-var supportedOAuth2Grants = ['code'];
+var toString             = Object.prototype.toString;
+var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
+var RETURN_PROPERTY      = '@return';
+var DESCRIPTION_PROPERTY = '@description';
+var RESERVED_METHODS     = _.object(
+  HTTP_METHODS.concat('headers', 'query'), true
+);
 
 /**
  * Runs validation logic against uri parameters from the RAML spec. Throws an
@@ -128,6 +128,20 @@ var validateParams = function (object, params) {
 };
 
 /**
+ * Accepts a params object and transforms it into a regex for matching the
+ * tokens in the route.
+ *
+ * @param  {Object} params
+ * @return {RegExp}
+ */
+var uriParamRegex = function (params) {
+  // Transform the params into a regular expression for matching.
+  return new RegExp('{(' + _.map(_.keys(params), function (param) {
+    return escape(param);
+  }).join('|') + ')}', 'g');
+};
+
+/**
  * Simple "template" function for working with the uri param variables.
  *
  * @param  {String}       template
@@ -141,12 +155,7 @@ var template = function (string, params, context) {
   if (_.isArray(context)) {
     var index = -1;
 
-    // Transform the params into a regular expression for matching.
-    var paramRegex = new RegExp('{(' + _.map(_.keys(params), function (param) {
-      return escape(param);
-    }).join('|') + ')}', 'g');
-
-    string = string.replace(paramRegex, function (match, param) {
+    string = string.replace(uriParamRegex(params), function (match, param) {
       validateParam(context[++index], params[param]);
       return '{' + index + '}';
     });
@@ -243,9 +252,15 @@ var getReponseHeaders = function (xhr, filterDuplicates) {
     header = header.split(':');
 
     // Make sure we have both parts of the header.
-    if (header.length === 2) {
-      var name  = filterDuplicates ? header[0].toLowerCase() : header[0];
-      var value = trim(header[1]);
+    if (header.length > 1) {
+      var name  = header.shift();
+      var value = trim(header.join(':'));
+
+      // Lowercase the header name to filter duplicate headers.
+      if (filterDuplicates) {
+        name = name.toLowerCase();
+      }
+
       responseHeaders[name] = value;
     }
   });
@@ -574,8 +589,6 @@ var attachResources = function attachResources (nodes, context, resources) {
     var routeNodes   = _.extend([], nodes);
     var templateTags = resource.uriParameters && _.keys(resource.uriParameters);
 
-    routeNodes.push(route);
-
     if (templateTags && templateTags.length) {
       // The route must end with template tags and have no intermediate text
       // between template tags.
@@ -619,6 +632,21 @@ var attachResources = function attachResources (nodes, context, resources) {
           return attachResources(routeNodes, newContext, resources);
         }, context[routeName]);
 
+        // Generate the description object for helping tooltip display.
+        context[routeName][DESCRIPTION_PROPERTY] = {
+          '!type': 'fn(' + _.map(
+            route.match(uriParamRegex(resource.uriParameters)),
+            function (parameter) {
+              var name    = parameter.slice(1, -1);
+              var param   = resource.uriParameters[name];
+              var display = param.displayName + (!param.required ? '?' : '');
+
+              return display + ': ' + (param.type || '?');
+            }
+          ).join(', ') + ')'
+        };
+
+        // Generate the return property for helping autocompletion.
         var returnPropContext = {};
         attachMethods(routeNodes, returnPropContext, resource.methods);
         attachResources(routeNodes, returnPropContext, resources);
@@ -685,11 +713,7 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
     var methodName = 'authenticate' + cases.pascal(title);
 
     if (scheme.type === 'OAuth 2.0') {
-      var acceptedGrants = scheme.settings.authorizationGrants;
-
-      if (_.intersection(acceptedGrants, supportedOAuth2Grants).length) {
-        context[methodName] = authenticateOAuth2(nodes, scheme);
-      }
+      context[methodName] = authenticateOAuth2(nodes, scheme);
     }
   });
 
