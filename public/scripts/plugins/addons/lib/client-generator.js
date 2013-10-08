@@ -634,6 +634,9 @@ var attachResources = function attachResources (nodes, context, resources) {
     var routeNodes   = _.extend([], nodes);
     var templateTags = resource.uriParameters && _.keys(resource.uriParameters);
 
+    // Push the current route into the route array.
+    routeNodes.push(route);
+
     if (templateTags && templateTags.length) {
       // The route must end with template tags and have no intermediate text
       // between template tags.
@@ -734,9 +737,8 @@ var authenticateOAuth2 = function (nodes, scheme) {
       'authenticate:oauth2',
       options,
       function (err, auth) {
-        // Set the nodes authentication details. This will be used by in the
+        // Set the nodes authentication details. This will be used with the
         // final http request.
-        nodes.config.authentication = nodes.config.authentication || {};
         nodes.config.authentication[scheme.type] = true;
         return done(err, auth);
       }
@@ -787,6 +789,7 @@ var generateClient = function (ast) {
     config: {
       baseUri:         ast.baseUri.replace(/\/+$/, ''),
       securedBy:       ast.securedBy,
+      authentication:  {},
       securitySchemes: ast.securitySchemes
     }
   });
