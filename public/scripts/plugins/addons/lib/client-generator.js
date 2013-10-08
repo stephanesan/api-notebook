@@ -167,6 +167,22 @@ var template = function (string, params, context) {
 };
 
 /**
+ * Transform a general RAML method describing object into a tooltip
+ * documentation object.
+ *
+ * @param  {Object} object
+ * @return {Object}
+ */
+var toDescriptionObject = function (object) {
+  var description = {};
+
+  // Documentation/description is usually available.
+  description['!doc'] = object.description;
+
+  return description;
+};
+
+/**
  * Sanitize the AST from the RAML parser into something easier to work with.
  *
  * @param  {Object} ast
@@ -714,6 +730,13 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
 
     if (scheme.type === 'OAuth 2.0') {
       context[methodName] = authenticateOAuth2(nodes, scheme);
+      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
+        toDescriptionObject(scheme), {
+          // Don't expect anything to parse this since it deviates from the
+          // Tern.js spec. However, it is somewhat more useful to read.
+          '!type': 'fn(options: { clientId: string, clientSecret: string })'
+        }
+      );
     }
   });
 
