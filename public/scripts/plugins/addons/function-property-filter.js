@@ -1,4 +1,9 @@
-var RETURN_PROP = '@return';
+/* global App */
+var _                = App._;
+var FILTER_PROPS     = ['@return', '@arguments', '@description'];
+var RETURN_PROP      = FILTER_PROPS[0];
+var ARGUMENTS_PROP   = FILTER_PROPS[1];
+var DESCRIPTION_PROP = FILTER_PROPS[2];
 
 /**
  * Filters `@return` from showing up in the inspector view.
@@ -7,7 +12,7 @@ var RETURN_PROP = '@return';
  * @param {Function} next
  */
 var inspectorFilterPlugin = function (data, next, done) {
-  if (typeof data.parent === 'function' && data.property === RETURN_PROP) {
+  if (_.isFunction(data.parent) && _.contains(FILTER_PROPS, data.property)) {
     return done(null, false);
   }
 
@@ -31,13 +36,39 @@ var completionFunctionPlugin = function (data, next, done) {
 };
 
 /**
+ * Augments the completion function with arguments.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+var completionArgumentsPlugin = function (data, next, done) {
+  // Completes the arguments property in functions, when available.
+  if (ARGUMENTS_PROP in data.context) {
+    return done(null, data.context[ARGUMENTS_PROP]);
+  }
+
+  return next();
+};
+
+var completionDescribePlugin = function (data, next, done) {
+  if (DESCRIPTION_PROP in data.context) {
+    return done(null, data.context[DESCRIPTION_PROP]);
+  }
+
+  return next();
+};
+
+/**
  * A { key: function } map of all middleware used in the plugin.
  *
  * @type {Object}
  */
 var plugins = {
-  'inspector:filter':    inspectorFilterPlugin,
-  'completion:function': completionFunctionPlugin
+  'inspector:filter':     inspectorFilterPlugin,
+  'completion:function':  completionFunctionPlugin,
+  'completion:describe':  completionDescribePlugin,
+  'completion:arguments': completionArgumentsPlugin
 };
 
 /**

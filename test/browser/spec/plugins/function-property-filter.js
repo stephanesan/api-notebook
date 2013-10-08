@@ -1,12 +1,12 @@
 /* global describe, it */
 
-describe('Function Return Plugin', function () {
+describe('Function Property Filter Plugin', function () {
   beforeEach(function () {
-    functionReturnPlugin.attach(App.middleware);
+    functionPropertyFilterPlugin.attach(App.middleware);
   });
 
   afterEach(function () {
-    functionReturnPlugin.detach(App.middleware);
+    functionPropertyFilterPlugin.detach(App.middleware);
   });
 
   describe('Inspector', function () {
