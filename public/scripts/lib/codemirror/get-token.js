@@ -11,10 +11,13 @@ var _ = require('underscore');
 module.exports = function (cm, pos) {
   var token = cm.getTokenAt(pos);
 
-  // Extend the base token with its position in the editor.
-  return _.extend(token, {
+  // Extend the base token with its position in the editor. This is essential to
+  // recursively traverse DOM tokens.
+  _.extend(token, {
     pos: _.extend({}, pos, {
       ch: token.start
     })
   });
+
+  return token;
 };

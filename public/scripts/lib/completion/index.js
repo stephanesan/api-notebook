@@ -1,8 +1,8 @@
-var _            = require('underscore');
-var Widget       = require('./widget');
-var Tooltip      = require('./tooltip');
-var completion   = require('../codemirror/sandbox-completion');
-var argumentsDoc = require('../codemirror/sandbox-tooltip');
+var _              = require('underscore');
+var Widget         = require('./widget');
+var Tooltip        = require('./tooltip');
+var tooltipData    = require('../codemirror/sandbox-tooltip');
+var completionData = require('../codemirror/sandbox-completion');
 
 /**
  * The completion widget is a constructor function that is used with CodeMirror
@@ -137,7 +137,7 @@ Completion.prototype.refresh = function (done) {
 Completion.prototype.showWidget = function () {
   this.removeWidget();
   this._completionActive = true;
-  completion(this.cm, this.options, _.bind(function (err, data) {
+  completionData(this.cm, this.options, _.bind(function (err, data) {
     if (this._completionActive && data) {
       this.widget = new Widget(this, data);
     } else {
@@ -161,7 +161,7 @@ Completion.prototype.removeWidget = function () {
 Completion.prototype.showTooltip = function () {
   this.removeTooltip();
 
-  argumentsDoc(this.cm, this.options, _.bind(function (err, data) {
+  tooltipData(this.cm, this.options, _.bind(function (err, data) {
     if (data) {
       this.tooltip = new Tooltip(this, data);
     }

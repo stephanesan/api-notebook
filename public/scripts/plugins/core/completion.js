@@ -258,4 +258,16 @@ module.exports = function (middleware) {
     // Intentionally return `null` as the data object.
     return done(null, null);
   });
+
+  /**
+   * Provides a description object of an object, function, variable, etc.
+   *
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.core('completion:describe', function (data, next, done) {
+    // Intentionally returning an empty description object.
+    return done(null, {});
+  });
 };
