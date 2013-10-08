@@ -15,7 +15,7 @@ var Tooltip = module.exports = function (completion, data) {
 
   CodeMirror.signal(completion.cm, 'startTooltip', completion.cm);
 
-  this.render();
+  return this.render();
 };
 
 /**
@@ -24,20 +24,42 @@ var Tooltip = module.exports = function (completion, data) {
  * @return {Tooltip}
  */
 Tooltip.prototype.render = function () {
+  var description = this.data.description;
+
   this.removeTooltip();
 
-  if (!this.data.description['!type']) {
+  // Needs the type or a description at minimum to render.
+  if (!description['!type'] && !description['!doc']) {
     return this;
   }
 
   this._tooltip = document.createElement('div');
   this._tooltip.className = 'CodeMirror-tooltip';
 
-  document.body.appendChild(this._tooltip);
+  if (description['!type']) {
+    var typeEl = this._tooltip.appendChild(document.createElement('div'));
+    typeEl.className = 'CodeMirror-tooltip-type';
+    typeEl.appendChild(document.createTextNode(description['!type']));
+  }
 
-  var typeEl = this._tooltip.appendChild(document.createElement('div'));
-  typeEl.className = 'CodeMirror-tooltip-type';
-  typeEl.appendChild(document.createTextNode(this.data.description['!type']));
+  if (description['!doc']) {
+    var docEl = this._tooltip.appendChild(document.createElement('div'));
+    docEl.className = 'CodeMirror-tooltip-doc';
+    docEl.appendChild(document.createTextNode(description['!doc']));
+
+    if (description['!url']) {
+      docEl.appendChild(document.createTextNode(' '));
+
+      var infoEl = docEl.appendChild(document.createElement('a'));
+      infoEl.href      = description['!url'];
+      infoEl.target    = '_blank';
+      infoEl.className = 'CodeMirror-tooltip-doc-url';
+      infoEl.appendChild(document.createTextNode('Read more'));
+    }
+  }
+
+  // Append the tooltip to the DOM.
+  document.body.appendChild(this._tooltip);
 
   this.reposition();
 

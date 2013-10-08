@@ -27,7 +27,10 @@ var Completion = module.exports = function (cm, options) {
    * to allow a small grace period in case we are clicking a widget suggestion.
    */
   this.onBlur = function () {
-    closeOnBlur = window.setTimeout(function () { that.removeWidget(); }, 20);
+    closeOnBlur = window.setTimeout(function () {
+      that.removeWidget();
+      that.removeTooltip();
+    }, 20);
   };
 
   /**
