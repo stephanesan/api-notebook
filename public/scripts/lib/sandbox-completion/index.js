@@ -3,6 +3,19 @@ var ecma5   = require('./ecma5.json');
 var browser = require('./browser.json');
 
 /**
+ * Turn a string path into a value from the input object.
+ *
+ * @param  {Object} object
+ * @param  {String} path
+ * @return {*}
+ */
+var fromPath = function (object, path) {
+  return _.reduce(path.split('.'), function (memo, part) {
+    return memo[part];
+  }, object);
+};
+
+/**
  * Recurse through the description structure and attach descriptions to nodes
  * using a `Map` interface.
  *
@@ -100,7 +113,7 @@ module.exports = function (global) {
         }
 
         // Split the documentation type and get the return type.
-        var returnType = describe['!type'].split(' -> ')[1];
+        var returnType = describe['!type'].split(' -> ').pop();
 
         if (returnType === 'string') {
           return done(null, data.global.String());
@@ -129,7 +142,10 @@ module.exports = function (global) {
 
         // Instance type return.
         if (/^\+/.test(returnType) && data.global[returnType.substr(1)]) {
-          return done(null, data.global[returnType.substr(1)].prototype);
+          return done(
+            null,
+            fromPath(data.global, returnType.substr(1)).prototype
+          );
         }
 
         return next();
