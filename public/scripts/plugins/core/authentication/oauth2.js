@@ -2,6 +2,7 @@
 var _   = require('underscore');
 var qs  = require('querystring');
 var url = require('url');
+var openPopup; // Keep a reference to open popup windows.
 
 /**
  * Generate a custom store for OAuth2 tokens.
@@ -186,19 +187,24 @@ var oAuth2CodeFlow = function (options, done) {
     'response_type': 'code'
   });
 
-  var popup = window.open(
+  // Close any previously open popup.
+  if (openPopup) {
+    openPopup.close();
+  }
+
+  openPopup = window.open(
     options.authorizationUrl + '?' + query,
-    'authenticateOauth2', // Assigning a name stops overlapping windows.
+    'authenticateOauth2',
     'left=' + left + ',top=100,width=' + width + ',height=' + height
   );
 
-  if (!_.isObject(popup)) {
+  if (!_.isObject(openPopup)) {
     return done(new Error(errorPrefix + 'Popup window blocked'));
   }
 
   // Catch the client closing the window before authentication is complete.
   var closeInterval = window.setInterval(function () {
-    if (popup.closed) {
+    if (openPopup.closed) {
       window.clearInterval(closeInterval);
       return done(new Error(errorPrefix + 'Authentication Cancelled'));
     }
@@ -209,7 +215,7 @@ var oAuth2CodeFlow = function (options, done) {
    * be able to access and send the callback data.
    */
   global.authenticateOauth2 = function (href) {
-    // Stop potentially breaking calls.
+    openPopup = null;
     delete global.authenticateOauth2;
     window.clearInterval(closeInterval);
 
