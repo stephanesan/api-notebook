@@ -2,6 +2,7 @@
 var _               = App._;
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
+var fromPath        = require('../../lib/from-path');
 
 /**
  * Override the RAML parser read file functionality and replace with middleware.
@@ -33,43 +34,6 @@ ramlParser.readFile = function (file) {
   }
 
   return data;
-};
-
-/**
- * Parse a path string to a reference on the object. Supports passing an
- * optional setter.
- *
- * @param  {Object} object
- * @param  {String} path
- * @param  {*}      [setter]
- * @return {*}
- */
-var fromPath = function (object, path, setter) {
-  var isSetter = false;
-  var nodes    = path.split('.');
-
-  // Check that we have passed a third argument as the setter.
-  if (arguments.length > 2) {
-    isSetter = true;
-  }
-
-  var reference = _.reduce(nodes, function (object, prop, index) {
-    if (isSetter) {
-      // If we are at the last property, set the value.
-      if (index === nodes.length - 1) {
-        return object[prop] = setter;
-      }
-
-      // Ensure the object is available.
-      if (!(prop in object)) {
-        object[prop] = {};
-      }
-    }
-
-    return object[prop];
-  }, object);
-
-  return reference;
 };
 
 /**
@@ -105,7 +69,7 @@ API.createClient = function (name, url, done) {
 
     try {
       client = clientGenerator(data);
-      fromPath(App._executeWindow, name, client);
+      fromPath(App._executeWindow, name.split('.'), client);
     } catch (e) {
       return done(e);
     }

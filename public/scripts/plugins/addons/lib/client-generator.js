@@ -1,10 +1,11 @@
 /* global App */
-var _      = App._;
-var qs     = App.Library.querystring;
-var trim   = require('trim');
-var cases  = require('change-case');
-var escape = require('escape-regexp');
-var parser = require('uri-template');
+var _        = App._;
+var qs       = App.Library.querystring;
+var trim     = require('trim');
+var cases    = require('change-case');
+var escape   = require('escape-regexp');
+var parser   = require('uri-template');
+var fromPath = require('../../../lib/from-path');
 
 var toString         = Object.prototype.toString;
 var HTTP_METHODS     = ['get', 'head', 'put', 'post', 'patch', 'delete'];
@@ -177,7 +178,7 @@ var sanitizeAST = function (ast) {
   ast.resources = (function flattenResources (resources) {
     var map = {};
 
-    // Resources are provided as an object, we'll move them to be key based.
+    // Resources are provided as an array, we'll move them to be an object.
     _.each(resources, function (resource) {
       // Methods are implemented as arrays of objects too, but not recursively.
       if (resource.methods) {
@@ -190,8 +191,20 @@ var sanitizeAST = function (ast) {
         resource.resources = flattenResources(resource.resources);
       }
 
-      // Remove the prefixed `/` from the relativeUri.
-      map[resource.relativeUri.substr(1)] = resource;
+      var resourcePath = [];
+
+      _.each(resource.relativeUri.substr(1).split('/'), function (node, index) {
+        // Prepend `resources` to each path node after the first one. This is
+        // required because of the way the AST is structured.
+        if (index > 0) {
+          resourcePath.push('resources');
+        }
+
+        resourcePath.push(node);
+      });
+
+      // Attach the resource map at the correct endpoint on the map.
+      fromPath(map, resourcePath, resource);
     });
 
     return map;
