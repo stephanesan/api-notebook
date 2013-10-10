@@ -129,8 +129,10 @@ Persistence.prototype.save = function (done) {
         return done && done(err);
       }
 
-      this.set('id',      data.id);
+      this.set('id',      data.id, { silent: true });
       this.set('ownerId', data.ownerId);
+
+      Backbone.history.navigate(data.id);
 
       this._changeState(Persistence.SAVE_DONE);
       return done && done();
@@ -210,6 +212,8 @@ Persistence.prototype.load = function (done) {
       this.set('contents', data.contents, { silent: true });
       this.set('notebook', data.notebook, { silent: true });
 
+      Backbone.history.navigate(data.id);
+
       var complete = _.bind(function () {
         delete this._loading;
         this.trigger('changeNotebook', this);
@@ -252,12 +256,12 @@ Persistence.prototype.fork = function () {
     this.set('originalId', this.get('id'));
   }
 
-  // Removes the notebook id and sets the user id to the current user.
-  this.unset('id');
-  this.set('ownerId', this.get('userId'));
-
   // Reset the state to default.
   this._changeState(Persistence.NULL);
+
+  // Removes the notebook id and sets the user id to the current user.
+  this.set('id', null, { silent: true });
+  this.set('ownerId', this.get('userId'));
 };
 
 /**
@@ -280,7 +284,7 @@ var syncProtection = function (fn) {
     if (persistence._syncing) { return; }
 
     persistence._syncing = true;
-    fn.apply(this, arguments);
+    return fn.apply(this, arguments);
   };
 };
 
@@ -346,7 +350,7 @@ persistence.listenTo(persistence, 'change:contents', (function () {
         changing = false;
         if (changeQueue) {
           changeQueue = false;
-          change.call(this);
+          return change.call(this);
         }
       }, this)
     );
@@ -359,8 +363,6 @@ persistence.listenTo(persistence, 'change:contents', (function () {
  * jarring experience. Also load the initial notebook contents alongside.
  */
 persistence.listenTo(messages, 'ready', function () {
-  persistence.load();
-
   return middleware.trigger(
     'persistence:authenticated',
     _.extend(this.getMiddlewareData(), {
@@ -383,12 +385,10 @@ persistence.listenTo(messages, 'ready', function () {
 });
 
 /**
- * Redirects the page to the updated id.
+ * Attempt to load the notebook on id changes.
  */
 persistence.listenTo(persistence, 'change:id', function (model, id) {
-  process.nextTick(function () {
-    Backbone.history.navigate(id == null ? '' : id.toString());
-  });
+  return persistence.load();
 });
 
 /**
