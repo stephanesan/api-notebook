@@ -6,7 +6,7 @@ describe('Authentication', function () {
 
     beforeEach(function () {
       server = sinon.fakeServer.create();
-      sinon.stub(window, 'open');
+      sinon.stub(window, 'open').returns({});
     });
 
     afterEach(function () {

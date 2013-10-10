@@ -102,7 +102,7 @@ describe('Persistence', function () {
 
       // Check the application titles match.
       expect(App.persistence.get('title')).to.equal('Test Notebook');
-      expect(app.el.querySelector('.notebook-title').textContent).to.equal('Test Notebook');
+      expect(app.el.querySelector('.notebook-title').value).to.equal('Test Notebook');
 
       app.remove();
       return done();
