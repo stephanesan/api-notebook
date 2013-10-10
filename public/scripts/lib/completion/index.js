@@ -88,6 +88,9 @@ var Completion = module.exports = function (cm, options) {
    * @param  {CodeMirror} cm
    */
   this.onCursorActivity = function (cm) {
+    // Cursor activity is triggered even when we don't have focus.
+    if (!cm.hasFocus()) { return; }
+
     that.showTooltip();
 
     if (closeOnCursor) {
