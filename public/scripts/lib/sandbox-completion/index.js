@@ -1,19 +1,7 @@
-var _       = require('underscore');
-var ecma5   = require('./ecma5.json');
-var browser = require('./browser.json');
-
-/**
- * Turn a string path into a value from the input object.
- *
- * @param  {Object} object
- * @param  {String} path
- * @return {*}
- */
-var fromPath = function (object, path) {
-  return _.reduce(path.split('.'), function (memo, part) {
-    return memo[part];
-  }, object);
-};
+var _        = require('underscore');
+var ecma5    = require('./ecma5.json');
+var browser  = require('./browser.json');
+var fromPath = require('../from-path');
 
 /**
  * Recurse through the description structure and attach descriptions to nodes
@@ -144,7 +132,7 @@ module.exports = function (global) {
         if (/^\+/.test(returnType) && data.global[returnType.substr(1)]) {
           return done(
             null,
-            fromPath(data.global, returnType.substr(1)).prototype
+            fromPath(data.global, returnType.substr(1).split('.')).prototype
           );
         }
 
