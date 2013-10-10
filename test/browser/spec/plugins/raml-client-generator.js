@@ -100,7 +100,7 @@ describe('RAML Client Generator Plugin', function () {
           }
         )(function (err, exec) {
           App._.each(headers, function (value, header) {
-            expect(exec.result.getHeader(header)).to.equal(value);
+            expect(exec.result.headers[header]).to.equal(value);
           });
           return done(err);
         });
