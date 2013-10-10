@@ -1,11 +1,12 @@
-var _           = require('underscore');
-var marked      = require('marked');
-var domify      = require('domify');
-var Backbone    = require('backbone');
-var EditorCell  = require('./editor-cell');
-var messages    = require('../state/messages');
-var stripInput  = require('../lib/codemirror/strip-input');
-var insertAfter = require('../lib/browser/insert-after');
+var _            = require('underscore');
+var marked       = require('marked');
+var domify       = require('domify');
+var Backbone     = require('backbone');
+var EditorCell   = require('./editor-cell');
+var messages     = require('../state/messages');
+var stripInput   = require('../lib/codemirror/strip-input');
+var insertAfter  = require('../lib/browser/insert-after');
+var ownerProtect = require('./lib/owner-protect');
 
 /**
  * Create a new text cell instance.
@@ -93,14 +94,11 @@ TextCell.prototype.refresh = function () {
  *
  * @return {TextCell}
  */
-TextCell.prototype.focus = function () {
-  // Don't allow focusing on the editor if the user is not the owner
-  if (!this.isOwner()) { return this; }
-
+TextCell.prototype.focus = ownerProtect(function () {
   this._hasFocus = true;
   this.renderEditor();
   return EditorCell.prototype.focus.call(this);
-};
+});
 
 /**
  * Set the value of the text cell. Switches between updating the CodeMirror view

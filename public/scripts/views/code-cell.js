@@ -1,12 +1,13 @@
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var EditorCell = require('./editor-cell');
-var ResultCell = require('./result-cell');
-var Completion = require('../lib/completion');
-var stripInput = require('../lib/codemirror/strip-input');
-var state      = require('../state/state');
-var extraKeys  = require('./lib/extra-keys');
-var controls   = require('../lib/controls').code;
+var _            = require('underscore');
+var Backbone     = require('backbone');
+var EditorCell   = require('./editor-cell');
+var ResultCell   = require('./result-cell');
+var Completion   = require('../lib/completion');
+var stripInput   = require('../lib/codemirror/strip-input');
+var state        = require('../state/state');
+var extraKeys    = require('./lib/extra-keys');
+var controls     = require('../lib/controls').code;
+var ownerProtect = require('./lib/owner-protect');
 
 /**
  * Initialize a new code cell view.
@@ -117,6 +118,7 @@ CodeCell.prototype.getPrevCodeView = function () {
 CodeCell.prototype.execute = function (done) {
   // Set the value as our own model for executing
   this.model.set('value', this.editor.getValue());
+
   // Make sure we have focus on the currently executing cell.
   if (!this.hasFocus()) {
     this.browseToCell(this.model);
@@ -146,31 +148,31 @@ CodeCell.prototype.execute = function (done) {
 /**
  * Browse up to the previous code view contents.
  */
-CodeCell.prototype.browseUp = function () {
+CodeCell.prototype.browseUp = ownerProtect(function () {
   if (this.editor.doc.getCursor().line === 0) {
     return this.trigger('browseUp', this, this._editorCid);
   }
 
   CodeMirror.commands.goLineUp(this.editor);
-};
+});
 
 /**
  * Browse down to the next code view contents.
  */
-CodeCell.prototype.browseDown = function () {
+CodeCell.prototype.browseDown = ownerProtect(function () {
   if (this.editor.doc.getCursor().line === this.editor.doc.lastLine()) {
     return this.trigger('browseDown', this, this._editorCid);
   }
 
   CodeMirror.commands.goLineDown(this.editor);
-};
+});
 
 /**
  * Create a new line in the editor.
  */
-CodeCell.prototype.newLine = function () {
+CodeCell.prototype.newLine = ownerProtect(function () {
   CodeMirror.commands.newlineAndIndent(this.editor);
-};
+});
 
 /**
  * Browse to the contents of any code cell.
@@ -178,12 +180,12 @@ CodeCell.prototype.newLine = function () {
  * @param  {Object}   newModel
  * @return {CodeCell}
  */
-CodeCell.prototype.browseToCell = function (newModel) {
+CodeCell.prototype.browseToCell = ownerProtect(function (newModel) {
   this._editorCid = newModel.cid;
   this.setValue(newModel.get('value'));
 
   return this;
-};
+});
 
 /**
  * Set up the editor instance and bindings.
