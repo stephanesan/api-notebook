@@ -216,10 +216,37 @@ var sanitizeAST = function (ast) {
         resource.resources = flattenResources(resource.resources);
       }
 
-      // Split the relative uri into path "parts".
-      resource.uriParts = resource.relativeUri.substr(1).split('/');
+      (function attachResource (object, segments) {
+        var segment = segments.shift();
 
-      map[resource.relativeUri.substr(1)] = resource;
+        // Only the one segment part left, embed the entire resource.
+        if (!segments.length) {
+          return object[segment] = resource;
+        }
+
+        // Pull any potential tags out of the relative uri part.
+        var tags = _.map(segment.match(/\{([^\{\}]+)\}/g), function (tag) {
+          return tag.slice(1, -1);
+        });
+
+        // Nested segments need access to the relative uri parameters.
+        object[segment] = {
+          resources:     {},
+          // Dodgy `relativeUri` patch.
+          relativeUri:   '/' + segment,
+          // Pick out the applicable template tags.
+          uriParameters: _.pick(resource.uriParameters, tags)
+        };
+
+        // Remove the segment from the original relative uri.
+        resource.relativeUri = resource.relativeUri.substr(segment.length + 1);
+
+        // Remove tags no longer applicable to other parts.
+        // Note: This *will* break if the same tag name is in multiple parts.
+        resource.uriParameters = _.omit(resource.uriParameters, tags);
+
+        return attachResource(object[segment].resources, segments);
+      })(map, resource.relativeUri.substr(1).split('/'));
     });
 
     return map;
@@ -227,6 +254,8 @@ var sanitizeAST = function (ast) {
 
   // Parse the root url and inject variables.
   ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
+
+  console.log(ast);
 
   return ast;
 };
