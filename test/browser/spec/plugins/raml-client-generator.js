@@ -715,7 +715,7 @@ describe('RAML Client Generator Plugin', function () {
       };
 
       beforeEach(function () {
-        functionReturnPlugin.attach(App.middleware);
+        functionPropertyFilterPlugin.attach(App.middleware);
 
         view = new App.View.CodeCell();
 
@@ -737,7 +737,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       afterEach(function () {
-        functionReturnPlugin.detach(App.middleware);
+        functionPropertyFilterPlugin.detach(App.middleware);
 
         view.remove();
       });
