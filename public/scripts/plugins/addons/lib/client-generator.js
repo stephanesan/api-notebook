@@ -216,20 +216,10 @@ var sanitizeAST = function (ast) {
         resource.resources = flattenResources(resource.resources);
       }
 
-      var resourcePath = [];
+      // Split the relative uri into path "parts".
+      resource.uriParts = resource.relativeUri.substr(1).split('/');
 
-      _.each(resource.relativeUri.substr(1).split('/'), function (node, index) {
-        // Prepend `resources` to each path node after the first one. This is
-        // required because of the way the AST is structured.
-        if (index > 0) {
-          resourcePath.push('resources');
-        }
-
-        resourcePath.push(node);
-      });
-
-      // Attach the resource map at the correct endpoint on the map.
-      fromPath(map, resourcePath, resource);
+      map[resource.relativeUri.substr(1)] = resource;
     });
 
     return map;
