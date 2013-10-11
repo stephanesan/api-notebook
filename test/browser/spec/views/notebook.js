@@ -514,7 +514,7 @@ describe('Notebook', function () {
         // Set different user and gist owners
         App.persistence.isReady = true;
         App.persistence.set('userId', 'test');
-        expect(cell.editor.options.readOnly).to.equal('nocursor');
+        expect(cell.editor.options.readOnly).to.be.true;
 
         view.remove();
         App.persistence.isReady = false;
