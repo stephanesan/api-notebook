@@ -814,6 +814,15 @@ var generateClient = function (ast) {
   // Enable the `@return` property used by the completion plugin.
   client[RETURN_PROPERTY] = attachMethods(nodes, {}, httpMethods);
 
+  // Enable the `@description` property used by the completion tooltip helper.
+  client[DESCRIPTION_PROPERTY] = {
+    '!type': 'fn(url: string, data?: object)',
+    '!doc': [
+      'Make an API request to a custom URL. Pass in a `data` object to replace',
+      'any template tags before making the request.'
+    ].join(' ')
+  };
+
   // Attach all the resources to the returned client function.
   attachResources(nodes, client, ast.resources);
 
