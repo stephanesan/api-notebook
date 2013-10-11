@@ -155,19 +155,19 @@ var oAuth2CodeFlow = function (options, done) {
   var errorPrefix = 'OAuth2 Code Grant: ';
 
   if (!_.isString(options.clientId)) {
-    return done(new Error(errorPrefix + '"clientId" is missing'));
+    return done(new TypeError(errorPrefix + '"clientId" is missing'));
   }
 
   if (!_.isString(options.clientSecret)) {
-    return done(new Error(errorPrefix + '"clientSecret" is missing'));
+    return done(new TypeError(errorPrefix + '"clientSecret" is missing'));
   }
 
   if (!_.isString(options.accessTokenUrl)) {
-    return done(new Error(errorPrefix + '"accessTokenUrl" is missing'));
+    return done(new TypeError(errorPrefix + '"accessTokenUrl" is missing'));
   }
 
   if (!_.isString(options.authorizationUrl)) {
-    return done(new Error(errorPrefix + '"authorizationUrl" is missing'));
+    return done(new TypeError(errorPrefix + '"authorizationUrl" is missing'));
   }
 
   var width       = 720;
@@ -296,8 +296,8 @@ var proxyDone = function (done) {
 };
 
 /**
- * Register oauth2 based middleware. Handles oauth2 implicit auth flow, and the
- * normal oauth2 authentication flow when using the notebook proxy server.
+ * Register OAuth2 based middleware. Handles OAuth2 implicit auth flow, and the
+ * normal OAuth2 authentication flow when using with a proxy server.
  *
  * @param {Object} middleware
  */
@@ -400,9 +400,9 @@ module.exports = function (middleware) {
 
         // Update ajax data.
         data.url = url.format(uri);
-        data.headers = _.extend({
+        data.headers = _.extend(data.headers, {
           'Cache-Control': 'no-store'
-        }, data.headers);
+        });
       }
     }
 
