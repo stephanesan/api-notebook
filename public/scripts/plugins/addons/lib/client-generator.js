@@ -231,9 +231,10 @@ var sanitizeAST = function (ast) {
 
         // Nested segments need access to the relative uri parameters.
         object[segment] = {
-          resources:     {},
+          // Extends any resources already attached to the same property.
+          resources: _.extend({}, object[segment] && object[segment].resources),
           // Dodgy `relativeUri` patch.
-          relativeUri:   '/' + segment,
+          relativeUri: '/' + segment,
           // Pick out the applicable template tags.
           uriParameters: _.pick(resource.uriParameters, tags)
         };
