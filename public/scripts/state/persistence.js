@@ -194,7 +194,6 @@ Persistence.prototype.load = function (done) {
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
-      ownerId:  null,
       contents: null,
       notebook: null
     }),
