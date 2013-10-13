@@ -170,6 +170,23 @@ App.prototype.render = function () {
   this.el.appendChild(domify(
     '<header class="notebook-header clearfix">' +
       '<div class="notebook-header-secondary">' +
+      '</div>' +
+
+      '<div class="notebook-header-primary">' +
+        '<input class="notebook-title" autocomplete="off" value="' +
+          persistence.get('title') +
+        '"' + (persistence.isOwner() ? '' : ' readonly') + '>' +
+      '</div>' +
+
+    '</header>' +
+    '<div class="notebook-toolbar clearfix">' +
+      '<div class="auth-status">' +
+        'Doolittle @ Github.' +
+      '</div>' +
+      '<div class="save-status">' +
+        'Saved 11:26AM.' +
+      '</div>' +
+      '<div class="toolbar-buttons">' +
         '<button class="btn-text notebook-fork">Make my own copy</button>' +
         '<button class="btn-text notebook-clone">Make another copy</button>' +
         '<button class="btn-text notebook-auth">' +
@@ -178,13 +195,7 @@ App.prototype.render = function () {
         '<button class="notebook-exec">Run All</button>' +
         '<button class="ir modal-toggle">Keyboard Shortcuts</button>' +
       '</div>' +
-
-      '<div class="notebook-header-primary">' +
-        '<input class="notebook-title" autocomplete="off" value="' +
-          persistence.get('title') +
-        '"' + (persistence.isOwner() ? '' : ' readonly') + '>' +
-      '</div>' +
-    '</header>' +
+    '</div>' +
 
     '<div class="banner notebook-auth">' +
       '<p>Please authenticate to save the notebook.</p>' +
