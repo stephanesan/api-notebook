@@ -127,7 +127,7 @@ var loadPlugin = function (data, next, done) {
  */
 var savePlugin = function (data, next, done) {
   if (!data.isAuthenticated()) {
-    return next(new Error('Not authenticated'));
+    return next();
   }
 
   if (navigator.onLine === false) {

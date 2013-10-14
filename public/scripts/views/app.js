@@ -164,13 +164,6 @@ App.prototype.updateState = function () {
 
   var stamp = hours + ':' + ('0' + minutes).slice(-2) + suffix;
 
-  // Avoid doing status updates when saving fails and we aren't authenticated.
-  if (!persistence.isAuthenticated()) {
-    if (state === persistence.SAVE_FAIL || state === persistence.SAVING) {
-      return this;
-    }
-  }
-
   // Remove the content of the status display.
   statusEl.innerHTML = '';
 
