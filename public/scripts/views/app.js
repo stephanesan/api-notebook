@@ -127,8 +127,8 @@ App.prototype.updateUser = function () {
 App.prototype.updateId = function () {
   var isSaved = persistence.has('id');
 
-  this.el.classList[isSaved  ? 'add' : 'remove']('user-is-saved');
-  this.el.classList[!isSaved ? 'add' : 'remove']('user-not-saved');
+  this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
+  this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
 
   return this;
 };
@@ -172,7 +172,7 @@ App.prototype.updateState = function () {
   } else if (state === persistence.LOAD_FAIL) {
     statusEl.textContent = 'Load failed.';
   } else if (state === persistence.LOAD_DONE) {
-    statusEl.textContent = 'Loaded ' + stamp + '.';
+    statusEl.textContent = persistence.isNew() ? '' : 'Loaded ' + stamp + '.';
   } else if (state === persistence.SAVING) {
     statusEl.textContent = 'Saving.';
   } else if (state === persistence.SAVE_FAIL) {
@@ -235,7 +235,6 @@ App.prototype.render = function () {
       '<div class="toolbar-buttons">' +
         '<button class="btn-text notebook-fork">Make my own copy</button>' +
         '<button class="btn-text notebook-clone">Make another copy</button>' +
-        '<button class="btn-text notebook-auth">Authenticate</button>' +
         '<button class="notebook-exec">Run All</button>' +
         '<button class="ir modal-toggle">Keyboard Shortcuts</button>' +
       '</div>' +
