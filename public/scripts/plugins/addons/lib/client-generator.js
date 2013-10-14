@@ -256,8 +256,6 @@ var sanitizeAST = function (ast) {
   // Parse the root url and inject variables.
   ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
 
-  console.log(ast);
-
   return ast;
 };
 
