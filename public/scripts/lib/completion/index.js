@@ -89,9 +89,9 @@ var Completion = module.exports = function (cm, options) {
    */
   this.onCursorActivity = function (cm) {
     // Cursor activity is triggered even when we don't have focus.
-    if (!cm.hasFocus()) { return; }
-
-    that.showTooltip();
+    if (cm.hasFocus()) {
+      that.showTooltip();
+    }
 
     if (closeOnCursor) {
       return that.removeWidget();
