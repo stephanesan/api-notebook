@@ -129,7 +129,7 @@ Persistence.prototype.save = function (done) {
         return done && done(err);
       }
 
-      this.set('id',      data.id, { silent: true });
+      this.set('id',      data.id);
       this.set('ownerId', data.ownerId);
 
       Backbone.history.navigate(data.id);
@@ -242,7 +242,7 @@ Persistence.prototype.load = function (done) {
 Persistence.prototype.reset = function () {
   return this.set(_.extend(this.defaults, {
     notebook: []
-  }), { silent: true });
+  }));
 };
 
 /**
@@ -260,7 +260,7 @@ Persistence.prototype.fork = function () {
   this._changeState(Persistence.NULL);
 
   // Removes the notebook id and sets the user id to the current user.
-  this.set('id', null, { silent: true });
+  this.set('id', null);
   this.set('ownerId', this.get('userId'));
 };
 
@@ -385,19 +385,13 @@ persistence.listenTo(messages, 'ready', function () {
 });
 
 /**
- * Attempt to load the notebook on id changes.
- */
-persistence.listenTo(persistence, 'change:id', function (model, id) {
-  return persistence.load();
-});
-
-/**
  * Loads the notebook from the persistence layer.
  *
  * @param  {String} id
  */
 persistence.listenTo(
   router, 'route:newNotebook route:loadNotebook', function (id) {
-    return persistence.set('id', id);
+    persistence.set('id', id);
+    return persistence.load();
   }
 );
