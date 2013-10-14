@@ -32,6 +32,7 @@ App.prototype.events = {
   'click .notebook-fork':  'forkNotebook',
   'click .notebook-clone': 'forkNotebook',
   'click .notebook-auth':  'authNotebook',
+  'click .notebook-save':  'saveNotebook',
   // Listen for `Enter` presses and blur the input instead.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -63,15 +64,6 @@ App.prototype.initialize = function () {
   Backbone.history.start({
     pushState: false
   });
-
-  // Listens to different application state changes and updates accordingly.
-  this.listenTo(persistence, 'changeUser',      this.updateUser,      this);
-  this.listenTo(persistence, 'change:id',       this.updateId,        this);
-  this.listenTo(persistence, 'change:title',    this.updateTitle,     this);
-  this.listenTo(messages,    'keydown:Esc',     this.hideShortcuts,   this);
-  this.listenTo(messages,    'keydown:Shift-/', this.toggleShortcuts, this);
-
-  this.updateUser();
 };
 
 /**
@@ -86,11 +78,26 @@ App.prototype.remove = function () {
 };
 
 /**
+ * Update all data "bound" methods.
+ *
+ * @return {App}
+ */
+App.prototype.update = function () {
+  this.updateId();
+  this.updateUser();
+  this.updateTitle();
+  this.updateState();
+
+  return this;
+};
+
+/**
  * Updates the template when the user or document owner changes.
  *
  * @return {App}
  */
 App.prototype.updateUser = function () {
+  var auth    = this.el.querySelector('.auth-status');
   var title   = this.el.querySelector('.notebook-title');
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
@@ -100,10 +107,11 @@ App.prototype.updateUser = function () {
   this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
   this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
 
-  // Allow/disallow editing of the title.
-  if (title) {
-    title.readOnly = !isOwner;
-  }
+  // Allow/disallow editing of the title based on authentication status.
+  title.readOnly = !isOwner;
+
+  // Update the auth display status with the user title.
+  auth.textContent = persistence.get('userTitle') + '.';
 
   // Adding and removing some of these classes cause the container to resize.
   messages.trigger('resize');
@@ -127,10 +135,66 @@ App.prototype.updateId = function () {
 
 /**
  * Updates the application title when the notebook title changes.
+ *
+ * @return {App}
  */
 App.prototype.updateTitle = function () {
-  var title = persistence.get('title');
-  this.el.querySelector('.notebook-title').value = title;
+  this.el.querySelector('.notebook-title').value = persistence.get('title');
+
+  return this;
+};
+
+/**
+ * Update the displayed notebook persistence state.
+ *
+ * @return {App}
+ */
+App.prototype.updateState = function () {
+  var state    = persistence.get('state');
+  var statusEl = this.el.querySelector('.save-status');
+  var now      = new Date();
+  var hours    = now.getHours();
+  var minutes  = now.getMinutes();
+  var suffix   = 'AM';
+
+  if (hours > 12) {
+    hours  = hours - 12;
+    suffix = 'PM';
+  }
+
+  var stamp = hours + ':' + ('0' + minutes).slice(-2) + suffix;
+
+  // Avoid doing status updates when saving fails and we aren't authenticated.
+  if (!persistence.isAuthenticated()) {
+    if (state === persistence.SAVE_FAIL || state === persistence.SAVING) {
+      return this;
+    }
+  }
+
+  // Remove the content of the status display.
+  statusEl.innerHTML = '';
+
+  if (state === persistence.LOADING) {
+    statusEl.textContent = 'Loading.';
+  } else if (state === persistence.LOAD_FAIL) {
+    statusEl.textContent = 'Load failed.';
+  } else if (state === persistence.LOAD_DONE) {
+    statusEl.textContent = 'Loaded ' + stamp + '.';
+  } else if (state === persistence.SAVING) {
+    statusEl.textContent = 'Saving.';
+  } else if (state === persistence.SAVE_FAIL) {
+    var saveEl = document.createElement('button');
+    saveEl.className   = 'btn-text notebook-save';
+    saveEl.textContent = 'Try again';
+
+    statusEl.appendChild(document.createTextNode('Save failed.'));
+    statusEl.appendChild(saveEl);
+    statusEl.appendChild(document.createTextNode('.'));
+  } else if (state === persistence.SAVE_DONE) {
+    statusEl.textContent = 'Saved ' + stamp + '.';
+  }
+
+  return this;
 };
 
 /**
@@ -169,18 +233,12 @@ App.prototype.render = function () {
 
   this.el.appendChild(domify(
     '<header class="notebook-header clearfix">' +
-      '<input class="notebook-title" autocomplete="off" value="' +
-        persistence.get('title') +
-      '"' + (persistence.isOwner() ? '' : ' readonly') + '>' +
+      '<input class="notebook-title" autocomplete="off">' +
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="auth-status">' +
-        'Doolittle @ Github.' +
-      '</div>' +
-      '<div class="save-status">' +
-        'Saved 11:26AM.' +
-      '</div>' +
+      '<div class="auth-status"></div>' +
+      '<div class="save-status"></div>' +
       '<div class="toolbar-buttons">' +
         '<button class="btn-text notebook-fork">Make my own copy</button>' +
         '<button class="btn-text notebook-clone">Make another copy</button>' +
@@ -228,6 +286,17 @@ App.prototype.render = function () {
     '</div>'
   ));
 
+  // Listens to different application state changes and updates accordingly.
+  this.listenTo(persistence, 'changeUser',      this.updateUser);
+  this.listenTo(persistence, 'change:state',    this.updateState);
+  this.listenTo(persistence, 'change:id',       this.updateId);
+  this.listenTo(persistence, 'change:title',    this.updateTitle);
+  this.listenTo(messages,    'keydown:Esc',     this.hideShortcuts);
+  this.listenTo(messages,    'keydown:Shift-/', this.toggleShortcuts);
+
+  // Trigger all the update methods.
+  this.update();
+
   return this;
 };
 
@@ -262,4 +331,11 @@ App.prototype.authNotebook = function () {
  */
 App.prototype.forkNotebook = function () {
   persistence.fork();
+};
+
+/**
+ * Manually attempt to save the notebook.
+ */
+App.prototype.saveNotebook = function () {
+  persistence.save();
 };

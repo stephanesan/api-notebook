@@ -1,4 +1,5 @@
 /* global App */
+var _         = App._;
 var OAUTH_KEY = 'github-oauth';
 var CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 var AUTH_URL  = 'https://github.com/login/oauth/authorize';
@@ -13,7 +14,7 @@ var VALID_URL = 'https://api.github.com/user';
  * @param {Function} done
  */
 var changePlugin = function (data, next, done) {
-  return data.save(done);
+  return setTimeout(_.bind(data.save, null, done), 500);
 };
 
 /**
@@ -26,11 +27,22 @@ var authenticatedUserId = function (done) {
     validateUrl:      VALID_URL,
     authorizationUrl: AUTH_URL
   }, function (err, auth) {
+    var content;
+
     if (err || !auth) {
       return done(err);
     }
 
-    return done(null, JSON.parse(auth.xhr.responseText).id);
+    try {
+      content = JSON.parse(auth.xhr.responseText);
+    } catch (e) {
+      return done(e);
+    }
+
+    return done(null, {
+      userId:    content.id,
+      userTitle: content.login + ' @ Github'
+    });
   });
 };
 
@@ -53,13 +65,10 @@ var authenticatePlugin = function (data, next, done) {
     authorizationUrl: AUTH_URL
   }, function (err, auth) {
     if (err) {
-      return done(err);
+      return next(err);
     }
 
-    authenticatedUserId(function (err, userId) {
-      data.userId = userId;
-      return done(err);
-    });
+    return authenticatedUserId(done);
   });
 };
 
@@ -71,10 +80,7 @@ var authenticatePlugin = function (data, next, done) {
  * @param {Function} done
  */
 var authenticatedPlugin = function (data, next, done) {
-  authenticatedUserId(function (err, userId) {
-    data.userId = userId;
-    return done(err);
-  });
+  authenticatedUserId(done);
 };
 
 /**
@@ -93,10 +99,16 @@ var loadPlugin = function (data, next, done) {
     url: 'https://api.github.com/gists/' + data.id,
     method: 'GET'
   }, function (err, xhr) {
-    var content = JSON.parse(xhr.responseText);
+    var content;
+
+    try {
+      content = JSON.parse(xhr.responseText);
+    } catch (e) {
+      return next(e);
+    }
 
     if (!content || !content.files || !content.files['notebook.md']) {
-      return next();
+      return next(new Error('Unexpected JSON response'));
     }
 
     data.id       = content.id;
@@ -115,7 +127,11 @@ var loadPlugin = function (data, next, done) {
  */
 var savePlugin = function (data, next, done) {
   if (!data.isAuthenticated()) {
-    return next();
+    return next(new Error('Not authenticated'));
+  }
+
+  if (navigator.onLine === false) {
+    return next(new Error('No internet available'));
   }
 
   App.middleware.trigger('ajax:oauth2', {
@@ -133,13 +149,22 @@ var savePlugin = function (data, next, done) {
     }
   }, function (err, xhr) {
     if (err) {
-      return done(err);
+      return next(err);
     }
 
-    var content = JSON.parse(xhr.responseText);
-    data.id      = content.id;
-    data.ownerId = content.user && content.user.id;
-    return done();
+    if (xhr.status !== 200) {
+      return next(new Error('Request failed'));
+    }
+
+    try {
+      var content = JSON.parse(xhr.responseText);
+      data.id      = content.id;
+      data.ownerId = content.user && content.user.id;
+    } catch (e) {
+      return next(e);
+    }
+
+    return next();
   });
 };
 
