@@ -235,8 +235,8 @@ App.prototype.render = function () {
       '<div class="toolbar-buttons">' +
         '<button class="btn-text notebook-fork">Make my own copy</button>' +
         '<button class="btn-text notebook-clone">Make another copy</button>' +
-        '<button class="notebook-exec">Run All</button>' +
-        '<button class="ir modal-toggle">Keyboard Shortcuts</button>' +
+        '<button class="btn-round ir notebook-exec">Run All</button>' +
+        '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
       '</div>' +
     '</div>' +
 
