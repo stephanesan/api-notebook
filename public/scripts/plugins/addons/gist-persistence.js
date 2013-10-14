@@ -152,7 +152,8 @@ var savePlugin = function (data, next, done) {
       return next(err);
     }
 
-    if (xhr.status !== 200) {
+    // The status does not equal a sucessful patch or creation.
+    if (xhr.status !== 200 && xhr.status !== 201) {
       return next(new Error('Request failed'));
     }
 
