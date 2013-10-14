@@ -14,11 +14,9 @@ var Persistence = Backbone.Model.extend({
     id:         null,
     state:      0,
     title:      'New Notebook',
-    userId:     null,
-    userTitle:  'Unauthenticated',
-    ownerId:    null,
+    notebook:   [],
     originalId: null,
-    notebook:   []
+    userTitle:  'Unauthenticated'
   }
 });
 
@@ -126,7 +124,7 @@ Persistence.prototype.save = function (done) {
     'persistence:save',
     this.getMiddlewareData(),
     _.bind(function (err, data) {
-      if (!data.id || err) {
+      if (err) {
         this._changeState(Persistence.SAVE_FAIL);
         return done && done(err);
       }
@@ -201,7 +199,7 @@ Persistence.prototype.load = function (done) {
     _.bind(function (err, data) {
       this._loading = true;
 
-      if (!data.id || err) {
+      if (err) {
         delete this._loading;
         this._changeState(Persistence.LOAD_FAIL);
         return done && done(err);
