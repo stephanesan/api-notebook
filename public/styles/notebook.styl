@@ -30,25 +30,15 @@
   &:focus
     outline: 0
 
-.notebook-header-primary
-  overflow: hidden
-  padding-right: 40px
-
-.notebook-header-secondary
-  float: right
-  margin-top: 5px
-  > button
-    margin-left: 5px
-    vertical-align: middle
-
-.banner
+.notebook-banner
   padding: 1em 2em
   border: 1px solid #ccc
-  border-color: darken($yellow, 20%) #ccc
-  background: $yellow
+  border-top-width: 0
+  border-bottom-color: darken($yellow, 20%)
   cursor: pointer
+  background: $yellow
 
-.banner p
+.notebook-banner p
   margin: 0
 
 .notebook .cell-result
@@ -119,3 +109,5 @@
       float: left
       margin-right: 1em
       line-height: 28px
+    button:last-child
+      margin-right: 0
