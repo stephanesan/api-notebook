@@ -241,7 +241,8 @@ App.prototype.render = function () {
     '</div>' +
 
     '<div class="notebook-banner notebook-auth">' +
-      '<p>Please authenticate to save the notebook.</p>' +
+      '<p>Please <span class="text-underline">authenticate</span> ' +
+      'to save the notebook.</p>' +
     '</div>' +
 
     '<div class="modal-backdrop"></div>'
