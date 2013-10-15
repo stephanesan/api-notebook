@@ -214,9 +214,10 @@ Widget.prototype.reposition = function () {
   var that  = this;
   var hints = this.hints;
 
-  hints.className  = hints.className.replace(' CodeMirror-hints-top', '');
-  hints.style.top  = top  + 'px';
-  hints.style.left = left + 'px';
+  hints.className    = hints.className.replace(' CodeMirror-hints-top', '');
+  hints.style.top    = top  + 'px';
+  hints.style.left   = left + 'px';
+  hints.style.height = 'auto';
 
   var box       = hints.getBoundingClientRect();
   var padding   = 5;
@@ -228,17 +229,19 @@ Widget.prototype.reposition = function () {
 
   if (overlapX > 0) {
     if (box.right - box.left > winWidth) {
-      hints.style.width = (winWidth - padding * 2) + 'px';
       overlapX -= (box.right - box.left) - winWidth;
+      hints.style.width = (winWidth - padding * 2) + 'px';
     }
+
     hints.style.left = (left = pos.left - overlapX - padding) + 'px';
   }
 
   if (overlapY > 0) {
     var height = box.bottom - box.top;
     var winPos = cm.cursorCoords(this.data.from, 'window');
+
     // Switch the hints to be above instead of below
-    if (winHeight - top < winPos.top) {
+    if (winHeight - winPos.bottom < winPos.top) {
       // When the box is larger than the available height, resize it. Otherwise,
       // we need to position `x` from the top taking into account the height.
       if (height > (winPos.top - padding)) {
@@ -247,10 +250,11 @@ Widget.prototype.reposition = function () {
       } else {
         top = pos.top - height;
       }
+
       hints.style.top = top + 'px';
       hints.className += ' CodeMirror-hints-top';
-    } else if (top + height > winHeight) {
-      hints.style.height = (winHeight - pos.bottom - 5) + 'px';
+    } else {
+      hints.style.height = (winHeight - winPos.bottom - padding) + 'px';
     }
   }
 
