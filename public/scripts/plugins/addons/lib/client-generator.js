@@ -514,7 +514,7 @@ var httpRequest = function (nodes, method) {
       if (authenticated) {
         if (scheme.type === 'OAuth 2.0') {
           request        = 'ajax:oauth2';
-          options.oauth2 = nodes.config.securitySchemes[secured].settings;
+          options.oauth2 = nodes.config.authentication[scheme.type];
         }
 
         return true;
@@ -755,9 +755,9 @@ var authenticateOAuth2 = function (nodes, scheme) {
       'authenticate:oauth2',
       options,
       function (err, auth) {
-        // Set the nodes authentication details. This will be used with the
-        // final http request.
-        nodes.config.authentication[scheme.type] = true;
+        // Set the client authentication details. This will be used with any
+        // http requests that require the authentication type.
+        nodes.config.authentication[scheme.type] = auth;
         return done(err, auth);
       }
     );
