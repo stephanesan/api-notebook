@@ -1,15 +1,18 @@
 /* global App */
-var _   = require('underscore');
-var qs  = require('querystring');
-var url = require('url');
-var openPopup;
+var _           = require('underscore');
+var qs          = require('querystring');
+var url         = require('url');
+var authWindow  = require('./lib/auth-window');
+var redirectUri = url.resolve(
+  global.location.href, '/authentication/oauth2.html'
+);
 
 /**
  * An array containing the supported grant types in preferred order.
  *
  * @type {Array}
  */
-var supportedGrants = ['code'];
+var supportedGrants = ['token', 'code'];
 
 /**
  * Format error response types to regular strings for displaying the clients.
@@ -78,98 +81,142 @@ var erroredResponse = function (data) {
 };
 
 /**
+ * Validate an OAuth2 response object.
+ *
+ * @param {Object}   response
+ * @param {Function} done
+ */
+var authResponse = function (response, done) {
+  if (erroredResponse(response)) {
+    return done(new Error(erroredResponse(response)));
+  }
+
+  var data = {
+    accessToken: response.access_token,
+    response:    response // Allow access to the entire OAuth2 response.
+  };
+
+  if (response.token_type) {
+    data.tokenType = response.token_type;
+  }
+
+  if (+response.expires_in) {
+    data.expiration = Date.now() + (response.expires_in * 1000);
+  }
+
+  return done(null, data);
+};
+
+/**
+ * Trigger the client-side implicit OAuth2 flow.
+ *
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var oauth2TokenFlow = function (options, done) {
+  if (!_.isString(options.clientId)) {
+    return done(new TypeError('"clientId" expected'));
+  }
+
+  if (!_.isString(options.authorizationUrl)) {
+    return done(new TypeError('"authorizationUrl" expected'));
+  }
+
+  var state = ('' + Math.random()).substr(2);
+  var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
+    'state':         state,
+    'scope':         options.scopes.join(' '),
+    'client_id':     options.clientId,
+    'redirect_uri':  redirectUri,
+    'response_type': 'token'
+  }), done);
+
+  global.authenticateOauth2 = function (href) {
+    popup.close();
+    delete global.authenticateOauth2;
+
+    if (href.substr(0, redirectUri.length) !== redirectUri) {
+      return done(new Error('Invalid redirect uri'));
+    }
+
+    var uri      = url.parse(href, true);
+    var response = _.extend(qs.parse(uri.hash.substr(1)), uri.query);
+
+    if (response.state !== state) {
+      return done(new Error('State mismatch'));
+    }
+
+    // Pass the response off for validation. At least Instagram has a bug where
+    // the state is being passed back as part of the query string instead of the
+    // hash, so we merge both options together.
+    return authResponse(response, done);
+  };
+};
+
+/**
  * Trigger the full server-side OAuth2 flow.
  *
  * @param {Object}   options
  * @param {Function} done
  */
 var oAuth2CodeFlow = function (options, done) {
-  var errorPrefix = 'OAuth2 Code Grant: ';
-
   if (!_.isString(options.clientId)) {
-    return done(new TypeError(errorPrefix + '"clientId" is missing'));
+    return done(new TypeError('"clientId" expected'));
   }
 
   if (!_.isString(options.clientSecret)) {
-    return done(new TypeError(errorPrefix + '"clientSecret" is missing'));
+    return done(new TypeError('"clientSecret" expected'));
   }
 
   if (!_.isString(options.accessTokenUrl)) {
-    return done(new TypeError(errorPrefix + '"accessTokenUrl" is missing'));
+    return done(new TypeError('"accessTokenUrl" expected'));
   }
 
   if (!_.isString(options.authorizationUrl)) {
-    return done(new TypeError(errorPrefix + '"authorizationUrl" is missing'));
+    return done(new TypeError('"authorizationUrl" expected'));
   }
 
-  var width       = 720;
-  var height      = 480;
-  var left        = (window.screen.availWidth - width) / 2;
-  var state       = ('' + Math.random()).substr(2);
-  var redirectUri = url.resolve(
-    global.location.href, '/authentication/oauth2.html'
-  );
-
-  // Stringify the query string data.
-  var query  = qs.stringify({
+  var state = ('' + Math.random()).substr(2);
+  var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
     'state':         state,
     'scope':         options.scopes.join(' '),
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'code'
-  });
-
-  // Close any previously open popup.
-  if (openPopup) {
-    openPopup.close();
-  }
-
-  openPopup = window.open(
-    options.authorizationUrl + '?' + query, '',
-    'left=' + left + ',top=100,width=' + width + ',height=' + height
-  );
-
-  if (!_.isObject(openPopup)) {
-    return done(new Error(errorPrefix + 'Popup window blocked'));
-  }
-
-  // Catch the client closing the window before authentication is complete.
-  var closeInterval = window.setInterval(function () {
-    if (openPopup.closed) {
-      window.clearInterval(closeInterval);
-      return done(new Error(errorPrefix + 'Authentication Cancelled'));
-    }
-  }, 300);
+  }), done);
 
   /**
    * Assigns a global variable that the oauth authentication window should
    * be able to access and send the callback data.
    */
   global.authenticateOauth2 = function (href) {
-    openPopup = null;
+    popup.close();
     delete global.authenticateOauth2;
-    window.clearInterval(closeInterval);
 
-    // Parse the url and prepare to do an ajax request to get the acces token.
+    // Parse the url and prepare to do an POST request to get the access token.
     var query = url.parse(href, true).query;
 
+    if (href.substr(0, redirectUri.length) !== redirectUri) {
+      return done(new Error('Invalid redirect uri'));
+    }
+
     if (erroredResponse(query)) {
-      return done(new Error(errorPrefix + erroredResponse(query)));
+      return done(new Error(erroredResponse(query)));
     }
 
     if (query.state !== state) {
-      return done(new Error(errorPrefix + 'State mismatch'));
+      return done(new Error('State mismatch'));
     }
 
     if (!query.code) {
-      return done(new Error(errorPrefix + 'Response code missing'));
+      return done(new Error('Response code missing'));
     }
 
     App.middleware.trigger('ajax', {
       url: options.accessTokenUrl,
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        'Accept':       'application/json',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       data: qs.stringify({
@@ -180,32 +227,9 @@ var oAuth2CodeFlow = function (options, done) {
         'client_secret': options.clientSecret
       })
     }, function (err, xhr) {
-      if (err) {
-        return done(err);
-      }
+      if (err) { return done(err); }
 
-      var response = JSON.parse(xhr.responseText);
-
-      // Repond with the error body.
-      if (erroredResponse(response)) {
-        return done(new Error(errorPrefix + erroredResponse(response)));
-      }
-
-      var data = {
-        scopes:      options.scopes,
-        accessToken: response.access_token,
-        response:    response // Provide access to the entire OAuth2 response.
-      };
-
-      if (response.token_type) {
-        data.tokenType = response.token_type;
-      }
-
-      if (+response.expires_in) {
-        data.expiration = Date.now() + (response.expires_in * 1000);
-      }
-
-      return done(null, data);
+      return authResponse(JSON.parse(xhr.responseText), done);
     });
   };
 };
@@ -275,6 +299,18 @@ module.exports = function (middleware) {
    */
   middleware.core('authenticate:oauth2:code', function (data, next, done) {
     return oAuth2CodeFlow(data, proxyDone(done));
+  });
+
+  /**
+   * Middleware for authenticating with the OAuth2 implicit auth flow.
+   * Reference: http://tools.ietf.org/html/rfc6749#section-4.2
+   *
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.core('authenticate:oauth2:token', function (data, next, done) {
+    return oauth2TokenFlow(data, proxyDone(done));
   });
 
   /**
