@@ -130,15 +130,21 @@ var doPropertyLookup = function (cm, tokens, options, done) {
  * @param {Function}   done
  */
 exports.propertyLookup = function (cm, tokens, options, done) {
+  // No tokens exist, which means we are doing a lookup at the global level.
+  if (!tokens.length) {
+    return done(null, _.extend({
+      editor: cm
+    }, options));
+  }
+
   var invalid = _.some(tokens, function (token) {
     return token.type === 'invalid';
   });
 
   // If any invalid tokens exist, fail completion.
-  if (invalid) { return done(new Error('Completion is not possible')); }
-
-  // No tokens exist, which means we are doing a lookup at the global level.
-  if (!tokens.length) { return done(null, options.global); }
+  if (invalid) {
+    return done(new Error('Completion is not possible'));
+  }
 
   // Run the property lookup functionality.
   exports.resolveTokens(cm, tokens, options, function (err, tokens) {
@@ -223,18 +229,10 @@ exports.eatSpaceAndMove = function (cm, token) {
  * @param {Function}   done
  */
 exports.getPropertyObject = function (cm, token, options, done) {
-  if (token.type !== 'property') {
-    return [];
-  }
-
-  token = exports.eatSpaceAndMove(cm, token);
-
-  if (token.type !== null || token.string !== '.') {
-    return [];
-  }
-
   // Defer to the `getProperty` function.
-  return exports.getProperty(cm, token, options, done);
+  return exports.getProperty(
+    cm, exports.eatSpaceAndMove(cm, token), options, done
+  );
 };
 
 /**

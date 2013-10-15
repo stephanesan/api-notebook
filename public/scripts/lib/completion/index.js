@@ -89,7 +89,7 @@ var Completion = module.exports = function (cm, options) {
    */
   this.onCursorActivity = function (cm) {
     // Cursor activity is triggered even when we don't have focus.
-    if (cm.hasFocus()) {
+    if (cm.hasFocus() && !cm.getOption('readOnly')) {
       that.showTooltip();
     }
 
@@ -174,6 +174,9 @@ Completion.prototype.showTooltip = function () {
   }, this));
 };
 
+/**
+ * Remove the overlay toolip.
+ */
 Completion.prototype.removeTooltip = function () {
   if (this.tooltip) {
     this.tooltip.remove();
