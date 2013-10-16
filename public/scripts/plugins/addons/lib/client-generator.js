@@ -778,12 +778,20 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
     var methodName = 'authenticate' + cases.pascal(title);
 
     if (scheme.type === 'OAuth 2.0') {
+      var isImplicit = _.contains(
+        scheme.settings.authorizationGrants, 'token'
+      ) ? '?' : '';
+
       context[methodName] = authenticateOAuth2(nodes, scheme);
       context[methodName][DESCRIPTION_PROPERTY] = _.extend(
         toDescriptionObject(scheme), {
           // Don't expect anything to parse this since it deviates from the
           // Tern.js spec. However, it is somewhat more useful to read.
-          '!type': 'fn(options: { clientId: string, clientSecret: string })'
+          '!type': [
+            'fn(options: {',
+            'clientId: string, clientSecret' + isImplicit + ': string',
+            '})'
+          ].join(' ')
         }
       );
     }
