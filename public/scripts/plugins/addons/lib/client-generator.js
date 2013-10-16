@@ -512,14 +512,12 @@ var httpRequest = function (nodes, method) {
       var authenticated = nodes.config.authentication[scheme.type];
 
       if (authenticated) {
-        var data = _.extend({}, scheme, authenticated);
-
         if (scheme.type === 'OAuth 2.0') {
           request        = 'ajax:oauth2';
-          options.oauth2 = data;
+          options.oauth2 = authenticated;
         } else if (scheme.type === 'OAuth 1.0') {
           request        = 'ajax:oauth1';
-          options.oauth1 = data;
+          options.oauth1 = authenticated;
         }
 
         return true;
@@ -763,7 +761,7 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
       function (err, auth) {
         // Set the client authentication details. This will be used with any
         // http requests that require the authentication type.
-        nodes.config.authentication[scheme.type] = auth;
+        nodes.config.authentication[scheme.type] = _.defaults(auth, options);
         return done(err, auth);
       }
     );
