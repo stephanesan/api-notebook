@@ -8,6 +8,11 @@ var redirectUri = url.resolve(
   global.location.href, '/authentication/oauth1.html'
 );
 
+/**
+ * Default ports of different protocols.
+ *
+ * @type {Object}
+ */
 var defaultPorts = {
   'http:':  '80',
   'https:': '443'
@@ -51,11 +56,13 @@ var decodeData = function (str) {
   return decodeURIComponent(str.replace(/\+/g, ' '));
 };
 
+/**
+ * Normalize the url for including with the hashed signature.
+ *
+ * @param  {Object} uri
+ * @return {String}
+ */
 var normalizeUrl = function (uri) {
-  if (_.isString(uri)) {
-    uri = url.parse(uri, true);
-  }
-
   var port = '';
 
   if (uri.port && defaultPorts[uri.protocol] !== uri.port) {
@@ -65,6 +72,13 @@ var normalizeUrl = function (uri) {
   return uri.protocol + '//' + uri.hostname + port + uri.pathname;
 };
 
+/**
+ * Sort query string parameters (represented as an array of arrays) by name and
+ * then value.
+ *
+ * @param  {Array} argPairs
+ * @return {Array}
+ */
 var sortRequestParams = function (argPairs) {
   return argPairs.sort(function (a, b) {
     if (a[0] === b[0]) {
@@ -75,22 +89,44 @@ var sortRequestParams = function (argPairs) {
   });
 };
 
+/**
+ * Transform an object of key, value pairs to an array of arrays.
+ *
+ * @param  {Object} obj
+ * @return {Array}
+ */
 var paramsToArray = function (obj) {
-  return _.map(obj, function (value, key) {
-    return [encodeData(key), encodeData(value)];
-  });
+  return _.pairs(obj);
 };
 
+/**
+ * Transform an array of parameters (in nested array form) to a query string.
+ *
+ * @param  {Array}  array
+ * @return {String}
+ */
 var arrayToParams = function (array) {
   return _.map(array, function (args) {
-    return args[0] + '=' + args[1];
+    return encodeData(args[0]) + '=' + encodeData(args[1]);
   }).join('&');
 };
 
+/**
+ * Sort query string parameters by alphabetical order and turn in a string.
+ *
+ * @param  {Object} obj
+ * @return {String}
+ */
 var normaliseRequestParams = function (obj) {
   return arrayToParams(sortRequestParams(paramsToArray(obj)));
 };
 
+/**
+ * Create the base signature string for hashing.
+ *
+ * @param  {Object} data
+ * @return {String}
+ */
 var createSignatureBase = function (data) {
   return [
     data.method.toUpperCase(),
@@ -99,15 +135,22 @@ var createSignatureBase = function (data) {
   ].join('&');
 };
 
-var createSignature = function (base, data) {
+/**
+ * Generate a signature string combining the base signature with consumer
+ * secrets.
+ *
+ * @param  {String} base
+ * @param  {Object} data
+ * @return {String}
+ */
+var createSignature = function (base, options) {
   var key = [
-    encodeData(data.oauth1.consumerSecret),
-    encodeData(data.oauth1.oauthTokenSecret)
+    encodeData(options.consumerSecret), encodeData(options.oauthTokenSecret)
   ].join('&');
 
   var hash = '';
 
-  if (data.oauth1.signatureMethod === 'PLAINTEXT') {
+  if (options.signatureMethod === 'PLAINTEXT') {
     hash = key;
   } else {
     hash = crypto.createHmac('sha1', key).update(base).digest('base64');
@@ -116,11 +159,22 @@ var createSignature = function (base, data) {
   return hash;
 };
 
-var getSignature = function (data, parameters) {
-  var signatureBase = createSignatureBase(data, parameters);
-  return createSignature(signatureBase, data);
+/**
+ * Generate a signature from the AJAX data.
+ *
+ * @param  {Object} data
+ * @return {String}
+ */
+var getSignature = function (data) {
+  var signatureBase = createSignatureBase(data);
+  return createSignature(signatureBase, data.oauth1);
 };
 
+/**
+ * Generate a random nonce string.
+ *
+ * @return {String}
+ */
 var getNonce = function () {
   var chars = [
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
@@ -139,6 +193,12 @@ var getNonce = function () {
   return nonce;
 };
 
+/**
+ * Prepare ordered OAuth parameters based on the provided data.
+ *
+ * @param  {Object} data
+ * @return {Array}
+ */
 var prepareParameters = function (data) {
   data.url.query = _.extend({
     'oauth_timestamp':        getTimestamp(),
@@ -148,8 +208,13 @@ var prepareParameters = function (data) {
     'oauth_consumer_key':     data.oauth1.consumerKey
   }, data.url.query);
 
+  // Attach the token query parameter if we have one.
   if (data.oauth1.oauthToken) {
     data.url.query.oauth_token = data.oauth1.oauthToken;
+  }
+
+  if (data.oauth1.oauthCallback) {
+    data.url.query.oauth_callback = data.oauth1.oauthCallback;
   }
 
   var parameters = sortRequestParams(paramsToArray(data.url.query));
@@ -159,12 +224,24 @@ var prepareParameters = function (data) {
   return parameters;
 };
 
+/**
+ * Check whether the parameters name is a valid OAuth parameter.
+ *
+ * @param  {String}  param
+ * @return {Boolean}
+ */
 var isParamAnOAuthParameter = function (param) {
   return (/^oauth_/).test(param);
 };
 
-var buildAuthorizationHeaders = function (data, paramsArray) {
-  return 'OAuth ' + _.chain(paramsArray).filter(function (param) {
+/**
+ * Generate the Authorization header from an order parameter array.
+ *
+ * @param  {Array}  params
+ * @return {String}
+ */
+var buildAuthorizationHeaders = function (params) {
+  return 'OAuth ' + _.chain(params).filter(function (param) {
     return isParamAnOAuthParameter(param[0]);
   }).map(function (param) {
     return param[0] + '="' + param[1] + '"';
@@ -172,19 +249,18 @@ var buildAuthorizationHeaders = function (data, paramsArray) {
 };
 
 /**
- * Send a request for the request token.
+ * Send a request to get the initial OAuth request tokens.
  *
  * @param {String}   url
  * @param {Function} done
  */
 var getRequestToken = function (options, done) {
-  var uri      = options.requestTokenUri;
-  var callback = 'oauth_callback=' + encodeURIComponent(redirectUri);
-
   return App.middleware.trigger('ajax:oauth1', {
-    url:    uri + (uri.indexOf('?') > -1 ? '&' : '?') + callback,
+    url:    options.requestTokenUri,
     method: 'POST',
-    oauth1: options,
+    oauth1: _.extend({
+      oauthCallback: redirectUri
+    }, options),
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -204,18 +280,24 @@ var getRequestToken = function (options, done) {
   });
 };
 
-var getAccessToken = function (options, response, done) {
+/**
+ * Get the final access token by passing in the request options and the token
+ * verifier.
+ *
+ * @param {Object}   options
+ * @param {String}   verifier
+ * @param {Function} done
+ */
+var getAccessToken = function (options, verifier, done) {
   return App.middleware.trigger('ajax:oauth1', {
     url:    options.tokenCredentialsUri,
     method: 'POST',
-    oauth1: _.extend({
-      oauthToken: response.oauth_token
-    }, options),
+    oauth1: options,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     },
     data: qs.stringify({
-      'oauth_verifier': response.oauth_verifier
+      'oauth_verifier': verifier
     })
   }, function (err, xhr) {
     if (err) { return done(err); }
@@ -228,6 +310,8 @@ var getAccessToken = function (options, response, done) {
       oauthTokenSecret: response.oauth_token_secret
     };
 
+    // Delete data that has been pulled off the response object to avoid
+    // duplication.
     delete response.oauth_token;
     delete response.oauth_token_secret;
 
@@ -236,7 +320,7 @@ var getAccessToken = function (options, response, done) {
 };
 
 /**
- * Trigger the OAuth1 authentication flow.
+ * Trigger the full OAuth1 authentication flow.
  *
  * @param {Object}   options
  * @param {Function} done
@@ -279,7 +363,9 @@ var oauth1Flow = function (options, done) {
         return done(new Error('Invalid OAuth token response'));
       }
 
-      return getAccessToken(options, response, done);
+      return getAccessToken(_.extend({
+        oauthToken: response.oauth_token
+      }, options), response.oauth_verifier, done);
     };
   });
 };
@@ -327,20 +413,31 @@ module.exports = function (middleware) {
       return done(new TypeError('"oauth1" config object expected'), null);
     }
 
+    // Parse the url for augmenting the query string parameters. Needed in
+    // multiple places throughout the flow, so we can minimize the number of
+    // parses by doing it once at the start.
     data.url = url.parse(data.url, true);
 
+    // Delete parameters specific to re-adding the query string, since we need
+    // to regenerate the query string without OAuth params.
     delete data.url.href;
     delete data.url.path;
     delete data.url.search;
 
     var orderedParams = prepareParameters(data);
-    var authorization = buildAuthorizationHeaders(data, orderedParams);
+    var authorization = buildAuthorizationHeaders(orderedParams);
 
     data.headers.Authorization = authorization;
 
-    data.url.query = qs.stringify(_.filter(orderedParams, function (param) {
+    data.url.query = arrayToParams(_.filter(orderedParams, function (param) {
       return !isParamAnOAuthParameter(param[0]);
     }));
+
+    // Reattach the query string if we have one available.
+    if (data.url.query) {
+      data.url.search = '?' + data.url.query;
+      data.url.path   = data.url.pathname + data.url.search;
+    }
 
     data.url = url.format(data.url);
 
