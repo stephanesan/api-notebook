@@ -86,22 +86,31 @@ var erroredResponse = function (data) {
  * @param {Object}   response
  * @param {Function} done
  */
-var authResponse = function (response, done) {
+var authResponse = function (options, response, done) {
   if (erroredResponse(response)) {
     return done(new Error(erroredResponse(response)));
   }
 
   var data = {
-    accessToken: response.access_token,
-    response:    response // Allow access to the entire OAuth2 response.
+    scopes:      response.scope || options.scopes.join(' '),
+    accessToken: response.access_token
   };
+
+  var other = _.omit(response, [
+    'access_token', 'token_type', 'expires_in', 'scope', 'state', 'error',
+    'error_description', 'error_uri'
+  ]);
+
+  if (_.keys(other).length) {
+    data.other = other;
+  }
 
   if (response.token_type) {
     data.tokenType = response.token_type;
   }
 
   if (+response.expires_in) {
-    data.expiration = Date.now() + (response.expires_in * 1000);
+    data.expires = Date.now() + (response.expires_in * 1000);
   }
 
   return done(null, data);
@@ -149,7 +158,7 @@ var oauth2TokenFlow = function (options, done) {
     // Pass the response off for validation. At least Instagram has a bug where
     // the state is being passed back as part of the query string instead of the
     // hash, so we merge both options together.
-    return authResponse(response, done);
+    return authResponse(options, response, done);
   };
 };
 
@@ -229,7 +238,7 @@ var oAuth2CodeFlow = function (options, done) {
     }, function (err, xhr) {
       if (err) { return done(err); }
 
-      return authResponse(JSON.parse(xhr.responseText), done);
+      return authResponse(options, JSON.parse(xhr.responseText), done);
     });
   };
 };
@@ -337,6 +346,7 @@ module.exports = function (middleware) {
       // Update ajax data headers and url.
       data.url = url.format(uri);
       data.headers = _.extend(data.headers, {
+        'Pragma':        'no-store',
         'Cache-Control': 'no-store'
       });
     }
