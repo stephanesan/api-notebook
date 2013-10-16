@@ -514,7 +514,10 @@ var httpRequest = function (nodes, method) {
       if (authenticated) {
         if (scheme.type === 'OAuth 2.0') {
           request        = 'ajax:oauth2';
-          options.oauth2 = nodes.config.authentication[scheme.type];
+          options.oauth2 = authenticated;
+        } else if (scheme.type === 'OAuth 1.0') {
+          request        = 'ajax:oauth1';
+          options.oauth1 = authenticated;
         }
 
         return true;
@@ -732,13 +735,14 @@ var attachResources = function attachResources (nodes, context, resources) {
 };
 
 /**
- * Returns a function that can be used to authenticate with the API.
+ * Attach an authentication method that delegates to middleware.
  *
+ * @param  {String}   trigger
  * @param  {Array}    nodes
  * @param  {Object}   scheme
  * @return {Function}
  */
-var authenticateOAuth2 = function (nodes, scheme) {
+var authenticateMiddleware = function (trigger, nodes, scheme) {
   return function (data, done) {
     if (!_.isFunction(done)) {
       done = App._executeContext.async();
@@ -752,7 +756,7 @@ var authenticateOAuth2 = function (nodes, scheme) {
     App._executeContext.timeout(10 * 60 * 1000);
 
     App.middleware.trigger(
-      'authenticate:oauth2',
+      'authenticate:' + trigger,
       options,
       function (err, auth) {
         // Set the client authentication details. This will be used with any
@@ -762,6 +766,28 @@ var authenticateOAuth2 = function (nodes, scheme) {
       }
     );
   };
+};
+
+/**
+ * Returns a function that can be used to authenticate with Oauth1.
+ *
+ * @param  {Array}    nodes
+ * @param  {Object}   scheme
+ * @return {Function}
+ */
+var authenticateOAuth1 = function (nodes, scheme) {
+  return authenticateMiddleware('oauth1', nodes, scheme);
+};
+
+/**
+ * Returns a function that can be used to authenticate with OAuth2.
+ *
+ * @param  {Array}    nodes
+ * @param  {Object}   scheme
+ * @return {Function}
+ */
+var authenticateOAuth2 = function (nodes, scheme) {
+  return authenticateMiddleware('oauth2', nodes, scheme);
 };
 
 /**
@@ -784,12 +810,27 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
 
       context[methodName] = authenticateOAuth2(nodes, scheme);
       context[methodName][DESCRIPTION_PROPERTY] = _.extend(
-        toDescriptionObject(scheme), {
+        toDescriptionObject(scheme),
+        {
           // Don't expect anything to parse this since it deviates from the
           // Tern.js spec. However, it is somewhat more useful to read.
           '!type': [
             'fn(options: {',
             'clientId: string, clientSecret' + isImplicit + ': string',
+            '})'
+          ].join(' ')
+        }
+      );
+    }
+
+    if (scheme.type === 'OAuth 1.0') {
+      context[methodName] = authenticateOAuth1(nodes, scheme);
+      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
+        toDescriptionObject(scheme),
+        {
+          '!type': [
+            'fn(options: { ',
+            'consumerKey: string, consumerSecret: string',
             '})'
           ].join(' ')
         }

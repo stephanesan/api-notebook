@@ -110,17 +110,12 @@ var authResponse = function (options, response, done) {
 
   var data = {
     scope:       response.scope || options.scope,
+    response:    _.omit(response, [
+      'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope',
+      'state', 'error', 'error_description', 'error_uri'
+    ]),
     accessToken: response.access_token
   };
-
-  var other = _.omit(response, [
-    'access_token', 'token_type', 'expires_in', 'scope', 'state', 'error',
-    'error_description', 'error_uri'
-  ]);
-
-  if (_.keys(other).length) {
-    data.other = other;
-  }
 
   if (response.token_type) {
     data.tokenType = response.token_type;
@@ -128,6 +123,10 @@ var authResponse = function (options, response, done) {
 
   if (+response.expires_in) {
     data.expires = Date.now() + (response.expires_in * 1000);
+  }
+
+  if (response.refresh_token) {
+    data.refreshToken = response.refresh_token;
   }
 
   return done(null, data);
@@ -157,13 +156,9 @@ var oauth2TokenFlow = function (options, done) {
     'response_type': 'token'
   }), done);
 
-  global.authenticateOauth2 = function (href) {
+  global.authenticateOAuth2 = function (href) {
     popup.close();
-    delete global.authenticateOauth2;
-
-    if (href.substr(0, redirectUri.length) !== redirectUri) {
-      return done(new Error('Invalid redirect uri'));
-    }
+    delete global.authenticateOAuth2;
 
     var uri      = url.parse(href, true);
     var response = _.extend(qs.parse(uri.hash.substr(1)), uri.query);
@@ -282,7 +277,7 @@ var proxyDone = function (done) {
  */
 module.exports = function (middleware) {
   /**
-   * Trigger authentication via OAuth2 in the browser. Valid data properties:
+   * Trigger authentication via OAuth2.0 in the browser. Valid data properties:
    *
    *   `accessTokenUrl`      - "https://www.example.com/oauth2/token"
    *   `authorizationUrl`    - "https://www.example.com/oauth2/authorize"
@@ -345,7 +340,8 @@ module.exports = function (middleware) {
   });
 
   /**
-   * Add a new ajax flow for oauth2-based URLs.
+   * Allow a new ajax flow for OAuth2-based URLs. Accepts an `oauth2` property
+   * on the data object in the format that is returned from the middleware.
    *
    * @param {Object}   data
    * @param {Function} next
@@ -353,13 +349,13 @@ module.exports = function (middleware) {
    */
   middleware.core('ajax:oauth2', function (data, next, done) {
     if (!_.isObject(data.oauth2) || !data.oauth2.accessToken) {
-      return done(new Error('OAuth2 XHR: "accessToken" is missing'), null);
+      return done(new TypeError('"oauth2" config object expected'), null);
     }
 
     if (data.oauth2.tokenType === 'bearer') {
-      data.headers = _.extend({
+      data.headers = _.extend(data.headers, {
         'Authorization': 'Bearer ' + data.oauth2.accessToken
-      }, data.headers);
+      });
     } else {
       // Add the access token to the request query.
       var uri = url.parse(data.url, true);
