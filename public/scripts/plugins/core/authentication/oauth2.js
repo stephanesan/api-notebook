@@ -81,6 +81,23 @@ var erroredResponse = function (data) {
 };
 
 /**
+ * Fix passed in options objects.
+ *
+ * @param  {Object} options
+ * @return {Object}
+ */
+var sanitizeOptions = function (options) {
+  // Fix up reference to the `scopes` array.
+  options.scope = options.scopes;
+
+  if (_.isArray(options.scope)) {
+    options.scope = options.scopes.join(' ');
+  }
+
+  return options;
+};
+
+/**
  * Validate an OAuth2 response object.
  *
  * @param {Object}   response
@@ -92,7 +109,7 @@ var authResponse = function (options, response, done) {
   }
 
   var data = {
-    scopes:      response.scope || options.scopes.join(' '),
+    scope:       response.scope || options.scope,
     accessToken: response.access_token
   };
 
@@ -134,7 +151,7 @@ var oauth2TokenFlow = function (options, done) {
   var state = ('' + Math.random()).substr(2);
   var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
     'state':         state,
-    'scope':         options.scopes.join(' '),
+    'scope':         options.scope,
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'token'
@@ -188,7 +205,7 @@ var oAuth2CodeFlow = function (options, done) {
   var state = ('' + Math.random()).substr(2);
   var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
     'state':         state,
-    'scope':         options.scopes.join(' '),
+    'scope':         options.scope,
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'code'
@@ -279,6 +296,11 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('authenticate:oauth2', function (data, next, done) {
+    // Sanitize authorization grants to an array.
+    if (_.isString(data.authorizationGrants)) {
+      data.authorizationGrants = [data.authorizationGrants];
+    }
+
     // Use insection to get the accepted grant types in the order of the
     // supported grant types (which are ordered by preference).
     var grantType = _.intersection(
@@ -307,7 +329,7 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('authenticate:oauth2:code', function (data, next, done) {
-    return oAuth2CodeFlow(data, proxyDone(done));
+    return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
   });
 
   /**
@@ -319,7 +341,7 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('authenticate:oauth2:token', function (data, next, done) {
-    return oauth2TokenFlow(data, proxyDone(done));
+    return oauth2TokenFlow(sanitizeOptions(data), proxyDone(done));
   });
 
   /**
