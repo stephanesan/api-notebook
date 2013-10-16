@@ -512,12 +512,14 @@ var httpRequest = function (nodes, method) {
       var authenticated = nodes.config.authentication[scheme.type];
 
       if (authenticated) {
+        var data = _.extend({}, scheme, authenticated);
+
         if (scheme.type === 'OAuth 2.0') {
           request        = 'ajax:oauth2';
-          options.oauth2 = authenticated;
+          options.oauth2 = data;
         } else if (scheme.type === 'OAuth 1.0') {
           request        = 'ajax:oauth1';
-          options.oauth1 = authenticated;
+          options.oauth1 = data;
         }
 
         return true;

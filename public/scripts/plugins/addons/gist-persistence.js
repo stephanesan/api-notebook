@@ -36,9 +36,7 @@ var authenticatedUserId = function (done) {
   }, function (err, xhr) {
     var content;
 
-    if (err) {
-      return done(err);
-    }
+    if (err) { return done(err); }
 
     try {
       content = JSON.parse(xhr.responseText);
@@ -69,11 +67,9 @@ var authenticatePlugin = function (data, next, done) {
     clientSecret:        '', // Injected by proxy
     accessTokenUrl:      TOKEN_URL,
     authorizationUrl:    AUTH_URL,
-    authorizationGrants: ['code']
+    authorizationGrants: 'code'
   }, function (err, auth) {
-    if (err) {
-      return next(err);
-    }
+    if (err) { return next(err); }
 
     oauth2Store.set(auth);
 

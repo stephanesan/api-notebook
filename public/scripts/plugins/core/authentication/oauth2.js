@@ -210,9 +210,9 @@ var oAuth2CodeFlow = function (options, done) {
    * Assigns a global variable that the oauth authentication window should
    * be able to access and send the callback data.
    */
-  global.authenticateOauth2 = function (href) {
+  global.authenticateOAuth2 = function (href) {
     popup.close();
-    delete global.authenticateOauth2;
+    delete global.authenticateOAuth2;
 
     // Parse the url and prepare to do an POST request to get the access token.
     var query = url.parse(href, true).query;
@@ -353,9 +353,9 @@ module.exports = function (middleware) {
     }
 
     if (data.oauth2.tokenType === 'bearer') {
-      data.headers = _.extend(data.headers, {
+      data.headers = _.extend({
         'Authorization': 'Bearer ' + data.oauth2.accessToken
-      });
+      }, data.headers);
     } else {
       // Add the access token to the request query.
       var uri = url.parse(data.url, true);
@@ -363,10 +363,10 @@ module.exports = function (middleware) {
 
       // Update ajax data headers and url.
       data.url = url.format(uri);
-      data.headers = _.extend(data.headers, {
+      data.headers = _.extend({
         'Pragma':        'no-store',
         'Cache-Control': 'no-store'
-      });
+      }, data.headers);
     }
 
     // Trigger the regular ajax method.
