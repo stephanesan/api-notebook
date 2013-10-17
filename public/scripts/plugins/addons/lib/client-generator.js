@@ -620,6 +620,12 @@ var attachHeaders = function (nodes, context, methods) {
 
 /* jshint -W003 */
 var attachMethods = function (nodes, context, methods) {
+  // Skip attaching any method related methods if it there aren't any methods at
+  // this endpoint.
+  if (methods == null || !_.keys(methods).length) {
+    return context;
+  }
+
   var newContext, routeNodes;
 
   attachQuery(nodes, context, methods);
@@ -761,7 +767,7 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
       function (err, auth) {
         // Set the client authentication details. This will be used with any
         // http requests that require the authentication type.
-        nodes.config.authentication[scheme.type] = _.defaults(auth, options);
+        nodes.config.authentication[scheme.type] = _.extend({}, auth, options);
         return done(err, auth);
       }
     );
