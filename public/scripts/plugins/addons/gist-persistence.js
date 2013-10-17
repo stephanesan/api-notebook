@@ -130,7 +130,7 @@ var loadPlugin = function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-var savePlugin = function (data, next, done) {
+var savePlugin = function (data, next) {
   if (!data.isAuthenticated()) {
     return next();
   }
