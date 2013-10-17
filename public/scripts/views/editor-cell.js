@@ -224,6 +224,9 @@ EditorCell.prototype.removeEditor = function (copyDoc) {
   var doc;
 
   if (editor) {
+    // Cache history for cell re-renders.
+    this._history = this.editor.doc.getHistory();
+
     this.unbindEditor();
     delete this.editor;
 
@@ -263,6 +266,7 @@ EditorCell.prototype.renderEditor = function () {
     readOnly: !this.isOwner()
   }));
 
+  // Add an extra css class for helping with styling read-only editors.
   if (this.editor.getOption('readOnly')) {
     this.editor.getWrapperElement().className += ' CodeMirror-readOnly';
   }
@@ -288,6 +292,15 @@ EditorCell.prototype.renderEditor = function () {
   // Bind the editor events at the end in case of any focus issues when
   // changing docs, etc.
   this.bindEditor();
+
+  // Swap the previous history in place. Otherwise, assume this is a brand new
+  // editor instance and clear all history.
+  if (this._history) {
+    this.editor.doc.setHistory(this._history);
+    delete this._history;
+  } else {
+    this.editor.doc.clearHistory();
+  }
 
   return this;
 };
