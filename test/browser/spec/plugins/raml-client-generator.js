@@ -777,23 +777,39 @@ describe('RAML Client Generator Plugin', function () {
         });
       });
 
+      it('should not show query and other method functions when we can\'t execute a request', function (done) {
+        testAutocomplete('example.validation.', function (results) {
+          expect(results)
+            .to.not.include('query')
+            .and.not.include('headers');
+          return done();
+        });
+      });
+
       it('should not repeat query or other routes after using query', function (done) {
         testAutocomplete('example.collection.query("test=true").', function (results) {
-          expect(results).to.not.include.members(['collectionId', 'query']);
+          expect(results)
+            .to.not.include('collectionId')
+            .and.not.include('query');
           return done();
         });
       });
 
       it('should not repeat headers or other routes after using headers', function (done) {
         testAutocomplete('example.collection.headers({ test: true }).', function (results) {
-          expect(results).to.not.include.members(['collectionId', 'headers']);
+          expect(results)
+            .to.not.include('collectionId')
+            .and.not.include('headers');
           return done();
         });
       });
 
       it('should not repeat either headers or query after using both', function (done) {
         testAutocomplete('example.collection.headers({ test: true }).query("test=true").', function (results) {
-          expect(results).to.not.include.members(['collectionId', 'headers', 'query']);
+          expect(results)
+            .to.not.include('collectionId')
+            .and.not.include('headers')
+            .and.not.include('query');
           return done();
         });
       });
