@@ -255,13 +255,14 @@ Persistence.prototype.fork = function () {
     this.set('originalId', this.get('id'));
   }
 
-  // Reset the state to default.
-  Backbone.history.navigate('');
-  this._changeState(Persistence.NULL);
-
   // Removes the notebook id and sets the user id to the current user.
   this.set('id', null);
   this.set('ownerId', this.get('userId'));
+
+  // Reset the state to default and save.
+  Backbone.history.navigate('');
+  this._changeState(Persistence.NULL);
+  this.save();
 };
 
 /**
