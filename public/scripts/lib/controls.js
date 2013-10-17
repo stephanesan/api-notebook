@@ -152,10 +152,10 @@ defineEditorShortcut({
 });
 
 defineEditorShortcut({
-  label: 'Toggle Comments',
-  command: 'toggleComments',
+  label: 'Toggle Comment',
+  command: 'toggleComment',
   keyMap: [isMac ? 'Cmd' : 'Ctrl', '/'],
-  description: 'Toggle the selected line comments'
+  description: 'Toggle comments on the current line'
 });
 
 defineCodeShortcut({

@@ -130,7 +130,7 @@ EditorCell.prototype.newLineBelow = ownerProtect(function () {
   });
 });
 
-EditorCell.prototype.toggleComments = ownerProtect(function () {
+EditorCell.prototype.toggleComment = ownerProtect(function () {
   this.editor.execCommand('toggleComment');
 });
 
