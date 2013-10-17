@@ -122,7 +122,7 @@ Store.prototype.customStore = function (name) {
     _prefix: name
   });
 
-  return new CustomStore();
+  return (this._ = this._ || {})[name] = new CustomStore();
 };
 
 /**

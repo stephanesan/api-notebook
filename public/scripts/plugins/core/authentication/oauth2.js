@@ -163,6 +163,10 @@ var oauth2TokenFlow = function (options, done) {
     var uri      = url.parse(href, true);
     var response = _.extend(qs.parse(uri.hash.substr(1)), uri.query);
 
+    if (href.substr(0, redirectUri.length) !== redirectUri) {
+      return done(new Error('Invalid redirect uri'));
+    }
+
     if (response.state !== state) {
       return done(new Error('State mismatch'));
     }
