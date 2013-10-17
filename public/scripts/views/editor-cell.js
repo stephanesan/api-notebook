@@ -120,6 +120,7 @@ EditorCell.prototype.appendNew = ownerProtect(function () {
 EditorCell.prototype.focus = function () {
   // Set a hidden focus flag so we can use it to check in tests
   this._hasFocus = true;
+
   // Make focusing the editor async since it triggers other events such as
   // scrolling into view which interferes with iframe resizing events.
   process.nextTick(_.bind(this.editor.focus, this.editor));
@@ -216,32 +217,25 @@ EditorCell.prototype.unbindEditor = function () {
 /**
  * Remove the CodeMirror view from the DOM.
  *
- * @param  {Boolean} copyDoc
- * @return {CodeMirror.Doc}
+ * @return {EditorCell}
  */
-EditorCell.prototype.removeEditor = function (copyDoc) {
-  var editor = this.editor;
-  var doc;
+EditorCell.prototype.removeEditor = function () {
+  if (!this.editor) { return this; }
 
-  if (editor) {
-    // Cache history for cell re-renders.
-    this._history = this.editor.doc.getHistory();
+  // Cache history for cell re-renders.
+  this._history = this.editor.doc.getHistory();
+  this.unbindEditor();
 
-    this.unbindEditor();
-    delete this.editor;
-
-    if (copyDoc) {
-      doc = editor.doc.copy(true);
-    }
-
-    // Remove the old CodeMirror instance from the DOM
-    var editorEl = editor.getWrapperElement();
-    if (editorEl && editorEl.parentNode) {
-      editorEl.parentNode.removeChild(editorEl);
-    }
+  // Remove the old CodeMirror instance from the DOM.
+  var editorEl = this.editor.getWrapperElement();
+  if (editorEl && editorEl.parentNode) {
+    editorEl.parentNode.removeChild(editorEl);
   }
 
-  return doc;
+  // Delete any reference to the CodeMirror instance.
+  delete this.editor;
+
+  return this;
 };
 
 /**
@@ -250,15 +244,11 @@ EditorCell.prototype.removeEditor = function (copyDoc) {
  * @return {EditorCell}
  */
 EditorCell.prototype.renderEditor = function () {
-  var doc, hasFocus;
-
-  if (this.editor) {
-    hasFocus = this.editor.hasFocus();
-    doc      = this.removeEditor(true);
-  }
+  // Remove the currently rendered editor from all references.
+  this.removeEditor();
 
   // If an editor already exists, rerender the editor keeping the same options
-  // Initialize the codemirror editor
+  // Initialize the codemirror editor.
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({}, this.editorOptions, {
@@ -271,23 +261,15 @@ EditorCell.prototype.renderEditor = function () {
     this.editor.getWrapperElement().className += ' CodeMirror-readOnly';
   }
 
-  // Move the state of the editor
-  if (doc) {
-    this.editor.swapDoc(doc);
-  }
-
   // Alias the current view to the editor, since keyMaps are shared between
-  // all instances of CodeMirror
+  // all instances of CodeMirror.
   this.editor.view = this;
 
-  // Set the editor value if it already exists
+  // Set the editor value if it already exists.
   if (this.getValue()) {
     this.editor.setValue(this.getValue());
     this.moveCursorToEnd();
   }
-
-  // If it was previously focused, let's focus the editor again
-  if (hasFocus) { this.focus(); }
 
   // Bind the editor events at the end in case of any focus issues when
   // changing docs, etc.
