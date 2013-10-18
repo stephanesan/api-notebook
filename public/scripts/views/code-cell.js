@@ -256,7 +256,11 @@ CodeCell.prototype.render = function () {
   this.resultCell.render().appendTo(this.el);
 
   this.el.appendChild(
-    domify('<span class="comment icon-comment"></span>')
+    domify(
+      '<span class="comment">' +
+        '<span class="insert-dot icon-plus-circled"></span>' +
+      '</span>'
+    )
   );
 
   return this;

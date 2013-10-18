@@ -311,6 +311,11 @@ App.prototype.render = function () {
       'to save the notebook.</p>' +
     '</div>' +
 
+    '<div class="insert-buttons">' +
+      '<button> Insert Comment Cell</button>' +
+      '<button> Insert Code Cell</button>' +
+    '</div>' +
+
     '<div class="modal-backdrop"></div>'
   ));
 
