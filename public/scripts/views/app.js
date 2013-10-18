@@ -285,13 +285,27 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="auth-status"></div>' +
-      '<div class="save-status"></div>' +
-      '<div class="toolbar-buttons">' +
-        '<button class="btn-text notebook-fork">Make my own copy</button>' +
-        '<button class="btn-text notebook-clone">Make another copy</button>' +
-        '<button class="btn-round ir notebook-exec">Run All</button>' +
-        '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+      '<div class="inner">' +
+        '<div class="auth-status"></div>' +
+        '<div class="save-status"></div>' +
+        '<div class="toolbar-buttons">' +
+          '<button class="btn-text toggle-notebook-view btn-edit">' +
+            'Return to notebook view' +
+          '</button>' +
+          '<span class="btn-view">' +
+            '<button class="btn-text notebook-fork">' +
+              'Make my own copy' +
+            '</button>' +
+            '<button class="btn-text notebook-clone">' +
+              'Make another copy' +
+            '</button>' +
+            '<button class="btn-round ir notebook-exec">Run All</button>' +
+            '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+          '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="toolbar-end">'+
+        '<button class="btn-round edit-source toggle-notebook-edit"></button>' +
       '</div>' +
     '</div>' +
 
@@ -347,10 +361,6 @@ App.prototype.render = function () {
 
   this.el.appendChild(domify(
     '<div class="notebook">' +
-      '<div class="notebook-toggle clearfix">' +
-        '<button class="toggle-notebook-view">Done</button>' +
-        '<button class="toggle-notebook-edit">Edit as Markdown</button>' +
-      '</div>' +
     '</div>'
   ));
 

@@ -8,21 +8,6 @@
   border-top: 0
   border-radius: 0 0 5px 5px
   background: #fff
-  > .notebook-toggle
-    > button
-      float: right
-      color: #333
-      font-size: 13px
-      border: 0
-      padding: 0.4em 0.6em
-      background: transparent
-    > button:hover,
-    > button:focus
-      text-decoration: underline
-    .notebook-view-active & > .toggle-notebook-view
-      display: none
-    .notebook-edit-active & > .toggle-notebook-edit
-      display: none
   > .notebook-content
     padding: 0.5em 2em
 
@@ -117,24 +102,42 @@
 .notebook-toolbar
   border: solid 1px #CCC
   background-color: #F4F4F4
-  padding: 0.5em 2em
   font-size: .8em
-  .auth-status
+  position: relative
+  .inner
     float: left
-    font-weight: bold
-    margin-top: 0.5em
-  .save-status
-    float: left
-    font-style: italic
-    margin: 0.6em 0 0 0.5em
-  .toolbar-buttons
-    float: right
-    button
-      float: left
-      margin-right: 1em
-      line-height: 28px
-    button:last-child
-      margin-right: 0
+    padding: 0.5em 2em
+    width: 90%
+    .auth-status
+      display: inline-block
+      font-weight: bold
+      margin-top: 0.5em
+    .save-status
+      display: inline-block
+      font-style: italic
+      margin: 0.6em 0 0 0.5em
+    .toolbar-buttons
+      float: right
+      text-align: right
+      button
+        float: left
+        margin-right: 1em
+        line-height: 28px
+      button:last-child
+        margin-right: 0
+      .notebook-view-active & > .btn-edit
+          display: none
+      .notebook-edit-active & > .btn-view
+        display: none
+  .toolbar-end
+    position: absolute
+    right: 0
+    border-left: 1px solid #B2B2B2
+    background: #E5E5E5
+    width: 5%
+    height: 100%
+  .notebook-edit-active & > .toolbar-end
+    background: #F9F9F9
 
 .notebook-raw > pre
   border: 0
