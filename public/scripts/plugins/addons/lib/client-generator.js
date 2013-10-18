@@ -672,7 +672,7 @@ var attachResources = function attachResources (nodes, context, resources) {
 
         // If the route is only a template tag with no static text, use the
         // template tag text as the method name.
-        if (templateCount === 1 && '{' + templateTags[0] + '}' === route) {
+        if (templateCount === 1 && route === '{' + templateTags[0] + '}') {
           routeName = templateTags.pop();
         } else {
           routeName = route.substr(0, route.indexOf('{'));
@@ -707,18 +707,28 @@ var attachResources = function attachResources (nodes, context, resources) {
           return attachResources(routeNodes, newContext, resources);
         }, context[routeName]);
 
+        // Get the ordered tag names for completion.
+        var tags = _.map(
+          route.match(uriParamRegex(resource.uriParameters)),
+          function (param) {
+            return resource.uriParameters[param.slice(1, -1)];
+          }
+        );
+
         // Generate the description object for helping tooltip display.
         context[routeName][DESCRIPTION_PROPERTY] = {
-          '!type': 'fn(' + _.map(
-            route.match(uriParamRegex(resource.uriParameters)),
-            function (parameter) {
-              var name    = parameter.slice(1, -1);
-              var param   = resource.uriParameters[name];
-              var display = param.displayName + (!param.required ? '?' : '');
+          // Create a function type hint based on the display name and whether
+          // the tag is required.
+          '!type': 'fn(' + _.map(tags, function (param) {
+            var displayName = param.displayName + (!param.required ? '?' : '');
 
-              return display + ': ' + (param.type || '?');
-            }
-          ).join(', ') + ')'
+            return displayName + ': ' + (param.type || '?');
+          }).join(', ') + ')',
+          // Generate documentation by joining all the template descriptions
+          // together with new lines.
+          '!doc': _.map(_.uniq(tags), function (param) {
+            return '"' + param.displayName + '": ' + param.description;
+          }).join('\n')
         };
 
         // Generate the return property for helping autocompletion.

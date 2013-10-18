@@ -48,7 +48,7 @@ Tooltip.prototype.render = function () {
     docEl.appendChild(document.createTextNode(description['!doc']));
 
     if (description['!url']) {
-      docEl.appendChild(document.createTextNode(' '));
+      docEl.appendChild(document.createTextNode(' — '));
 
       var infoEl = docEl.appendChild(document.createElement('a'));
       infoEl.href      = description['!url'];
