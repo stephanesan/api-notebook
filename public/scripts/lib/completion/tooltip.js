@@ -64,7 +64,7 @@ Tooltip.prototype.render = function () {
   this.reposition();
 
   // Listen to changes in the viewport size and reposition the tooltip.
-  state.on('change:window.width', this.onResize = _.bind(
+  state.on('change:viewportWidth', this.onResize = _.bind(
     this.reposition, this
   ));
 
@@ -77,20 +77,37 @@ Tooltip.prototype.render = function () {
  * @return {[type]} [description]
  */
 Tooltip.prototype.reposition = function () {
-  var pos = this.completion.cm.cursorCoords(this.data.to);
+  var pos       = this.completion.cm.cursorCoords(this.data.to);
+  var posWindow = this.completion.cm.cursorCoords(this.data.to, 'window');
 
-  this._tooltip.style.position = 'absolute';
-  this._tooltip.style.top      = pos.bottom + 'px';
-  this._tooltip.style.left     = pos.left   + 'px';
+  this._tooltip.style.top  = pos.bottom + 'px';
+  this._tooltip.style.left = pos.left   + 'px';
 
-  var tooltip    = this._tooltip.getBoundingClientRect();
-  var winWidth   = state.get('window.width');
-  var rightWidth = tooltip.right - tooltip.left;
+  var tooltipPos   = this._tooltip.getBoundingClientRect();
+  var winWidth     = state.get('viewportWidth');
+  var winHeight    = state.get('viewportHeight');
+  var rightWidth   = winWidth  - posWindow.right;
+  var bottomHeight = winHeight - posWindow.bottom;
 
-  if (tooltip.right > winWidth - 5 && tooltip.left > rightWidth) {
+  if (tooltipPos.right > winWidth - 5 && tooltipPos.left > rightWidth) {
+    var docWidth = document.documentElement.scrollWidth;
+
     this._tooltip.className += ' CodeMirror-tooltip-right';
     this._tooltip.style.left  = 'auto';
-    this._tooltip.style.right = winWidth - pos.left + 'px';
+    this._tooltip.style.right = docWidth - pos.right + 'px';
+  }
+
+  if (tooltipPos.bottom > winHeight - 5 && posWindow.top > bottomHeight) {
+    this._tooltip.style.display = 'none';
+
+    // Get the document height after hiding the tooltip since it can affect the
+    // document height.
+    var docHeight = document.documentElement.scrollHeight;
+
+    this._tooltip.className += ' CodeMirror-tooltip-top';
+    this._tooltip.style.top     = 'auto';
+    this._tooltip.style.bottom  = docHeight - pos.top + 'px';
+    this._tooltip.style.display = 'block';
   }
 
   return this;
@@ -107,7 +124,7 @@ Tooltip.prototype.removeTooltip = function () {
     delete this._tooltip;
   }
 
-  state.off('change:window.width', this.onResize);
+  state.off('change:viewportWidth', this.onResize);
   delete this.onResize;
 
   return this;
