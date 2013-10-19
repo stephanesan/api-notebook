@@ -48,7 +48,7 @@
     "mocha": "~1.13.0"
   },
   "engines": {
-    "node": "0.10.17"
+    "node": "0.10.21"
   },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
