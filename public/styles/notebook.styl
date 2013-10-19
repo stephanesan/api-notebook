@@ -79,65 +79,64 @@
   &.result-error
     color: $color-error-text
 
-.cell-code > .comment
-  cursor: pointer
-  position: absolute
-  width: 100%
+.cell > .cell-insert
   top: -8px
-  border-bottom: dotted 1px #E5E5E5
+  width: 100%
+  position: absolute
+  border-bottom: dotted 1px #e5e5e5
   .insert-dot
+    cursor: pointer
     position: absolute
+    top: 0
     left: 50%
-    top: -5px
-    font-size: .4em
     padding: 0 4px
-    color: #EAEAEA
+    margin-top: -5px
+    margin-left: -10px
+    color: #eaeaea
+    font-size: 0.4em
     text-shadow: 0px -1px 1px rgba(128, 128, 128, 0.6)
-    background-color: #FFF
-  &:hover
-    border-bottom: dotted 1px #A5A5A5
-    .insert-dot
-      color: #A5A5A5
-  .user-not-owner &
-    display: none
+    background-color: #fff
+    &:hover
+      color: #a5a5a5
 
-.insert-buttons
+.cell > .cell-insert-bottom
+  display: none
+  top: auto
+  bottom: -8px
+
+.cell:last-child > .cell-insert-bottom
+  display: block
+
+.user-not-owner .cell > .cell-insert
+  display: none
+
+.cell-insert-buttons
+  display: none
   position: absolute
   left: 50%
-  margin-left: -145px
-  top: 140px
   z-index: 1001
-  border-radius: 3px
-  border: solid 1px #BFBFBF
-  background: linear-gradient(top, #fff 0%, #E6E6E6 100%)
-  box-shadow 1px 1px 3px #BFBFBF
-  button
+  margin-top: -15px
+  margin-left: -160px
+  .btn
+    width: @margin-left * -1
     color: #333
-    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75)
-    border: 0
-    border-left: solid 1px #BFBFBF
-    background: transparent
+    float: left
+    padding: 0.5em 1.5em
     font-size: 0.8em
-    padding: .5em 1.5em
+    border: solid 1px #bfbfbf
+    background: linear-gradient(#fff, #e6e6e6)
+    box-shadow: 0 1px 3px #bfbfbf
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75)
     &:hover
       color: #333333
       background: #e7e7e7
-  button:first-child
-    border-left: 0
+  .btn:first-child
     border-radius: left 3px
-  button:last-child
+  .btn:last-child
+    margin-left: -1px
     border-radius: right 3px
-
-.cell-text > .comment
-  position: absolute
-  top: 50%
-  left: -1.5em
-  margin-top: -0.5em
-  font-family: monospace
-
-.cell-text > .comment-close
-  left: auto
-  right: -20px
+  .cell-insert-hover &
+    display: block
 
 .markdown
   padding: 16px
@@ -153,8 +152,8 @@
     margin: 0 0 24px
 
 .notebook-toolbar
-  border: solid 1px #CCC
-  background-color: #F4F4F4
+  border: solid 1px #ccc
+  background-color: #f4f4f4
   font-size: .8em
   position: relative
   .toolbar-inner

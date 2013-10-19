@@ -20,13 +20,13 @@ var TextCell = module.exports = EditorCell.extend({
  *
  * @type {Object}
  */
-TextCell.prototype.events = _.extend({}, EditorCell.prototype.events, {
+TextCell.prototype.events = _.extend({
   'click': function () {
-    if (!this.hasFocus()) {
-      this.focus();
-    }
+    if (this.hasFocus()) { return; }
+
+    return this.focus();
   }
-});
+}, EditorCell.prototype.events);
 
 /**
  * The fallback model instance.
@@ -188,22 +188,6 @@ TextCell.prototype.renderEditor = function () {
   }
 
   process.nextTick(function () { messages.trigger('resize'); }, 0);
-
-  return this;
-};
-
-/**
- * Render the text cell instance.
- *
- * @return {TextCell}
- */
-TextCell.prototype.render = function () {
-  EditorCell.prototype.render.call(this);
-
-  this.el.appendChild(domify(
-    '<div class="comment comment-open">/*</div>' +
-    '<div class="comment comment-close">*/</div>'
-  ));
 
   return this;
 };

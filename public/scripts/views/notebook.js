@@ -293,6 +293,30 @@ Notebook.prototype.appendView = function (view, before) {
       this.refreshFromView(this.getPrevView(view));
     });
 
+    this.listenTo(view, 'newTextAbove', function (view) {
+      var newView = this.appendTextView(function (el) {
+        view.el.parentNode.insertBefore(el, view.el);
+      }).focus();
+      this.refreshFromView(newView);
+    });
+
+    this.listenTo(view, 'newCodeAbove', function (view) {
+      var newView = this.appendCodeView(function (el) {
+        view.el.parentNode.insertBefore(el, view.el);
+      }).focus();
+      this.refreshFromView(newView);
+    });
+
+    this.listenTo(view, 'newTextBelow', function (view) {
+      this.appendTextView(view.el).focus();
+      this.refreshFromView(view.el);
+    });
+
+    this.listenTo(view, 'newCodeBelow', function (view) {
+      this.appendCodeView(view.el).focus();
+      this.refreshFromView(view.el);
+    });
+
     // Listen to clone events and append the new views after the current view
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
@@ -379,19 +403,6 @@ Notebook.prototype.appendView = function (view, before) {
       } else {
         this.getNextView(view).moveCursorToEnd().focus();
       }
-    });
-
-    this.listenTo(view, 'documentation', function (view) {
-      var prevView = this.getPrevView(view);
-
-      if (prevView instanceof TextView) {
-        prevView.moveCursorToEnd().focus();
-        return CodeMirror.commands.newlineAndIndent(prevView.editor);
-      }
-
-      this.appendTextView(function (el) {
-        view.el.parentNode.insertBefore(el, view.el);
-      }).focus();
     });
 
     this.listenTo(view, 'text', function (view, text) {

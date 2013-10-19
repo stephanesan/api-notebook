@@ -1,4 +1,5 @@
 var _            = require('underscore');
+var domify       = require('domify');
 var Cell         = require('./cell');
 var BtnControls  = require('./btn-cell-controls');
 var extraKeys    = require('./lib/extra-keys');
@@ -32,6 +33,18 @@ EditorCell.prototype.initialize = function () {
  * @type {Function}
  */
 EditorCell.prototype.EditorModel = require('../models/cell');
+
+/**
+ * Event listeners for all editor cells in the notebook.
+ *
+ * @type {Object}
+ */
+EditorCell.prototype.events = {
+  'click .cell-insert-top .btn-insert-text':    'newTextAbove',
+  'click .cell-insert-top .btn-insert-code':    'newCodeAbove',
+  'click .cell-insert-bottom .btn-insert-text': 'newTextBelow',
+  'click .cell-insert-bottom .btn-insert-code': 'newCodeBelow'
+};
 
 /**
  * Set the base editor options used in CodeMirror.
@@ -319,10 +332,46 @@ EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
 
+  var insertContents = [
+    '<span class="insert-dot icon-plus-circled"></span>',
+    '<div class="cell-insert-buttons">',
+    '<button class="btn btn-insert-text">Insert Comment Cell</button>',
+    '<button class="btn btn-insert-code">Insert Code Cell</button>',
+    '</div>',
+  ].join('\n');
+
+  this.el.appendChild(domify([
+    '<span class="cell-insert cell-insert-top">',
+    insertContents,
+    '</span>',
+    '<span class="cell-insert cell-insert-bottom">',
+    insertContents,
+    '</span>'
+  ].join('\n')));
+
   this.listenTo(this.btnControls, 'showControls', function () {
     this.trigger('showControls', this);
   }, this);
   this.btnControls.render().prependTo(this.el);
+
+  /**
+   * Attach hover listeners to the cell insert bars, which will display the
+   * insert buttons.
+   */
+  _.each(this.el.querySelectorAll('.cell-insert'), function (el) {
+    var hoverTimeout;
+
+    el.addEventListener('mouseenter', _.bind(function () {
+      hoverTimeout = setTimeout(_.bind(function () {
+        this.el.classList.add('cell-insert-hover');
+      }, this), 300);
+    }, this));
+
+    el.addEventListener('mouseleave', _.bind(function () {
+      clearTimeout(hoverTimeout);
+      this.el.classList.remove('cell-insert-hover');
+    }, this));
+  }, this);
 
   return this;
 };
@@ -403,3 +452,21 @@ EditorCell.prototype.appendTo = function (el) {
 EditorCell.prototype.isOwner = function () {
   return persistence.isOwner();
 };
+
+/**
+ * Inserts new cells around the current cell.
+ */
+var triggerSelfAndHideButtons = function (obj, method) {
+  obj[method] = ownerProtect(function () {
+    this.trigger(method, this);
+    this.el.classList.remove('cell-insert-hover');
+  });
+};
+
+/**
+ * Attach numerous listeners that just trigger events.
+ */
+triggerSelfAndHideButtons(EditorCell.prototype, 'newTextAbove');
+triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeAbove');
+triggerSelfAndHideButtons(EditorCell.prototype, 'newTextBelow');
+triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeBelow');
