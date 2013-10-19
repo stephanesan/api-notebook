@@ -82,8 +82,12 @@ Tooltip.prototype.reposition = function () {
   var pos     = this.completion.cm.cursorCoords(this.data.to);
   var winPos  = this.completion.cm.cursorCoords(this.data.to, 'window');
 
-  tooltip.style.top  = pos.bottom + 'px';
-  tooltip.style.left = pos.left   + 'px';
+  // Reset possible styles.
+  tooltip.style.top    = pos.bottom + 'px';
+  tooltip.style.left   = pos.left   + 'px';
+  tooltip.style.right  = 'auto';
+  tooltip.style.bottom = 'auto';
+  tooltip.style.height = 'auto';
 
   var tooltipPos   = _.pick(
     tooltip.getBoundingClientRect(), 'top', 'left', 'right', 'bottom'
