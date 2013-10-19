@@ -42,7 +42,5 @@ EditNotebook.prototype.render = function () {
 EditNotebook.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
   this.editor.refresh();
-  this.editor.setCursor(Infinity, Infinity);
-  this.editor.focus();
   return this;
 };

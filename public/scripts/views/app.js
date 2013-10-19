@@ -23,16 +23,15 @@ var changeNotebook = function (fn) {
     // Remove the old application contents/notebook.
     if (this.contents) {
       this.contents.remove();
-      this.el.classList.remove('notebook-view-active', 'notebook-edit-active');
       delete this.contents;
-      delete this.notebook;
+      this.el.classList.remove('notebook-view-active', 'notebook-edit-active');
     }
 
     // Sets the new notebook contents.
     this.contents = fn && fn.apply(this, arguments);
 
     // If the function returned an object, assume it is a view and render it.
-    if (_.isObject(this.contents)) {
+    if (this.contents instanceof Backbone.View) {
       this.contents.render().appendTo(this._contentsEl);
     }
 
@@ -65,8 +64,7 @@ App.prototype.events = {
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
   // Switch between application views.
-  'click .toggle-notebook-edit': 'renderEdit',
-  'click .toggle-notebook-view': 'renderNotebook',
+  'click .toggle-notebook-edit': 'renderNotebook',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -99,23 +97,19 @@ App.prototype.initialize = function () {
 };
 
 /**
- * Renders the regular notebook editor inside the application.
+ * Switch between raw source edit mode and the normal notebook execution.
  *
  * @return {App}
  */
 App.prototype.renderNotebook = changeNotebook(function () {
+  if (this.notebook) {
+    delete this.notebook;
+    this.el.classList.add('notebook-edit-active');
+    return new EditNotebook();
+  }
+
   this.el.classList.add('notebook-view-active');
   return this.notebook = new Notebook();
-});
-
-/**
- * Renders the raw notebook editor inside the application.
- *
- * @return {App}
- */
-App.prototype.renderEdit = changeNotebook(function () {
-  this.el.classList.add('notebook-edit-active');
-  return new EditNotebook();
 });
 
 /**
@@ -285,13 +279,19 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="inner">' +
+      '<div class="toolbar-end">'+
+        '<button class="edit-source toggle-notebook-edit"></button>' +
+      '</div>' +
+
+      '<div class="toolbar-inner">' +
         '<div class="auth-status"></div>' +
         '<div class="save-status"></div>' +
         '<div class="toolbar-buttons">' +
-          '<button class="btn-text toggle-notebook-view btn-edit">' +
-            'Return to notebook view' +
-          '</button>' +
+          '<span class="btn-edit">' +
+            '<button class="btn-text toggle-notebook-edit">' +
+              'Return to notebook view' +
+            '</button>' +
+          '</span>' +
           '<span class="btn-view">' +
             '<button class="btn-text notebook-fork">' +
               'Make my own copy' +
@@ -303,9 +303,6 @@ App.prototype.render = function () {
             '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
           '</span>' +
         '</div>' +
-      '</div>' +
-      '<div class="toolbar-end">'+
-        '<button class="btn-round edit-source toggle-notebook-edit"></button>' +
       '</div>' +
     '</div>' +
 

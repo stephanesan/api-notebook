@@ -47,16 +47,6 @@ var encodeData = function (str) {
 };
 
 /**
- * Decode a string.
- *
- * @param  {String} str
- * @return {String}
- */
-var decodeData = function (str) {
-  return decodeURIComponent(str.replace(/\+/g, ' '));
-};
-
-/**
  * Normalize the url for including with the hashed signature.
  *
  * @param  {Object} uri

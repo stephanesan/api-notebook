@@ -1,6 +1,5 @@
 /* global App */
 var _            = App._;
-var OAUTH_KEY    = 'github-oauth';
 var CLIENT_ID    = process.env.GITHUB_CLIENT_ID;
 var AUTH_URL     = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL    = 'https://github.com/login/oauth/access_token';

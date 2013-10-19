@@ -104,10 +104,9 @@
   background-color: #F4F4F4
   font-size: .8em
   position: relative
-  .inner
-    float: left
+  .toolbar-inner
     padding: 0.5em 2em
-    width: 90%
+    overflow: hidden
     .auth-status
       display: inline-block
       font-weight: bold
@@ -126,18 +125,16 @@
       button:last-child
         margin-right: 0
       .notebook-view-active & > .btn-edit
-          display: none
+        display: none
       .notebook-edit-active & > .btn-view
         display: none
   .toolbar-end
-    position: absolute
-    right: 0
-    border-left: 1px solid #B2B2B2
-    background: #E5E5E5
-    width: 5%
-    height: 100%
+    float: right
+    height: 3.2em
+    background: #e5e5e5
+    border-left: 1px solid #b2b2b2
   .notebook-edit-active & > .toolbar-end
-    background: #F9F9F9
+    background: #f9f9f9
 
 .notebook-raw > pre
   border: 0
