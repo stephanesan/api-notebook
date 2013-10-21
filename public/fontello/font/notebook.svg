@@ -1,0 +1,13 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg">
+<metadata>Copyright (C) 2013 by original authors @ fontello.com</metadata>
+<defs>
+<font id="notebook" horiz-adv-x="1000" >
+<font-face font-family="notebook" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
+<missing-glyph horiz-adv-x="1000" />
+<glyph glyph-name="plus-circled" unicode="&#xe802;" d="m0 350q0 207 147 354t353 146t354-146t146-354t-146-354t-354-146t-353 146t-147 354z m219-80l201 0l0-201l160 0l0 201l201 0l0 160l-201 0l0 201l-160 0l0-201l-201 0l0-160z" horiz-adv-x="1000" />
+<glyph glyph-name="comment" unicode="&#xe803;" d="m1137 749v-532q0-41-29-70t-71-30h-168v-268l-267 268h-502q-41 0-70 30t-30 70v532q0 41 30 71t70 29h937q41 0 71-29t29-71z" horiz-adv-x="1137" />
+</font>
+</defs>
+</svg>

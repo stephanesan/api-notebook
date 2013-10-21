@@ -45,7 +45,7 @@
 .notebook-view > .cell > .cell-result
   border-style: solid
   border-color: $color-result-border
-  border-width: 1px 0 0 5px
+  border-width: 0 2px 2px 5px
   font-size: 0.95em
   line-height: 1.45
   font-family: monospace
@@ -57,8 +57,8 @@
     border-left-color: $color-error-border
   > .result-label
     float: left
-    padding: .55em 0 .55em .45em
     color: $color-result-label
+    padding: .55em 0 .55em .45em
   > .result-content
     margin: 0 0.3em
     padding: 0.55em 0
@@ -66,42 +66,94 @@
 
 .notebook-view > .cell
   border: 1px solid $color-cell-border
-  margin: 1em 0
+  margin: 1.3em 0
   position: relative
   min-height: 1.55em
 
-.notebook-view > .cell > .cell-result
+.notebook-view > .cell > .markdown,
+.notebook-view > .cell > .CodeMirror
+  border: 2px solid $color-cell-border
+
+.notebook-view > .cell-code > .cell-result
   color: $color-result-text
   &.result-error
     color: $color-error-text
 
-.cell-text .comment
+.cell > .cell-insert
+  top: -12px
+  width: 100%
   position: absolute
-  top: 50%
-  left: -1.5em
-  margin-top: -0.5em
-  font-family: monospace
+  border-bottom: dotted 1px #e5e5e5
+  .insert-dot
+    cursor: pointer
+    position: absolute
+    top: 0
+    left: 50%
+    padding: 0 4px
+    margin-top: -5px
+    margin-left: -10px
+    color: #eaeaea
+    font-size: 0.4em
+    text-shadow: 0px -1px 1px rgba(128, 128, 128, 0.3)
+    background-color: #fff
+    &:hover
+      color: #a5a5a5
 
-.cell-text .comment-close
-  left: auto
-  right: -20px
+.cell > .cell-insert-bottom
+  display: none
+  top: auto
+  bottom: -12px
+
+.cell:last-child > .cell-insert-bottom
+  display: block
+
+.user-not-owner .cell > .cell-insert
+  display: none
+
+.cell-insert-buttons
+  display: none
+  position: absolute
+  left: 50%
+  z-index: 1001
+  margin-top: -10px
+  margin-left: -140px
+  .btn
+    width: @margin-left * -1
+    color: #333
+    float: left
+    padding: 0.6em 0.1em
+    font-size: 0.7em
+    border: solid 1px #bfbfbf
+    background: linear-gradient(#fff, #e6e6e6)
+    box-shadow: 0 1px 2px #bfbfbf
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75)
+    &:hover
+      color: #333333
+      background: #e7e7e7
+  .btn:first-child
+    border-radius: left 3px
+  .btn:last-child
+    margin-left: -1px
+    border-radius: right 3px
+  .cell-insert-hover &
+    display: block
 
 .markdown
   padding: 16px
+  p,
   h1,
   h2,
   h3,
   h4,
   h5,
   h6,
-  p,
   ul,
   ol
     margin: 0 0 24px
 
 .notebook-toolbar
-  border: solid 1px #CCC
-  background-color: #F4F4F4
+  border: solid 1px #ccc
+  background-color: #f4f4f4
   font-size: .8em
   position: relative
   .toolbar-inner

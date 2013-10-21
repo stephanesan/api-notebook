@@ -293,6 +293,30 @@ Notebook.prototype.appendView = function (view, before) {
       this.refreshFromView(this.getPrevView(view));
     });
 
+    this.listenTo(view, 'newTextAbove', function (view) {
+      var newView = this.appendTextView(function (el) {
+        view.el.parentNode.insertBefore(el, view.el);
+      }).focus();
+      this.refreshFromView(newView);
+    });
+
+    this.listenTo(view, 'newCodeAbove', function (view) {
+      var newView = this.appendCodeView(function (el) {
+        view.el.parentNode.insertBefore(el, view.el);
+      }).focus();
+      this.refreshFromView(newView);
+    });
+
+    this.listenTo(view, 'newTextBelow', function (view) {
+      this.appendTextView(view.el).focus();
+      this.refreshFromView(view.el);
+    });
+
+    this.listenTo(view, 'newCodeBelow', function (view) {
+      this.appendCodeView(view.el).focus();
+      this.refreshFromView(view.el);
+    });
+
     // Listen to clone events and append the new views after the current view
     this.listenTo(view, 'clone', function (view, clone) {
       this.appendView(clone, view.el);
@@ -330,31 +354,22 @@ Notebook.prototype.appendView = function (view, before) {
       newView.focus();
       if (cursor) { newView.editor.setCursor(cursor); }
     });
+
+    this.listenTo(view, 'appendNew', function (view) {
+      this.appendCodeView(view.el).focus();
+      this.refreshFromView(view);
+    });
+
+    this.listenTo(view, 'showControls', function (view) {
+      this.controls.toggleView(view);
+    });
   }
-
-  /**
-   * Event listener for 'appendNew' event.
-   * Appends a new CodeCell after the passed in CellView.
-   */
-  this.listenTo(view, 'appendNew', function (view) {
-    this.appendCodeView(view.el).focus();
-    this.refreshFromView(view);
-  });
-
-  /**
-   * Event listener for 'showControls' event.
-   * Appends the UIControls to the focused cell.
-   */
-  this.listenTo(view, 'showControls', function (view) {
-    this.controls.toggleView(view);
-  });
 
   // Listening to different events for `text` cells
   if (view instanceof TextView) {
-    // Listen to a code event which tells us to make a new code cell
     this.listenTo(view, 'code', function (view, code) {
       // Either add a new code view (if we have code or it's the last view),
-      // or focus the next view.
+      // and focus the next view.
       if (code || this.el.lastChild === view.el) {
         this.appendCodeView(view.el, code);
       }
@@ -364,7 +379,6 @@ Notebook.prototype.appendView = function (view, before) {
       if (!view.getValue()) { view.remove(); }
     });
 
-    // Append a new code cell when we blur a text cell and it the last cell.
     this.listenTo(view, 'blur', function (view) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
@@ -423,6 +437,10 @@ Notebook.prototype.appendView = function (view, before) {
 
   // Append the view to the end of the console
   view.render().appendTo(_.bind(function (el) {
+    if (_.isFunction(before)) {
+      return before(el);
+    }
+
     return before ? insertAfter(el, before) : this.el.appendChild(el);
   }, this));
 
