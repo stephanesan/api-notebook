@@ -361,16 +361,16 @@ EditorCell.prototype.render = function () {
   _.each(this.el.querySelectorAll('.cell-insert'), function (el) {
     var hoverTimeout;
 
-    el.addEventListener('mouseenter', _.bind(function () {
-      hoverTimeout = setTimeout(_.bind(function () {
-        this.el.classList.add('cell-insert-hover');
-      }, this), 300);
-    }, this));
+    el.addEventListener('mouseenter', function (e) {
+      hoverTimeout = setTimeout(function () {
+        e.target.classList.add('cell-insert-hover');
+      }, 300);
+    });
 
-    el.addEventListener('mouseleave', _.bind(function () {
+    el.addEventListener('mouseleave', function (e) {
       clearTimeout(hoverTimeout);
-      this.el.classList.remove('cell-insert-hover');
-    }, this));
+      e.target.classList.remove('cell-insert-hover');
+    });
   }, this);
 
   return this;
