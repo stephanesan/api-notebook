@@ -436,6 +436,7 @@ var httpRequest = function (nodes, method) {
     var mime    = getMime(getHeader(headers, 'Content-Type'));
     var request = 'ajax';
     var fullUrl = nodes.config.baseUri + '/' + nodes.join('/');
+    var response, error; // Weird async and sync code mixing.
 
     // No need to pass data through with `GET` or `HEAD` requests.
     if (method.method === 'get' || method.method === 'head') {
@@ -536,13 +537,21 @@ var httpRequest = function (nodes, method) {
 
     // Trigger the ajax middleware so plugins can hook onto the requests. If the
     // function is async we need to register a callback for the middleware.
-    App.middleware.trigger(request, options, async && function (err, xhr) {
-      return done(err, sanitizeXHR(xhr));
+    App.middleware.trigger(request, options, function (err, xhr) {
+      error    = err;
+      response = sanitizeXHR(xhr);
+
+      return async && done(err, response);
     });
 
     // If the request was synchronous, return the sanitized XHR response data.
+    // This is super jank for handling errors, etc.
     if (!async) {
-      return sanitizeXHR(options.xhr);
+      if (error) {
+        throw error;
+      }
+
+      return response;
     }
   };
 };
