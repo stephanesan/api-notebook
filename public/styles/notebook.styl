@@ -42,19 +42,24 @@
 .notebook-banner p
   margin: 0
 
-.notebook-view > .cell > .cell-result
-  border-style: solid
-  border-color: $color-result-border
-  border-width: 0 2px 2px 5px
+.notebook-view > .cell
+  margin: 1em 0
+  position: relative
+  min-height: 1.55em
+
+.notebook-view > .cell > .CodeMirror,
+.notebook-view > .cell-text > .markdown
+  border: 2px solid $color-cell-border
+
+.notebook-view > .cell-code > .cell-result
+  border: 2px solid $color-cell-border
+  border-top: 0
+  border-left-width: 5px
+  color: $color-result-text
   font-size: 0.95em
   line-height: 1.45
   font-family: monospace
   background-color: $color-result-bg
-  &.result-pending
-    display: none
-  &.result-error
-    background-color: $color-error-bg
-    border-left-color: $color-error-border
   > .result-label
     float: left
     color: $color-result-label
@@ -64,20 +69,17 @@
     padding: 0.55em 0
     overflow: hidden
 
-.notebook-view > .cell
-  border: 1px solid $color-cell-border
-  margin: 1.3em 0
-  position: relative
-  min-height: 1.55em
+.notebook-view > .cell-code > .cell-result-pending
+  display: none
 
-.notebook-view > .cell > .markdown,
-.notebook-view > .cell > .CodeMirror
-  border: 2px solid $color-cell-border
-
-.notebook-view > .cell-code > .cell-result
-  color: $color-result-text
-  &.result-error
+.notebook-view > .cell-code-error
+  > .CodeMirror,
+  > .cell-result,
+  > .btn-show-cell-controls
+    border-color: $color-error-border
+  > .cell-result
     color: $color-error-text
+    background-color: $color-error-bg
 
 .cell > .cell-insert
   top: -12px
