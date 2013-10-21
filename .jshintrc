@@ -31,6 +31,7 @@
   "noempty"       : true,     // Prohibit use of empty blocks.
   "nonew"         : true,     // Prohibit use of constructors for side-effects.
   "undef"         : true,     // Require all non-global variables be declared before they are used.
+  "unused"        : true,     // Require all variables be used.
 
   // Turn off:
   "plusplus"      : false,    // Prohibit use of `++` & `--`.

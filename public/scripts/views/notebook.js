@@ -1,13 +1,10 @@
-var _        = require('underscore');
-var trim     = require('trim');
-var View     = require('./view');
-var Backbone = require('backbone');
+var _    = require('underscore');
+var View = require('./view');
 
 var CodeView           = require('./code-cell');
 var TextView           = require('./text-cell');
 var EditorView         = require('./editor-cell');
 var CellControls       = require('./cell-controls');
-var EntryModel         = require('../models/cell');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
@@ -39,7 +36,7 @@ var appendNewView = function (View) {
  * @type {Function}
  */
 var Notebook = module.exports = View.extend({
-  className: 'notebook'
+  className: 'notebook-view'
 });
 
 /**
@@ -47,7 +44,7 @@ var Notebook = module.exports = View.extend({
  *
  * @param  {Object} options
  */
-Notebook.prototype.initialize = function (options) {
+Notebook.prototype.initialize = function () {
   this.sandbox    = new Sandbox();
   this.controls   = new CellControls().render();
   this.collection = new NotebookCollection();
@@ -76,7 +73,6 @@ Notebook.prototype.initialize = function (options) {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
-  persistence.reset();
   this.sandbox.remove();
   this.sandboxCompletion.detach(middleware);
 
@@ -204,7 +200,7 @@ Notebook.prototype.execute = function (done) {
     if (view.model.get('type') === 'code') {
       view.focus().moveCursorToEnd();
 
-      view.execute(function (err, data) {
+      view.execute(function () {
         execution(that.getNextView(view));
       });
     } else {

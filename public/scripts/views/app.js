@@ -2,14 +2,44 @@ var _        = require('underscore');
 var domify   = require('domify');
 var Backbone = require('backbone');
 
-var View        = require('./view');
-var Notebook    = require('./notebook');
-var controls    = require('../lib/controls');
-var state       = require('../state/state');
-var messages    = require('../state/messages');
-var persistence = require('../state/persistence');
+var View         = require('./view');
+var Notebook     = require('./notebook');
+var EditNotebook = require('./edit-notebook');
+var controls     = require('../lib/controls');
+var messages     = require('../state/messages');
+var persistence  = require('../state/persistence');
 
 var ENTER_KEY = 13;
+
+/**
+ * Helper function for removing old application contents and resizing the
+ * viewport container.
+ *
+ * @param  {Function} fn
+ * @return {Function}
+ */
+var changeNotebook = function (fn) {
+  return function () {
+    // Remove the old application contents/notebook.
+    if (this.contents) {
+      this.contents.remove();
+      delete this.contents;
+      this.el.classList.remove('notebook-view-active', 'notebook-edit-active');
+    }
+
+    // Sets the new notebook contents.
+    this.contents = fn && fn.apply(this, arguments);
+
+    // If the function returned an object, assume it is a view and render it.
+    if (this.contents instanceof Backbone.View) {
+      this.contents.render().appendTo(this._contentsEl);
+    }
+
+    // Resize the parent frame since we have added notebook contents.
+    messages.trigger('resize');
+    return this;
+  };
+};
 
 /**
  * Create a central application view.
@@ -33,7 +63,9 @@ App.prototype.events = {
   'click .notebook-clone': 'forkNotebook',
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
-  // Listen for `Enter` presses and blur the input instead.
+  // Switch between application views.
+  'click .toggle-notebook-edit': 'renderNotebook',
+  // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
 
@@ -57,8 +89,6 @@ App.prototype.events = {
  * relevant events to respond to.
  */
 App.prototype.initialize = function () {
-  this.notebook = new Notebook();
-
   // Start up the history router, which will trigger the start of other
   // subsystems such as persistence and authentication.
   Backbone.history.start({
@@ -67,13 +97,29 @@ App.prototype.initialize = function () {
 };
 
 /**
+ * Switch between raw source edit mode and the normal notebook execution.
+ *
+ * @return {App}
+ */
+App.prototype.renderNotebook = changeNotebook(function () {
+  if (this.notebook) {
+    delete this.notebook;
+    this.el.classList.add('notebook-edit-active');
+    return new EditNotebook();
+  }
+
+  this.el.classList.add('notebook-view-active');
+  return this.notebook = new Notebook();
+});
+
+/**
  * Remove the application view from the DOM.
  *
  * @return {App}
  */
 App.prototype.remove = function () {
-  this.notebook.remove();
   Backbone.history.stop();
+  changeNotebook().call(this);
   return View.prototype.remove.call(this);
 };
 
@@ -225,7 +271,6 @@ App.prototype.toggleShortcuts = function () {
  * @return {App}
  */
 App.prototype.render = function () {
-  this.notebook.render();
   View.prototype.render.call(this);
 
   this.el.appendChild(domify(
@@ -234,13 +279,30 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="auth-status"></div>' +
-      '<div class="save-status"></div>' +
-      '<div class="toolbar-buttons">' +
-        '<button class="btn-text notebook-fork">Make my own copy</button>' +
-        '<button class="btn-text notebook-clone">Make another copy</button>' +
-        '<button class="btn-round ir notebook-exec">Run All</button>' +
-        '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+      '<div class="toolbar-end">'+
+        '<button class="edit-source toggle-notebook-edit"></button>' +
+      '</div>' +
+
+      '<div class="toolbar-inner">' +
+        '<div class="auth-status"></div>' +
+        '<div class="save-status"></div>' +
+        '<div class="toolbar-buttons">' +
+          '<span class="btn-edit">' +
+            '<button class="btn-text toggle-notebook-edit">' +
+              'Return to notebook view' +
+            '</button>' +
+          '</span>' +
+          '<span class="btn-view">' +
+            '<button class="btn-text notebook-fork">' +
+              'Make my own copy' +
+            '</button>' +
+            '<button class="btn-text notebook-clone">' +
+              'Make another copy' +
+            '</button>' +
+            '<button class="btn-round ir notebook-exec">Run All</button>' +
+            '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+          '</span>' +
+        '</div>' +
       '</div>' +
     '</div>' +
 
@@ -294,6 +356,15 @@ App.prototype.render = function () {
   // Trigger all the update methods.
   this.update();
 
+  this.el.appendChild(domify(
+    '<div class="notebook">' +
+    '</div>'
+  ));
+
+  this._contentsEl = this.el.lastChild.appendChild(domify(
+    '<div class="notebook-content"></div>'
+  ));
+
   return this;
 };
 
@@ -304,8 +375,7 @@ App.prototype.render = function () {
  */
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
-  this.notebook.appendTo(this.el);
-  messages.trigger('resize');
+  this.renderNotebook();
   return this;
 };
 
@@ -313,7 +383,7 @@ App.prototype.appendTo = function () {
  * Runs the entire notebook sequentially.
  */
 App.prototype.runNotebook = function () {
-  this.notebook.execute();
+  return this.notebook && this.notebook.execute();
 };
 
 /**

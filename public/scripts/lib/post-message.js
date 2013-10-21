@@ -37,7 +37,7 @@ _.extend(PostMessage.prototype, Events);
  * @param  {*}      ...
  * @return {PostMessage}
  */
-PostMessage.prototype.trigger = function (name /*, ...args */) {
+PostMessage.prototype.trigger = function (/* name , ...args */) {
   // If we have a frame event, use `trigger` normally and trigger the event
   // for local event listeners.
   if (this._frameEvent) {

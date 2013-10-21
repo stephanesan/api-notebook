@@ -1,11 +1,10 @@
 /* global App */
-var _        = App._;
-var qs       = App.Library.querystring;
-var trim     = require('trim');
-var cases    = require('change-case');
-var escape   = require('escape-regexp');
-var parser   = require('uri-template');
-var fromPath = require('../../../lib/from-path');
+var _      = App._;
+var qs     = App.Library.querystring;
+var trim   = require('trim');
+var cases  = require('change-case');
+var escape = require('escape-regexp');
+var parser = require('uri-template');
 
 var toString             = Object.prototype.toString;
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
@@ -625,8 +624,6 @@ var attachMethods = function (nodes, context, methods) {
   if (methods == null || !_.keys(methods).length) {
     return context;
   }
-
-  var newContext, routeNodes;
 
   attachQuery(nodes, context, methods);
   attachHeaders(nodes, context, methods);

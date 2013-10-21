@@ -1,5 +1,4 @@
 var _            = require('underscore');
-var trim         = require('trim');
 var Cell         = require('./cell');
 var BtnControls  = require('./btn-cell-controls');
 var extraKeys    = require('./lib/extra-keys');
@@ -13,7 +12,9 @@ var ownerProtect = require('./lib/owner-protect');
  *
  * @type {Function}
  */
-var EditorCell = module.exports = Cell.extend();
+var EditorCell = module.exports = Cell.extend({
+  className: 'cell cell-editor'
+});
 
 /**
  * Runs when we initialize the editor cell.

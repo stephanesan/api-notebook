@@ -112,7 +112,6 @@ middleware.disuse = acceptObject(function (name, fn) {
  *                         finished executing.
  */
 middleware.listenTo(middleware, 'all', function (name, data, out) {
-  var that  = this;
   var sent  = false;
   var index = 0;
   var prevData;
@@ -161,7 +160,7 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
   (function next (err, data) {
-    var layer  = stack[index++];
+    var layer = stack[index++];
 
     // If we were provided two arguments, the second argument would have been
     // an updated data object. If we weren't passed two arguments, use the
