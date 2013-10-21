@@ -79,10 +79,6 @@ describe('App', function () {
           expect(editor.getValue()).to.equal(contents);
         });
 
-        it('should start with the editor focused', function () {
-          expect(editor.hasFocus()).to.be.true;
-        });
-
         it('should update persistence when editing the raw notebook', function () {
           editor.setValue('Simple test');
 
