@@ -14,13 +14,11 @@ $button_color = #5B5B5B
   position: fixed
   z-index: 200
   top: 100px
-
   width: 90%
   max-width: 52em
   margin-left: -1px
   border: 1px solid #aaa
   border-radius: 5px
-
   background: #fff
   box-shadow: 2px 2px 5px rgba(0,0,0,0.1)
 
@@ -63,7 +61,6 @@ $button_color = #5B5B5B
   bottom: 0
   left: 0
   z-index: 199
-
   background: rgba(0,0,0,0.15)
   cursor: pointer
 
@@ -87,6 +84,16 @@ $button_color = #5B5B5B
   background: transparent
   border-radius: 50em
 
+.edit-source
+  width: 44px
+  height: 100%
+  border: 0
+  background: transparent
+
+.edit-source:after
+  content: '</>'
+  color: $button_color
+  font-size: 18px
 
 .notebook-exec:after
   content: ''

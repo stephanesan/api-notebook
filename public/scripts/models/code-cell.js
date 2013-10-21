@@ -5,7 +5,7 @@ var Cell = require('./cell');
  *
  * @type {Function}
  */
-var CodeCell = module.exports = Cell.extend({
+module.exports = Cell.extend({
   defaults: {
     type: 'code',
     value: ''

@@ -1,5 +1,4 @@
-var _        = require('underscore');
-var Backbone = require('backbone');
+var _ = require('underscore');
 
 var AJAX_TIMEOUT = 20000;
 

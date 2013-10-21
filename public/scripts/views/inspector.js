@@ -1,7 +1,6 @@
 var _          = require('underscore');
 var View       = require('./view');
 var domify     = require('domify');
-var Backbone   = require('backbone');
 var stringify  = require('../lib/stringify');
 var state      = require('../state/state');
 var messages   = require('../state/messages');

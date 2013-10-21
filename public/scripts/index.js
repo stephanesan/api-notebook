@@ -1,4 +1,5 @@
-var bootstrap  = require('./bootstrap');
+require('./bootstrap');
+
 var loadScript = require('./lib/browser/load-script');
 
 /**
@@ -44,6 +45,7 @@ App.CodeMirror = {
 App.View = {
   View:           require('./views/view'),
   Notebook:       require('./views/notebook'),
+  EditNotebook:   require('./views/edit-notebook'),
   Inspector:      require('./views/inspector'),
   ErrorInspector: require('./views/error-inspector'),
   Cell:           require('./views/cell'),
@@ -51,7 +53,7 @@ App.View = {
   TextCell:       require('./views/text-cell'),
   EditorCell:     require('./views/editor-cell'),
   ResultCell:     require('./views/result-cell'),
-  CellControls:   require('./views/cell-controls'),
+  CellControls:   require('./views/cell-controls')
 };
 
 // Expose application models.

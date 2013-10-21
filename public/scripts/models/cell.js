@@ -5,4 +5,6 @@ var Backbone = require('backbone');
  *
  * @type {Function}
  */
-var Cell = module.exports = Backbone.Model.extend();
+module.exports = Backbone.Model.extend({
+  className: 'cell'
+});

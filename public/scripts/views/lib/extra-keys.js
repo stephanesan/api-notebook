@@ -1,7 +1,7 @@
 var _ = require('underscore');
 
 /**
- * Accepts an array of controls and returns a keymap for CodeMirror.
+ * Accepts an array of controls and returns a keymap accepted by CodeMirror.
  *
  * @param  {Array}  controls
  * @return {Object}
