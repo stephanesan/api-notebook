@@ -45,7 +45,7 @@ module.exports = function (grunt) {
           {
             expand: true,
             cwd: 'public',
-            src: ['*.html', 'raml/*.yml', 'authentication/**'],
+            src: ['*.html', 'raml/*.yml', 'authentication/**', 'images/**'],
             dest: 'build/'
           },
           { src: 'public/test.js', dest: FIXTURE_DIR + '/test.js' },

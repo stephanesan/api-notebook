@@ -357,13 +357,14 @@ App.prototype.render = function () {
   this.update();
 
   this.el.appendChild(domify(
-    '<div class="notebook">' +
+    '<div class="notebook clearfix">' +
+    '<div class="notebook-content"></div>' +
+    '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
     '</div>'
   ));
 
-  this._contentsEl = this.el.lastChild.appendChild(domify(
-    '<div class="notebook-content"></div>'
-  ));
+  // Keep a static reference to the notebook contents element.
+  this._contentsEl = this.el.lastChild.firstChild;
 
   return this;
 };
