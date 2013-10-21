@@ -12,7 +12,7 @@ var redirectUri = url.resolve(
  *
  * @type {Array}
  */
-var supportedGrants = ['token', 'code'];
+var supportedGrants = ['code', 'token'];
 
 /**
  * Format error response types to regular strings for displaying the clients.
@@ -352,8 +352,12 @@ module.exports = function (middleware) {
    * @param {Function} done
    */
   middleware.core('ajax:oauth2', function (data, next, done) {
-    if (!_.isObject(data.oauth2) || !data.oauth2.accessToken) {
+    if (!_.isObject(data.oauth2)) {
       return done(new TypeError('"oauth2" config object expected'), null);
+    }
+
+    if (!data.oauth2.accessToken) {
+      return done(new TypeError('"accessToken" expected'), null);
     }
 
     if (data.oauth2.tokenType === 'bearer') {
