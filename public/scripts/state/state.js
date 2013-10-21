@@ -10,24 +10,22 @@ var messages = require('./messages');
 var state = module.exports = new (Backbone.Model.extend())();
 
 var updateScrollDimensions = function () {
-  state.set('window.scrollWidth',  document.documentElement.scrollWidth);
-  state.set('window.scrollHeight', document.documentElement.scrollHeight);
+  state.set('documentWidth',  document.documentElement.scrollWidth);
+  state.set('documentHeight', document.documentElement.scrollHeight);
 };
 
 var updateWindowDimensions = function () {
-  var width  = window.innerWidth || Math.max(document.body.offsetWidth,
-    document.documentElement.offsetWidth);
-  var height = window.innerHeight || Math.max(document.body.offsetHeight,
-    document.documentElement.offsetHeight);
+  var width  = window.innerWidth;
+  var height = window.innerHeight;
 
-  state.set('window.width',  width);
-  state.set('window.height', height);
+  state.set('viewportWidth',  width);
+  state.set('viewportHeight', height);
 
-  updateScrollDimensions();
+  return updateScrollDimensions();
 };
 
 updateWindowDimensions();
-state.listenTo(messages, 'resize', updateScrollDimensions);
+state.listenTo(messages, 'resize',        updateScrollDimensions);
 state.listenTo(messages, 'window:resize', updateWindowDimensions);
 
 state.listenTo(messages, 'keydown:Alt-Alt', function () {

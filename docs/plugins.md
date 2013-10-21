@@ -60,7 +60,7 @@ Deserialize data from the server into an array of cells the notebook collection 
 
 Triggers an authentication check of the user. Set the `userId` property on the data object to authenticated user id, or leave `null` if the user authentication failed.
 
-* **persistence:authenticated**
+**persistence:authenticated**
 
 Load the initial persistence layer session. It does not trigger any sort of authentication and is only used to check if we have a valid session. Passes through all notebook data and expects the `userId` to be set if the session is active.
 
@@ -84,6 +84,6 @@ Triggers the full OAuth2 authentication flow. Returns the access token.
 
 Provides additional context variables for the sandbox. The data object in this case is the direct context object and can be augmented directly. *Please note: This is also triggered by the code cell to get additional completion data.*
 
-* **sandbox:execute**
+**sandbox:execute**
 
 Triggered for code cell execution, it passes through an object with the executing `code`, `context` and `window` environment. That would allow you to intercept code executions and augment with your own code. Like with the `ajax` middleware, calling `done` here will skip execution all together.
