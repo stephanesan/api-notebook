@@ -368,6 +368,7 @@ module.exports = function (middleware) {
       // Add the access token to the request query.
       var uri = url.parse(data.url, true);
       uri.query.access_token = data.oauth2.accessToken;
+      delete uri.search;
 
       // Update ajax data headers and url.
       data.url = url.format(uri);
