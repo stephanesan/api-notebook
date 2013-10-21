@@ -679,7 +679,7 @@ var attachResources = function attachResources (nodes, context, resources) {
         // If the route is only a template tag with no static text, use the
         // template tag text as the method name.
         if (templateCount === 1 && route === '{' + templateTags[0] + '}') {
-          routeName = templateTags.pop();
+          routeName = templateTags[0];
         } else {
           routeName = route.substr(0, route.indexOf('{'));
         }
@@ -687,7 +687,7 @@ var attachResources = function attachResources (nodes, context, resources) {
         // Don't add reserved methods to the context. This is done to avoid
         // potentially confusing use cases. *Was it `get` to make the request
         // or to set the path?*
-        if (_.has(RESERVED_METHODS, routeName)) {
+        if (!routeName || _.has(RESERVED_METHODS, routeName)) {
           return false;
         }
 
