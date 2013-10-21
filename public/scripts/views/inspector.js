@@ -168,10 +168,28 @@ InspectorView.prototype._renderChildrenEl = function () {
  */
 InspectorView.prototype._renderChildren = function () {
   // Convert to an object to remove duplicate property names. Chrome has a
-  // pretty major bug where all `document` keys are returned twice.
+  // pretty major bug where all `document` keys are returned twice. We also
+  // want to sort the keys numerically, and then alphabetically.
   var propertyNames = _.keys(_.object(
     Object.getOwnPropertyNames(this.inspect), true
-  )).sort();
+  )).sort(function (a, b) {
+    // Order two numbers by their values.
+    if (!isNaN(+a) && !isNaN(+b)) {
+      return +a - +b;
+    }
+
+    // Numbers should always come out on top.
+    if (!isNaN(+a)) {
+      return -1;
+    }
+
+    if (!isNaN(+b)) {
+      return 1;
+    }
+
+    // Strings can be sorted like normal.
+    return a > b;
+  });
 
   _.each(propertyNames, function (prop) {
     var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
