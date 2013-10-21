@@ -3,6 +3,8 @@
 describe('Embeddable Widget', function () {
   var fixture = document.getElementById('fixture');
 
+  this.timeout(5000);
+
   it('should exist', function () {
     expect(Notebook).to.exist;
   });
