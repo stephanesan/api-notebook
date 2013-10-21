@@ -309,12 +309,12 @@ Notebook.prototype.appendView = function (view, before) {
 
     this.listenTo(view, 'newTextBelow', function (view) {
       this.appendTextView(view.el).focus();
-      this.refreshFromView(view.el);
+      this.refreshFromView(view);
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
       this.appendCodeView(view.el).focus();
-      this.refreshFromView(view.el);
+      this.refreshFromView(view);
     });
 
     // Listen to clone events and append the new views after the current view
