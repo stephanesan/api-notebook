@@ -333,3 +333,5 @@ traits:
           required:
             type: boolean
             required: true
+/~{test}:
+  type: member
