@@ -306,6 +306,13 @@ describe('RAML Client Generator Plugin', function () {
         });
       });
 
+      it('should be able to add routes with mixed text and nodes with invalid variable text', function (done) {
+        sandbox.execute('example["~"];', function (err, exec) {
+          expect(exec.result).to.be.a('function');
+          return done(err);
+        });
+      });
+
       it('should return an error when not passing the variable', function (done) {
         sandbox.execute('example.collection.collectionId();', function (err, exec) {
           expect(exec.isError).to.be.true;
@@ -358,6 +365,11 @@ describe('RAML Client Generator Plugin', function () {
         it(
           'should respond to `mixed("123", "456").get()`',
           testRequest('.mixed("123", "456")', 'get', '/mixed123456')
+        );
+
+        it(
+          'should respond to `~("123").get()`',
+          testRequest('["~"]("123")', 'get', '/~123')
         );
 
         describe('Response Types', function () {
@@ -772,6 +784,13 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('example.mixed("123", "456").', function (results) {
+          expect(results).to.include.members(['get', 'query', 'headers']);
+          return done();
+        });
+      });
+
+      it('should autocomplete with combined text and variables', function (done) {
+        testAutocomplete('example["~"]("123").', function (results) {
           expect(results).to.include.members(['get', 'query', 'headers']);
           return done();
         });
