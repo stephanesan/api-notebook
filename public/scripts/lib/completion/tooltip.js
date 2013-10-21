@@ -64,7 +64,7 @@ Tooltip.prototype.render = function () {
   this.reposition();
 
   // Listen to changes in the viewport size and reposition the tooltip.
-  state.on('change:window.width', this.onResize = _.bind(
+  state.on('change:viewportWidth', this.onResize = _.bind(
     this.reposition, this
   ));
 
@@ -77,20 +77,62 @@ Tooltip.prototype.render = function () {
  * @return {[type]} [description]
  */
 Tooltip.prototype.reposition = function () {
-  var pos = this.completion.cm.cursorCoords(this.data.to);
+  var tooltip = this._tooltip;
+  var padding = 5;
+  var pos     = this.completion.cm.cursorCoords(this.data.to);
+  var winPos  = this.completion.cm.cursorCoords(this.data.to, 'window');
 
-  this._tooltip.style.position = 'absolute';
-  this._tooltip.style.top      = pos.bottom + 'px';
-  this._tooltip.style.left     = pos.left   + 'px';
+  // Reset possible styles.
+  tooltip.style.top    = pos.bottom + 'px';
+  tooltip.style.left   = pos.left   + 'px';
+  tooltip.style.right  = 'auto';
+  tooltip.style.bottom = 'auto';
+  tooltip.style.height = 'auto';
 
-  var tooltip    = this._tooltip.getBoundingClientRect();
-  var winWidth   = state.get('window.width');
-  var rightWidth = tooltip.right - tooltip.left;
+  var tooltipPos   = _.pick(
+    tooltip.getBoundingClientRect(), 'top', 'left', 'right', 'bottom'
+  );
 
-  if (tooltip.right > winWidth - 5 && tooltip.left > rightWidth) {
-    this._tooltip.className += ' CodeMirror-tooltip-right';
-    this._tooltip.style.left  = 'auto';
-    this._tooltip.style.right = winWidth - pos.left + 'px';
+  var winWidth     = state.get('viewportWidth');
+  var winHeight    = state.get('viewportHeight');
+  var rightWidth   = winWidth  - winPos.right;
+  var bottomHeight = winHeight - winPos.bottom;
+
+  if (tooltipPos.right > winWidth - padding && tooltipPos.left > rightWidth) {
+    var docWidth = document.documentElement.scrollWidth;
+
+    tooltip.className += ' CodeMirror-tooltip-right';
+    tooltip.style.left  = 'auto';
+    tooltip.style.right = docWidth - pos.right + 'px';
+
+    // Update the tooltip positions.
+    tooltipPos.left  = winPos.right - tooltip.clientWidth;
+    tooltipPos.right = winPos.right;
+  }
+
+  if (tooltipPos.bottom > winHeight - padding && winPos.top > bottomHeight) {
+    tooltip.style.display = 'none';
+
+    // Get the document height after hiding the tooltip since it can affect the
+    // document height.
+    var docHeight = document.documentElement.scrollHeight;
+
+    tooltip.className += ' CodeMirror-tooltip-top';
+    tooltip.style.top     = 'auto';
+    tooltip.style.bottom  = docHeight - pos.top + 'px';
+    tooltip.style.display = 'block';
+
+    // Update the tooltip postitions.
+    tooltipPos.top    = winPos.top - tooltip.clientHeight;
+    tooltipPos.bottom = winPos.top;
+  }
+
+  if (tooltipPos.top < padding) {
+    tooltip.style.height = tooltipPos.bottom - padding + 'px';
+  }
+
+  if (tooltipPos.bottom > winHeight - padding) {
+    tooltip.style.height = winHeight - tooltipPos.top - padding + 'px';
   }
 
   return this;
@@ -107,7 +149,7 @@ Tooltip.prototype.removeTooltip = function () {
     delete this._tooltip;
   }
 
-  state.off('change:window.width', this.onResize);
+  state.off('change:viewportWidth', this.onResize);
   delete this.onResize;
 
   return this;

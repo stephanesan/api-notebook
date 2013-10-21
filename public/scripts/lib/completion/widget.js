@@ -54,7 +54,7 @@ Widget.prototype.removeHints = function () {
   // Remove all event listeners associated with the hints.
   this.completion.cm.off('scroll', this.onScroll);
   this.completion.cm.removeKeyMap(this.hintKeyMap);
-  state.off('change:window.height change:window.width', this.onResize);
+  state.off('change:viewportHeight change:viewportWidth', this.onResize);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
   delete this.hints;
   delete this.onScroll;
@@ -192,7 +192,7 @@ Widget.prototype.refresh = function (done) {
     });
 
     state.on(
-      'change:window.height change:window.width',
+      'change:viewportHeight change:viewportWidth',
       this.onResize = function () { that.reposition(); }
     );
 
@@ -224,8 +224,8 @@ Widget.prototype.reposition = function () {
 
   var box       = hints.getBoundingClientRect();
   var padding   = 5;
-  var winWidth  = state.get('window.width');
-  var winHeight = state.get('window.height');
+  var winWidth  = state.get('viewportWidth');
+  var winHeight = state.get('viewportHeight');
 
   var overlapX = box.right  - winWidth;
   var overlapY = box.bottom - winHeight;
