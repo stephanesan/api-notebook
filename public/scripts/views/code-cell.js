@@ -124,15 +124,12 @@ CodeCell.prototype.execute = function (done) {
   }
 
   this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-    // Log any sandbox execution errors for the user to inspect.
-    if (err && console) {
-      console.error(err.toString());
-    }
-
     if (data.isError) {
       this.model.unset('result');
+      this.el.classList.add('cell-code-error');
     } else {
       this.model.set('result', data.result);
+      this.el.classList.remove('cell-code-error');
     }
 
     // Trigger `execute` and set the result, each of which need an additional

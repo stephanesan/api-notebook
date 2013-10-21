@@ -9,7 +9,7 @@ var middleware = require('../state/middleware');
  * @type {Function}
  */
 var ResultCell = module.exports = Cell.extend({
-  className: 'cell cell-result result-pending'
+  className: 'cell cell-result cell-result-pending'
 });
 
 /**
@@ -22,8 +22,8 @@ ResultCell.prototype._reset = function (done) {
     delete this._view;
 
     this._resultContent.innerHTML = '';
-    this.el.classList.add('result-pending');
     this.el.classList.remove('result-error');
+    this.el.classList.add('cell-result-pending');
 
     return done && done(err);
   }, this));
@@ -40,6 +40,10 @@ ResultCell.prototype.setResult = function (data, context, done) {
   this._reset(_.bind(function (err) {
     if (err) { return done && done(err); }
 
+    if (data.isError) {
+      this.el.classList.add('result-error');
+    }
+
     middleware.trigger('result:render', {
       el:      this._resultContent,
       context: context,
@@ -47,12 +51,7 @@ ResultCell.prototype.setResult = function (data, context, done) {
       isError: data.isError
     }, _.bind(function (err, view) {
       this._view = view;
-
-      if (data.isError) {
-        this.el.classList.add('result-error');
-      }
-      this.el.classList.remove('result-pending');
-
+      this.el.classList.remove('cell-result-pending');
       return done && done(err);
     }, this));
   }, this));
