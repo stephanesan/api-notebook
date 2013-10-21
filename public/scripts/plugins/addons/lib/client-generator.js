@@ -673,7 +673,7 @@ var attachResources = function attachResources (nodes, context, resources) {
     if (templateTags && templateTags.length) {
       // The route must end with template tags and have no intermediate text
       // between template tags.
-      if (/^\w*(?:\{[^\{\}]+\})+$/.test(route)) {
+      if (/^.*(?:\{[^\{\}]+\})+$/.test(route)) {
         var templateCount = templateTags.length;
 
         // If the route is only a template tag with no static text, use the
