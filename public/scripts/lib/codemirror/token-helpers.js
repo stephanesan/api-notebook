@@ -300,8 +300,7 @@ exports.getPropertyPath = function (cm, token) {
     var level = 1;
     var prev  = token;
 
-    while (token && level > 0) {
-      token = exports.getPrevToken(cm, token);
+    while (level > 0 && (token = exports.getPrevToken(cm, token))) {
       if (token.string === ']') {
         level++;
       } else if (token.string === '[') {
@@ -387,8 +386,7 @@ exports.getPropertyPath = function (cm, token) {
     var prev  = token;
 
     // While still in parens *and not at the beginning of the editor*
-    while (token && level > 0) {
-      token = exports.getPrevToken(cm, token);
+    while (level > 0 && (token = exports.getPrevToken(cm, token))) {
       if (token.string === ')') {
         level++;
       } else if (token.string === '(') {
@@ -398,7 +396,7 @@ exports.getPropertyPath = function (cm, token) {
 
     // No support for resolving across multiple lines.. yet.
     if (level > 0) {
-      context.push(_.extend(token, invalidToken));
+      context.push(_.extend(token || {}, invalidToken));
       return token;
     }
 

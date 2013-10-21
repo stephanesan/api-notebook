@@ -256,6 +256,11 @@ describe('Completion', function () {
       testAutocomplete('window[1 + 2 + 3].w', null, 'window')
     );
 
+    it(
+      'should not crash when completing odd brackets',
+      testAutocomplete(')(w', 'window')
+    );
+
     describe('Multiple Lines', function () {
       it(
         'should complete properties across multiple lines',
