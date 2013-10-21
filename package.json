@@ -18,7 +18,7 @@
     "kamino": "git://github.com/tildeio/kamino.js",
     "async": "~0.2.9",
     "load-script": "0.0.2",
-    "raml-parser": "git+ssh://git@github.com:restful-api-modeling-lang/javascript-parser",
+    "raml-parser": "git+ssh://git@github.com:restful-api-modeling-lang/javascript-parser#e146f4f3a09c641cc94fa1a83eda3c691a008479",
     "raml-examples": "git+ssh://git@github.com:restful-api-modeling-lang/examples",
     "escape-regexp": "0.0.1",
     "uri-template": "~0.4.1",
