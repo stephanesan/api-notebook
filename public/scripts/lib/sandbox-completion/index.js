@@ -26,11 +26,11 @@ var attachDescriptions = function (map, describe, global) {
         // Tern.js definitions prepend an exclamation mark to definition types.
         if (key.charAt(0) === '!') { return; }
 
-        // Firefox is janky here and throwing an error when recursing through
-        // the Node prototype with getters.
-        try {
-          return recurse(describe, context[key]);
-        } catch (e) {}
+        var descriptor = Object.getOwnPropertyDescriptor(context, key);
+
+        // We need to use property descriptors here since Firefox throws errors
+        // with getters on some prototype properties.
+        return descriptor && recurse(describe, descriptor.value);
       });
     }
   })(describe, global);
