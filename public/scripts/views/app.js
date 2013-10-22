@@ -346,12 +346,11 @@ App.prototype.render = function () {
   ));
 
   // Listens to different application state changes and updates accordingly.
-  this.listenTo(persistence, 'changeUser',      this.updateUser);
-  this.listenTo(persistence, 'change:state',    this.updateState);
-  this.listenTo(persistence, 'change:id',       this.updateId);
-  this.listenTo(persistence, 'change:title',    this.updateTitle);
-  this.listenTo(messages,    'keydown:Esc',     this.hideShortcuts);
-  this.listenTo(messages,    'keydown:Shift-/', this.toggleShortcuts);
+  this.listenTo(persistence, 'changeUser',   this.updateUser);
+  this.listenTo(persistence, 'change:state', this.updateState);
+  this.listenTo(persistence, 'change:id',    this.updateId);
+  this.listenTo(persistence, 'change:title', this.updateTitle);
+  this.listenTo(messages,    'keydown:Esc',  this.hideShortcuts);
 
   // Trigger all the update methods.
   this.update();

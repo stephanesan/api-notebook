@@ -7,10 +7,10 @@ var fromPath = require('../from-path');
  * Recurse through the description structure and attach descriptions to nodes
  * using a `Map` interface.
  *
- * @param  {WeakMap} map
- * @param  {Object}  describe
- * @param  {Object}  global
- * @return {WeakMap}
+ * @param  {Map}    map
+ * @param  {Object} describe
+ * @param  {Object} global
+ * @return {Map}
  */
 var attachDescriptions = function (map, describe, global) {
   (function recurse (description, context) {
@@ -26,7 +26,11 @@ var attachDescriptions = function (map, describe, global) {
         // Tern.js definitions prepend an exclamation mark to definition types.
         if (key.charAt(0) === '!') { return; }
 
-        return recurse(describe, context[key]);
+        var descriptor = Object.getOwnPropertyDescriptor(context, key);
+
+        // We need to use property descriptors here since Firefox throws errors
+        // with getters on some prototype properties.
+        return descriptor && recurse(describe, descriptor.value);
       });
     }
   })(describe, global);
@@ -41,7 +45,7 @@ var attachDescriptions = function (map, describe, global) {
  * @return {Object}
  */
 module.exports = function (global) {
-  var map     = new WeakMap();
+  var map     = new Map();
   var exports = {};
   var plugins = {};
 
