@@ -14,6 +14,7 @@ var App = global.App = require('./views/app');
 App.Library = {
   url:         require('url'),
   path:        require('path'),
+  crypto:      require('crypto'),
   querystring: require('querystring'),
   async:       require('async'),
   Backbone:    require('backbone')
