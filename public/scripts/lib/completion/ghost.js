@@ -15,11 +15,6 @@ var Ghost = module.exports = function (widget, data, result) {
   this.widget     = widget;
   this.completion = widget.completion;
 
-  this.cm.addKeyMap(this.keyMap = {
-    'Tab':   function () { that.accept(); },
-    'Right': function () { that.accept(); }
-  });
-
   if (result.special) {
     text = result.value;
   } else {
@@ -27,10 +22,17 @@ var Ghost = module.exports = function (widget, data, result) {
 
     if (substring === data.token.string) {
       text = result.value.substr(this.data.to.ch - this.data.from.ch);
-    } else {
-      return this.remove();
     }
   }
+
+  // Don't create the ghost element if there is no text to display. It makes for
+  // a janky UI where keys are blocked thanks to the ghost shortcuts.
+  if (!text) { return; }
+
+  this.cm.addKeyMap(this.keyMap = {
+    'Tab':   function () { that.accept(); },
+    'Right': function () { that.accept(); }
+  });
 
   // Creates the ghost element to be styled.
   var ghostHint = document.createElement('span');
