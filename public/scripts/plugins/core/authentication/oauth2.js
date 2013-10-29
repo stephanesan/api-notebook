@@ -353,11 +353,11 @@ module.exports = function (middleware) {
    */
   middleware.core('ajax:oauth2', function (data, next, done) {
     if (!_.isObject(data.oauth2)) {
-      return done(new TypeError('"oauth2" config object expected'), null);
+      return done(new TypeError('"oauth2" config object expected'));
     }
 
     if (!data.oauth2.accessToken) {
-      return done(new TypeError('"accessToken" expected'), null);
+      return done(new TypeError('"accessToken" expected'));
     }
 
     if (data.oauth2.tokenType === 'bearer') {
