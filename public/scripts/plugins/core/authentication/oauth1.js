@@ -8,6 +8,8 @@ var redirectUri = url.resolve(
   global.location.href, '/authentication/oauth1.html'
 );
 
+var appUrlEncoded = 'application/x-www-form-urlencoded';
+
 /**
  * Default ports of different protocols.
  *
@@ -102,26 +104,16 @@ var arrayToParams = function (array) {
 };
 
 /**
- * Sort query string parameters by alphabetical order and turn in a string.
- *
- * @param  {Object} obj
- * @return {String}
- */
-var normaliseRequestParams = function (obj) {
-  return arrayToParams(sortRequestParams(paramsToArray(obj)));
-};
-
-/**
  * Create the base signature string for hashing.
  *
  * @param  {Object} data
  * @return {String}
  */
-var createSignatureBase = function (data) {
+var createSignatureBase = function (params, data) {
   return [
     data.method.toUpperCase(),
     encodeData(normalizeUrl(data.url)),
-    encodeData(normaliseRequestParams(data.url.query))
+    encodeData(arrayToParams(params))
   ].join('&');
 };
 
@@ -138,11 +130,9 @@ var createSignature = function (base, options) {
     encodeData(options.consumerSecret), encodeData(options.oauthTokenSecret)
   ].join('&');
 
-  var hash = '';
+  var hash = key;
 
-  if (options.signatureMethod === 'PLAINTEXT') {
-    hash = key;
-  } else {
+  if (options.signatureMethod === 'HMAC-SHA1') {
     hash = crypto.createHmac('sha1', key).update(base).digest('base64');
   }
 
@@ -152,11 +142,12 @@ var createSignature = function (base, options) {
 /**
  * Generate a signature from the AJAX data.
  *
+ * @param  {Array}  params
  * @param  {Object} data
  * @return {String}
  */
-var getSignature = function (data) {
-  var signatureBase = createSignatureBase(data);
+var getSignature = function (params, data) {
+  var signatureBase = createSignatureBase(params, data);
   return createSignature(signatureBase, data.oauth1);
 };
 
@@ -190,28 +181,48 @@ var getNonce = function () {
  * @return {Array}
  */
 var prepareParameters = function (data) {
-  data.url.query = _.extend({
+  var params = _.extend({
     'oauth_timestamp':        getTimestamp(),
     'oauth_nonce':            getNonce(),
     'oauth_version':          '1.0',
-    'oauth_signature_method': 'HMAC-SHA1',
+    'oauth_signature_method': data.oauth1.signatureMethod,
     'oauth_consumer_key':     data.oauth1.consumerKey
   }, data.url.query);
 
   // Attach the token query parameter if we have one.
   if (data.oauth1.oauthToken) {
-    data.url.query.oauth_token = data.oauth1.oauthToken;
+    params.oauth_token = data.oauth1.oauthToken;
   }
 
   if (data.oauth1.oauthCallback) {
-    data.url.query.oauth_callback = data.oauth1.oauthCallback;
+    params.oauth_callback = data.oauth1.oauthCallback;
   }
 
-  var parameters = sortRequestParams(paramsToArray(data.url.query));
+  var contentType = _.find(_.pairs(data.headers), function (header) {
+    return header[0].toLowerCase() === 'content-type';
+  });
 
-  parameters.push(['oauth_signature', encodeData(getSignature(data))]);
+  if (!contentType) {
+    contentType = data.headers['Content-Type'] = appUrlEncoded;
+  } else {
+    contentType = contentType[1];
+  }
 
-  return parameters;
+  if (contentType === appUrlEncoded) {
+    if (_.isString(data.data)) {
+      _.extend(params, qs.parse(data.data));
+    } else if (_.isObject(data.data)) {
+      _.extend(params, data.data);
+    }
+  }
+
+  var sortedParams = sortRequestParams(paramsToArray(params));
+
+  sortedParams.push(
+    ['oauth_signature', encodeData(getSignature(sortedParams, data))]
+  );
+
+  return sortedParams;
 };
 
 /**
@@ -227,15 +238,17 @@ var isParamAnOAuthParameter = function (param) {
 /**
  * Generate the Authorization header from an order parameter array.
  *
+ * @param  {Object} data
  * @param  {Array}  params
  * @return {String}
  */
-var buildAuthorizationHeaders = function (params) {
-  return 'OAuth ' + _.chain(params).filter(function (param) {
-    return isParamAnOAuthParameter(param[0]);
-  }).map(function (param) {
-    return param[0] + '="' + param[1] + '"';
-  }).value().join(',');
+var buildAuthorizationHeaders = function (data, params) {
+  return 'OAuth realm="' + normalizeUrl(data.url) + '",' +
+    _.chain(params).filter(function (param) {
+      return isParamAnOAuthParameter(param[0]);
+    }).map(function (param) {
+      return param[0] + '="' + param[1] + '"';
+    }).value().join(',');
 };
 
 /**
@@ -252,7 +265,7 @@ var getRequestToken = function (options, done) {
       oauthCallback: redirectUri
     }, options),
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': appUrlEncoded
     }
   }, function (err, xhr) {
     if (err) { return done(err); }
@@ -284,7 +297,7 @@ var getAccessToken = function (options, verifier, done) {
     method: 'POST',
     oauth1: options,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': appUrlEncoded
     },
     data: qs.stringify({
       'oauth_verifier': verifier
@@ -407,6 +420,10 @@ module.exports = function (middleware) {
       return done(new TypeError('"oauth1" config object expected'), null);
     }
 
+    if (!data.oauth1.signatureMethod) {
+      data.oauth1.signatureMethod = 'HMAC-SHA1';
+    }
+
     // Parse the url for augmenting the query string parameters. Needed in
     // multiple places throughout the flow, so we can minimize the number of
     // parses by doing it once at the start.
@@ -419,13 +436,15 @@ module.exports = function (middleware) {
     delete data.url.search;
 
     var orderedParams = prepareParameters(data);
-    var authorization = buildAuthorizationHeaders(orderedParams);
+    var authorization = buildAuthorizationHeaders(data, orderedParams);
 
     data.headers.Authorization = authorization;
 
-    data.url.query = arrayToParams(_.filter(orderedParams, function (param) {
-      return !isParamAnOAuthParameter(param[0]);
-    }));
+    data.url.query = arrayToParams(
+      _.filter(paramsToArray(data.url.query), function (param) {
+        return !isParamAnOAuthParameter(param[0]);
+      })
+    );
 
     // Reattach the query string if we have one available.
     if (data.url.query) {
