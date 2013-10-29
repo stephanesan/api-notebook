@@ -181,21 +181,21 @@ var getNonce = function () {
  * @return {Array}
  */
 var prepareParameters = function (data) {
-  var params = _.extend({
+  var params = paramsToArray(_.extend({
     'oauth_timestamp':        getTimestamp(),
     'oauth_nonce':            getNonce(),
     'oauth_version':          '1.0',
     'oauth_signature_method': data.oauth1.signatureMethod,
     'oauth_consumer_key':     data.oauth1.consumerKey
-  }, data.url.query);
+  }, data.url.query));
 
   // Attach the token query parameter if we have one.
   if (data.oauth1.oauthToken) {
-    params.oauth_token = data.oauth1.oauthToken;
+    params.push(['oauth_token', data.oauth1.oauthToken]);
   }
 
   if (data.oauth1.oauthCallback) {
-    params.oauth_callback = data.oauth1.oauthCallback;
+    params.push(['oauth_callback', data.oauth1.oauthCallback]);
   }
 
   var contentType = _.find(_.pairs(data.headers), function (header) {
@@ -210,13 +210,17 @@ var prepareParameters = function (data) {
 
   if (contentType === appUrlEncoded) {
     if (_.isString(data.data)) {
-      _.extend(params, qs.parse(data.data));
-    } else if (_.isObject(data.data)) {
-      _.extend(params, data.data);
+      data.data = qs.parse(data.data);
+    }
+
+    if (_.isObject(data.data)) {
+      var body = paramsToArray(data.data);
+      data.data = arrayToParams(body);
+      params.push.apply(params, body);
     }
   }
 
-  var sortedParams = sortRequestParams(paramsToArray(params));
+  var sortedParams = sortRequestParams(params);
 
   sortedParams.push(
     ['oauth_signature', encodeData(getSignature(sortedParams, data))]
