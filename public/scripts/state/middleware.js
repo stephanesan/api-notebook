@@ -117,29 +117,11 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
   var prevData;
 
   // Set up the initial stack.
-  var stack = _.map(this._stack[name], function (fn) {
-    return {
-      fn:   fn,
-      args: []
-    };
-  });
-
-  // An "all" middleware listener can be hooked onto in a similar fashion to the
-  // "all" Backbone event. It is passed an additional name parameter as the
-  // first argument of the callback function.
-  stack.push.apply(stack, _.map(this._stack.all, function (fn) {
-    return {
-      fn:   fn,
-      args: [name]
-    };
-  }));
+  var stack = _.toArray(this._stack[name]);
 
   // Core plugins should always be appended to the end of the stack.
   if (_.isFunction(this._core[name])) {
-    stack.push({
-      fn:   this._core[name],
-      args: []
-    });
+    stack.push(this._core[name]);
   }
 
   // Call the final function when are done executing the stack of functions.
@@ -148,8 +130,12 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
   var done = function (err, data) {
     // Don't call the final function more than once.
     if (sent) { return; }
+
     // If we pass in two arguments, the second will be the updated data object.
-    if (arguments.length < 2) { data = prevData; }
+    if (arguments.length < 2) {
+      data = prevData;
+    }
+
     // Set the function to have "run" and call the final function.
     sent = true;
     if (_.isFunction(out)) {
@@ -174,15 +160,15 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     // If we have called the done callback inside the middleware, or we have hit
     // the end of the stack loop, we need to break the recursive next loop.
     if (sent || !layer) {
-      if (!sent) { done(err, data); }
+      if (!sent) {
+        done(err, data);
+      }
+
       return;
     }
 
-    var plugin = layer.fn;
-    var args   = layer.args;
-
     try {
-      var arity = plugin.length - args.length;
+      var arity = layer.length;
 
       // Error handling middleware can be registered by using a function with
       // four arguments. E.g. `function (err, data, next, done) {}`. Any
@@ -190,19 +176,17 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
       // have an error in the pipeline.
       if (err) {
         if (arity === 4) {
-          args.push(err, data, next, done);
-          plugin.apply(null, args);
+          layer(err, data, next, done);
         } else {
           next(err, data);
         }
       } else if (arity < 4) {
-        args.push(data, next, done);
-        plugin.apply(null, args);
+        layer(data, next, done);
       } else {
         next(null, data);
       }
     } catch (e) {
-      next(e, data);
+      next(e);
     }
   })(null, data);
 });

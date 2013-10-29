@@ -260,37 +260,6 @@ describe('Middleware', function () {
       expect(errorSpy).to.have.been.calledThrice;
     });
 
-    it('should be able to register a special all middleware listener', function () {
-      var spy = sinon.spy(function (name, data, next, done) {
-        expect(name).to.equal('test');
-        expect(data).to.be.an('object');
-        expect(next).to.be.a('function');
-        expect(done).to.be.a('function');
-        next();
-      });
-
-      middleware.use('all', spy);
-      middleware.trigger('test', {});
-
-      expect(spy).to.have.been.calledOnce;
-    });
-
-    it('should be able to register error middleware with the all listener', function () {
-      var errorSpy = sinon.spy(function (name, err, data, next, done) {
-        expect(error.message).to.equal('Test');
-        next(err);
-      });
-
-      middleware.use('all', function () { throw new Error('Test'); });
-      middleware.use('all', errorSpy);
-      middleware.use('all', errorSpy);
-      middleware.use('all', errorSpy);
-
-      middleware.trigger('test');
-
-      expect(errorSpy).to.have.been.calledThrice;
-    });
-
     it('should accept an object of { name => function } pairs to use', function () {
       var spy = sinon.spy();
 
