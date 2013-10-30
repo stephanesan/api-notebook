@@ -18,6 +18,7 @@ describe('Middleware', function () {
 
   describe('plugins', function () {
     afterEach(function () {
+      middleware._core  = {};
       middleware._stack = {};
     });
 
@@ -32,6 +33,14 @@ describe('Middleware', function () {
       middleware.trigger('test');
 
       expect(spy).to.have.been.calledOnce;
+    });
+
+    it('should expose a check to see if middleware is being handled', function () {
+      expect(middleware.exists('test')).to.be.false;
+
+      middleware.use('test', sinon.stub());
+
+      expect(middleware.exists('test')).to.be.true;
     });
 
     it('should loop through middleware', function () {

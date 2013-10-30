@@ -103,6 +103,16 @@ middleware.disuse = acceptObject(function (name, fn) {
 });
 
 /**
+ * Checks whether a middleware stack exists for the
+ *
+ * @param  {String}  name
+ * @return {Boolean}
+ */
+middleware.exists = function (name) {
+  return !!(this._core[name] || this._stack[name] && this._stack[name].length);
+};
+
+/**
  * Listens to any events triggered on the middleware system and runs through the
  * middleware stack based on the event name.
  *
@@ -175,7 +185,7 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
       // functions with less than four arguments will be called when we don't
       // have an error in the pipeline.
       if (err) {
-        if (arity === 4) {
+        if (arity > 3) {
           layer(err, data, next, done);
         } else {
           next(err, data);
@@ -186,7 +196,7 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
         next(null, data);
       }
     } catch (e) {
-      next(e);
+      next(e, data);
     }
   })(null, data);
 });
