@@ -124,7 +124,7 @@ middleware.exists = function (name) {
  * @param  {Function} done A callback function to call when the stack has
  *                         finished executing.
  */
-middleware.listenTo(middleware, 'all', function (name, data, out) {
+middleware.listenTo(middleware, 'all', function (name, data, complete) {
   var sent  = false;
   var index = 0;
   var prevData;
@@ -137,24 +137,21 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     stack.push(this._core[name]);
   }
 
-  // Call the final function when are done executing the stack of functions.
+  // Call the final function when we are done executing the middleware stack.
   // It should also be passed as a parameter of the data object to each
-  // middleware operation since we could short-circuit the entire stack.
-  var done = function (err, data) {
-    // Don't call the final function more than once.
-    if (sent) { return; }
-
-    // If we pass in two arguments, the second will be the updated data object.
-    if (arguments.length < 2) {
-      data = prevData;
-    }
-
+  // middleware operation since it's possible to short-circuit the entire stack.
+  var done = _.once(function (err, data) {
     // Set the function to have "run" and call the final function.
     sent = true;
-    if (_.isFunction(out)) {
-      return out(err, data);
+    if (_.isFunction(complete)) {
+      // If we don't have enough arguments, send the previous data object.
+      if (arguments.length < 2) {
+        data = prevData;
+      }
+
+      return complete(err, data);
     }
-  };
+  });
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
@@ -189,12 +186,12 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
       // have an error in the pipeline.
       if (err) {
         if (arity > 3) {
-          layer(err, data, next, done);
+          layer(err, data, _.once(next), done);
         } else {
           next(err, data);
         }
       } else if (arity < 4) {
-        layer(data, next, done);
+        layer(data, _.once(next), done);
       } else {
         next(null, data);
       }

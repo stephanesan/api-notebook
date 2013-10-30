@@ -17,9 +17,17 @@ describe('Middleware', function () {
   });
 
   describe('plugins', function () {
-    afterEach(function () {
+    var origCore  = middleware._core;
+    var origStack = middleware._stack;
+
+    beforeEach(function () {
       middleware._core  = {};
       middleware._stack = {};
+    });
+
+    after(function () {
+      middleware._core  = origCore;
+      middleware._stack = origStack;
     });
 
     it('should define a `use` method', function () {
@@ -118,7 +126,7 @@ describe('Middleware', function () {
       expect(spy).to.have.been.calledOnce;
     });
 
-    it('should be able to run completion function after multiple middleware', function () {
+    it('should be able to run complete function after multiple middleware', function () {
       var spy  = sinon.spy();
       var next = sinon.spy(function (data, next) {
         next();
@@ -146,6 +154,24 @@ describe('Middleware', function () {
 
       expect(spy).to.have.been.calledOnce;
       expect(next).to.have.been.calledOnce;
+    });
+
+    it('should only be able to call next once', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+
+      middleware.use('test', function (data, next) {
+        next();
+        next();
+        next();
+      });
+      middleware.use('test', spy1);
+      middleware.use('test', spy2);
+
+      middleware.trigger('test');
+
+      expect(spy1).to.have.been.calledOnce;
+      expect(spy2).to.not.have.been.called;
     });
 
     it('should only be able to call done once', function () {
