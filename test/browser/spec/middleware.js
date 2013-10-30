@@ -43,6 +43,40 @@ describe('Middleware', function () {
       expect(middleware.exists('test')).to.be.true;
     });
 
+    it('should trigger an add event when a plugin is added', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+
+      middleware.on('newPlugin', spy1);
+      middleware.on('newPlugin:test', spy2);
+
+      expect(spy1).to.not.have.been.called;
+      expect(spy2).to.not.have.been.called;
+
+      middleware.use('test', sinon.stub());
+
+      expect(spy1).to.have.been.called;
+      expect(spy2).to.have.been.called;
+    });
+
+    it('should trigger a remove event when a plugin is removed', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+      var stub = sinon.stub();
+
+      middleware.use('test', stub);
+      middleware.on('removePlugin', spy1);
+      middleware.on('removePlugin:test', spy2);
+
+      expect(spy1).to.not.have.been.called;
+      expect(spy2).to.not.have.been.called;
+
+      middleware.disuse('test', stub);
+
+      expect(spy1).to.have.been.called;
+      expect(spy2).to.have.been.called;
+    });
+
     it('should loop through middleware', function () {
       var spy = sinon.spy(function (data, next) {
         next();

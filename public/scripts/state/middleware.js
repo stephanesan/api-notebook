@@ -58,6 +58,8 @@ middleware._core = {};
  */
 middleware.use = acceptObject(function (name, fn) {
   var stack = this._stack[name] || (this._stack[name] = []);
+  this.trigger('newPlugin', fn);
+  this.trigger('newPlugin:' + name, fn);
   stack.push(fn);
   return this;
 });
@@ -84,20 +86,21 @@ middleware.core = function (name, fn) {
  * @return {this}
  */
 middleware.disuse = acceptObject(function (name, fn) {
-  if (!fn || !this._stack[name]) {
-    delete this._stack[name];
-    return this;
-  }
+  var stack = this._stack[name] || [];
 
-  var stack = this._stack[name];
   for (var i = 0; i < stack.length; i++) {
-    if (stack[i] === fn) {
+    if (!fn || stack[i] === fn) {
+      this.trigger('removePlugin', stack[i]);
+      this.trigger('removePlugin:' + name, stack[i]);
       stack.splice(i, 1);
-      i--;
+      i -= 1; // Decrement the index by one with the function we just removed.
     }
   }
 
-  if (!stack.length) { delete this._stack[name]; }
+  // Delete empty arrays.
+  if (!stack.length) {
+    delete this._stack[name];
+  }
 
   return this;
 });
