@@ -234,6 +234,8 @@ App.prototype.updateState = function () {
     statusEl.appendChild(document.createTextNode('.'));
   } else if (state === persistence.SAVE_DONE) {
     statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
+  } else if (state === persistence.CHANGED) {
+    statusEl.textContent = 'Unsaved changes.';
   }
 
   return this;

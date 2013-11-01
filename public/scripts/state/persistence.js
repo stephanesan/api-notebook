@@ -32,6 +32,7 @@ Persistence.prototype.SAVE_FAIL = Persistence.SAVE_FAIL = 3;
 Persistence.prototype.SAVE_DONE = Persistence.SAVE_DONE = 4;
 Persistence.prototype.LOAD_FAIL = Persistence.LOAD_FAIL = 5;
 Persistence.prototype.LOAD_DONE = Persistence.LOAD_DONE = 6;
+Persistence.prototype.CHANGED   = Persistence.CHANGED   = 7;
 
 /**
  * Private method for triggering state changes and relevant events.
@@ -344,6 +345,8 @@ persistence.listenTo(persistence, 'change:contents', (function () {
     if (changing) { return changeQueue = true; }
 
     changing = true;
+    this._changeState(Persistence.CHANGED);
+
     middleware.trigger(
       'persistence:change',
       this.getMiddlewareData(),
