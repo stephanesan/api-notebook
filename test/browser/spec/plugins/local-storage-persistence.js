@@ -1,14 +1,14 @@
-/* global describe, it, beforeEach, afterEach */
+/* global describe, it, before, after */
 
 describe('Local Storage Persistence Plugin', function () {
   var id       = '213';
   var notebook = '---\ntitle: Test Notebook\n---\n\n# Testing localStorage';
 
-  beforeEach(function () {
+  before(function () {
     localStoragePersistencePlugin.attach(App.middleware);
   });
 
-  afterEach(function () {
+  after(function () {
     App.persistence.reset();
     localStorage.removeItem('notebook-' + id);
     localStoragePersistencePlugin.detach(App.middleware);

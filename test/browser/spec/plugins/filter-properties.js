@@ -1,11 +1,11 @@
 /* global describe, it */
 
 describe('Filter Properties Plugin', function () {
-  beforeEach(function () {
+  before(function () {
     filterPropertiesPlugin.attach(App.middleware);
   });
 
-  afterEach(function () {
+  after(function () {
     filterPropertiesPlugin.detach(App.middleware);
   });
 
