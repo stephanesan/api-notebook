@@ -183,9 +183,7 @@ var savePlugin = function (data, next, done) {
     }),
     oauth2: oauth2Store.toJSON()
   }, function (err, xhr) {
-    if (err) {
-      return next(err);
-    }
+    if (err) { return next(err); }
 
     // The status does not equal a sucessful patch or creation.
     if (xhr.status !== 200 && xhr.status !== 201) {

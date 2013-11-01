@@ -78,7 +78,7 @@ describe('Gist Persistence Plugin', function () {
 
     server.respondWith(
       'POST',
-      'https://api.github.com/gists?access_token=' + accessToken,
+      'https://api.github.com/gists',
       [
         200,
         {
