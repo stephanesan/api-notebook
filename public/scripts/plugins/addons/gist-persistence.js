@@ -1,5 +1,4 @@
 /* global App */
-var _            = App._;
 var CLIENT_ID    = process.env.GITHUB_CLIENT_ID;
 var AUTH_URL     = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
@@ -20,7 +19,7 @@ var oauth2Store = App.store.customStore('github');
  * @param {Function} done
  */
 var changePlugin = function (data, next, done) {
-  return setTimeout(_.bind(data.save, null, done), 500);
+  return done();
 };
 
 /**

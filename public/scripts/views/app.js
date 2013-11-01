@@ -59,7 +59,6 @@ var App = module.exports = View.extend({
 App.prototype.events = {
   'click .modal-toggle':   'showShortcuts',
   'click .notebook-exec':  'runNotebook',
-  'click .notebook-fork':  'forkNotebook',
   'click .notebook-clone': 'forkNotebook',
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
@@ -285,7 +284,7 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="toolbar-end">'+
+      '<div class="toolbar-end">' +
         '<button class="edit-source toggle-notebook-edit"></button>' +
       '</div>' +
 
@@ -299,8 +298,8 @@ App.prototype.render = function () {
             '</button>' +
           '</span>' +
           '<span class="btn-view">' +
-            '<button class="btn-text notebook-fork">' +
-              'Make my own copy' +
+            '<button class="btn-text notebook-save">' +
+              'Save notebook' +
             '</button>' +
             '<button class="btn-text notebook-clone">' +
               'Make another copy' +

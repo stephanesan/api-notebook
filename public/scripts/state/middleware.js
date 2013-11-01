@@ -140,9 +140,10 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
   // Call the final function when we are done executing the middleware stack.
   // It should also be passed as a parameter of the data object to each
   // middleware operation since it's possible to short-circuit the entire stack.
-  var done = _.once(function (err, data) {
-    // Set the function to have "run" and call the final function.
+  var over = function (err, data) {
+    // Set the function to have been already "run" and call the final function.
     sent = true;
+
     if (_.isFunction(complete)) {
       // If we don't have enough arguments, send the previous data object.
       if (arguments.length < 2) {
@@ -151,11 +152,11 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
 
       return complete(err, data);
     }
-  });
+  };
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
-  (function next (err, data) {
+  (function move (err, data) {
     var layer = stack[index++];
 
     // If we were provided two arguments, the second argument would have been
@@ -167,18 +168,28 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
       prevData = data;
     }
 
-    // If we have called the done callback inside the middleware, or we have hit
+    // If we have called the done function inside a plugin, or we have hit
     // the end of the stack loop, we need to break the recursive next loop.
     if (sent || !layer) {
       if (!sent) {
-        done(err, data);
+        over(err, data);
       }
 
       return;
     }
 
     try {
-      var arity = layer.length;
+      var arity  = layer.length;
+      var called = (function (has) {
+        return function (fn) {
+          return function () {
+            if (has) { return; }
+
+            has = true;
+            return fn.apply(null, arguments);
+          };
+        };
+      })(false);
 
       // Error handling middleware can be registered by using a function with
       // four arguments. E.g. `function (err, data, next, done) {}`. Any
@@ -186,17 +197,17 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
       // have an error in the pipeline.
       if (err) {
         if (arity > 3) {
-          layer(err, data, _.once(next), done);
+          layer(err, data, called(move), called(over));
         } else {
-          next(err, data);
+          move(err, data);
         }
       } else if (arity < 4) {
-        layer(data, _.once(next), done);
+        layer(data, called(move), called(over));
       } else {
-        next(null, data);
+        move(null, data);
       }
     } catch (e) {
-      next(e, data);
+      move(e, data);
     }
   })(null, data);
 });
