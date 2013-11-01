@@ -1,4 +1,4 @@
-/* global describe, it, beforeEach, afterEach */
+/* global describe, it, beforeEach, afterEach, before, after */
 
 describe('RAML Client Generator Plugin', function () {
   var fixture              = document.getElementById('fixture');
@@ -7,12 +7,12 @@ describe('RAML Client Generator Plugin', function () {
   var methods              = methodsWithBodies.concat(methodsWithoutBodies);
   var sandbox;
 
-  beforeEach(function () {
+  before(function () {
     sandbox = new App.Sandbox();
     ramlClientGeneratorPlugin.attach(App.middleware);
   });
 
-  afterEach(function () {
+  after(function () {
     sandbox.remove();
     ramlClientGeneratorPlugin.detach(App.middleware);
   });
