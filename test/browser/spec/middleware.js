@@ -17,8 +17,17 @@ describe('Middleware', function () {
   });
 
   describe('plugins', function () {
-    afterEach(function () {
+    var origCore  = middleware._core;
+    var origStack = middleware._stack;
+
+    beforeEach(function () {
+      middleware._core  = {};
       middleware._stack = {};
+    });
+
+    after(function () {
+      middleware._core  = origCore;
+      middleware._stack = origStack;
     });
 
     it('should define a `use` method', function () {
@@ -32,6 +41,48 @@ describe('Middleware', function () {
       middleware.trigger('test');
 
       expect(spy).to.have.been.calledOnce;
+    });
+
+    it('should expose a check to see if middleware is being handled', function () {
+      expect(middleware.exists('test')).to.be.false;
+
+      middleware.use('test', sinon.stub());
+
+      expect(middleware.exists('test')).to.be.true;
+    });
+
+    it('should trigger an add event when a plugin is added', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+
+      middleware.on('newPlugin', spy1);
+      middleware.on('newPlugin:test', spy2);
+
+      expect(spy1).to.not.have.been.called;
+      expect(spy2).to.not.have.been.called;
+
+      middleware.use('test', sinon.stub());
+
+      expect(spy1).to.have.been.called;
+      expect(spy2).to.have.been.called;
+    });
+
+    it('should trigger a remove event when a plugin is removed', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+      var stub = sinon.stub();
+
+      middleware.use('test', stub);
+      middleware.on('removePlugin', spy1);
+      middleware.on('removePlugin:test', spy2);
+
+      expect(spy1).to.not.have.been.called;
+      expect(spy2).to.not.have.been.called;
+
+      middleware.disuse('test', stub);
+
+      expect(spy1).to.have.been.called;
+      expect(spy2).to.have.been.called;
     });
 
     it('should loop through middleware', function () {
@@ -75,7 +126,7 @@ describe('Middleware', function () {
       expect(spy).to.have.been.calledOnce;
     });
 
-    it('should be able to run completion function after multiple middleware', function () {
+    it('should be able to run complete function after multiple middleware', function () {
       var spy  = sinon.spy();
       var next = sinon.spy(function (data, next) {
         next();
@@ -103,6 +154,24 @@ describe('Middleware', function () {
 
       expect(spy).to.have.been.calledOnce;
       expect(next).to.have.been.calledOnce;
+    });
+
+    it('should only be able to call next once', function () {
+      var spy1 = sinon.spy();
+      var spy2 = sinon.spy();
+
+      middleware.use('test', function (data, next) {
+        next();
+        next();
+        next();
+      });
+      middleware.use('test', spy1);
+      middleware.use('test', spy2);
+
+      middleware.trigger('test');
+
+      expect(spy1).to.have.been.calledOnce;
+      expect(spy2).to.not.have.been.called;
     });
 
     it('should only be able to call done once', function () {
@@ -254,37 +323,6 @@ describe('Middleware', function () {
       middleware.use('test', errorSpy);
       middleware.use('test', errorSpy);
       middleware.use('test', errorSpy);
-
-      middleware.trigger('test');
-
-      expect(errorSpy).to.have.been.calledThrice;
-    });
-
-    it('should be able to register a special all middleware listener', function () {
-      var spy = sinon.spy(function (name, data, next, done) {
-        expect(name).to.equal('test');
-        expect(data).to.be.an('object');
-        expect(next).to.be.a('function');
-        expect(done).to.be.a('function');
-        next();
-      });
-
-      middleware.use('all', spy);
-      middleware.trigger('test', {});
-
-      expect(spy).to.have.been.calledOnce;
-    });
-
-    it('should be able to register error middleware with the all listener', function () {
-      var errorSpy = sinon.spy(function (name, err, data, next, done) {
-        expect(error.message).to.equal('Test');
-        next(err);
-      });
-
-      middleware.use('all', function () { throw new Error('Test'); });
-      middleware.use('all', errorSpy);
-      middleware.use('all', errorSpy);
-      middleware.use('all', errorSpy);
 
       middleware.trigger('test');
 

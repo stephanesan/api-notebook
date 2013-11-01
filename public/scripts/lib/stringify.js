@@ -28,6 +28,14 @@ var getInternalName = (function () {
   return function (object) {
     var name = 'Object';
 
+    if (object === null) {
+      return 'null';
+    }
+
+    if (object === undefined) {
+      return 'undefined';
+    }
+
     do {
       if (typeof object.constructor === 'object') {
         name = Object.prototype.toString.call(object).slice(8, -1);

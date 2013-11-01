@@ -58,6 +58,8 @@ middleware._core = {};
  */
 middleware.use = acceptObject(function (name, fn) {
   var stack = this._stack[name] || (this._stack[name] = []);
+  this.trigger('newPlugin', fn);
+  this.trigger('newPlugin:' + name, fn);
   stack.push(fn);
   return this;
 });
@@ -84,23 +86,34 @@ middleware.core = function (name, fn) {
  * @return {this}
  */
 middleware.disuse = acceptObject(function (name, fn) {
-  if (!fn || !this._stack[name]) {
-    delete this._stack[name];
-    return this;
-  }
+  var stack = this._stack[name] || [];
 
-  var stack = this._stack[name];
   for (var i = 0; i < stack.length; i++) {
-    if (stack[i] === fn) {
+    if (!fn || stack[i] === fn) {
+      this.trigger('removePlugin', stack[i]);
+      this.trigger('removePlugin:' + name, stack[i]);
       stack.splice(i, 1);
-      i--;
+      i -= 1; // Decrement the index by one with the function we just removed.
     }
   }
 
-  if (!stack.length) { delete this._stack[name]; }
+  // Delete empty arrays.
+  if (!stack.length) {
+    delete this._stack[name];
+  }
 
   return this;
 });
+
+/**
+ * Checks whether a middleware stack exists for the
+ *
+ * @param  {String}  name
+ * @return {Boolean}
+ */
+middleware.exists = function (name) {
+  return !!(this._core[name] || this._stack[name] && this._stack[name].length);
+};
 
 /**
  * Listens to any events triggered on the middleware system and runs through the
@@ -111,51 +124,34 @@ middleware.disuse = acceptObject(function (name, fn) {
  * @param  {Function} done A callback function to call when the stack has
  *                         finished executing.
  */
-middleware.listenTo(middleware, 'all', function (name, data, out) {
+middleware.listenTo(middleware, 'all', function (name, data, complete) {
   var sent  = false;
   var index = 0;
   var prevData;
 
   // Set up the initial stack.
-  var stack = _.map(this._stack[name], function (fn) {
-    return {
-      fn:   fn,
-      args: []
-    };
-  });
-
-  // An "all" middleware listener can be hooked onto in a similar fashion to the
-  // "all" Backbone event. It is passed an additional name parameter as the
-  // first argument of the callback function.
-  stack.push.apply(stack, _.map(this._stack.all, function (fn) {
-    return {
-      fn:   fn,
-      args: [name]
-    };
-  }));
+  var stack = _.toArray(this._stack[name]);
 
   // Core plugins should always be appended to the end of the stack.
   if (_.isFunction(this._core[name])) {
-    stack.push({
-      fn:   this._core[name],
-      args: []
-    });
+    stack.push(this._core[name]);
   }
 
-  // Call the final function when are done executing the stack of functions.
+  // Call the final function when we are done executing the middleware stack.
   // It should also be passed as a parameter of the data object to each
-  // middleware operation since we could short-circuit the entire stack.
-  var done = function (err, data) {
-    // Don't call the final function more than once.
-    if (sent) { return; }
-    // If we pass in two arguments, the second will be the updated data object.
-    if (arguments.length < 2) { data = prevData; }
+  // middleware operation since it's possible to short-circuit the entire stack.
+  var done = _.once(function (err, data) {
     // Set the function to have "run" and call the final function.
     sent = true;
-    if (_.isFunction(out)) {
-      return out(err, data);
+    if (_.isFunction(complete)) {
+      // If we don't have enough arguments, send the previous data object.
+      if (arguments.length < 2) {
+        data = prevData;
+      }
+
+      return complete(err, data);
     }
-  };
+  });
 
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
@@ -174,30 +170,28 @@ middleware.listenTo(middleware, 'all', function (name, data, out) {
     // If we have called the done callback inside the middleware, or we have hit
     // the end of the stack loop, we need to break the recursive next loop.
     if (sent || !layer) {
-      if (!sent) { done(err, data); }
+      if (!sent) {
+        done(err, data);
+      }
+
       return;
     }
 
-    var plugin = layer.fn;
-    var args   = layer.args;
-
     try {
-      var arity = plugin.length - args.length;
+      var arity = layer.length;
 
       // Error handling middleware can be registered by using a function with
       // four arguments. E.g. `function (err, data, next, done) {}`. Any
       // functions with less than four arguments will be called when we don't
       // have an error in the pipeline.
       if (err) {
-        if (arity === 4) {
-          args.push(err, data, next, done);
-          plugin.apply(null, args);
+        if (arity > 3) {
+          layer(err, data, _.once(next), done);
         } else {
           next(err, data);
         }
       } else if (arity < 4) {
-        args.push(data, next, done);
-        plugin.apply(null, args);
+        layer(data, _.once(next), done);
       } else {
         next(null, data);
       }
