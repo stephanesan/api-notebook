@@ -93,6 +93,17 @@ App.prototype.initialize = function () {
   Backbone.history.start({
     pushState: false
   });
+
+  // Block attempts to close or refresh the window when the current persistence
+  // state is dirty.
+  Backbone.$(window).on('beforeunload', function (e) {
+    if (persistence.get('state') !== persistence.CHANGED) { return; }
+
+    var confirmationMessage = 'Your changes will be lost.';
+
+    (e || window.event).returnValue = confirmationMessage;
+    return confirmationMessage;
+  });
 };
 
 /**
