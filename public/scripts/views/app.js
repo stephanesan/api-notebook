@@ -59,7 +59,7 @@ var App = module.exports = View.extend({
 App.prototype.events = {
   'click .modal-toggle':   'showShortcuts',
   'click .notebook-exec':  'runNotebook',
-  'click .notebook-clone': 'forkNotebook',
+  'click .notebook-clone': 'cloneNotebook',
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
   // Switch between application views.
@@ -364,19 +364,19 @@ App.prototype.runNotebook = function () {
  * Authenticate with the persistence layer.
  */
 App.prototype.authNotebook = function () {
-  persistence.authenticate();
+  return persistence.authenticate();
 };
 
 /**
- * Fork the current notebook in-memory.
+ * Clone the current notebook in-memory.
  */
-App.prototype.forkNotebook = function () {
-  persistence.fork();
+App.prototype.cloneNotebook = function () {
+  return persistence.clone();
 };
 
 /**
  * Manually attempt to save the notebook.
  */
 App.prototype.saveNotebook = function () {
-  persistence.save();
+  return persistence.save();
 };

@@ -115,10 +115,6 @@ Persistence.prototype.deserialize = function (done) {
  * @param {Function} done
  */
 Persistence.prototype.save = function (done) {
-  if (!this.isOwner()) {
-    return done(new Error('Not the current notebook owner'));
-  }
-
   this._changeState(Persistence.SAVING);
 
   middleware.trigger(
@@ -178,7 +174,9 @@ Persistence.prototype.authenticate = function (done) {
 Persistence.prototype.getMiddlewareData = function () {
   return _.extend(this.toJSON(), {
     save:            _.bind(this.save, this),
+    clone:           _.bind(this.clone, this),
     isOwner:         _.bind(this.isOwner, this),
+    authenticate:    _.bind(this.authenticate, this),
     isAuthenticated: _.bind(this.isAuthenticated, this)
   });
 };
@@ -238,32 +236,31 @@ Persistence.prototype.load = function (done) {
 };
 
 /**
- * Resets the persistence model state.
+ * Clone the notebook and reset the persistence layer to look normal again.
  */
-Persistence.prototype.reset = function () {
-  return this.set(_.extend(this.defaults, {
-    notebook: []
-  }));
-};
-
-/**
- * Pseudo persistence forking.
- */
-Persistence.prototype.fork = function () {
-  // Allows a reference back to the original notebook. Could be a useful to
-  // track where notebooks originally came from.
+Persistence.prototype.clone = function (done) {
+  // Allows a reference back to the original notebook. Could be a useful for
+  // someone to track where different notebooks originally come from.
   if (this.has('id')) {
     this.set('originalId', this.get('id'));
   }
 
   // Removes the notebook id and sets the user id to the current user.
-  this.set('id', null);
+  this.set('id',      null);
   this.set('ownerId', this.get('userId'));
 
   // Reset the state to default and save.
   Backbone.history.navigate('');
   this._changeState(Persistence.NULL);
-  this.save();
+
+  return this.save(done);
+};
+
+/**
+ * Resets the persistence model state.
+ */
+Persistence.prototype.reset = function () {
+  return this.set(this.defaults);
 };
 
 /**

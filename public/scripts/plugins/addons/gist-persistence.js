@@ -5,14 +5,29 @@ var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
 var VALIDATE_URL = 'https://api.github.com/user';
 
 /**
- * Generate a custom store for the Github token.
+ * OAuth2 authentication options object.
+ *
+ * @type {Object}
+ */
+var authOpts = {
+  scopes:              ['gist'],
+  clientId:            CLIENT_ID,
+  clientSecret:        '', // Injected by proxy
+  accessTokenUri:      TOKEN_URL,
+  authorizationUri:    AUTH_URL,
+  authorizationGrants: 'code'
+};
+
+/**
+ * Generate a custom store for the Github OAuth2 response tokens.
  *
  * @type {Object}
  */
 var oauth2Store = App.store.customStore('github');
 
 /**
- * Any time a change occurs, we'll sync the change with our Github gist.
+ * When a change occurs *and* we are already authenticated, we can automatically
+ * save the update to a gist.
  *
  * @param {Object}   data
  * @param {Function} next
@@ -23,7 +38,8 @@ var changePlugin = function (data, next, done) {
 };
 
 /**
- * Get the authenticated user id.
+ * Get the authenticated user id and title by making a request on the users
+ * behalf.
  *
  * @param {Function} done
  */
@@ -59,14 +75,7 @@ var authenticatedUserId = function (done) {
  * @param {Function} done
  */
 var authenticatePlugin = function (data, next, done) {
-  App.middleware.trigger('authenticate:oauth2', {
-    scopes:              ['gist'],
-    clientId:            CLIENT_ID,
-    clientSecret:        '',
-    accessTokenUri:      TOKEN_URL,
-    authorizationUri:    AUTH_URL,
-    authorizationGrants: 'code'
-  }, function (err, auth) {
+  App.middleware.trigger('authenticate:oauth2', authOpts, function (err, auth) {
     if (err) { return next(err); }
 
     oauth2Store.set(auth);
@@ -76,7 +85,7 @@ var authenticatePlugin = function (data, next, done) {
 };
 
 /**
- * Check that we are authenticated with Github.
+ * Check whether we are authenticated to Github.
  *
  * @param {Object}   data
  * @param {Function} next
@@ -87,7 +96,7 @@ var authenticatedPlugin = function (data, next, done) {
 };
 
 /**
- * Load a single gist from Github and make sure it holds our notebook content.
+ * Loads a single gist id from Github and checks whether it holds our notebook.
  *
  * @param {Object}   data
  * @param {Function} next
@@ -122,15 +131,40 @@ var loadPlugin = function (data, next, done) {
 };
 
 /**
- * Save the notebook into a Github gist for persistence.
+ * Save the notebook into a single Github gist for persistence. If the user is
+ * not yet authenticated, we'll attempt to do a smoother on boarding by showing
+ * a help dialog.
  *
  * @param {Object}   data
  * @param {Function} next
  * @param {Function} done
  */
-var savePlugin = function (data, next) {
+var savePlugin = function (data, next, done) {
+  if (!data.isOwner()) {
+    return data.clone(done);
+  }
+
   if (!data.isAuthenticated()) {
-    return next();
+    return App.middleware.trigger('ui:modal', {
+      title:   'Authenticate with Github',
+      content: [
+        '<p>Tell the user something useful here.</p>',
+        '<p class="text-center">',
+        '<button class="btn" data-github>Connect to Github</button>',
+        '</p>'
+      ].join('\n'),
+      afterRender: function (modal, close) {
+        App.Library.Backbone.$(modal).on('click', '[data-github]', function () {
+          return data.authenticate(close);
+        });
+      }
+    }, function (err) {
+      if (err) { return done(err); }
+
+      // Close the first save attempt and start another now that we should be
+      // authenticated to Github.
+      return done(), data.save();
+    });
   }
 
   App.middleware.trigger('ajax:oauth2', {

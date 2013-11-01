@@ -37,24 +37,34 @@ var template = _.template([
 var modalPlugin = function (options, next, done) {
   var modal = domify(template(options));
 
-  var close = function () {
-    messages.off('keydown:Esc', close);
+  var close = function (err, data) {
+    if (options.afterDestroy) {
+      options.afterDestroy(modal);
+    }
+
+    messages.off('keydown:Esc', boundClose);
     document.body.removeChild(modal);
     document.body.classList.remove('modal-visible');
-    return done();
+    return done(err, data);
   };
+
+  var boundClose = _.bind(close, null, null, null);
 
   document.body.appendChild(modal);
   document.body.classList.add('modal-visible');
 
-  messages.on('keydown:Esc', close);
+  messages.on('keydown:Esc', boundClose);
   Backbone.$(modal)
     .on('click', function (e) {
       if (e.target !== modal) { return; }
 
       return close();
     })
-    .on('click', '[data-dismiss]', close);
+    .on('click', '[data-dismiss]', boundClose);
+
+  // Execute the after render function which can be used to attach more
+  // functionality to the modal.
+  return options.afterRender && options.afterRender(modal, close);
 };
 
 /**
