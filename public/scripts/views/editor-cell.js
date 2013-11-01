@@ -5,8 +5,23 @@ var BtnControls  = require('./btn-cell-controls');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
-var persistence  = require('../state/persistence');
 var ownerProtect = require('./lib/owner-protect');
+
+var triggerSelf = function (obj, method) {
+  obj[method] = ownerProtect(function () {
+    this.trigger(method, this);
+  });
+};
+
+/**
+ * Inserts new cells around the current cell.
+ */
+var triggerSelfAndHideButtons = function (obj, method) {
+  obj[method] = ownerProtect(function () {
+    this.trigger(method, this);
+    this.el.classList.remove('cell-insert-hover');
+  });
+};
 
 /**
  * Create a generic editor cell instance view.
@@ -72,34 +87,6 @@ EditorCell.prototype.remove = ownerProtect(function () {
 });
 
 /**
- * Moves the cells position in the notebook up by one cell.
- */
-EditorCell.prototype.moveUp = ownerProtect(function () {
-  this.trigger('moveUp', this);
-});
-
-/**
- * Moves the cells position in the notebook down by one cell.
- */
-EditorCell.prototype.moveDown = ownerProtect(function () {
-  this.trigger('moveDown', this);
-});
-
-/**
- * Navigate up to the previous cell with the cursor.
- */
-EditorCell.prototype.navigateUp = ownerProtect(function () {
-  this.trigger('navigateUp', this);
-});
-
-/**
- * Navigate down to the next cell with the cursor.
- */
-EditorCell.prototype.navigateDown = ownerProtect(function () {
-  this.trigger('navigateDown', this);
-});
-
-/**
  * Clones the editor cell and triggers a clone event with the cloned view.
  *
  * @return {EditorCell} Cloned view.
@@ -110,20 +97,6 @@ EditorCell.prototype.clone = ownerProtect(function () {
   }));
   this.trigger('clone', this, clone);
   return clone;
-});
-
-/**
- * Triggers a `switch` event to switch the cell mode.
- */
-EditorCell.prototype.switch = ownerProtect(function () {
-  this.trigger('switch', this);
-});
-
-/**
- * Append a new editor cell directly below the current cell.
- */
-EditorCell.prototype.appendNew = ownerProtect(function () {
-  this.trigger('appendNew', this);
 });
 
 /**
@@ -144,6 +117,9 @@ EditorCell.prototype.newLineBelow = ownerProtect(function () {
   });
 });
 
+/**
+ * Toggle comments in the current editor instance.
+ */
 EditorCell.prototype.toggleComment = ownerProtect(function () {
   this.editor.execCommand('toggleComment');
 });
@@ -287,10 +263,10 @@ EditorCell.prototype.renderEditor = function () {
   // Initialize the codemirror editor.
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
-  }, this), _.extend({}, this.editorOptions, {
+  }, this), _.extend({
     view:     this,
     readOnly: !this.isOwner()
-  }));
+  }, this.editorOptions));
 
   // Add an extra css class for helping with styling read-only editors.
   if (this.editor.getOption('readOnly')) {
@@ -450,18 +426,18 @@ EditorCell.prototype.appendTo = function (el) {
  * @return {Boolean}
  */
 EditorCell.prototype.isOwner = function () {
-  return persistence.isOwner();
+  return true;
 };
 
 /**
- * Inserts new cells around the current cell.
+ * Add a few simple binding for just proxying events.
  */
-var triggerSelfAndHideButtons = function (obj, method) {
-  obj[method] = ownerProtect(function () {
-    this.trigger(method, this);
-    this.el.classList.remove('cell-insert-hover');
-  });
-};
+triggerSelf(EditorCell.prototype, 'switch');
+triggerSelf(EditorCell.prototype, 'moveUp');
+triggerSelf(EditorCell.prototype, 'moveDown');
+triggerSelf(EditorCell.prototype, 'appendNew');
+triggerSelf(EditorCell.prototype, 'navigateUp');
+triggerSelf(EditorCell.prototype, 'navigateDown');
 
 /**
  * Attach numerous listeners that just trigger events.
