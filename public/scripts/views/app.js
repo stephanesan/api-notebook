@@ -154,7 +154,6 @@ App.prototype.update = function () {
  */
 App.prototype.updateUser = function () {
   var auth    = this.el.querySelector('.auth-status');
-  var title   = this.el.querySelector('.notebook-title');
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
 
@@ -163,14 +162,8 @@ App.prototype.updateUser = function () {
   this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
   this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
 
-  // Allow/disallow editing of the title based on authentication status.
-  title.readOnly = !isOwner;
-
   // Update the auth display status with the user title.
   auth.textContent = persistence.get('userTitle') + '.';
-
-  // Adding and removing some of these classes cause the container to resize.
-  messages.trigger('resize');
 
   return this;
 };
