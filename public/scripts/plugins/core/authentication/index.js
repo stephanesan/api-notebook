@@ -1,3 +1,4 @@
+var basic  = require('./basic');
 var oauth1 = require('./oauth1');
 var oauth2 = require('./oauth2');
 
@@ -7,6 +8,7 @@ var oauth2 = require('./oauth2');
  * @param {Object} middleware
  */
 module.exports = function (middleware) {
+  basic(middleware);
   oauth1(middleware);
   oauth2(middleware);
 };

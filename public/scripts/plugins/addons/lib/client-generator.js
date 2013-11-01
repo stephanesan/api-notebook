@@ -518,6 +518,9 @@ var httpRequest = function (nodes, method) {
         } else if (scheme.type === 'OAuth 1.0') {
           request        = 'ajax:oauth1';
           options.oauth1 = authenticated;
+        } else if (scheme.type === 'Basic Authentication') {
+          request           = 'ajax:basicAuth';
+          options.basicAuth = authenticated;
         }
 
         return true;
@@ -813,6 +816,17 @@ var authenticateOAuth2 = function (nodes, scheme) {
 };
 
 /**
+ * Returns a function that can be used to authentcate via Basic Authentication.
+ *
+ * @param  {Array}    nodes
+ * @param  {Object}   scheme
+ * @return {Function}
+ */
+var authenticateBasicAuth = function (nodes, scheme) {
+  return authenticateMiddleware('basicAuth', nodes, scheme);
+};
+
+/**
  * Attaches all available security schemes to the context.
  *
  * @param  {Array}  nodes
@@ -843,9 +857,7 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
           ].join(' ')
         }
       );
-    }
-
-    if (scheme.type === 'OAuth 1.0') {
+    } else if (scheme.type === 'OAuth 1.0') {
       context[methodName] = authenticateOAuth1(nodes, scheme);
       context[methodName][DESCRIPTION_PROPERTY] = _.extend(
         toDescriptionObject(scheme),
@@ -855,6 +867,14 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
             'consumerKey: string, consumerSecret: string',
             '})'
           ].join(' ')
+        }
+      );
+    } else if (scheme.type === 'Basic Authentication') {
+      context[methodName] = authenticateBasicAuth(nodes, scheme);
+      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
+        toDescriptionObject(scheme),
+        {
+          '!type': 'fn(options: { username: string, password: string })'
         }
       );
     }
