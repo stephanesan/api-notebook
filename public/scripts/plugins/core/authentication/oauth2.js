@@ -156,9 +156,9 @@ var oauth2TokenFlow = function (options, done) {
     'response_type': 'token'
   }), done);
 
-  global.authenticateOAuth2 = function (href) {
+  global.authenticateOAuth = function (href) {
     popup.close();
-    delete global.authenticateOAuth2;
+    delete global.authenticateOAuth;
 
     var uri      = url.parse(href, true);
     var response = _.extend(qs.parse((uri.hash || '').substr(1)), uri.query);
@@ -214,9 +214,9 @@ var oAuth2CodeFlow = function (options, done) {
    * Assigns a global variable that the oauth authentication window should
    * be able to access and send the callback data.
    */
-  global.authenticateOAuth2 = function (href) {
+  global.authenticateOAuth = function (href) {
     popup.close();
-    delete global.authenticateOAuth2;
+    delete global.authenticateOAuth;
 
     // Parse the url and prepare to do an POST request to get the access token.
     var query = url.parse(href, true).query;

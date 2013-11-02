@@ -35,36 +35,37 @@ var template = _.template([
  * @param {Function} done
  */
 var modalPlugin = function (options, next, done) {
-  var modal = domify(template(options));
+  var modal = {
+    el: domify(template(options)),
+    close: function (err, data) {
+      if (options.beforeDestroy) {
+        options.beforeDestroy(modal);
+      }
 
-  var close = function (err, data) {
-    if (options.afterDestroy) {
-      options.afterDestroy(modal);
+      messages.off('keydown:Esc', boundClose);
+      document.body.removeChild(modal);
+      document.body.classList.remove('modal-visible');
+      return done(err, data);
     }
-
-    messages.off('keydown:Esc', boundClose);
-    document.body.removeChild(modal);
-    document.body.classList.remove('modal-visible');
-    return done(err, data);
   };
 
-  var boundClose = _.bind(close, null, null, null);
+  var boundClose = _.bind(modal.close, null, null, null);
 
-  document.body.appendChild(modal);
+  document.body.appendChild(modal.el);
   document.body.classList.add('modal-visible');
 
   messages.on('keydown:Esc', boundClose);
-  Backbone.$(modal)
+  Backbone.$(modal.el)
     .on('click', function (e) {
-      if (e.target !== modal) { return; }
+      if (e.target !== modal.el) { return; }
 
-      return close();
+      return boundClose();
     })
     .on('click', '[data-dismiss]', boundClose);
 
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
-  return options.afterRender && options.afterRender(modal, close);
+  return options.afterRender && options.afterRender(modal);
 };
 
 /**

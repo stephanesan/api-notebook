@@ -360,9 +360,9 @@ var oauth1Flow = function (options, done) {
       'oauth_token': data.oauthToken
     }), done);
 
-    global.authenticateOAuth1 = function (href) {
+    global.authenticateOAuth = function (href) {
       popup.close();
-      delete global.authenticateOAuth2;
+      delete global.authenticateOAuth;
 
       if (href.substr(0, redirectUri.length) !== redirectUri) {
         return done(new Error('Invalid redirect uri'));

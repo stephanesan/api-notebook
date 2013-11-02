@@ -157,10 +157,11 @@ var savePlugin = function (data, next, done) {
         '<button class="btn" data-github>Connect to Github</button>',
         '</p>'
       ].join('\n'),
-      afterRender: function (modal, close) {
-        App.Library.Backbone.$(modal).on('click', '[data-github]', function () {
-          return data.authenticate(close);
-        });
+      afterRender: function (modal) {
+        App.Library.Backbone.$(modal.el)
+          .on('click', '[data-github]', function () {
+            return data.authenticate(modal.close);
+          });
       }
     }, function (err) {
       if (err) { return done(err); }
