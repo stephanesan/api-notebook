@@ -129,8 +129,6 @@ Persistence.prototype.save = function (done) {
       this.set('id',      data.id);
       this.set('ownerId', data.ownerId);
 
-      Backbone.history.navigate(data.id);
-
       this._changeState(Persistence.SAVE_DONE);
       return done && done();
     }, this)
@@ -210,8 +208,6 @@ Persistence.prototype.load = function (done) {
       this.set('contents', data.contents, { silent: true });
       this.set('notebook', data.notebook, { silent: true });
 
-      Backbone.history.navigate(data.id);
-
       var complete = _.bind(function () {
         delete this._loading;
         this.trigger('changeNotebook', this);
@@ -248,9 +244,6 @@ Persistence.prototype.clone = function (done) {
   // Removes the notebook id and sets the user id to the current user.
   this.set('id',      null);
   this.set('ownerId', this.get('userId'));
-
-  // Reset the state to default and save.
-  Backbone.history.navigate('');
   this._changeState(Persistence.NULL);
 
   return this.save(done);
@@ -388,7 +381,7 @@ persistence.listenTo(messages, 'ready', function () {
 /**
  * Loads the notebook from the persistence layer.
  *
- * @param  {String} id
+ * @param {String} id
  */
 persistence.listenTo(
   router, 'route:newNotebook route:loadNotebook', function (id) {
@@ -396,3 +389,14 @@ persistence.listenTo(
     return persistence.load();
   }
 );
+
+/**
+ * Listens for any changes of the persistence id. When it changes, we need to
+ * navigate to the update url.
+ *
+ * @param {Object} _
+ * @param {String} id
+ */
+persistence.listenTo(persistence, 'change:id', function (_, id) {
+  return Backbone.history.navigate(id == null ? '' : id);
+});
