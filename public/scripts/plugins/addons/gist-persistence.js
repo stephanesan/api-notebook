@@ -144,11 +144,9 @@ var loadPlugin = function (data, next, done) {
  * @param {Function} done
  */
 var savePlugin = function (data, next, done) {
-  if (!data.isOwner()) {
-    return done(), data.clone();
-  }
-
   if (!data.isAuthenticated()) {
+    var authenticated = false;
+
     return App.middleware.trigger('ui:modal', {
       title:   'Authenticate with Github',
       content: [
@@ -158,8 +156,10 @@ var savePlugin = function (data, next, done) {
         '</p>'
       ].join('\n'),
       afterRender: function (modal) {
+        // Set the `authenticated` flag when the button is clicked.
         App.Library.Backbone.$(modal.el)
           .on('click', '[data-github]', function () {
+            authenticated = true;
             return data.authenticate(modal.close);
           });
       }
@@ -168,8 +168,12 @@ var savePlugin = function (data, next, done) {
 
       // Close the first save attempt and start another now that we should be
       // authenticated to Github.
-      return done(), data.save();
+      return done(), authenticated && data.save();
     });
+  }
+
+  if (!data.isOwner()) {
+    return done(), data.clone();
   }
 
   App.middleware.trigger('ajax:oauth2', {

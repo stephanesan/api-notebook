@@ -76,6 +76,7 @@ module.exports = function (url, cb) {
       });
     }
   }, function () {
+    openModal = null;
     return !completed && cb(new Error('Modal closed without authenticating'));
   });
 

@@ -37,7 +37,7 @@ var template = _.template([
 var modalPlugin = function (options, next, done) {
   var modal = {
     el: domify(template(options)),
-    close: function (err, data) {
+    close: function (err) {
       if (_.isFunction(options.beforeDestroy)) {
         options.beforeDestroy(modal);
       }
@@ -45,11 +45,15 @@ var modalPlugin = function (options, next, done) {
       messages.off('keydown:Esc', boundClose);
       document.body.removeChild(modal.el);
       document.body.classList.remove('modal-visible');
-      return done(err, data);
-    }
+      return done(err);
+    },
+    closed: false
   };
 
-  var boundClose = _.bind(modal.close, null, null, null);
+  var boundClose = function () {
+    modal.closed = true;
+    return modal.close();
+  };
 
   document.body.appendChild(modal.el);
   document.body.classList.add('modal-visible');
