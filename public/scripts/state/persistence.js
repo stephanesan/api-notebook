@@ -398,5 +398,5 @@ persistence.listenTo(
  * @param {String} id
  */
 persistence.listenTo(persistence, 'change:id', function (_, id) {
-  return Backbone.history.navigate(id == null ? '' : id);
+  return Backbone.history.navigate(id == null ? '' : '' + id);
 });
