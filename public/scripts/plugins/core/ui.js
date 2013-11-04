@@ -38,12 +38,12 @@ var modalPlugin = function (options, next, done) {
   var modal = {
     el: domify(template(options)),
     close: function (err, data) {
-      if (options.beforeDestroy) {
+      if (_.isFunction(options.beforeDestroy)) {
         options.beforeDestroy(modal);
       }
 
       messages.off('keydown:Esc', boundClose);
-      document.body.removeChild(modal);
+      document.body.removeChild(modal.el);
       document.body.classList.remove('modal-visible');
       return done(err, data);
     }
@@ -65,7 +65,7 @@ var modalPlugin = function (options, next, done) {
 
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
-  return options.afterRender && options.afterRender(modal);
+  return _.isFunction(options.afterRender) && options.afterRender(modal);
 };
 
 /**
