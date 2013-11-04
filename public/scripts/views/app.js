@@ -229,13 +229,7 @@ App.prototype.updateState = function () {
   } else if (state === persistence.SAVING) {
     statusEl.textContent = 'Saving.';
   } else if (state === persistence.SAVE_FAIL) {
-    var saveEl = document.createElement('button');
-    saveEl.className   = 'btn-text notebook-save';
-    saveEl.textContent = 'Try again';
-
-    statusEl.appendChild(document.createTextNode('Save failed.'));
-    statusEl.appendChild(saveEl);
-    statusEl.appendChild(document.createTextNode('.'));
+    statusEl.textContent = 'Save failed.';
   } else if (state === persistence.SAVE_DONE) {
     statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
   } else if (state === persistence.CHANGED) {
