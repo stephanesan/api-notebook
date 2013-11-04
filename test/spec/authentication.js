@@ -4,26 +4,41 @@ describe('Authentication', function () {
   describe('Oauth2', function () {
     var oldOpen, server;
 
+    var authModalIntercept = function (data, next, done) {
+      var attachEvent = data.afterRender;
+
+      data.afterRender = function (modal) {
+        attachEvent(modal);
+        simulateEvent(modal.el.querySelector('[data-authenticate]'), 'click');
+      };
+
+      return next();
+    };
+
     beforeEach(function () {
       server = sinon.fakeServer.create();
-      sinon.stub(window, 'open').returns({});
+      sinon.stub(window, 'open').returns({
+        close: function () {}
+      });
+      App.middleware.use('ui:modal', authModalIntercept);
     });
 
     afterEach(function () {
       server.restore();
       window.open.restore();
+      App.middleware.disuse('ui:modal', authModalIntercept);
     });
 
     it('should be able to do the server-side code flow', function (done) {
-      var tokenUrl         = 'https://www.example.com/oauth2/token';
-      var authorizationUrl = 'https://www.example.com/oauth2/authorize';
+      var tokenUri         = 'https://www.example.com/oauth2/token';
+      var authorizationUri = 'https://www.example.com/oauth2/authorize';
 
       App.middleware.trigger('authenticate:oauth2', {
         clientId:            '',
         clientSecret:        '',
-        accessTokenUrl:      tokenUrl,
+        accessTokenUri:      tokenUri,
         authorizationGrants: 'code',
-        authorizationUrl:    authorizationUrl
+        authorizationUri:    authorizationUri
       }, function (err, auth) {
         expect(err).to.not.exist;
         expect(auth.accessToken).to.equal('123456');
@@ -39,11 +54,11 @@ describe('Authentication', function () {
         }, '{"access_token":"123456","token_type":"bearer"}']
       );
 
-      expect(window.open.lastCall.args[0]).to.contain(authorizationUrl);
+      expect(window.open.lastCall.args[0]).to.contain(authorizationUri);
       // Cheat and grab the state we passed through to the authentication server.
       var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
-      window.authenticateOAuth2(App.Library.url.resolve(
-        location.href, 'authentication/oauth2.html?code=123&state=' + state
+      window.authenticateOAuth(App.Library.url.resolve(
+        location.href, 'authentication/oauth.html?code=123&state=' + state
       ));
 
       server.respond();
