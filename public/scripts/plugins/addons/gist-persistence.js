@@ -64,8 +64,8 @@ var authenticatePlugin = function (data, next, done) {
     scopes:              ['gist'],
     clientId:            CLIENT_ID,
     clientSecret:        '', // Injected by proxy
-    accessTokenUrl:      TOKEN_URL,
-    authorizationUrl:    AUTH_URL,
+    accessTokenUri:      TOKEN_URL,
+    authorizationUri:    AUTH_URL,
     authorizationGrants: 'code'
   }, function (err, auth) {
     if (err) { return next(err); }

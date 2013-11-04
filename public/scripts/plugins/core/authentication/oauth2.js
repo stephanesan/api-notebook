@@ -143,12 +143,12 @@ var oauth2TokenFlow = function (options, done) {
     return done(new TypeError('"clientId" expected'));
   }
 
-  if (!_.isString(options.authorizationUrl)) {
-    return done(new TypeError('"authorizationUrl" expected'));
+  if (!_.isString(options.authorizationUri)) {
+    return done(new TypeError('"authorizationUri" expected'));
   }
 
   var state = ('' + Math.random()).substr(2);
-  var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
+  var popup = authWindow(options.authorizationUri + '?' + qs.stringify({
     'state':         state,
     'scope':         options.scope,
     'client_id':     options.clientId,
@@ -193,16 +193,16 @@ var oAuth2CodeFlow = function (options, done) {
     return done(new TypeError('"clientSecret" expected'));
   }
 
-  if (!_.isString(options.accessTokenUrl)) {
-    return done(new TypeError('"accessTokenUrl" expected'));
+  if (!_.isString(options.accessTokenUri)) {
+    return done(new TypeError('"accessTokenUri" expected'));
   }
 
-  if (!_.isString(options.authorizationUrl)) {
-    return done(new TypeError('"authorizationUrl" expected'));
+  if (!_.isString(options.authorizationUri)) {
+    return done(new TypeError('"authorizationUri" expected'));
   }
 
   var state = ('' + Math.random()).substr(2);
-  var popup = authWindow(options.authorizationUrl + '?' + qs.stringify({
+  var popup = authWindow(options.authorizationUri + '?' + qs.stringify({
     'state':         state,
     'scope':         options.scope,
     'client_id':     options.clientId,
@@ -238,7 +238,7 @@ var oAuth2CodeFlow = function (options, done) {
     }
 
     App.middleware.trigger('ajax', {
-      url: options.accessTokenUrl,
+      url: options.accessTokenUri,
       method: 'POST',
       headers: {
         'Accept':       'application/json',
@@ -283,8 +283,8 @@ module.exports = function (middleware) {
   /**
    * Trigger authentication via OAuth2.0 in the browser. Valid data properties:
    *
-   *   `accessTokenUrl`      - "https://www.example.com/oauth2/token"
-   *   `authorizationUrl`    - "https://www.example.com/oauth2/authorize"
+   *   `accessTokenUri`      - "https://www.example.com/oauth2/token"
+   *   `authorizationUri`    - "https://www.example.com/oauth2/authorize"
    *   `clientId`            - EXAMPLE_CLIENT_ID
    *   `clientSecret`        - EXAMPLE_CLIENT_SECRET
    *   `authorizationGrants` - ["code"]
