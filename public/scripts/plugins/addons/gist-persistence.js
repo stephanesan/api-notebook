@@ -145,7 +145,7 @@ var loadPlugin = function (data, next, done) {
  */
 var savePlugin = function (data, next, done) {
   if (!data.isOwner()) {
-    return data.clone(done);
+    return done(), data.clone();
   }
 
   if (!data.isAuthenticated()) {
