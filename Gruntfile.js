@@ -1,9 +1,9 @@
 var DEV         = process.env.NODE_ENV !== 'production';
 var PLUGIN_DIR  = __dirname + '/public/scripts/plugins/addons';
 var BUILD_DIR   = __dirname + '/build';
+var DEPLOY_DIR  = __dirname + '/deploy';
 var TEST_DIR    = BUILD_DIR + '/test';
 var FIXTURE_DIR = TEST_DIR  + '/fixtures';
-var PORT        = process.env.PORT      || 3000;
 var TEST_PORT   = process.env.TEST_PORT || 9876;
 
 module.exports = function (grunt) {
@@ -35,7 +35,8 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     clean: {
-      build: BUILD_DIR
+      build:  BUILD_DIR,
+      deploy: DEPLOY_DIR
     },
 
     copy: {
@@ -60,6 +61,12 @@ module.exports = function (grunt) {
             dest: 'build/font'
           }
         ]
+      },
+      deploy: {
+        files: [
+          { src: 'build/**/*', dest: DEPLOY_DIR + '/' },
+          { src: '{server.js,Procfile,package.json}', dest: DEPLOY_DIR + '/' }
+        ]
       }
     },
 
@@ -75,6 +82,32 @@ module.exports = function (grunt) {
     shell: {
       'mocha-browser': {
         command: './node_modules/.bin/mocha-phantomjs test/index.html',
+        options: {
+          stdout: true,
+          stderr: true,
+          failOnError: true
+        }
+      },
+      'build-heroku': {
+        command: [
+          'NODE_ENV="production" NOTEBOOK_URL=$DEPLOY_NOTEBOOK_URL ' +
+            'GITHUB_CLIENT_ID=$DEPLOY_GITHUB_CLIENT_ID grunt build'
+        ].join(';'),
+        options: {
+          stdout: true,
+          stderr: true,
+          failOnError: true
+        }
+      },
+      'deploy-heroku': {
+        command: [
+          'HEROKU_ENDPOINT=`git config --get remote.heroku.url`',
+          'cd deploy',
+          'git init .',
+          'git add . > /dev/null',
+          'git commit -m "Deploy" > /dev/null',
+          'git push $HEROKU_ENDPOINT master:master -f'
+        ].join(' && '),
         options: {
           stdout: true,
           stderr: true,
@@ -147,12 +180,11 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('server', function () {
-    require('child_process').fork(__dirname + '/server.js');
+    require('child_process').exec('npm start');
   });
 
   grunt.registerTask('test-server', function () {
-    process.env.PORT = TEST_PORT;
-    require('child_process').fork(__dirname + '/server.js');
+    require('child_process').exec('PORT=' + TEST_PORT + ' npm start');
   });
 
   // Set the notebook test url.
@@ -168,6 +200,12 @@ module.exports = function (grunt) {
   // Test the application in a headless environment.
   grunt.registerTask('test', [
     'check', 'test-browser'
+  ]);
+
+  // Deploy the application to Heroku.
+  grunt.registerTask('deploy', [
+    'clean:deploy', 'shell:build-heroku', 'copy:deploy',
+    'shell:deploy-heroku', 'clean:deploy'
   ]);
 
   // Generate the built application.

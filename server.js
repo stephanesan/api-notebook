@@ -5,15 +5,15 @@ var app     = connect();
 // Log requests in dev.
 app.use(connect.logger('dev'));
 
-// Serve the regular static directory.
-app.use(connect.static('build'));
-
 // Enables cross-domain requests.
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
   return next();
 });
+
+// Serve the regular static directory.
+app.use(connect.static('build'));
 
 // Serve a simple HTTP proxy.
 app.use(function (req, res, next) {

@@ -52,7 +52,7 @@ describe('App', function () {
       it('should be able to set the notebook title', function () {
         var titleEl = view.el.querySelector('.notebook-title');
         titleEl.value = 'Test Notebook';
-        simulateEvent(titleEl, 'focusout');
+        simulateEvent(titleEl, 'keyup');
         expect(App.persistence.get('title')).to.equal('Test Notebook');
       });
     });

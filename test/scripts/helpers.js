@@ -80,7 +80,8 @@ window.testCompletion = function (editor, text, done) {
 window.simulateEvent = (function () {
   var eventMatchers = {
     'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll|focusin|focusout)$/,
-    'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/
+    'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/,
+    'KeyboardEvent': /^(?:key(?:down|press|up))$/
   };
 
   var defaultOptions = {
@@ -120,6 +121,19 @@ window.simulateEvent = (function () {
 
       if (eventType === 'HTMLEvents') {
         oEvent.initEvent(eventName, options.bubbles, options.cancelable);
+      } else if (eventType === 'KeyboardEvents') {
+        oEvent.initKeyboardEvent(
+          eventName,
+          options.bubbles,
+          options.cancelable,
+          document.defaultView,
+          options.char,
+          options.key,
+          options.location,
+          '', // Fix `modifiersListArg`
+          options.repeat,
+          options.locale
+        );
       } else {
         oEvent.initMouseEvent(
           eventName,
