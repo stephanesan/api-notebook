@@ -405,12 +405,6 @@ Notebook.prototype.appendView = function (view, before) {
       }
     });
 
-    this.listenTo(view, 'text', function (view, text) {
-      this.appendTextView(view.el, text).focus();
-
-      if (!view.getValue()) { view.remove(); }
-    });
-
     this.listenTo(view, 'browseUp', function (view, currentCid) {
       var model = this.collection.getPrevCode(this.collection.get(currentCid));
 

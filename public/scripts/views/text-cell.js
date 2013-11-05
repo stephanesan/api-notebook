@@ -3,7 +3,6 @@ var marked       = require('marked');
 var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var messages     = require('../state/messages');
-var stripInput   = require('../lib/codemirror/strip-input');
 var ownerProtect = require('./lib/owner-protect');
 
 /**
@@ -64,13 +63,6 @@ TextCell.prototype.editorOptions = _.extend(
  */
 TextCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
-
-  this.listenTo(this, 'change', function (view, data) {
-    var endCommentBlock = stripInput('*/', view.editor, data);
-    if (endCommentBlock !== false) {
-      return this.trigger('code', this, endCommentBlock);
-    }
-  });
 
   // Listen to itself since editor cells have a built in protection here.
   this.listenTo(this, 'blur', function () {

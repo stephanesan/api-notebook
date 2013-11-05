@@ -2,7 +2,6 @@ var _            = require('underscore');
 var EditorCell   = require('./editor-cell');
 var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
-var stripInput   = require('../lib/codemirror/strip-input');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').code;
 var ownerProtect = require('./lib/owner-protect');
@@ -198,17 +197,8 @@ CodeCell.prototype.bindEditor = function () {
   );
 
   // Listen for code cells changes and update line numbers.
-  this.listenTo(this, 'change', function (view, data) {
-    this.lastLine = this.startLine + view.editor.lastLine();
-
-    var commentBlock = stripInput('/*', view.editor, data);
-
-    // When the comment block check doesn't return false, it means we want to
-    // start a new comment block
-    if (commentBlock !== false) {
-      if (this.getValue()) { this.execute(); }
-      return this.trigger('text', this, commentBlock);
-    }
+  this.listenTo(this, 'change', function () {
+    this.lastLine = this.startLine + this.editor.lastLine();
   }, this);
 
   return this;
