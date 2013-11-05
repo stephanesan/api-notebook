@@ -1,4 +1,3 @@
-var request     = require('request');
 var DEV         = process.env.NODE_ENV !== 'production';
 var PLUGIN_DIR  = __dirname + '/public/scripts/plugins/addons';
 var BUILD_DIR   = __dirname + '/build';
@@ -6,50 +5,6 @@ var TEST_DIR    = BUILD_DIR + '/test';
 var FIXTURE_DIR = TEST_DIR  + '/fixtures';
 var PORT        = process.env.PORT      || 3000;
 var TEST_PORT   = process.env.TEST_PORT || 9876;
-
-var serverMiddleware = function (connect, options) {
-  var middleware = [];
-
-  // Enables cross-domain requests.
-  middleware.push(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin',  '*');
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
-    return next();
-  });
-
-  // Serve the regular static directory.
-  middleware.push(connect.static(options.base));
-
-  middleware.push(function (req, res, next) {
-    if (req.url.substr(0, 7) !== '/proxy/') {
-      return next();
-    }
-
-    var url = req.url.substr(7);
-
-    // Attach the client secret to any Github access token requests.
-    if (/^https?:\/\/github.com\/login\/oauth\/access_token/.test(url)) {
-      url += (url.indexOf('?') > -1 ? '&' : '?');
-      url += 'client_secret=';
-      url += encodeURIComponent(process.env.GITHUB_CLIENT_SECRET);
-    }
-
-    var proxy = request(url);
-
-    // Send the proxy error to the client.
-    proxy.on('error', function (err) {
-      res.writeHead(500);
-      return res.end(err.message);
-    });
-
-    // Pipe the request data directly into the proxy request and back to the
-    // response object. This avoids having to buffer the request body in cases
-    // where they could be unexepectedly large and/or slow.
-    return req.pipe(proxy).pipe(res);
-  });
-
-  return middleware;
-};
 
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
@@ -105,23 +60,6 @@ module.exports = function (grunt) {
             dest: 'build/font'
           }
         ]
-      }
-    },
-
-    connect: {
-      server: {
-        options: {
-          middleware: serverMiddleware,
-          port: PORT,
-          base: BUILD_DIR
-        }
-      },
-      'test-server': {
-        options: {
-          middleware: serverMiddleware,
-          port: TEST_PORT,
-          base: BUILD_DIR
-        }
       }
     },
 
@@ -208,6 +146,15 @@ module.exports = function (grunt) {
     }
   });
 
+  grunt.registerTask('server', function () {
+    require('child_process').fork(__dirname + '/server.js');
+  });
+
+  grunt.registerTask('test-server', function () {
+    process.env.PORT = TEST_PORT;
+    require('child_process').fork(__dirname + '/server.js');
+  });
+
   // Set the notebook test url.
   grunt.registerTask('test-notebook-url', function () {
     process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
@@ -215,7 +162,7 @@ module.exports = function (grunt) {
 
   // Test the application in a headless browser environment.
   grunt.registerTask('test-browser', [
-    'test-notebook-url', 'build', 'connect:test-server', 'shell:mocha-browser'
+    'test-notebook-url', 'build', 'test-server', 'shell:mocha-browser'
   ]);
 
   // Test the application in a headless environment.
@@ -235,6 +182,6 @@ module.exports = function (grunt) {
 
   // Build the application and watch for file changes.
   grunt.registerTask('default', [
-    'build', 'connect:server', 'watch'
+    'build', 'server', 'watch'
   ]);
 };
