@@ -1,9 +1,8 @@
-var _           = require('underscore');
-var domify      = require('domify');
-var Backbone    = require('backbone');
-var View        = require('./view');
-var controls    = require('../lib/controls').editor;
-var persistence = require('../state/persistence');
+var _        = require('underscore');
+var domify   = require('domify');
+var Backbone = require('backbone');
+var View     = require('./view');
+var controls = require('../lib/controls').editor;
 
 /**
  * Displays the cell controls overlay menu.
@@ -17,13 +16,6 @@ var ControlsView = module.exports = View.extend({
     'click .action': 'onClick'
   }
 });
-
-/**
- * Initialize the cell controls overlay menu.
- */
-ControlsView.prototype.initialize = function () {
-  this.listenTo(persistence, 'changeUser', this.render);
-};
 
 /**
  * Toggles the control to be appended or removed from a view. If the control
@@ -52,6 +44,7 @@ ControlsView.prototype.detach = function () {
   if (this.editorView) {
     this.el.parentNode.removeChild(this.el);
   }
+
   delete this.editorView;
 };
 
@@ -63,16 +56,7 @@ ControlsView.prototype.detach = function () {
 ControlsView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  var only = [];
-
-  // Add more options if we are the owner of the document.
-  if (persistence.isOwner()) {
-    only.push('moveUp', 'moveDown', 'switch', 'clone', 'remove', 'appendNew');
-  }
-
-  if (!only.length) {
-    return this;
-  }
+  var only = ['moveUp', 'moveDown', 'switch', 'clone', 'remove', 'appendNew'];
 
   var html = _.map(controls, function (action) {
     // Some items are currently being hidden from the controls menu
@@ -80,14 +64,9 @@ ControlsView.prototype.render = function () {
 
     var button = '<button class="action" data-action="' + action.command + '">';
     button += action.label;
-
-    // Add the keyboard codes if the user can edit the document and use the key
-    // codes.
-    if (persistence.isOwner()) {
-      button += '<span>' + action.keyCode + '</span>';
-    }
-
+    button += '<span>' + action.keyCode + '</span>';
     button += '</button>';
+
     return button;
   }).join('\n');
   this.el.appendChild(domify(html));
