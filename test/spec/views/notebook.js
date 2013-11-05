@@ -445,10 +445,6 @@ describe('Notebook', function () {
             return cell.el.getElementsByClassName('cell-controls')[0];
           };
 
-          var simulateClick = function (element) {
-            simulateEvent(element, 'click');
-          };
-
           it('should exist as one instance', function () {
             expect(view.controls).to.be.an('object');
           });
@@ -459,18 +455,83 @@ describe('Notebook', function () {
             btn = getButton(codeCells[0]);
             expect(btn).to.be.ok;
 
-            simulateClick(btn);
+            simulateEvent(btn, 'mousedown');
             menu = getMenu(codeCells[0]);
 
             expect(menu).to.be.ok;
           });
 
-          // TODO: add tests to menu functions
-          it.skip('should be able to move cells up');
-          it.skip('should be able to move cells down');
-          it.skip('should be able to move switch cell mode');
-          it.skip('should be able to clone the cell');
-          it.skip('should be able to delete the cell');
+          describe('Functionality', function () {
+            var menu;
+
+            beforeEach(function () {
+              simulateEvent(getButton(codeCells[0]), 'mousedown');
+
+              menu = codeCells[0].el.querySelector('.cell-controls');
+            });
+
+            it('should be able to move cells up', function () {
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="moveUp"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.at(0)).to.equal(codeCells[0].model);
+            });
+
+            it('should be able to move cells down', function () {
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="moveDown"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.at(2)).to.equal(codeCells[0].model);
+            });
+
+            it('should be able to move switch cell mode', function () {
+              expect(view.collection.at(1).get('type')).to.equal('code');
+
+              var btn = menu.querySelector('[data-action="switch"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.at(1).get('type')).to.equal('text');
+            });
+
+            it('should be able to clone the cell', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              codeCells[0].setValue('testing');
+
+              var btn = menu.querySelector('[data-action="clone"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.length).to.equal(5);
+              expect(view.collection.at(2).view.getValue()).to.equal('testing');
+            });
+
+            it('should be able to delete the cell', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="remove"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.length).to.equal(3);
+              expect(view.collection.at(1)).to.not.equal(codeCells[0].model);
+            });
+
+            it('should create a new cell below', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(2)).to.equal(textCells[0].model);
+
+              var btn = menu.querySelector('[data-action="appendNew"]');
+              simulateEvent(btn, 'click');
+
+              expect(view.collection.length).to.equal(5);
+              expect(view.collection.at(2)).to.not.equal(textCells[0].model);
+            });
+          });
         });
 
         describe('Line numbers', function () {

@@ -329,9 +329,11 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'remove', function (view) {
       // If it's the last node in the document, append a new code cell
       if (this.el.childNodes.length < 2) { this.appendCodeView(view.el); }
+
       // Focus in on the next/previous cell
       var newView = this.getNextView(view) || this.getPrevView(view);
-      if (newView) { newView.focus().moveCursorToEnd(); }
+      newView.focus().moveCursorToEnd();
+
       // Need to remove the model from the collection
       this.collection.remove(view.model);
       this.refreshFromView(newView);
@@ -353,11 +355,6 @@ Notebook.prototype.appendView = function (view, before) {
       view.remove();
       newView.focus();
       if (cursor) { newView.editor.setCursor(cursor); }
-    });
-
-    this.listenTo(view, 'appendNew', function (view) {
-      this.appendCodeView(view.el).focus();
-      this.refreshFromView(view);
     });
 
     this.listenTo(view, 'showControls', function (view) {

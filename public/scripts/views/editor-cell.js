@@ -435,7 +435,6 @@ EditorCell.prototype.isOwner = function () {
 triggerSelf(EditorCell.prototype, 'switch');
 triggerSelf(EditorCell.prototype, 'moveUp');
 triggerSelf(EditorCell.prototype, 'moveDown');
-triggerSelf(EditorCell.prototype, 'appendNew');
 triggerSelf(EditorCell.prototype, 'navigateUp');
 triggerSelf(EditorCell.prototype, 'navigateDown');
 
@@ -446,3 +445,10 @@ triggerSelfAndHideButtons(EditorCell.prototype, 'newTextAbove');
 triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeAbove');
 triggerSelfAndHideButtons(EditorCell.prototype, 'newTextBelow');
 triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeBelow');
+
+/**
+ * Alias the append new cell below function to creating a new code cell.
+ *
+ * @type {Function}
+ */
+EditorCell.prototype.appendNew = EditorCell.prototype.newCodeBelow;

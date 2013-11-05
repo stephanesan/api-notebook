@@ -92,7 +92,13 @@ ControlsView.prototype.render = function () {
  * @param {object} e The normalized event object.
  */
 ControlsView.prototype.onClick = function (e) {
-  var action     = e.target.getAttribute('data-action');
+  var target = e.target;
+
+  if (target.tagName === 'SPAN') {
+    target = target.parentNode;
+  }
+
+  var action     = target.getAttribute('data-action');
   var editorView = this.editorView;
   var viewFn     = editorView[action];
 
