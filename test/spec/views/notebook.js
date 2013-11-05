@@ -237,6 +237,58 @@ describe('Notebook', function () {
         });
       });
 
+      it('should be able to prepend a code cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model);
+        var newButton = codeCells[0].el
+          .querySelector('.cell-insert-top .btn-insert-code');
+
+        simulateEvent(newButton, 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to prepend a text cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model);
+        var newButton = codeCells[0].el
+          .querySelector('.cell-insert-top .btn-insert-text');
+
+        simulateEvent(newButton, 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to append a code cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
+        var newButton = codeCells[0].el
+          .querySelector('.cell-insert-bottom .btn-insert-code');
+
+        simulateEvent(newButton, 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to append a text cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
+        var newButton = codeCells[0].el
+          .querySelector('.cell-insert-bottom .btn-insert-text');
+
+        simulateEvent(newButton, 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+        expect(view.collection.length).to.equal(5);
+      });
+
       describe('Text Cell', function () {
         it('should remove itself when initializing a code cell', function () {
           expect(view.collection.length).to.equal(4);
