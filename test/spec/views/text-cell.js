@@ -35,19 +35,6 @@ describe('Text Cell', function () {
       it('should be a markdown editor', function () {
         expect(editor.getOption('mode')).to.equal('gfm');
       });
-
-      describe('end comment block', function () {
-        it('should open a new cell at the end of a block comment', function () {
-          var spy = sinon.spy(function (view, code) {
-            expect(code).to.equal('testing');
-          });
-          view.on('code', spy);
-          editor.setValue('abc */ testing');
-          expect(spy).to.have.been.calledOnce;
-          expect(editor.getValue()).to.equal('abc');
-          expect(view.model.get('value')).to.equal('abc');
-        });
-      });
     });
   });
 });

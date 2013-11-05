@@ -293,41 +293,6 @@ describe('Notebook', function () {
       });
 
       describe('Code Cell', function () {
-        it('should replace itself when initializing a text cell', function () {
-          expect(view.collection.length).to.equal(4);
-
-          codeCells[0].trigger('text', codeCells[0]);
-
-          // Removes the empty cell actively converting it into a text node
-          expect(view.collection.length).to.equal(4);
-          expect(codeCells[0].el.parentNode).to.not.exist;
-          expect(textCells[0].el.previousSibling.className).to.contain('cell-text');
-          expect(view.collection.at(1)).to.be.an.instanceof(App.Model.TextEntry);
-          expect(view.collection.at(1).view.el.nextSibling).to.equal(textCells[0].el);
-          expect(view.collection.at(1).view.hasFocus()).to.be.ok;
-        });
-
-        it('shouldn\'t replace itself when it has content', function () {
-          expect(view.collection.length).to.equal(4);
-
-          codeCells[0].setValue('testing');
-          codeCells[0].trigger('text', codeCells[0]);
-
-          expect(view.collection.length).to.equal(5);
-          expect(codeCells[0].el.nextSibling.className).to.contain('cell-text');
-          expect(view.collection.at(2)).to.be.an.instanceof(App.Model.TextEntry);
-          expect(view.collection.at(2).view.el.nextSibling).to.equal(textCells[0].el);
-          expect(view.collection.at(2).view.hasFocus()).to.be.ok;
-        });
-
-        it('should initialize the new cell with content when available', function () {
-          codeCells[0].trigger('text', codeCells[0], 'testing');
-
-          expect(view.collection.at(1).view.getValue()).to.equal('testing');
-          expect(view.collection.at(1).view.hasFocus()).to.be.ok;
-          expect(view.collection.at(1).view.editor.getCursor().ch).to.equal(7);
-        });
-
         it('should create a new view upon code execution', function () {
           expect(view.collection.length).to.equal(4);
 

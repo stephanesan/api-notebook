@@ -246,23 +246,6 @@ describe('Code Cell', function () {
         });
       });
 
-      describe('Comment Block', function () {
-        it('should open a text cell and execute the current content', function () {
-          var textSpy = sinon.spy(function (view, text) {
-            expect(text).to.equal('testing');
-          });
-          var executeSpy = sinon.spy(view, 'execute');
-
-          view.on('text', textSpy);
-
-          editor.setValue('abc /* testing');
-          expect(textSpy).to.have.been.calledOnce;
-          expect(executeSpy).to.have.been.calledOnce;
-          expect(editor.getValue()).to.equal('abc');
-          expect(view.model.get('value')).to.equal('abc');
-        });
-      });
-
       describe('Completion', function () {
         it('should complete from the sandbox', function (done) {
           view.notebook.sandbox.execute('var testing = "test";', function () {
