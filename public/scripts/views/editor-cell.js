@@ -19,7 +19,7 @@ var triggerSelf = function (obj, method) {
 var triggerSelfAndHideButtons = function (obj, method) {
   obj[method] = ownerProtect(function () {
     this.trigger(method, this);
-    this.el.classList.remove('cell-insert-hover');
+    this.el.querySelector('.cell-insert').classList.remove('cell-insert-hover');
   });
 };
 
