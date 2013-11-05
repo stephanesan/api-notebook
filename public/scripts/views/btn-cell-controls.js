@@ -12,7 +12,8 @@ var BtnCellControls = module.exports = View.extend({
     type: 'button'
   },
   events: {
-    'click': 'onClick'
+    'mousedown':  'onClick',
+    'touchstart': 'onClick'
   }
 });
 
