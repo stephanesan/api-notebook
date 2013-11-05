@@ -72,15 +72,15 @@ App.prototype.events = {
     e.preventDefault();
     e.srcElement.blur();
   },
-  // Update the notebook title when leaving the input.
-  'focusout .notebook-title': function (e) {
+  // Update the notebook title when a new character is entered.
+  'keyup .notebook-title': function (e) {
     persistence.set('title', e.srcElement.value);
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
-    if (persistence.isOwner()) {
-      e.srcElement.select();
-    }
+    if (!persistence.isOwner()) { return; }
+
+    e.srcElement.select();
   }
 };
 
@@ -234,7 +234,7 @@ App.prototype.updateState = function () {
     statusEl.appendChild(saveEl);
     statusEl.appendChild(document.createTextNode('.'));
   } else if (state === persistence.SAVE_DONE) {
-    statusEl.textContent = 'Saved ' + stamp + '.';
+    statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
   }
 
   return this;

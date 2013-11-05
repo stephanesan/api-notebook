@@ -6,7 +6,7 @@
  * @param  {Object} ...
  * @return {Object}
  */
-var extend = function (obj /*, ...source */) {
+window.extend = function (obj /*, ...source */) {
   var sources = Array.prototype.slice.call(arguments, 1);
 
   for (var i = 0; i < sources.length; i++) {
@@ -25,7 +25,7 @@ var extend = function (obj /*, ...source */) {
  * @param  {String|Number} code
  * @param  {Object}        props
  */
-var fakeKey = function (cm, code, props) {
+window.fakeKey = function (cm, code, props) {
   if (typeof code === 'string') {
     code = code.charCodeAt(0);
   }
@@ -47,7 +47,7 @@ var fakeKey = function (cm, code, props) {
  * @param  {String}     value
  * @return {Array}
  */
-var testCompletion = function (editor, text, done) {
+window.testCompletion = function (editor, text, done) {
   // Listens to an event triggered by the widget
   editor.on('refreshCompletion', function refresh (cm, results) {
     editor.off('refreshCompletion', refresh);
@@ -77,10 +77,11 @@ var testCompletion = function (editor, text, done) {
  *
  * @return {Function}
  */
-var simulateEvent = (function () {
+window.simulateEvent = (function () {
   var eventMatchers = {
     'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll|focusin|focusout)$/,
-    'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/
+    'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/,
+    'KeyboardEvent': /^(?:key(?:down|press|up))$/
   };
 
   var defaultOptions = {
@@ -120,6 +121,19 @@ var simulateEvent = (function () {
 
       if (eventType === 'HTMLEvents') {
         oEvent.initEvent(eventName, options.bubbles, options.cancelable);
+      } else if (eventType === 'KeyboardEvents') {
+        oEvent.initKeyboardEvent(
+          eventName,
+          options.bubbles,
+          options.cancelable,
+          document.defaultView,
+          options.char,
+          options.key,
+          options.location,
+          '', // Fix `modifiersListArg`
+          options.repeat,
+          options.locale
+        );
       } else {
         oEvent.initMouseEvent(
           eventName,

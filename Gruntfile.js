@@ -2,16 +2,16 @@ var DEV         = process.env.NODE_ENV !== 'production';
 var PLUGIN_DIR  = __dirname + '/public/scripts/plugins/addons';
 var BUILD_DIR   = __dirname + '/build';
 var DEPLOY_DIR  = __dirname + '/deploy';
-var TESTS_DIR   = __dirname + '/build/test';
-var FIXTURE_DIR = TESTS_DIR + '/fixtures';
-var TEST_PORT   = 9876;
-var jsRegex     = /\.js$/;
+var TEST_DIR    = BUILD_DIR + '/test';
+var FIXTURE_DIR = TEST_DIR  + '/fixtures';
+var TEST_PORT   = process.env.TEST_PORT || 9876;
 
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
+  var jsRegex             = /\.js$/;
   var browserifyPlugins   = {};
-  var browserifyTransform = ['envify', 'brfs'];
+  var browserifyTransform = ['envify'];
 
   if (!DEV) {
     browserifyTransform.push('uglifyify');
@@ -35,7 +35,7 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     clean: {
-      build: BUILD_DIR,
+      build:  BUILD_DIR,
       deploy: DEPLOY_DIR
     },
 
@@ -48,7 +48,12 @@ module.exports = function (grunt) {
             src: ['*.html', 'raml/*.yml', 'authentication/**', 'images/**'],
             dest: 'build/'
           },
-          { src: 'public/test.js', dest: FIXTURE_DIR + '/test.js' },
+          {
+            expand: true,
+            cwd: 'test/fixtures',
+            src: '**',
+            dest: FIXTURE_DIR
+          },
           {
             expand: true,
             cwd: 'public/fontello/font',
@@ -59,34 +64,9 @@ module.exports = function (grunt) {
       },
       deploy: {
         files: [
-          { src: '{build,routes}/**/*', dest: 'deploy/' },
-          { src: '{app.js,Procfile,package.json}', dest: 'deploy/' },
-          {
-            src: 'node_modules/{raml-parser,raml-examples}/**/*',
-            dest: DEPLOY_DIR + '/'
-          }
+          { src: 'build/**/*', dest: DEPLOY_DIR + '/' },
+          { src: '{server.js,Procfile,package.json}', dest: DEPLOY_DIR + '/' }
         ]
-      }
-    },
-
-    connect: {
-      'test-server': {
-        options: {
-          middleware: function (connect, options) {
-            var middlewares = [];
-            // Enables cross-domain requests.
-            middlewares.push(function (req, res, next) {
-              res.setHeader('Access-Control-Allow-Origin',  '*');
-              res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
-              return next();
-            });
-            // Serve the regular static directory.
-            middlewares.push(connect.static(options.base));
-            return middlewares;
-          },
-          port: TEST_PORT,
-          base: BUILD_DIR
-        }
       }
     },
 
@@ -101,15 +81,7 @@ module.exports = function (grunt) {
 
     shell: {
       'mocha-browser': {
-        command: './node_modules/.bin/mocha-phantomjs test/browser/index.html',
-        options: {
-          stdout: true,
-          stderr: true,
-          failOnError: true
-        }
-      },
-      'mocha-server': {
-        command: './node_modules/.bin/mocha test/server/spec',
+        command: './node_modules/.bin/mocha-phantomjs test/index.html',
         options: {
           stdout: true,
           stderr: true,
@@ -120,7 +92,7 @@ module.exports = function (grunt) {
         command: [
           'NODE_ENV="production" NOTEBOOK_URL=$DEPLOY_NOTEBOOK_URL ' +
             'GITHUB_CLIENT_ID=$DEPLOY_GITHUB_CLIENT_ID grunt build'
-        ].join('; '),
+        ].join(';'),
         options: {
           stdout: true,
           stderr: true,
@@ -163,8 +135,8 @@ module.exports = function (grunt) {
         }
       },
       test: {
-        src: 'test/browser/common.js',
-        dest: TESTS_DIR + '/browser/common.js',
+        src: ['test/scripts/common.js', 'test/scripts/helpers.js'],
+        dest: TEST_DIR + '/scripts/bundle.js',
         options: {
           debug:     DEV,
           transform: browserifyTransform
@@ -207,15 +179,12 @@ module.exports = function (grunt) {
     }
   });
 
-  // Update the deploy dependencies list.
-  grunt.registerTask('deploy-bundle-dependencies', function () {
-    var pkg = grunt.file.readJSON(DEPLOY_DIR + '/package.json');
-    pkg.bundledDependencies = require('fs').readdirSync(
-      DEPLOY_DIR + '/node_modules'
-    );
-    grunt.file.write(
-      DEPLOY_DIR + '/package.json', JSON.stringify(pkg, undefined, 2)
-    );
+  grunt.registerTask('server', function () {
+    require('child_process').exec('npm start');
+  });
+
+  grunt.registerTask('test-server', function () {
+    require('child_process').exec('PORT=' + TEST_PORT + ' npm start');
   });
 
   // Set the notebook test url.
@@ -223,25 +192,20 @@ module.exports = function (grunt) {
     process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
   });
 
-  // Test the server-side of the application.
-  grunt.registerTask('test-server', [
-    'shell:mocha-server'
-  ]);
-
   // Test the application in a headless browser environment.
   grunt.registerTask('test-browser', [
-    'test-notebook-url', 'build', 'connect:test-server', 'shell:mocha-browser'
+    'test-notebook-url', 'build', 'test-server', 'shell:mocha-browser'
   ]);
 
   // Test the application in a headless environment.
   grunt.registerTask('test', [
-    'check', 'test-browser', 'test-server'
+    'check', 'test-browser'
   ]);
 
-  // Deploy the application to heroku.
+  // Deploy the application to Heroku.
   grunt.registerTask('deploy', [
     'clean:deploy', 'shell:build-heroku', 'copy:deploy',
-    'deploy-bundle-dependencies', 'shell:deploy-heroku', 'clean:deploy'
+    'shell:deploy-heroku', 'clean:deploy'
   ]);
 
   // Generate the built application.
@@ -256,6 +220,6 @@ module.exports = function (grunt) {
 
   // Build the application and watch for file changes.
   grunt.registerTask('default', [
-    'build', 'watch'
+    'build', 'server', 'watch'
   ]);
 };
