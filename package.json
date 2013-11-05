@@ -1,7 +1,7 @@
 {
-  "name": "JSNotebook",
+  "name": "api-notebook",
   "version": "0.0.1",
-  "description": "JSNotebook",
+  "description": "Executable JavaScript environment for running API examples.",
   "private": true,
   "dependencies": {
     "underscore": "~1.5.2",
@@ -48,7 +48,7 @@
     "mocha": "~1.13.0"
   },
   "engines": {
-    "node": "0.10.21"
+    "node": "~0.10.21"
   },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
@@ -57,9 +57,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/eastridge/jsnotebook.git"
+    "url": "git://github.com/mulesoft/api-notebook.git"
   },
-  "author": "FormidableLabs",
+  "author": "Formidable Labs",
   "license": "BSD",
   "readmeFilename": "README.md"
 }
