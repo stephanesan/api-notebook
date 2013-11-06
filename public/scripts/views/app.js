@@ -298,11 +298,9 @@ App.prototype.render = function () {
             '</button>' +
           '</span>' +
           '<span class="btn-view">' +
-            '<button class="btn-text notebook-save">' +
+            '<button class="btn-text notebook-clone">Make a copy</button>' +
+            '<button class="btn-round icon-floppy notebook-save">' +
               'Save notebook' +
-            '</button>' +
-            '<button class="btn-text notebook-clone">' +
-              'Make another copy' +
             '</button>' +
             '<button class="btn-round ir notebook-exec">Run All</button>' +
             '<button class="btn-round ir modal-toggle">Shortcuts</button>' +

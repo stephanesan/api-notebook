@@ -173,6 +173,7 @@ Persistence.prototype.getMiddlewareData = function () {
   return _.extend(this.toJSON(), {
     save:            _.bind(this.save, this),
     clone:           _.bind(this.clone, this),
+    isNew:           _.bind(this.isNew, this),
     isOwner:         _.bind(this.isOwner, this),
     authenticate:    _.bind(this.authenticate, this),
     isAuthenticated: _.bind(this.isAuthenticated, this)

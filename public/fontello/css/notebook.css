@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'notebook';
-  src: url('../font/notebook.eot?94528915');
-  src: url('../font/notebook.eot?94528915#iefix') format('embedded-opentype'),
-       url('../font/notebook.woff?94528915') format('woff'),
-       url('../font/notebook.ttf?94528915') format('truetype'),
-       url('../font/notebook.svg?94528915#notebook') format('svg');
+  src: url('../font/notebook.eot?85598043');
+  src: url('../font/notebook.eot?85598043#iefix') format('embedded-opentype'),
+       url('../font/notebook.woff?85598043') format('woff'),
+       url('../font/notebook.ttf?85598043') format('truetype'),
+       url('../font/notebook.svg?85598043#notebook') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -14,7 +14,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'notebook';
-    src: url('../font/notebook.svg?94528915#notebook') format('svg');
+    src: url('../font/notebook.svg?85598043#notebook') format('svg');
   }
 }
 */
@@ -50,5 +50,6 @@
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
 
-.icon-plus-circled:before { content: '\e802'; } /* '' */
-.icon-comment:before { content: '\e803'; } /* '' */
+.icon-plus-circled:before { content: '\e801'; } /* '' */
+.icon-folder-open:before { content: '\e802'; } /* '' */
+.icon-floppy:before { content: '\e800'; } /* '' */

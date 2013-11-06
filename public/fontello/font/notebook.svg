@@ -6,8 +6,9 @@
 <font id="notebook" horiz-adv-x="1000" >
 <font-face font-family="notebook" font-weight="400" font-stretch="normal" units-per-em="1000" ascent="850" descent="-150" />
 <missing-glyph horiz-adv-x="1000" />
-<glyph glyph-name="plus-circled" unicode="&#xe802;" d="m0 350q0 207 147 354t353 146t354-146t146-354t-146-354t-354-146t-353 146t-147 354z m219-80l201 0l0-201l160 0l0 201l201 0l0 160l-201 0l0 201l-160 0l0-201l-201 0l0-160z" horiz-adv-x="1000" />
-<glyph glyph-name="comment" unicode="&#xe803;" d="m1137 749v-532q0-41-29-70t-71-30h-168v-268l-267 268h-502q-41 0-70 30t-30 70v532q0 41 30 71t70 29h937q41 0 71-29t29-71z" horiz-adv-x="1137" />
+<glyph glyph-name="plus-circled" unicode="&#xe801;" d="m679 314v72q0 14-11 25t-25 10h-143v143q0 15-11 25t-25 11h-71q-15 0-25-11t-11-25v-143h-143q-14 0-25-10t-10-25v-72q0-14 10-25t25-11h143v-142q0-15 11-25t25-11h71q15 0 25 11t11 25v142h143q14 0 25 11t11 25z m178 36q0-117-57-215t-156-156t-215-58t-216 58t-155 156t-58 215t58 215t155 156t216 58t215-58t156-156t57-215z" horiz-adv-x="857.1" />
+<glyph glyph-name="folder-open" unicode="&#xe802;" d="m1049 319q0-18-18-37l-187-221q-24-28-67-48t-81-20h-607q-19 0-33 7t-15 24q0 17 17 37l188 221q24 28 67 48t80 20h607q19 0 34-7t15-24z m-192 192v-90h-464q-53 0-110-26t-92-67l-188-221l-2-3q0 2-1 7t0 7v536q0 51 37 88t88 37h179q51 0 88-37t37-88v-18h303q51 0 88-37t37-88z" horiz-adv-x="1071.4" />
+<glyph glyph-name="floppy" unicode="&#xe800;" d="m214-7h429v214h-429v-214z m500 0h72v500q0 8-6 21t-11 20l-157 156q-5 6-19 12t-22 5v-232q0-22-15-38t-38-16h-322q-22 0-37 16t-16 38v232h-72v-714h72v232q0 22 16 38t37 16h465q22 0 38-16t15-38v-232z m-214 518v178q0 8-5 13t-13 5h-107q-7 0-13-5t-5-13v-178q0-8 5-13t13-5h107q7 0 13 5t5 13z m357-18v-518q0-22-15-38t-38-16h-750q-23 0-38 16t-16 38v750q0 22 16 38t38 16h517q23 0 50-12t42-26l156-157q16-15 27-42t11-49z" horiz-adv-x="857.1" />
 </font>
 </defs>
 </svg>

@@ -24,9 +24,13 @@ $button_color = #5B5B5B
   width: 26px
   height: @width
   padding: 0
+  color: $button_color
+  line-height: @height - 2px
   border: 2px solid $button_color
   background: transparent
   border-radius: 50em
+  &[class*="icon-"]:before
+    margin: 0 0.4em
 
 .edit-source
   width: 44px
