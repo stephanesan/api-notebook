@@ -4,7 +4,7 @@ var qs          = require('querystring');
 var url         = require('url');
 var authWindow  = require('./lib/auth-window');
 var redirectUri = url.resolve(
-  global.location.href, 'authentication/oauth2.html'
+  global.location.href, 'authentication/oauth.html'
 );
 
 /**

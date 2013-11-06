@@ -121,7 +121,7 @@ window.simulateEvent = (function () {
 
       if (eventType === 'HTMLEvents') {
         oEvent.initEvent(eventName, options.bubbles, options.cancelable);
-      } else if (eventType === 'KeyboardEvents') {
+      } else if (eventType === 'KeyboardEvent') {
         oEvent.initKeyboardEvent(
           eventName,
           options.bubbles,

@@ -93,7 +93,7 @@ describe('Gist Persistence Plugin', function () {
 
     server.respondWith(
       'POST',
-      'https://api.github.com/gists',
+      /^https:\/\/api.github.com\/gists/,
       [
         200,
         {
