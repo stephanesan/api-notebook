@@ -34,7 +34,7 @@ var oauth2Store = App.store.customStore('github');
  * @param {Function} done
  */
 var changePlugin = function (data, next, done) {
-  if (!data.isAuthenticated() || !data.isOwner()) {
+  if (data.isNew() || !data.isAuthenticated() || !data.isOwner()) {
     return done();
   }
 
