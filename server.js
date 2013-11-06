@@ -1,6 +1,21 @@
+var _       = require('underscore');
+var url     = require('url');
 var connect = require('connect');
 var request = require('request');
 var app     = connect();
+
+/**
+ * Uses a simple object representation of urls to merge additional data with
+ * proxied requests. Port this to use RAML ASAP.
+ *
+ * @type {Object}
+ */
+var mergeData = {
+  'github.com/login/oauth/access_token': {
+    'client_id':     process.env.GITHUB_CLIENT_ID,
+    'client_secret': process.env.GITHUB_CLIENT_SECRET
+  }
+};
 
 // Log requests in dev.
 app.use(connect.logger('dev'));
@@ -21,16 +36,25 @@ app.use(function (req, res, next) {
     return next();
   }
 
-  var url = req.url.substr(7);
+  var data  = {};
 
-  // Attach the client secret to any Github access token requests.
-  if (/^https?:\/\/github.com\/login\/oauth\/access_token/.test(url)) {
-    url += (url.indexOf('?') > -1 ? '&' : '?');
-    url += 'client_secret=';
-    url += encodeURIComponent(process.env.GITHUB_CLIENT_SECRET);
-  }
+  var uri   = data.uri = url.parse(req.url.substr(7));
+  var qs    = data.qs  = uri.query || {};
+  var route = uri.host + uri.pathname;
 
-  var proxy = request(url);
+  // Extends the query string with additonal query data.
+  _.extend(qs, mergeData[route]);
+
+  // Remove any `x-forwarded-*` headers set by the upstream proxy (E.g. Heroku)
+  // Keeping these headers may cause APIs to do unexpected things, such as
+  // Github which redirects requests when `x-forwarded-proto` === `http`.
+  _.each(req.headers, function (_, key) {
+    if (key.substr(0, 11) === 'x-forwarded') {
+      delete req.headers[key];
+    }
+  });
+
+  var proxy = request(data);
 
   // Send the proxy error to the client.
   proxy.on('error', function (err) {
