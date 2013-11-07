@@ -80,6 +80,14 @@ Load a notebook from somewhere. Gets passed the notebook id and user id and expe
 
 Save a notebook to somewhere. Gets passed all notebook data.
 
+**persistence:loadId**
+
+Load the initial url and id to start the application.
+
+**persistence:syncId**
+
+An event triggered when the url needed to be synced with the application.
+
 ### Ajax
 
 **ajax**

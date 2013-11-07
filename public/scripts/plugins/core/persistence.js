@@ -22,7 +22,9 @@ module.exports = function (middleware) {
     // Prepend the front matter.
     data.contents = [
       META_DATA_DELIMITER,
-      'title: ' + data.title,
+      _.map(data.meta, function (value, key) {
+        return key + ': ' + value;
+      }).join('\n'),
       META_DATA_DELIMITER
     ].join('\n');
 
@@ -73,7 +75,7 @@ module.exports = function (middleware) {
 
         // Ignore the line if we don't have a `title: data` combination.
         if (parts.length === 2) {
-          data[parts[0]] = parts[1];
+          data.meta[parts[0]] = parts[1];
         }
       });
 
@@ -138,5 +140,38 @@ module.exports = function (middleware) {
     ].join('\n');
 
     return next();
+  });
+
+  /**
+   * If the id sync makes it back to core, unset it.
+   *
+   * @param {String}   id
+   * @param {Function} next
+   */
+  middleware.core('persistence:syncId', function (id, next) {
+    return next(null, '');
+  });
+
+  /**
+   * Use a regular middleware function definition for the base load task.
+   *
+   * @param {*}        id
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.use('persistence:loadId', function (id, next, done) {
+    return done(null, window.location.hash.substr(1));
+  });
+
+  /**
+   * Sync the displayed id and returns an updated url.
+   *
+   * @param {String}   id
+   * @param {Function} next
+   * @param {Function} done
+   */
+  middleware.use('persistence:syncId', function (id, next, done) {
+    window.location.hash = id == null ? '' : id;
+    return done(null, window.location.href);
   });
 };

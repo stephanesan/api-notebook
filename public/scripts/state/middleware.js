@@ -60,7 +60,7 @@ middleware.use = acceptObject(function (name, fn) {
   var stack = this._stack[name] || (this._stack[name] = []);
   this.trigger('newPlugin', fn);
   this.trigger('newPlugin:' + name, fn);
-  stack.push(fn);
+  stack.unshift(fn);
   return this;
 });
 

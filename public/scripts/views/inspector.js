@@ -2,7 +2,6 @@ var _          = require('underscore');
 var View       = require('./view');
 var domify     = require('domify');
 var stringify  = require('../lib/stringify');
-var state      = require('../state/state');
 var messages   = require('../state/messages');
 var middleware = require('../state/middleware');
 
@@ -228,54 +227,12 @@ InspectorView.prototype._renderChildren = function () {
  * @return {InspectorView}
  */
 InspectorView.prototype.renderPreview = function () {
-  var html    = '';
-  var prefix  = '';
-  var special = !!this.internal;
-  var preview = this.stringifyPreview();
-  var parent  = this.parent && this.parent.inspect;
+  var parent = this.parent && this.parent.inspect;
   var desc;
 
-  // If we have a property name, use it as the display prefix.
-  if (this.property) { prefix = this.property; }
-
-  // If we have a parent object, do some more advanced checks to establish some
-  // more advanced properties such as the prefix and special display.
-  if (parent) {
-    if (this.internal) {
-      // Internal properties are always special.
-      special = true;
-      // Getters and getters still have a descriptor available.
-      if (this.internal === '[[Getter]]' || this.internal === '[[Setter]]') {
-        if (this.internal === '[[Getter]]') {
-          prefix = 'get ' + this.property;
-        } else {
-          prefix = 'set ' + this.property;
-        }
-        desc = Object.getOwnPropertyDescriptor(parent, this.property);
-      // No other internal object property types can get a descriptive text, so
-      // we'll just use the internal property name as the prefix.
-      } else {
-        prefix = this.internal;
-      }
-    } else {
-      desc    = Object.getOwnPropertyDescriptor(parent, this.property);
-      special = !desc.writable || !desc.configurable || !desc.enumerable;
-    }
+  if (parent && !this.internal) {
+    desc = Object.getOwnPropertyDescriptor(parent, this.property);
   }
-
-  html += '<div class="arrow"></div>';
-  html += '<div class="preview">';
-  if (prefix) {
-    html += '<span class="property' + (special ? ' is-special' : '') + '">';
-    html += _.escape('' + prefix);
-    html += '</span>: ';
-  }
-  html += '<span class="inspect" title="' + _.escape(preview) + '">';
-  html += _.escape(preview.split('\n').join('↵'));
-  html += '</span>';
-  html += '</div>';
-
-  var el = this.previewEl = domify(html);
 
   // Run filter middleware to check if the property should be filtered from
   // the basic display.
@@ -285,19 +242,52 @@ InspectorView.prototype.renderPreview = function () {
     internal:   this.internal,
     descriptor: desc
   }, _.bind(function (err, filter) {
-    this.el.appendChild(el);
+    if (!filter) { return; }
 
-    var toggleExtra = _.bind(function (toggle) {
-      this.el.classList[toggle ? 'remove' : 'add']('hide');
-    }, this);
+    var html    = '';
+    var prefix  = '';
+    var special = !!this.internal;
+    var preview = this.stringifyPreview();
 
-    if (!filter) {
-      // Listen for state changes to show extra properties/information
-      toggleExtra(state.get('showExtra'));
-      this.listenTo(state, 'change:showExtra', function (_, toggle) {
-        toggleExtra(toggle);
-      });
+    // If we have a property name, use it as the display prefix.
+    if (this.property) { prefix = this.property; }
+
+    // If we have a parent object, do some more advanced checks to establish
+    // some more advanced properties such as the prefix and special display.
+    if (parent) {
+      if (this.internal) {
+        // Internal properties are always special.
+        special = true;
+        // Getters and getters still have a descriptor available.
+        if (this.internal === '[[Getter]]' || this.internal === '[[Setter]]') {
+          if (this.internal === '[[Getter]]') {
+            prefix = 'get ' + this.property;
+          } else {
+            prefix = 'set ' + this.property;
+          }
+        // No other internal object property types can get a descriptive text,
+        // so we'll just use the internal property name as the prefix.
+        } else {
+          prefix = this.internal;
+        }
+      } else {
+        special = !desc.writable || !desc.configurable || !desc.enumerable;
+      }
     }
+
+    html += '<div class="arrow"></div>';
+    html += '<div class="preview">';
+    if (prefix) {
+      html += '<span class="property' + (special ? ' is-special' : '') + '">';
+      html += _.escape('' + prefix);
+      html += '</span>: ';
+    }
+    html += '<span class="inspect" title="' + _.escape(preview) + '">';
+    html += _.escape(preview.split('\n').join('↵'));
+    html += '</span>';
+    html += '</div>';
+
+    this.el.appendChild(this.previewEl = domify(html));
   }, this));
 
   return this;

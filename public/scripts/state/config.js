@@ -1,7 +1,6 @@
-var _           = require('underscore');
-var Backbone    = require('backbone');
-var middleware  = require('./middleware');
-var persistence = require('./persistence');
+var _          = require('underscore');
+var Backbone   = require('backbone');
+var middleware = require('./middleware');
 
 /**
  * Configuration is a static backbone model that we listen to for changes in
@@ -60,23 +59,6 @@ config.listenTo(config, 'change:alias', function (model, alias) {
   _.each(alias, function (value, key) {
     global[key] = value;
   });
-});
-
-/**
- * Listens for global id changes and updates persistence. Primarily for loading
- * a new notebook from the embed frame where the current url scheme is unlikely
- * to be maintained.
- */
-config.listenTo(config, 'change:id', function (_, id) {
-  persistence.set('id', id);
-  return persistence.load();
-});
-
-/**
- * Listens for content changes and cause a new persistence load.
- */
-config.listenTo(config, 'change:content', function () {
-  return persistence.load();
 });
 
 /**

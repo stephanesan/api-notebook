@@ -1,6 +1,6 @@
 var _          = require('underscore');
 var Backbone   = require('backbone');
-var router     = require('./router');
+var config     = require('./config');
 var messages   = require('./messages');
 var middleware = require('./middleware');
 
@@ -13,12 +13,23 @@ var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
     state:      0,
-    title:      'New Notebook',
     notebook:   [],
     originalId: null,
-    userTitle:  'Unauthenticated'
+    userId:     null,
+    ownerId:    null,
+    userTitle:  'Unauthenticated',
+    displayUrl: ''
   }
 });
+
+Persistence.prototype.initialize = function () {
+  // Set the `meta` property on the persistence model to be its own model.
+  this.meta = new (Backbone.Model.extend({
+    defaults: {
+      title: 'New Notebook'
+    }
+  }))();
+};
 
 /**
  * Represent persistence states in event listeners as numerical entities.
@@ -96,12 +107,11 @@ Persistence.prototype.deserialize = function (done) {
   middleware.trigger(
     'persistence:deserialize',
     _.extend(this.getMiddlewareData(), {
-      title:    null,
       ownerId:  null,
       notebook: null
     }),
     _.bind(function (err, data) {
-      this.set('title',    data.title || this.defaults.title);
+      this.meta.set(data.meta);
       this.set('notebook', data.notebook);
 
       return done && done(err);
@@ -171,6 +181,7 @@ Persistence.prototype.authenticate = function (done) {
  */
 Persistence.prototype.getMiddlewareData = function () {
   return _.extend(this.toJSON(), {
+    meta:            this.meta.toJSON(),
     save:            _.bind(this.save, this),
     clone:           _.bind(this.clone, this),
     isNew:           _.bind(this.isNew, this),
@@ -282,28 +293,35 @@ var syncProtection = function (fn) {
 };
 
 /**
+ * Serialize the notebook contents.
+ */
+var serialize = syncProtection(function () {
+  // Serialize the notebook contents and remove sync protection.
+  persistence.serialize(function () {
+    persistence._syncing = false;
+  });
+});
+
+/**
+ * Deserialize the notebook contents.
+ */
+var deserialize = syncProtection(function () {
+  // Deserialize the contents and remove sync protection.
+  persistence.deserialize(function () {
+    persistence._syncing = false;
+  });
+});
+
+/**
  * Keeps the serialized notebook in sync with the deserialized version.
  */
-persistence.listenTo(
-  persistence, 'change:notebook change:title', syncProtection(function () {
-    // Serialize the notebook contents and remove sync protection.
-    persistence.serialize(function () {
-      persistence._syncing = false;
-    });
-  })
-);
+persistence.listenTo(persistence,      'change:notebook', serialize);
+persistence.listenTo(persistence.meta, 'change',          serialize);
 
 /**
  * Keeps the deserialized notebook contents in sync with the serialized content.
  */
-persistence.listenTo(
-  persistence, 'change:contents', syncProtection(function () {
-    // Deserialize the contents and remove sync protection.
-    persistence.deserialize(function () {
-      persistence._syncing = false;
-    });
-  })
-);
+persistence.listenTo(persistence, 'change:contents', deserialize);
 
 /**
  * Listens to any changes to the user id and emits a custom `changeUser` event
@@ -315,7 +333,7 @@ persistence.listenTo(
   'change:userId change:ownerId change:userTitle',
   _.debounce(function () {
     this.trigger('changeUser', this);
-  }, 100)
+  }, 300)
 );
 
 /**
@@ -358,6 +376,9 @@ persistence.listenTo(persistence, 'change:contents', (function () {
  * jarring experience. Also load the initial notebook contents alongside.
  */
 persistence.listenTo(messages, 'ready', function () {
+  // Trigger the initial id update.
+  persistence.trigger('updateId');
+
   return middleware.trigger(
     'persistence:authenticated',
     _.extend(this.getMiddlewareData(), {
@@ -380,24 +401,42 @@ persistence.listenTo(messages, 'ready', function () {
 });
 
 /**
- * Loads the notebook from the persistence layer.
- *
- * @param {String} id
- */
-persistence.listenTo(
-  router, 'route:newNotebook route:loadNotebook', function (id) {
-    persistence.set('id', id);
-    return persistence.load();
-  }
-);
-
-/**
  * Listens for any changes of the persistence id. When it changes, we need to
- * navigate to the update url.
+ * navigate to the updated url.
  *
  * @param {Object} _
  * @param {String} id
  */
 persistence.listenTo(persistence, 'change:id', function (_, id) {
-  return Backbone.history.navigate(id == null ? '' : '' + id);
+  config.set('id', id, { silent: true });
+
+  return middleware.trigger('persistence:syncId', id, function (err, url) {
+    return persistence.set('displayUrl', url);
+  });
+});
+
+/**
+ * Listens for global id changes and updates persistence. Primarily for loading
+ * a new notebook from the embed frame where the current url scheme is unlikely
+ * to be maintained.
+ */
+persistence.listenTo(config, 'change:id', function (_, id) {
+  persistence.set('id', id);
+  return persistence.load();
+});
+
+/**
+ * Listens for content changes and cause a new persistence load.
+ */
+persistence.listenTo(config, 'change:content', function () {
+  return persistence.load();
+});
+
+/**
+ * Update id events will load the id again.
+ */
+persistence.listenTo(persistence, 'updateId', function () {
+  return middleware.trigger('persistence:loadId', null, function (err, id) {
+    return config.set('id', id);
+  });
 });

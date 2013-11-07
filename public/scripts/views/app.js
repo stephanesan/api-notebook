@@ -73,7 +73,7 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.set('title', e.srcElement.value);
+    persistence.meta.set('title', e.srcElement.value);
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
@@ -88,12 +88,6 @@ App.prototype.events = {
  * relevant events to respond to.
  */
 App.prototype.initialize = function () {
-  // Start up the history router, which will trigger the start of other
-  // subsystems such as persistence and authentication.
-  Backbone.history.start({
-    pushState: false
-  });
-
   // Block attempts to close or refresh the window when the current persistence
   // state is dirty.
   this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
@@ -188,7 +182,13 @@ App.prototype.updateId = function () {
  * @return {App}
  */
 App.prototype.updateTitle = function () {
-  this.el.querySelector('.notebook-title').value = persistence.get('title');
+  var title   = persistence.meta.get('title');
+  var titleEl = this.el.querySelector('.notebook-title');
+
+  // Only attempt to update when out of sync.
+  if (titleEl.value !== title) {
+    titleEl.value = title;
+  }
 
   return this;
 };
@@ -316,7 +316,9 @@ App.prototype.render = function () {
   this.listenTo(persistence, 'changeUser',   this.updateUser);
   this.listenTo(persistence, 'change:state', this.updateState);
   this.listenTo(persistence, 'change:id',    this.updateId);
-  this.listenTo(persistence, 'change:title', this.updateTitle);
+
+  // Update displayed meta data.
+  this.listenTo(persistence.meta, 'change:title', this.updateTitle);
 
   // Trigger all the update methods.
   this.update();

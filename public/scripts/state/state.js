@@ -27,11 +27,3 @@ var updateWindowDimensions = function () {
 updateWindowDimensions();
 state.listenTo(messages, 'resize',        updateScrollDimensions);
 state.listenTo(messages, 'window:resize', updateWindowDimensions);
-
-state.listenTo(messages, 'keydown:Alt-Alt', function () {
-  state.set('showExtra', true);
-});
-
-state.listenTo(messages, 'keyup:Alt', function () {
-  state.set('showExtra', false);
-});

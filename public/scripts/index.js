@@ -27,7 +27,6 @@ App.nextTick = process.nextTick;
 App.state       = require('./state/state');
 App.store       = require('./state/store');
 App.config      = require('./state/config');
-App.router      = require('./state/router');
 App.messages    = require('./state/messages');
 App.middleware  = require('./state/middleware');
 App.persistence = require('./state/persistence');
@@ -81,7 +80,7 @@ var prepareState = function (config, done) {
     return done(null, config);
   }
 
-  var postMessage = new App.PostMessage(window.parent);
+  var postMessage = App.postMessage = new App.PostMessage(window.parent);
 
   // A config object can be passed from the parent frame with configuration
   // options.
@@ -104,7 +103,23 @@ var prepareState = function (config, done) {
 
   // The parent frame will send back a ready response when setup is complete.
   postMessage.on('ready', function () {
-    done(null, config, postMessage);
+    done(null, config);
+  });
+
+  // Grab the parent frames hash when we are trying to load an id.
+  App.middleware.use('persistence:loadId', function (id, next, done) {
+    done(null, window.parent.location.hash.substr(1));
+  });
+
+  // Set the parent frame url when we try to sync the id.
+  App.middleware.use('persistence:syncId', function (id, next, done) {
+    window.parent.location.hash = id == null ? '' : id;
+    done(null, window.parent.location.href);
+  });
+
+  // Parents hash change events will update the persistence id.
+  window.parent.addEventListener('hashchange', function () {
+    App.persistence.trigger('updateId');
   });
 
   // Send a message to the parent frame and let it know we are ready to accept
@@ -129,7 +144,7 @@ App.start = function (el /*, config */, done) {
     done   = arguments[2];
   }
 
-  return prepareState(config, function (err, config, postMessage) {
+  return prepareState(config, function (err, config) {
     // Load all the injected scripts before starting the app.
     App.Library.async.each(config.inject || [], loadScript, function (err) {
       // Set the config object before the app starts since it interacts with
@@ -140,7 +155,16 @@ App.start = function (el /*, config */, done) {
 
       // Allows different parts of the application to kickstart requests.
       App.messages.trigger('ready');
-      if (postMessage) { postMessage.trigger('rendered'); }
+
+      // Send a `rendered` event back to the parent frame when we are embedded.
+      if (App.postMessage) {
+        App.postMessage.trigger('rendered');
+      } else {
+        // Trigger id updates when the hash changes.
+        window.addEventListener('hashchange', function () {
+          App.persistence.trigger('updateId');
+        });
+      }
 
       // Passes the app instance to the callback function.
       return done && done(err, app);
