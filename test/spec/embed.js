@@ -34,10 +34,8 @@ describe('Embeddable Widget', function () {
   });
 
   it('should be able to initialize with custom styles', function () {
-    var notebook = new Notebook(fixture, {
-      style: {
-        border: '1px solid red'
-      }
+    var notebook = new Notebook(fixture, {}, {
+      border: '1px solid red'
     });
 
     expect(fixture.childNodes.length).to.equal(1);

@@ -218,28 +218,10 @@ var savePlugin = function (data, next, done) {
  *
  * @type {Object}
  */
-var plugins = {
+module.exports = {
   'persistence:change':        changePlugin,
   'persistence:authenticate':  authenticatePlugin,
   'persistence:authenticated': authenticatedPlugin,
   'persistence:load':          loadPlugin,
   'persistence:save':          savePlugin
-};
-
-/**
- * Registers all the neccessary handlers for Github gist persistence.
- *
- * @param {Object} middleware
- */
-exports.attach = function (middleware) {
-  middleware.use(plugins);
-};
-
-/**
- * Detaches all middleware used by gist persistence.
- *
- * @param {Object} middleware
- */
-exports.detach = function (middleware) {
-  middleware.disuse(plugins);
 };

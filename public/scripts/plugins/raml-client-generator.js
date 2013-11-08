@@ -2,7 +2,7 @@
 var _               = App._;
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
-var fromPath        = require('../../lib/from-path');
+var fromPath        = require('../lib/from-path');
 
 // Special documentation parameter.
 var DESCRIPTION_PROPERTY = '@description';
@@ -78,9 +78,7 @@ API.createClient = function (name, url, done) {
     }
 
     return done(null, client);
-  }, function (err) {
-    return done(err);
-  });
+  }, done);
 };
 
 API.createClient[DESCRIPTION_PROPERTY] = {
@@ -107,24 +105,6 @@ var contextPlugin = function (context, next) {
  *
  * @type {Object}
  */
-var plugins = {
+module.exports = {
   'sandbox:context': contextPlugin
-};
-
-/**
- * Attach the middleware to the application.
- *
- * @param {Object} middleware
- */
-exports.attach = function (middleware) {
-  middleware.use(plugins);
-};
-
-/**
- * Detaches the middleware from the application. Useful during tests.
- *
- * @param {Object} middleware
- */
-exports.detach = function (middleware) {
-  middleware.disuse(plugins);
 };

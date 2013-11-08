@@ -1,7 +1,8 @@
-var _        = require('underscore');
-var domify   = require('domify');
-var Backbone = require('backbone');
-var messages = require('../../state/messages');
+var _          = require('underscore');
+var domify     = require('domify');
+var Backbone   = require('backbone');
+var messages   = require('../../state/messages');
+var middleware = require('../../state/middleware');
 
 /**
  * Generate the HTML for a modal popup.
@@ -34,7 +35,7 @@ var template = _.template([
  * @param {Function} next
  * @param {Function} done
  */
-var modalPlugin = function (options, next, done) {
+middleware.core('ui:modal', function (options, next, done) {
   var modal = {
     el: domify(template(options)),
     close: function (err) {
@@ -70,13 +71,4 @@ var modalPlugin = function (options, next, done) {
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
   return _.isFunction(options.afterRender) && options.afterRender(modal);
-};
-
-/**
- * Attach the core UI-based middleware plugins.
- *
- * @param {Object} middleware
- */
-module.exports = function (middleware) {
-  middleware.core('ui:modal', modalPlugin);
-};
+});

@@ -1,6 +1,7 @@
-var css    = require('css-component');
-var each   = require('foreach');
-var Kamino = require('kamino');
+var css     = require('css-component');
+var each    = require('foreach');
+var Kamino  = require('kamino');
+var __slice = Array.prototype.slice;
 
 // Set the location to load the notebook from
 var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
@@ -15,7 +16,7 @@ var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
  * @return {Object}
  */
 var extend = function (obj /*, ...source */) {
-  each(Array.prototype.slice.call(arguments, 1), function (source) {
+  each(__slice.call(arguments, 1), function (source) {
     for (var prop in source) {
       if (Object.prototype.hasOwnProperty.call(source, prop)) {
         obj[prop] = source[prop];
@@ -59,7 +60,7 @@ var getDataAttributes = function (el) {
  *
  * @type {Object}
  */
-var defaults = {
+var defaultOptions = {
   id:      null, // Initial id to pull content from
   content: null, // Fallback content in case of no id
   style:   {},   // Set styles on the iframe
@@ -71,7 +72,7 @@ var defaults = {
  *
  * @type {Object}
  */
-var styles = {
+var defaultStyles = {
   width:   '100%',
   border:  'none',
   display: 'block',
@@ -86,16 +87,53 @@ var styles = {
  * @param  {Object}           options
  * @return {Notebook}
  */
-var Notebook = module.exports = function (el, options) {
+var Notebook = module.exports = function (el, options, styles) {
   if (!(this instanceof Notebook)) {
     return new Notebook(el, options);
   }
 
-  // Extend default options with passed in options
-  this.options = extend({}, defaults, options);
-  this.options.style = extend({}, styles, options && options.style);
+  var notebook = this;
 
-  this.makeFrame(el);
+  notebook.makeFrame(el, extend({}, defaultOptions, options));
+  notebook.styleFrame(extend({}, defaultStyles, styles));
+};
+
+/**
+ * Keep track of all created notebooks and allow configuration after creation.
+ *
+ * @type {Array}
+ */
+Notebook.instances = [];
+
+/**
+ * Keep track of all registered subscriptions and unsubscriptions.
+ *
+ * @type {Array}
+ */
+Notebook.subscriptions   = [];
+Notebook.unsubscriptions = [];
+
+/**
+ * Pass a subscription method to every notebook. It will be called for all
+ * notebook instances, new and old.
+ *
+ * @param {Function} fn
+ */
+Notebook.subscribe = function (fn) {
+  Notebook.subscriptions.push(fn);
+
+  each(Notebook.instances, function (notebook) {
+    fn(notebook);
+  });
+};
+
+/**
+ * Pass an unsubscribe method to every notebook instance for removal.
+ *
+ * @param {Function} fn
+ */
+Notebook.unsubscribe = function (fn) {
+  Notebook.unsubscriptions.push(fn);
 };
 
 /**
@@ -105,50 +143,29 @@ var Notebook = module.exports = function (el, options) {
  * @param  {Element|Function} el
  * @return {Notebook}
  */
-Notebook.prototype.makeFrame = function (el) {
-  var that   = this;
-  var src    = NOTEBOOK_URL + '/embed.html';
-  var config = {
-    referrer: window.location.href
-  };
-
+Notebook.prototype.makeFrame = function (el, options) {
+  var that  = this;
+  var src   = NOTEBOOK_URL + '/embed.html';
   var frame = this.frame = document.createElement('iframe');
   frame.src = src;
 
-  // An initial notebook id to load.
-  if (this.options.id) {
-    config.id = this.options.id;
-  }
-
-  // Fallback content when the initial id fails to load or no id is provided.
-  if (typeof this.options.content === 'string') {
-    config.content = this.options.content;
-  }
-
-  // Application variables to alias inside the iframe.
-  if (typeof this.options.alias === 'object') {
-    config.alias = this.options.alias;
-  }
-
-  // Allow injection of scripts directly into the iframe.
-  if (typeof this.options.inject === 'object') {
-    config.inject = this.options.inject;
-  }
-
-  // Inject script execution before the app starts.
-  if (typeof this.options.exec === 'string') {
-    config.exec = this.options.exec;
-  }
+  // Extend basic configuration options.
+  extend(options.config || (options.config = {}), {
+    id:  options.id,
+    url: window.location.href
+  });
 
   // When the app is ready to receive events, send configuration data and let
-  // the frame know when we are ready to execute.
+  // the frame know that we are ready to execute.
   this.once('ready', function () {
-    this.trigger('config', config);
+    this.trigger('ready', options);
 
-    // Once all the data has been passed through to the frame, let it know it
-    // is ready to render. This would be handy for embedding an inline loading
-    // indicator or similar while the iframe starts to load too.
-    this.trigger('ready');
+    this.once('rendered', function () {
+      Notebook.instances.push(that);
+      each(Notebook.subscriptions, function (fn) {
+        fn(that);
+      });
+    });
   });
 
   // When a new height comes through, update the iframe height
@@ -171,7 +188,6 @@ Notebook.prototype.makeFrame = function (el) {
   }
 
   this.window = frame.contentWindow;
-  this.styleFrame(this.options.style);
 
   return this;
 };
@@ -182,8 +198,8 @@ Notebook.prototype.makeFrame = function (el) {
  * @param  {Object}   style
  * @return {Notebook}
  */
-Notebook.prototype.styleFrame = function (style) {
-  css(this.frame, style);
+Notebook.prototype.styleFrame = function (styles) {
+  css(this.frame, styles);
   return this;
 };
 
@@ -199,6 +215,7 @@ Notebook.prototype.exec = function (evil, done) {
 
   this.trigger('exec', evil);
 };
+
 
 /**
  * Returns a variable from the embedded page.
@@ -231,6 +248,20 @@ Notebook.prototype.removeFrame = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
+  for (var i = 0; i < Notebook.instances.length; i++) {
+    if (Notebook.instances[i] === this) {
+      /* jshint -W083 */
+      each(Notebook.unsubscriptions, function (fn) {
+        fn(Notebook.instances[i]);
+      });
+
+      i--;
+      Notebook.instances.pop();
+    }
+  }
+
+  this.off();
+
   return this.removeFrame();
 };
 
@@ -276,7 +307,12 @@ Notebook.prototype.off = function (name, fn) {
   if (!this._events || !this._events[name]) { return this; }
 
   if (!fn) {
-    delete this._events[name];
+    if (!name) {
+      delete this._events;
+    } else {
+      delete this._events[name];
+    }
+
     return this;
   }
 
@@ -307,7 +343,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
 
   if (this._frameEvent) {
     delete that._frameEvent;
-    args = Array.prototype.slice.call(arguments, 1);
+    args = __slice.call(arguments, 1);
     if (this._events && this._events[name]) {
       // Slice a copy of the events since we might be removing an event from
       // within an event callback. In which case it would break the loop.
@@ -318,9 +354,16 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
     return this;
   }
 
-  args = Array.prototype.slice.call(arguments, 0);
+  args = __slice.call(arguments, 0);
   this.frame.contentWindow.postMessage(Kamino.stringify(args), NOTEBOOK_URL);
   return this;
+};
+
+/**
+ * Shorthand for setting a config option.
+ */
+Notebook.prototype.config = function () {
+  this.trigger.apply(this, ['config'].concat(__slice.call(arguments)));
 };
 
 /**

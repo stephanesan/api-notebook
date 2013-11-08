@@ -52,7 +52,7 @@ middleware._core = {};
  * Backbone Events and a custom callback syntax since we aren't dealing with
  * request/response applications.
  *
- * @param  {String}   namespace
+ * @param  {String}   name
  * @param  {Function} fn
  * @return {this}
  */
@@ -60,7 +60,7 @@ middleware.use = acceptObject(function (name, fn) {
   var stack = this._stack[name] || (this._stack[name] = []);
   this.trigger('newPlugin', fn);
   this.trigger('newPlugin:' + name, fn);
-  stack.unshift(fn);
+  stack.push(fn);
   return this;
 });
 
@@ -89,7 +89,7 @@ middleware.disuse = acceptObject(function (name, fn) {
   var stack = this._stack[name] || [];
 
   for (var i = 0; i < stack.length; i++) {
-    if (!fn || stack[i] === fn) {
+    if (arguments.length < 2 || stack[i] === fn) {
       this.trigger('removePlugin', stack[i]);
       this.trigger('removePlugin:' + name, stack[i]);
       stack.splice(i, 1);

@@ -3,6 +3,7 @@ var _           = require('underscore');
 var qs          = require('querystring');
 var url         = require('url');
 var authWindow  = require('./lib/auth-window');
+var middleware  = require('../../../state/middleware');
 var redirectUri = url.resolve(
   global.location.href, 'authentication/oauth.html'
 );
@@ -274,111 +275,103 @@ var proxyDone = function (done) {
 };
 
 /**
- * Register OAuth2 based middleware. Handles OAuth2 implicit auth flow, and the
- * normal OAuth2 authentication flow when using with a proxy server.
+ * Trigger authentication via OAuth2.0 in the browser. Valid data properties:
  *
- * @param {Object} middleware
+ *   `accessTokenUri`      - "https://www.example.com/oauth2/token"
+ *   `authorizationUri`    - "https://www.example.com/oauth2/authorize"
+ *   `clientId`            - EXAMPLE_CLIENT_ID
+ *   `clientSecret`        - EXAMPLE_CLIENT_SECRET
+ *   `authorizationGrants` - ["code"]
+ *   `scopes`              - ["user", "read", "write"]
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
-module.exports = function (middleware) {
-  /**
-   * Trigger authentication via OAuth2.0 in the browser. Valid data properties:
-   *
-   *   `accessTokenUri`      - "https://www.example.com/oauth2/token"
-   *   `authorizationUri`    - "https://www.example.com/oauth2/authorize"
-   *   `clientId`            - EXAMPLE_CLIENT_ID
-   *   `clientSecret`        - EXAMPLE_CLIENT_SECRET
-   *   `authorizationGrants` - ["code"]
-   *   `scopes`              - ["user", "read", "write"]
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('authenticate:oauth2', function (data, next, done) {
-    // Sanitize authorization grants to an array.
-    if (_.isString(data.authorizationGrants)) {
-      data.authorizationGrants = [data.authorizationGrants];
-    }
+middleware.core('authenticate:oauth2', function (data, next, done) {
+  // Sanitize authorization grants to an array.
+  if (_.isString(data.authorizationGrants)) {
+    data.authorizationGrants = [data.authorizationGrants];
+  }
 
-    // Use insection to get the accepted grant types in the order of the
-    // supported grant types (which are ordered by preference).
-    var grantType = _.intersection(
-      supportedGrants, data.authorizationGrants
-    )[0];
+  // Use insection to get the accepted grant types in the order of the
+  // supported grant types (which are ordered by preference).
+  var grantType = _.intersection(
+    supportedGrants, data.authorizationGrants
+  )[0];
 
-    if (!grantType) {
-      return done(new Error(
-        'Unsupported OAuth2 Grant Flow. Supported flows include ' +
-        supportedGrants.join(', ')
-      ));
-    }
+  if (!grantType) {
+    return done(new Error(
+      'Unsupported OAuth2 Grant Flow. Supported flows include ' +
+      supportedGrants.join(', ')
+    ));
+  }
 
-    // Commit to the whole OAuth2 dance using the accepted grant type.
-    return middleware.trigger(
-      'authenticate:oauth2:' + grantType, data, done
-    );
-  });
+  // Commit to the whole OAuth2 dance using the accepted grant type.
+  return middleware.trigger(
+    'authenticate:oauth2:' + grantType, data, done
+  );
+});
 
-  /**
-   * Middleware for authenticating using the OAuth2 code grant flow.
-   * Reference: http://tools.ietf.org/html/rfc6749#section-4.1
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('authenticate:oauth2:code', function (data, next, done) {
-    return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
-  });
+/**
+ * Middleware for authenticating using the OAuth2 code grant flow.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.1
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.core('authenticate:oauth2:code', function (data, next, done) {
+  return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
+});
 
-  /**
-   * Middleware for authenticating with the OAuth2 implicit auth flow.
-   * Reference: http://tools.ietf.org/html/rfc6749#section-4.2
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('authenticate:oauth2:token', function (data, next, done) {
-    return oauth2TokenFlow(sanitizeOptions(data), proxyDone(done));
-  });
+/**
+ * Middleware for authenticating with the OAuth2 implicit auth flow.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.2
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.core('authenticate:oauth2:token', function (data, next, done) {
+  return oauth2TokenFlow(sanitizeOptions(data), proxyDone(done));
+});
 
-  /**
-   * Allow a new ajax flow for OAuth2-based URLs. Accepts an `oauth2` property
-   * on the data object in the format that is returned from the middleware.
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('ajax:oauth2', function (data, next, done) {
-    if (!_.isObject(data.oauth2)) {
-      return done(new TypeError('"oauth2" config object expected'));
-    }
+/**
+ * Allow a new ajax flow for OAuth2-based URLs. Accepts an `oauth2` property
+ * on the data object in the format that is returned from the middleware.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.core('ajax:oauth2', function (data, next, done) {
+  if (!_.isObject(data.oauth2)) {
+    return done(new TypeError('"oauth2" config object expected'));
+  }
 
-    if (!data.oauth2.accessToken) {
-      return done(new TypeError('"accessToken" expected'));
-    }
+  if (!data.oauth2.accessToken) {
+    return done(new TypeError('"accessToken" expected'));
+  }
 
-    if (data.oauth2.tokenType === 'bearer') {
-      data.headers = _.extend({
-        'Authorization': 'Bearer ' + data.oauth2.accessToken
-      }, data.headers);
-    } else {
-      // Add the access token to the request query.
-      var uri = url.parse(data.url, true);
-      uri.query.access_token = data.oauth2.accessToken;
-      delete uri.search;
+  if (data.oauth2.tokenType === 'bearer') {
+    data.headers = _.extend({
+      'Authorization': 'Bearer ' + data.oauth2.accessToken
+    }, data.headers);
+  } else {
+    // Add the access token to the request query.
+    var uri = url.parse(data.url, true);
+    uri.query.access_token = data.oauth2.accessToken;
+    delete uri.search;
 
-      // Update ajax data headers and url.
-      data.url = url.format(uri);
-      data.headers = _.extend({
-        'Pragma':        'no-store',
-        'Cache-Control': 'no-store'
-      }, data.headers);
-    }
+    // Update ajax data headers and url.
+    data.url = url.format(uri);
+    data.headers = _.extend({
+      'Pragma':        'no-store',
+      'Cache-Control': 'no-store'
+    }, data.headers);
+  }
 
-    // Trigger the regular ajax method.
-    return middleware.trigger('ajax', data, done);
-  });
-};
+  // Trigger the regular ajax method.
+  return middleware.trigger('ajax', data, done);
+});

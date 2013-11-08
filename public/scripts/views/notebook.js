@@ -59,7 +59,7 @@ Notebook.prototype.initialize = function () {
   this.sandboxCompletion = completionMiddleware(this.sandbox.window);
 
   // Attach the sandbox specific completion as middleware.
-  this.sandboxCompletion.attach(middleware);
+  middleware.use(this.sandboxCompletion);
 
   // When the user changes, we may have been given permission to do things like
   // edit the notebook. Hence, we need to rerender certain aspects of the app.
@@ -74,7 +74,7 @@ Notebook.prototype.initialize = function () {
  */
 Notebook.prototype.remove = function () {
   this.sandbox.remove();
-  this.sandboxCompletion.detach(middleware);
+  middleware.disuse(this.sandboxCompletion);
 
   // Remove references
   delete this.sandbox;

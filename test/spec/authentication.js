@@ -5,10 +5,10 @@ describe('Authentication', function () {
     var oldOpen, server;
 
     var authModalIntercept = function (data, next, done) {
-      var attachEvent = data.afterRender;
+      var afterRender = data.afterRender;
 
       data.afterRender = function (modal) {
-        attachEvent(modal);
+        afterRender(modal);
         simulateEvent(modal.el.querySelector('[data-authenticate]'), 'click');
       };
 

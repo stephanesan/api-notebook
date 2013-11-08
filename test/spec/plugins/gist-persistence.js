@@ -28,18 +28,18 @@ describe('Gist Persistence Plugin', function () {
   before(function () {
     App.persistence.reset();
     sinon.stub(window, 'open').returns({
-      close: function () {}
+      close: sinon.stub()
     });
     App.store._.github.clear();
     server = sinon.fakeServer.create();
-    gistPersistencePlugin.attach(App.middleware);
+    App.middleware.use(gistPersistencePlugin);
     App.middleware.use('ui:modal', authModalIntercept);
   });
 
   after(function () {
     server.restore();
     window.open.restore();
-    gistPersistencePlugin.detach(App.middleware);
+    App.middleware.disuse(gistPersistencePlugin);
     App.middleware.disuse('ui:modal', authModalIntercept);
   });
 
@@ -85,7 +85,7 @@ describe('Gist Persistence Plugin', function () {
     server.respond();
   });
 
-  it('should save to github ', function (done) {
+  it('should save to github', function (done) {
     App.persistence.set('userId',   userId);
     App.persistence.set('ownerId',  userId);
     App.persistence.set('contents', notebook);

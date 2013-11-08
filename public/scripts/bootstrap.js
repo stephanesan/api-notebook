@@ -16,3 +16,6 @@ require('codemirror/mode/xml/xml');
 require('codemirror/mode/clike/clike');
 require('codemirror/mode/htmlmixed/htmlmixed');
 require('codemirror/mode/javascript/javascript');
+
+// Require the core plugins.
+require('./lib/plugins');

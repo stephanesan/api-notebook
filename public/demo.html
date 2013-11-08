@@ -7,12 +7,9 @@
   </head>
   <body style="margin: 0; padding: 1em; background-color: #eee;">
     <script src="scripts/embed.js"></script>
+    <script src="plugins/embed-hash-persistence.js"></script>
     <script>
       new Notebook(document.body, {
-        style: {
-          margin:   '0 auto',
-          maxWidth: '52em'
-        },
         inject: [
           'plugins/proxy.js',
           'plugins/gist-persistence.js',
@@ -21,12 +18,15 @@
           'plugins/function-property-filter.js'
         ],
         exec: [
-          'proxyPlugin.attach(App.middleware);',
-          'gistPersistencePlugin.attach(App.middleware);',
-          'filterPropertiesPlugin.attach(App.middleware);',
-          'ramlClientGeneratorPlugin.attach(App.middleware);',
-          'functionPropertyFilterPlugin.attach(App.middleware);'
+          'App.middleware.use(proxyPlugin);',
+          'App.middleware.use(gistPersistencePlugin);',
+          'App.middleware.use(filterPropertiesPlugin);',
+          'App.middleware.use(ramlClientGeneratorPlugin);',
+          'App.middleware.use(functionPropertyFilterPlugin);'
         ].join('\n')
+      }, {
+        margin:   '0 auto',
+        maxWidth: '52em'
       });
     </script>
   </body>

@@ -1,4 +1,4 @@
-var toObj = require('../../lib/objectify');
+var toObj = require('../lib/objectify');
 
 // Keep a reference to all the keys defined on the root object prototype.
 var objectPrototypeKeys = toObj(Object.getOwnPropertyNames(Object.prototype));
@@ -120,25 +120,7 @@ var inspectorFilterPlugin = function (data, next, done) {
  *
  * @type {Object}
  */
-var plugins = {
+module.exports = {
   'inspector:filter':  inspectorFilterPlugin,
   'completion:filter': completionFilterPlugin
-};
-
-/**
- * Attach the middleware to the application.
- *
- * @param {Object} middleware
- */
-exports.attach = function (middleware) {
-  middleware.use(plugins);
-};
-
-/**
- * Detaches the middleware from the application. Useful during tests.
- *
- * @param {Object} middleware
- */
-exports.detach = function (middleware) {
-  middleware.disuse(plugins);
 };

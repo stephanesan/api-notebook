@@ -24,24 +24,6 @@ var ajaxPlugin = function (data, next) {
  *
  * @type {Object}
  */
-var plugins = {
+module.exports = {
   'ajax': ajaxPlugin
-};
-
-/**
- * Attach the middleware to the application.
- *
- * @param {Object} middleware
- */
-exports.attach = function (middleware) {
-  middleware.use(plugins);
-};
-
-/**
- * Detaches the middleware from the application. Useful during tests.
- *
- * @param {Object} middleware
- */
-exports.detach = function (middleware) {
-  middleware.disuse(plugins);
 };

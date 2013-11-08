@@ -141,8 +141,6 @@ InspectorView.prototype.renderChildren = function () {
     _.each(this.children, function (child) {
       child.remove();
     });
-
-    this.children = [];
   });
 
   return this;
@@ -242,7 +240,7 @@ InspectorView.prototype.renderPreview = function () {
     internal:   this.internal,
     descriptor: desc
   }, _.bind(function (err, filter) {
-    if (!filter) { return; }
+    if (!filter) { return this.remove(); }
 
     var html    = '';
     var prefix  = '';
@@ -304,4 +302,15 @@ InspectorView.prototype.render = function () {
   this.renderChildren();
 
   return this;
+};
+
+InspectorView.prototype.remove = function () {
+  if (this.parent) {
+    var indexOf = this.parent.children.indexOf(this);
+    if (indexOf > -1) {
+      this.parent.children.splice(indexOf, 1);
+    }
+  }
+
+  View.prototype.remove.call(this);
 };

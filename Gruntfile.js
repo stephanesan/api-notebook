@@ -1,11 +1,68 @@
+var request     = require('request');
 var DEV         = process.env.NODE_ENV !== 'production';
-var PLUGIN_DIR  = __dirname + '/public/scripts/plugins/addons';
+var PLUGIN_DIR  = __dirname + '/public/scripts/plugins';
 var BUILD_DIR   = __dirname + '/build';
-var DEPLOY_DIR  = __dirname + '/deploy';
 var TEST_DIR    = BUILD_DIR + '/test';
 var FIXTURE_DIR = TEST_DIR  + '/fixtures';
+var PORT        = process.env.PORT || 3000;
 var TEST_PORT   = process.env.TEST_PORT || 9876;
 
+/**
+ * Generic middleware stack for running the connect server grunt tasks.
+ *
+ * @param  {Object} connect
+ * @param  {Object} options
+ * @return {Array}
+ */
+var serverMiddleware = function (connect, options) {
+  var middleware = [];
+
+  // Enables cross-domain requests.
+  middleware.push(function (req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin',  '*');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
+    return next();
+  });
+
+  // Serve the regular static directory.
+  middleware.push(connect.static(options.base));
+
+  middleware.push(function (req, res, next) {
+    if (req.url.substr(0, 7) !== '/proxy/') {
+      return next();
+    }
+
+    var url = req.url.substr(7);
+
+    // Attach the client secret to any Github access token requests.
+    if (/^https?:\/\/github.com\/login\/oauth\/access_token/.test(url)) {
+      url += (url.indexOf('?') > -1 ? '&' : '?');
+      url += 'client_secret=';
+      url += encodeURIComponent(process.env.GITHUB_CLIENT_SECRET);
+    }
+
+    var proxy = request(url);
+
+    // Send the proxy error to the client.
+    proxy.on('error', function (err) {
+      res.writeHead(500);
+      return res.end(err.message);
+    });
+
+    // Pipe the request data directly into the proxy request and back to the
+    // response object. This avoids having to buffer the request body in cases
+    // where they could be unexepectedly large and/or slow.
+    return req.pipe(proxy).pipe(res);
+  });
+
+  return middleware;
+};
+
+/**
+ * Exports the grunt configuration.
+ *
+ * @param {Object} grunt
+ */
 module.exports = function (grunt) {
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
 
@@ -17,35 +74,45 @@ module.exports = function (grunt) {
     browserifyTransform.push('uglifyify');
   }
 
-  require('fs').readdirSync(PLUGIN_DIR).forEach(function (filename) {
-    if (!jsRegex.test(filename)) { return; }
-    // Remove trailing extension and transform to camelCase
-    var baseName = grunt.util._.camelize(filename.replace(jsRegex, ''));
+  require('fs').readdirSync(PLUGIN_DIR).forEach(function (fileName) {
+    if (!jsRegex.test(fileName)) { return; }
 
-    browserifyPlugins[baseName] = {
-      src:  PLUGIN_DIR + '/' + filename,
-      dest: 'build/plugins/' + filename,
+    // Remove trailing extension and transform to camelCase
+    var name = grunt.util._.camelize(fileName.replace(jsRegex, '')) + 'Plugin';
+
+    browserifyPlugins[name] = {
+      src:  PLUGIN_DIR + '/' + fileName,
+      dest: 'build/plugins/' + fileName,
       options: {
         debug:      DEV,
         transform:  browserifyTransform,
-        standalone: baseName + 'Plugin'
+        standalone: name
       }
     };
   });
 
   grunt.initConfig({
+    /**
+     * Remove the directory and any directory contents.
+     *
+     * @type {Object}
+     */
     clean: {
-      build:  BUILD_DIR,
-      deploy: DEPLOY_DIR
+      build: BUILD_DIR
     },
 
+    /**
+     * Copy any files required for the built functionality.
+     *
+     * @type {Object}
+     */
     copy: {
       build: {
         files: [
           {
             expand: true,
             cwd: 'public',
-            src: ['*.html', 'raml/*.yml', 'authentication/**', 'images/**'],
+            src: ['*.html', 'authentication/**', 'images/**'],
             dest: 'build/'
           },
           {
@@ -61,24 +128,28 @@ module.exports = function (grunt) {
             dest: 'build/font'
           }
         ]
-      },
-      deploy: {
-        files: [
-          { src: 'build/**/*', dest: DEPLOY_DIR + '/' },
-          { src: '{server.js,Procfile,package.json}', dest: DEPLOY_DIR + '/' }
-        ]
       }
     },
 
+    /**
+     * Lint all the JavaScript for potential errors.
+     *
+     * @type {Object}
+     */
     jshint: {
       all: {
-        src: ['routes/**/*.js', 'public/**/*.js', '*.js']
+        src: ['public/**/*.js', '*.js']
       },
       options: {
         jshintrc: '.jshintrc'
       }
     },
 
+    /**
+     * Specific shell scripts to run.
+     *
+     * @type {Object}
+     */
     shell: {
       'mocha-browser': {
         command: './node_modules/.bin/mocha-phantomjs test/index.html',
@@ -87,35 +158,14 @@ module.exports = function (grunt) {
           stderr: true,
           failOnError: true
         }
-      },
-      'build-heroku': {
-        command: [
-          'NODE_ENV="production" NOTEBOOK_URL=$DEPLOY_NOTEBOOK_URL ' +
-            'GITHUB_CLIENT_ID=$DEPLOY_GITHUB_CLIENT_ID grunt build'
-        ].join(';'),
-        options: {
-          stdout: true,
-          stderr: true,
-          failOnError: true
-        }
-      },
-      'deploy-heroku': {
-        command: [
-          'HEROKU_ENDPOINT=`git config --get remote.heroku.url`',
-          'cd deploy',
-          'git init .',
-          'git add . > /dev/null',
-          'git commit -m "Deploy" > /dev/null',
-          'git push $HEROKU_ENDPOINT master:master -f'
-        ].join(' && '),
-        options: {
-          stdout: true,
-          stderr: true,
-          failOnError: true
-        }
       }
     },
 
+    /**
+     * Browserify all the modules.
+     *
+     * @type {Object}
+     */
     browserify: grunt.util._.extend({
       application: {
         src: 'public/scripts/index.js',
@@ -144,6 +194,11 @@ module.exports = function (grunt) {
       }
     }, browserifyPlugins),
 
+    /**
+     * Compile the CSS using the Stylus preprocessor.
+     *
+     * @type {Object}
+     */
     stylus: {
       compile: {
         files: {
@@ -159,9 +214,36 @@ module.exports = function (grunt) {
       }
     },
 
+    /**
+     * Start some simple servers using connect middleware.
+     *
+     * @type {Object}
+     */
+    connect: {
+      server: {
+        options: {
+          middleware: serverMiddleware,
+          port: PORT,
+          base: BUILD_DIR
+        }
+      },
+      'test-server': {
+        options: {
+          middleware: serverMiddleware,
+          port: TEST_PORT,
+          base: BUILD_DIR
+        }
+      }
+    },
+
+    /**
+     * Watch for changes on any specific files and rebuild the output.
+     *
+     * @type {Object}
+     */
     watch: {
       html: {
-        files: ['public/**/*.{html,yml}'],
+        files: ['public/**/*.html'],
         tasks: ['newer:copy:build']
       },
       lint: {
@@ -179,14 +261,6 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('server', function () {
-    require('child_process').exec('npm start');
-  });
-
-  grunt.registerTask('test-server', function () {
-    require('child_process').exec('PORT=' + TEST_PORT + ' npm start');
-  });
-
   // Set the notebook test url.
   grunt.registerTask('test-notebook-url', function () {
     process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
@@ -194,18 +268,12 @@ module.exports = function (grunt) {
 
   // Test the application in a headless browser environment.
   grunt.registerTask('test-browser', [
-    'test-notebook-url', 'build', 'test-server', 'shell:mocha-browser'
+    'test-notebook-url', 'build', 'connect:test-server', 'shell:mocha-browser'
   ]);
 
   // Test the application in a headless environment.
   grunt.registerTask('test', [
     'check', 'test-browser'
-  ]);
-
-  // Deploy the application to Heroku.
-  grunt.registerTask('deploy', [
-    'clean:deploy', 'shell:build-heroku', 'copy:deploy',
-    'shell:deploy-heroku', 'clean:deploy'
   ]);
 
   // Generate the built application.
@@ -220,6 +288,6 @@ module.exports = function (grunt) {
 
   // Build the application and watch for file changes.
   grunt.registerTask('default', [
-    'build', 'server', 'watch'
+    'build', 'connect:server', 'watch'
   ]);
 };

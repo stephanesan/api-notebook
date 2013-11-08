@@ -2,11 +2,11 @@
 
 describe('Function Property Filter Plugin', function () {
   before(function () {
-    functionPropertyFilterPlugin.attach(App.middleware);
+    App.middleware.use(functionPropertyFilterPlugin);
   });
 
   after(function () {
-    functionPropertyFilterPlugin.detach(App.middleware);
+    App.middleware.disuse(functionPropertyFilterPlugin);
   });
 
   describe('Inspector', function () {
@@ -18,7 +18,7 @@ describe('Function Property Filter Plugin', function () {
       inspector.render().trigger('open');
 
       var properties = App._.map(inspector.children, function (child) {
-        return ~child.el.className.indexOf('hide') ? null : child.property;
+        return child.property;
       });
 
       expect(properties).to.not.contain('@return');

@@ -1,4 +1,5 @@
 var loadScript = require('../../lib/browser/load-script');
+var middleware = require('../../state/middleware');
 
 var ASYNC_TIMEOUT = 2000;
 
@@ -8,7 +9,7 @@ var ASYNC_TIMEOUT = 2000;
  * @param {Object}   context
  * @param {Function} next
  */
-var contextPlugin = function (context, next) {
+middleware.core('sandbox:context', function (context, next) {
   // Unfortunately it isn't as easy as this since we have lexical scoping issues
   // with the wrong window object. It would load the script in the wrong window.
   context.load    = function (/* src, done */) {};
@@ -16,7 +17,7 @@ var contextPlugin = function (context, next) {
   context.timeout = function () {};
 
   return next();
-};
+});
 
 /**
  * Sets up the pre-execution plugin.
@@ -25,7 +26,7 @@ var contextPlugin = function (context, next) {
  * @param {Function} next
  * @param {Function} done
  */
-var executePlugin = function (data, next, done) {
+middleware.core('sandbox:execute', function (data, next, done) {
   /* global App */
   var code    = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
   var async   = false;
@@ -138,14 +139,4 @@ var executePlugin = function (data, next, done) {
       }
     }
   });
-};
-
-/**
- * Attach sandbox related core middleware.
- *
- * @param  {Object} middleware
- */
-module.exports = function (middleware) {
-  middleware.core('sandbox:execute', executePlugin);
-  middleware.core('sandbox:context', contextPlugin);
-};
+});

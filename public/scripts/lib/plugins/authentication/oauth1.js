@@ -4,6 +4,7 @@ var qs          = require('querystring');
 var url         = require('url');
 var crypto      = require('crypto');
 var authWindow  = require('./lib/auth-window');
+var middleware  = require('../../../state/middleware');
 var redirectUri = url.resolve(
   global.location.href, 'authentication/oauth.html'
 );
@@ -394,70 +395,63 @@ var proxyDone = function (done) {
 };
 
 /**
- * Register OAuth1 based middleware.
+ * Trigger authentication via OAuth1.0(A) in the browser. Valid data
+ * properties include:
  *
- * @param {Object} middleware
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
-module.exports = function (middleware) {
-  /**
-   * Trigger authentication via OAuth1.0(A) in the browser. Valid data
-   * properties include:
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('authenticate:oauth1', function (data, next, done) {
-    return oauth1Flow(data, proxyDone(done));
-  });
+middleware.core('authenticate:oauth1', function (data, next, done) {
+  return oauth1Flow(data, proxyDone(done));
+});
 
-  /**
-   * Allow a new ajax flow for OAuth1-based URLs. Accepts an `oauth1` property
-   * on the data object in the format that is returned from the middleware.
-   *
-   * @param {Object}   data
-   * @param {Function} next
-   * @param {Function} done
-   */
-  middleware.core('ajax:oauth1', function (data, next, done) {
-    if (!_.isObject(data.oauth1)) {
-      return done(new TypeError('"oauth1" config object expected'), null);
-    }
+/**
+ * Allow a new ajax flow for OAuth1-based URLs. Accepts an `oauth1` property
+ * on the data object in the format that is returned from the middleware.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.core('ajax:oauth1', function (data, next, done) {
+  if (!_.isObject(data.oauth1)) {
+    return done(new TypeError('"oauth1" config object expected'), null);
+  }
 
-    if (!data.oauth1.signatureMethod) {
-      data.oauth1.signatureMethod = 'HMAC-SHA1';
-    }
+  if (!data.oauth1.signatureMethod) {
+    data.oauth1.signatureMethod = 'HMAC-SHA1';
+  }
 
-    // Parse the url for augmenting the query string parameters. Needed in
-    // multiple places throughout the flow, so we can minimize the number of
-    // parses by doing it once at the start.
-    data.url = url.parse(data.url, true);
+  // Parse the url for augmenting the query string parameters. Needed in
+  // multiple places throughout the flow, so we can minimize the number of
+  // parses by doing it once at the start.
+  data.url = url.parse(data.url, true);
 
-    // Delete parameters specific to re-adding the query string, since we need
-    // to regenerate the query string without OAuth params.
-    delete data.url.href;
-    delete data.url.path;
-    delete data.url.search;
+  // Delete parameters specific to re-adding the query string, since we need
+  // to regenerate the query string without OAuth params.
+  delete data.url.href;
+  delete data.url.path;
+  delete data.url.search;
 
-    var orderedParams = prepareParameters(data);
-    var authorization = buildAuthorizationHeaders(data, orderedParams);
+  var orderedParams = prepareParameters(data);
+  var authorization = buildAuthorizationHeaders(data, orderedParams);
 
-    data.headers.Authorization = authorization;
+  data.headers.Authorization = authorization;
 
-    data.url.query = arrayToParams(
-      _.filter(paramsToArray(data.url.query), function (param) {
-        return !isParamAnOAuthParameter(param[0]);
-      })
-    );
+  data.url.query = arrayToParams(
+    _.filter(paramsToArray(data.url.query), function (param) {
+      return !isParamAnOAuthParameter(param[0]);
+    })
+  );
 
-    // Reattach the query string if we have one available.
-    if (data.url.query) {
-      data.url.search = '?' + data.url.query;
-      data.url.path   = data.url.pathname + data.url.search;
-    }
+  // Reattach the query string if we have one available.
+  if (data.url.query) {
+    data.url.search = '?' + data.url.query;
+    data.url.path   = data.url.pathname + data.url.search;
+  }
 
-    data.url = url.format(data.url);
+  data.url = url.format(data.url);
 
-    return App.middleware.trigger('ajax', data, next);
-  });
-};
+  return App.middleware.trigger('ajax', data, next);
+});

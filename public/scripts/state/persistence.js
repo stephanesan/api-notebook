@@ -1,7 +1,5 @@
 var _          = require('underscore');
 var Backbone   = require('backbone');
-var config     = require('./config');
-var messages   = require('./messages');
 var middleware = require('./middleware');
 
 /**
@@ -14,11 +12,11 @@ var Persistence = Backbone.Model.extend({
     id:         null,
     state:      0,
     notebook:   [],
+    contents:   '',
     originalId: null,
     userId:     null,
     ownerId:    null,
-    userTitle:  'Unauthenticated',
-    displayUrl: ''
+    userTitle:  'Unauthenticated'
   }
 });
 
@@ -265,7 +263,8 @@ Persistence.prototype.clone = function (done) {
  * Resets the persistence model state.
  */
 Persistence.prototype.reset = function () {
-  return this.set(this.defaults);
+  this.set(this.defaults);
+  this.meta.set(this.meta.defaults);
 };
 
 /**
@@ -375,10 +374,7 @@ persistence.listenTo(persistence, 'change:contents', (function () {
  * will only check, and not actually trigger authentication which would be a
  * jarring experience. Also load the initial notebook contents alongside.
  */
-persistence.listenTo(messages, 'ready', function () {
-  // Trigger the initial id update.
-  persistence.trigger('updateId');
-
+persistence.listenTo(middleware, 'application:ready', function () {
   return middleware.trigger(
     'persistence:authenticated',
     _.extend(this.getMiddlewareData(), {
@@ -398,45 +394,4 @@ persistence.listenTo(messages, 'ready', function () {
       this.isReady = true;
     }, this)
   );
-});
-
-/**
- * Listens for any changes of the persistence id. When it changes, we need to
- * navigate to the updated url.
- *
- * @param {Object} _
- * @param {String} id
- */
-persistence.listenTo(persistence, 'change:id', function (_, id) {
-  config.set('id', id, { silent: true });
-
-  return middleware.trigger('persistence:syncId', id, function (err, url) {
-    return persistence.set('displayUrl', url);
-  });
-});
-
-/**
- * Listens for global id changes and updates persistence. Primarily for loading
- * a new notebook from the embed frame where the current url scheme is unlikely
- * to be maintained.
- */
-persistence.listenTo(config, 'change:id', function (_, id) {
-  persistence.set('id', id);
-  return persistence.load();
-});
-
-/**
- * Listens for content changes and cause a new persistence load.
- */
-persistence.listenTo(config, 'change:content', function () {
-  return persistence.load();
-});
-
-/**
- * Update id events will load the id again.
- */
-persistence.listenTo(persistence, 'updateId', function () {
-  return middleware.trigger('persistence:loadId', null, function (err, id) {
-    return config.set('id', id);
-  });
 });
