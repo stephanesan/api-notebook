@@ -38,17 +38,14 @@ module.exports = function (url, cb) {
     title: 'Request API Permission',
     content: [
       '<p>',
-      'Making API requests requires you to grant access to the application.',
+      'Please grant access to this application to make an API request.',
       '</p>',
       '<p>',
-      'You will be redirected to the API provider to approve the use of your ' +
-      'credentials and then returned to this page.',
-      '</p>',
-      '<p>',
+      'Click the "Authenticate" button to approve the use of your credentials.',
       'You can revoke these permissions at any time.',
       '</p>',
       '<p class="text-center">',
-      '<button class="btn" data-authenticate>Authenticate</button>',
+      '<button class="btn btn-primary" data-authenticate>Authenticate</button>',
       '</p>'
     ].join('\n'),
     afterRender: function (modal) {

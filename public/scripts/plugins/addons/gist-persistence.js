@@ -148,11 +148,17 @@ var savePlugin = function (data, next, done) {
     var authenticated = false;
 
     return App.middleware.trigger('ui:modal', {
-      title:   'Authenticate with Github',
+      title:   'Save Notebook',
       content: [
-        '<p>Tell the user something useful here.</p>',
+        '<p>Notebooks are saved as gists to your GitHub account.</p>',
+        '<p>',
+        'Please authorize this application in order to ',
+        'save, edit, and share your notebook.',
+        '</p>',
         '<p class="text-center">',
-        '<button class="btn" data-github>Connect to Github</button>',
+        '<button class="btn btn-primary" data-github>',
+        'Authorize With GitHub',
+        '</button>',
         '</p>'
       ].join('\n'),
       afterRender: function (modal) {
