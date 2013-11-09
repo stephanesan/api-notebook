@@ -15,7 +15,18 @@ var authOpts = {
   clientSecret:        '', // Injected by proxy
   accessTokenUri:      TOKEN_URL,
   authorizationUri:    AUTH_URL,
-  authorizationGrants: 'code'
+  authorizationGrants: 'code',
+  modal: {
+    title: 'Save Notebook',
+    content: [
+      '<p>Notebooks are saved as gists to your GitHub account.</p>',
+      '<p>',
+      'Please authorize this application in order to ',
+      'save, edit, and share your notebook.',
+      '</p>'
+    ].join('\n'),
+    btnText: 'Authorize With GitHub'
+  }
 };
 
 /**
@@ -145,37 +156,7 @@ var loadPlugin = function (data, next, done) {
  */
 var savePlugin = function (data, next, done) {
   if (!data.isAuthenticated()) {
-    var authenticated = false;
-
-    return App.middleware.trigger('ui:modal', {
-      title:   'Save Notebook',
-      content: [
-        '<p>Notebooks are saved as gists to your GitHub account.</p>',
-        '<p>',
-        'Please authorize this application in order to ',
-        'save, edit, and share your notebook.',
-        '</p>',
-        '<p class="text-center">',
-        '<button class="btn btn-primary" data-github>',
-        'Authorize With GitHub',
-        '</button>',
-        '</p>'
-      ].join('\n'),
-      afterRender: function (modal) {
-        // Set the `authenticated` flag when the button is clicked.
-        App.Library.Backbone.$(modal.el)
-          .on('click', '[data-github]', function () {
-            authenticated = true;
-            return data.authenticate(modal.close);
-          });
-      }
-    }, function (err) {
-      if (err) { return done(err); }
-
-      // Close the first save attempt and start another now that we should be
-      // authenticated to Github.
-      return done(), authenticated && data.save();
-    });
+    return data.authenticate(done);
   }
 
   if (!data.isOwner()) {

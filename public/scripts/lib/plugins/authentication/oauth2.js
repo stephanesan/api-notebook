@@ -155,7 +155,7 @@ var oauth2TokenFlow = function (options, done) {
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'token'
-  }), done);
+  }), options, done);
 
   global.authenticateOAuth = function (href) {
     popup.close();
@@ -209,7 +209,7 @@ var oAuth2CodeFlow = function (options, done) {
     'client_id':     options.clientId,
     'redirect_uri':  redirectUri,
     'response_type': 'code'
-  }), done);
+  }), options, done);
 
   /**
    * Assigns a global variable that the oauth authentication window should

@@ -359,7 +359,7 @@ var oauth1Flow = function (options, done) {
 
     var popup = authWindow(options.authorizationUri + '?' + qs.stringify({
       'oauth_token': data.oauthToken
-    }), done);
+    }), options, done);
 
     global.authenticateOAuth = function (href) {
       popup.close();

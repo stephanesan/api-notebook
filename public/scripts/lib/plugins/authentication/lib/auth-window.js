@@ -1,3 +1,4 @@
+var _          = require('underscore');
 var Backbone   = require('backbone');
 var middleware = require('../../../../state/middleware');
 
@@ -21,9 +22,9 @@ var closeAll = function () {
  * as catching blocked popup windows, listening for window closes, simplified
  * window positioning, etc.
  *
- * @return {Object} Execute `close` when the window is safe to clear.
+ * @return {Object} Execute `close` when the window is safe to cleared.
  */
-module.exports = function (url, cb) {
+module.exports = function (url, options, cb) {
   var width     = Math.min(720, window.screen.availWidth);
   var height    = Math.min(480, window.screen.availHeight);
   var top       = Math.min(100, (window.screen.availHeight - height) / 2);
@@ -34,7 +35,7 @@ module.exports = function (url, cb) {
   // Close previously open popup windows and modals.
   closeAll();
 
-  middleware.trigger('ui:modal', {
+  var modalOptions = _.extend({
     title: 'Request API Permission',
     content: [
       '<p>',
@@ -44,9 +45,6 @@ module.exports = function (url, cb) {
       'Click the "Authenticate" button to approve the use of your credentials.',
       'You can revoke these permissions at any time.',
       '</p>',
-      '<p class="text-center">',
-      '<button class="btn btn-primary" data-authenticate>Authenticate</button>',
-      '</p>'
     ].join('\n'),
     afterRender: function (modal) {
       openModal = modal;
@@ -72,7 +70,18 @@ module.exports = function (url, cb) {
         }, 400);
       });
     }
-  }, function () {
+  }, options.modal);
+
+
+  modalOptions.content += [
+    '<p class="text-center">',
+    '<button class="btn btn-primary" data-authenticate>',
+    (options.btnText || 'Authenticate'),
+    '</button>',
+    '</p>'
+  ].join('\n');
+
+  middleware.trigger('ui:modal', modalOptions, function () {
     openModal = null;
     return !completed && cb(new Error('Modal closed without authenticating'));
   });
