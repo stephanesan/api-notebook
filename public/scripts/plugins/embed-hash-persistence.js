@@ -1,5 +1,5 @@
-var Notebook  = window.Notebook;
-var notebooks = [];
+var Notebook   = window.Notebook;
+var notebooks  = [];
 
 window.addEventListener('hashchange', function () {
   for (var i = 0; i < notebooks.length; i++) {

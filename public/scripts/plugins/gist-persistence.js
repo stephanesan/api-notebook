@@ -1,4 +1,5 @@
 /* global App */
+var _            = App._;
 var CLIENT_ID    = process.env.GITHUB_CLIENT_ID;
 var AUTH_URL     = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
@@ -49,7 +50,7 @@ var changePlugin = function (data, next, done) {
     return done();
   }
 
-  return setTimeout(App._.bind(data.save, data, done), 600);
+  return setTimeout(_.bind(data.save, data, done), 600);
 };
 
 /**
@@ -156,7 +157,11 @@ var loadPlugin = function (data, next, done) {
  */
 var savePlugin = function (data, next, done) {
   if (!data.isAuthenticated()) {
-    return data.authenticate(done);
+    return data.authenticate(function (err) {
+      if (err) { return next(err); }
+
+      return done(), data.save();
+    });
   }
 
   if (!data.isOwner()) {
@@ -190,7 +195,7 @@ var savePlugin = function (data, next, done) {
       return next(e);
     }
 
-    return next();
+    return done();
   });
 };
 

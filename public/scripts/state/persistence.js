@@ -20,6 +20,17 @@ var Persistence = Backbone.Model.extend({
   }
 });
 
+/**
+ * Check whether the persistence model is new. Needs an override for empty
+ * strings since I'm too lazy to fix my hash change code.
+ */
+Persistence.prototype.isNew = function () {
+  return this.get('id') === '' || Backbone.Model.prototype.isNew.call(this);
+};
+
+/**
+ * Initialize the persistence model and attach the related meta data model.
+ */
 Persistence.prototype.initialize = function () {
   // Set the `meta` property on the persistence model to be its own model.
   this.meta = new (Backbone.Model.extend({
@@ -42,6 +53,7 @@ Persistence.prototype.SAVE_DONE = Persistence.SAVE_DONE = 4;
 Persistence.prototype.LOAD_FAIL = Persistence.LOAD_FAIL = 5;
 Persistence.prototype.LOAD_DONE = Persistence.LOAD_DONE = 6;
 Persistence.prototype.CHANGED   = Persistence.CHANGED   = 7;
+Persistence.prototype.CLONING   = Persistence.CLONING   = 8;
 
 /**
  * Private method for triggering state changes and relevant events.
@@ -251,10 +263,11 @@ Persistence.prototype.clone = function (done) {
     this.set('originalId', this.get('id'));
   }
 
+  this._changeState(Persistence.CLONING);
+
   // Removes the notebook id and sets the user id to the current user.
   this.set('id',      null);
   this.set('ownerId', this.get('userId'));
-  this._changeState(Persistence.NULL);
 
   return this.save(done);
 };

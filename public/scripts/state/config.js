@@ -18,8 +18,7 @@ var config = module.exports = new Backbone.Model({
  * to be maintained.
  */
 config.listenTo(config, 'change:id', function (_, id) {
-  persistence.set('id', id);
-  return persistence.load();
+  return persistence.set('id', id);
 });
 
 /**
@@ -30,7 +29,15 @@ config.listenTo(config, 'change:id', function (_, id) {
  * @param {String} id
  */
 config.listenTo(persistence, 'change:id', function (_, id) {
-  return config.set('id', id, { silent: true });
+  var cid    = config.get('id');
+  var state  = persistence.get('state');
+  var silent = state === persistence.SAVING || state === persistence.CLONING;
+
+  // Don't trigger reloads if the id has not really changed.
+  silent = silent || (id == null || id === '') && (cid == null || cid === '');
+
+  config.set('id', id);
+  return !silent && persistence.load();
 });
 
 /**
