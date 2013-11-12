@@ -14,7 +14,7 @@ describe('Local Storage Persistence Plugin', function () {
     App.middleware.disuse(localStoragePersistencePlugin);
   });
 
-  it.skip('should save to localStorage with a made up id', function (done) {
+  it('should save to localStorage with a made up id', function (done) {
     App.persistence.set('id',       id);
     App.persistence.set('contents', notebook);
 
@@ -27,7 +27,7 @@ describe('Local Storage Persistence Plugin', function () {
     });
   });
 
-  it.skip('should load the id from localStorage', function (done) {
+  it('should load the id from localStorage', function (done) {
     App.persistence.set('id', id);
     localStorage.setItem('notebook-' + id, notebook);
 

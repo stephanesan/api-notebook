@@ -28,7 +28,9 @@ middleware.use('application:ready', function (app, next) {
    * is unlikely to be maintained.
    */
   config.listenTo(config, 'change:id', function (_, id) {
-    return persistence.set('id', id);
+    var persistId = persistence.get('id');
+    persistence.set('id', id);
+    return persistId === id || persistence.load();
   });
 
   /**
@@ -39,14 +41,7 @@ middleware.use('application:ready', function (app, next) {
    * @param {String} id
    */
   config.listenTo(persistence, 'change:id', function (_, id) {
-    var cid    = config.get('id');
-    var state  = persistence.get('state');
-    var silent = state === persistence.SAVING || state === persistence.CLONING;
-
-    config.set('id', id);
-
-    // Make sure the id is actually changing before triggering a new load.
-    return !silent && id !== cid && persistence.load();
+    return config.set('id', id);
   });
 
   return next();
