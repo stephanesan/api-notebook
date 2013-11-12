@@ -4,40 +4,43 @@ var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
 var fromPath        = require('../lib/from-path');
 
-// Special documentation parameter.
+/**
+ * Provided a special documentation property for functionsw with another plugin.
+ *
+ * @type {String}
+ */
 var DESCRIPTION_PROPERTY = '@description';
 
 /**
- * Override the RAML parser read file functionality and replace with middleware.
+ * Custom file reader for RAML specs.
  *
- * @param  {String} file
- * @return {String}
+ * @param  {String}  url
+ * @return {Q.defer}
  */
-ramlParser.readFile = function (file) {
-  var error, status, data;
+var injectedReader = new ramlParser.FileReader(function (url) {
+  var deferred = this.q.defer();
 
   App.middleware.trigger('ajax', {
-    url:     file,
-    async:   false,
+    url: url,
     headers: {
       'Accept': 'application/raml+yaml, */*'
     }
   }, function (err, xhr) {
-    data   = xhr.responseText;
-    error  = err;
-    status = xhr.status;
+    if (err) {
+      return deferred.reject(err);
+    }
+
+    if (Math.floor(xhr.status / 100) !== 2) {
+      return deferred.reject(
+        new Error('Received status code ' + xhr.status + ' loading ' + url)
+      );
+    }
+
+    return deferred.resolve(xhr.responseText);
   });
 
-  if (error) {
-    throw error;
-  }
-
-  if (Math.floor(status / 100) !== 2) {
-    throw new Error('Failed to load RAML document at "' + file + '"');
-  }
-
-  return data;
-};
+  return deferred.promise;
+});
 
 /**
  * The Api object is used in the execution context.
@@ -67,7 +70,7 @@ API.createClient = function (name, url, done) {
 
   // Pass our url to the RAML parser for processing and transform the promise
   // back into a callback format.
-  ramlParser.loadFile(url).then(function (data) {
+  ramlParser.loadFile(url, { reader: injectedReader }).then(function (data) {
     var client;
 
     try {
