@@ -120,6 +120,12 @@ module.exports = function (grunt) {
             cwd: 'test/fixtures',
             src: '**',
             dest: FIXTURE_DIR
+          },
+          {
+            expand: true,
+            cwd: 'vendor/fontello/font',
+            src: ['**/*'],
+            dest: 'build/font/'
           }
         ]
       }

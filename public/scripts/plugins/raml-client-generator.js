@@ -96,7 +96,12 @@ API.createClient = function (name, url, config, done) {
 };
 
 API.createClient[DESCRIPTION_PROPERTY] = {
-  '!type': 'fn(alias: string, url: string, cb?: fn(error, client))',
+  '!type': 'fn(' + [
+    'alias: string',
+    'url: string',
+    'config?: { proxy: boolean }',
+    'cb?: fn(error, client)'
+  ].join(', ') + ')',
   '!doc': [
     'Generate an API client from a RAML document and alias it on the window.'
   ].join(' ')
