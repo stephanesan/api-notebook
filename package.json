@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Executable JavaScript environment for running API examples.",
   "private": true,
+  "browserify": {
+    "transform": ["envify"]
+  },
   "dependencies": {
     "underscore": "~1.5.2",
     "backbone": "~1.0.0",
