@@ -206,10 +206,7 @@ module.exports = function (grunt) {
         },
         options: {
           'include css': true,
-          import: [
-            'nib',
-            'includes/colors.styl'
-          ]
+          import: ['nib']
         }
       }
     },
