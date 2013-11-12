@@ -22,6 +22,22 @@ var acceptObject = function (fn) {
 };
 
 /**
+ * Generic method for adding a plugin to the middleware stack.
+ *
+ * @param {middleware} middleware
+ * @param {String}     name
+ * @param {Function}   fn
+ * @param {String}     method
+ */
+var addStack = function (middleware, name, fn, method) {
+  var stack = middleware._stack[name] || (middleware._stack[name] = []);
+  middleware.trigger('newPlugin', fn);
+  middleware.trigger('newPlugin:' + name, fn);
+  stack[method](fn);
+  return middleware;
+};
+
+/**
  * An event based implementation of a namespaced middleware system. Provides a
  * method to register new plugins and a queue system to trigger plugin hooks
  * while still being capable of having a fallback function.
@@ -57,11 +73,19 @@ middleware._core = {};
  * @return {this}
  */
 middleware.use = acceptObject(function (name, fn) {
-  var stack = this._stack[name] || (this._stack[name] = []);
-  this.trigger('newPlugin', fn);
-  this.trigger('newPlugin:' + name, fn);
-  stack.push(fn);
-  return this;
+  return addStack(this, name, fn, 'push');
+});
+
+/**
+ * Regist a function plugin for the middleware event. This registers the plugin
+ * at the beginning of the execution stack (as opposed to end, like usual).
+ *
+ * @param  {String}   name
+ * @param  {Function} fn
+ * @return {this}
+ */
+middleware.useFirst = acceptObject(function (name, fn) {
+  return addStack(this, name, fn, 'unshift');
 });
 
 /**

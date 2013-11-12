@@ -39,11 +39,14 @@ middleware.use('application:ready', function (app, next) {
    * @param {String} id
    */
   config.listenTo(persistence, 'change:id', function (_, id) {
+    var cid    = config.get('id');
     var state  = persistence.get('state');
     var silent = state === persistence.SAVING || state === persistence.CLONING;
 
     config.set('id', id);
-    return !silent && persistence.load();
+
+    // Make sure the id is actually changing before triggering a new load.
+    return !silent && id !== cid && persistence.load();
   });
 
   return next();

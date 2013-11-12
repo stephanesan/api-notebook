@@ -12,7 +12,7 @@ describe('Persistence', function () {
 
     App.middleware.use('persistence:load', function loadNotebook (data, next) {
       // Persistence will cycle through twice thanks to the relative file urls
-      if (data.id === 123456) {
+      if (data.id === '123456') {
         loaded = true;
         App.middleware.disuse('persistence:load', loadNotebook);
       }
@@ -22,7 +22,7 @@ describe('Persistence', function () {
 
     App.start(fixture, {
       config: {
-        id: 123456
+        id: '123456'
       }
     }, function (err, app) {
       app.remove();
@@ -38,12 +38,12 @@ describe('Persistence', function () {
       expect(data.notebook).to.be.an('array');
 
       App.middleware.disuse('persistence:change', changeNotebook);
-      return done();
     });
 
     App.start(fixture, function (err, app) {
       app.notebook.collection.at(0).view.setValue('test');
-      return app.remove();
+      app.remove();
+      return done();
     });
   });
 
@@ -64,6 +64,7 @@ describe('Persistence', function () {
         contentMatch = true;
         App.middleware.disuse('persistence:deserialize', deserializeNotebook);
       }
+
       return done();
     });
 

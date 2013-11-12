@@ -8,10 +8,10 @@ var USER_ID = 'blakeembrey';
  */
 var generateId = function () {
   var s4 = function () {
-    return Math.floor(Math.random()*(0x10000 - 1)).toString(16);
+    return Math.floor(Math.random() * (0x10000 - 1)).toString(16);
   };
 
-  return [s4(), s4(), s4(), s4()].join('');
+  return s4() + s4() + s4() + s4() + s4();
 };
 
 /**
@@ -56,14 +56,12 @@ var changePlugin = function (data, next, done) {
  * @param {Function} done
  */
 var savePlugin = function (data, next, done) {
-  process.nextTick(function () {
-    if (!data.id) {
-      data.id = generateId();
-    }
+  if (!data.id) {
+    data.id = generateId();
+  }
 
-    localStorage.setItem(localStorageKey(data.id), data.contents);
-    return done();
-  });
+  localStorage.setItem(localStorageKey(data.id), data.contents);
+  return done();
 };
 
 /**
@@ -73,16 +71,14 @@ var savePlugin = function (data, next, done) {
  * @param {Function} next
  */
 var loadPlugin = function (data, next, done) {
-  process.nextTick(function () {
-    var key = localStorageKey(data.id);
+  var key = localStorageKey(data.id);
 
-    // Hand loading off to the next middleware module.
-    if (!localStorage.getItem(key)) { return next(); }
+  // Hand loading off to the next middleware module.
+  if (!localStorage.getItem(key)) { return next(); }
 
-    data.ownerId  = USER_ID;
-    data.contents = localStorage.getItem(localStorageKey(data.id));
-    return done();
-  });
+  data.ownerId  = USER_ID;
+  data.contents = localStorage.getItem(localStorageKey(data.id));
+  return done();
 };
 
 /**

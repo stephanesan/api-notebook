@@ -73,7 +73,7 @@ describe('Gist Persistence Plugin', function () {
 
     App.persistence.authenticate(function (err) {
       expect(err).to.not.exist;
-      expect(App.persistence.get('userId')).to.equal(userId);
+      expect(App.persistence.get('userId')).to.equal('' + userId);
       return done();
     });
 
@@ -105,9 +105,9 @@ describe('Gist Persistence Plugin', function () {
 
     App.persistence.save(function (err) {
       expect(err).to.not.exist;
-      expect(App.persistence.get('id')).to.equal(id);
-      expect(App.persistence.get('userId')).to.equal(userId);
-      expect(App.persistence.get('ownerId')).to.equal(userId);
+      expect(App.persistence.get('id')).to.equal('' + id);
+      expect(App.persistence.get('userId')).to.equal('' + userId);
+      expect(App.persistence.get('ownerId')).to.equal('' + userId);
       expect(App.persistence.get('contents')).to.equal(notebook);
 
       return done();
@@ -132,6 +132,7 @@ describe('Gist Persistence Plugin', function () {
     );
 
     App.persistence.load(function (err) {
+      expect(err).to.not.exist;
       expect(App.persistence.get('contents')).to.equal(notebook);
 
       return done();

@@ -3,6 +3,18 @@ var Backbone   = require('backbone');
 var middleware = require('./middleware');
 
 /**
+ * Properties that should always be considered strings.
+ *
+ * @type {Object}
+ */
+var stringProps = {
+  'id':         true,
+  'originalId': true,
+  'userId':     true,
+  'ownerId':    true
+};
+
+/**
  * Persistence is a static model that holds all persistent notebook data.
  *
  * @type {Function}
@@ -25,7 +37,7 @@ var Persistence = Backbone.Model.extend({
  * strings since I'm too lazy to fix my hash change code.
  */
 Persistence.prototype.isNew = function () {
-  return this.get('id') === '' || Backbone.Model.prototype.isNew.call(this);
+  return !this.has('id');
 };
 
 /**
@@ -41,6 +53,20 @@ Persistence.prototype.initialize = function () {
 };
 
 /**
+ * Override `has` to take into account empty string overrides.
+ *
+ * @param  {String}  property
+ * @return {Boolean}
+ */
+Persistence.prototype.has = function (property) {
+  if (stringProps[property] && this.attributes[property] === '') {
+    return false;
+  }
+
+  return Backbone.Model.prototype.has.call(this, property);
+};
+
+/**
  * Hook into the set function using the hidden validate property to sanitize
  * set properties.
  *
@@ -49,9 +75,7 @@ Persistence.prototype.initialize = function () {
 Persistence.prototype._validate = function (attrs) {
   _.each(attrs, function (value, property) {
     // Skip attributes that don't need to be sanitized.
-    if (!_.contains(['id', 'originalId', 'userId', 'ownerId'], property)) {
-      return;
-    }
+    if (!stringProps[property]) { return; }
 
     attrs[property] = (value == null ? '' : '' + value);
   });
