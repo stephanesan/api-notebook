@@ -1,4 +1,3 @@
-var Notebook   = window.Notebook;
 var notebooks  = [];
 
 window.addEventListener('hashchange', function () {
@@ -9,30 +8,37 @@ window.addEventListener('hashchange', function () {
 });
 
 /**
- * Subscribe to a single notebook for hash changes.
+ * Export the attaching functionality.
  *
- * @param {Object} notebook
+ * @param {Function} Notebook
  */
-Notebook.subscribe(function (notebook) {
-  notebook.config('id', window.location.hash.substr(1));
+module.exports = function (Notebook) {
+  /**
+   * Subscribe to a single notebook for hash changes.
+   *
+   * @param {Object} notebook
+   */
+  Notebook.subscribe(function (notebook) {
+    notebook.config('id', window.location.hash.substr(1));
 
-  notebook.on('config:id', function (id) {
-    window.location.hash = id == null ? '' : id;
+    notebook.on('config:id', function (id) {
+      window.location.hash = id == null ? '' : id;
+    });
+
+    notebooks.push(notebook);
   });
 
-  notebooks.push(notebook);
-});
-
-/**
- * Unsubscribe to a single notebook from hash changes.
- *
- * @param {Object} notebook
- */
-Notebook.unsubscribe(function (notebook) {
-  for (var i = 0; i < notebooks.length; i++) {
-    if (notebook === notebooks[i]) {
-      i--;
-      notebooks.pop();
+  /**
+   * Unsubscribe to a single notebook from hash changes.
+   *
+   * @param {Object} notebook
+   */
+  Notebook.unsubscribe(function (notebook) {
+    for (var i = 0; i < notebooks.length; i++) {
+      if (notebook === notebooks[i]) {
+        i--;
+        notebooks.pop();
+      }
     }
-  }
-});
+  });
+};

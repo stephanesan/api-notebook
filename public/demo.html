@@ -9,6 +9,10 @@
     <script src="scripts/embed.js" data-manual></script>
     <script src="plugins/embed-hash-persistence.js"></script>
     <script>
+      // Attach a parent frame plugin to the embed script.
+      embedHashPersistencePlugin(Notebook);
+
+      // Generate a regular notebook with all the injected plugins.
       new Notebook(document.body, {
         inject: [
           'plugins/proxy.js',
