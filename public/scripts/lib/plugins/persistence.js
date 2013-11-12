@@ -130,6 +130,7 @@ middleware.core('persistence:deserialize', function (data, next, done) {
  * @param  {Function} next
  */
 middleware.core('persistence:load', function (data, next, done) {
+  data.id       = null;
   data.contents = [
     OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK
   ].join('\n');
