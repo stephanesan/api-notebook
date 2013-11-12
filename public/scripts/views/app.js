@@ -6,6 +6,7 @@ var View         = require('./view');
 var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
 var controls     = require('../lib/controls');
+var config       = require('../state/config');
 var messages     = require('../state/messages');
 var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
@@ -80,6 +81,10 @@ App.prototype.events = {
     if (!persistence.isOwner()) { return; }
 
     e.srcElement.select();
+  },
+  // Focus the share inputs automatically.
+  'click .notebook-share-input': function (e) {
+    e.srcElement.select();
   }
 };
 
@@ -134,6 +139,7 @@ App.prototype.remove = function () {
  */
 App.prototype.update = function () {
   this.updateId();
+  this.updateUrl();
   this.updateUser();
   this.updateTitle();
   this.updateState();
@@ -147,7 +153,7 @@ App.prototype.update = function () {
  * @return {App}
  */
 App.prototype.updateUser = function () {
-  var auth    = this.el.querySelector('.auth-status');
+  var authEl  = this.el.querySelector('.auth-status');
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
 
@@ -157,7 +163,7 @@ App.prototype.updateUser = function () {
   this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
 
   // Update the auth display status with the user title.
-  auth.textContent = persistence.get('userTitle') + '.';
+  authEl.textContent = persistence.get('userTitle');
 
   return this;
 };
@@ -168,10 +174,26 @@ App.prototype.updateUser = function () {
  * @return {App}
  */
 App.prototype.updateId = function () {
+  var shareEl = this.el.querySelector('.notebook-share-script');
+  var id      = persistence.get('id');
   var isSaved = persistence.has('id');
 
   this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
   this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
+
+  shareEl.value = '<script src="' + process.env.EMBED_SCRIPT_URL + '"' +
+    (id ? ' data-id="' + id + '"' : '') + '></script>';
+
+  return this;
+};
+
+/**
+ * Update the sharable url.
+ *
+ * @return {App}
+ */
+App.prototype.updateUrl = function () {
+  this.el.querySelector('.notebook-share-link').value = config.get('url');
 
   return this;
 };
@@ -234,6 +256,8 @@ App.prototype.updateState = function () {
     statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
   } else if (state === persistence.CHANGED) {
     statusEl.textContent = 'Unsaved changes.';
+  } else if (state === persistence.CLONING) {
+    statusEl.textContent = 'Cloning notebook.';
   }
 
   return this;
@@ -313,25 +337,31 @@ App.prototype.render = function () {
   ));
 
   // Listens to different application state changes and updates accordingly.
-  this.listenTo(persistence, 'changeUser',   this.updateUser);
-  this.listenTo(persistence, 'change:state', this.updateState);
-  this.listenTo(persistence, 'change:id',    this.updateId);
-
-  // Update displayed meta data.
+  this.listenTo(persistence,      'changeUser',   this.updateUser);
+  this.listenTo(persistence,      'change:state', this.updateState);
+  this.listenTo(persistence,      'change:id',    this.updateId);
+  this.listenTo(config,           'change:url',   this.updateUrl);
   this.listenTo(persistence.meta, 'change:title', this.updateTitle);
-
-  // Trigger all the update methods.
-  this.update();
 
   this.el.appendChild(domify(
     '<div class="notebook clearfix">' +
-    '<div class="notebook-content"></div>' +
-    '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
+      '<div class="notebook-content"></div>' +
+      '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
+      '<div class="notebook-share">' +
+        '<h3 class="notebook-share-title">Share this notebook</h3>' +
+        '<p class="notebook-share-about">Copy this code to embed.</p>' +
+        '<input class="notebook-share-script notebook-share-input" readonly>' +
+        '<p class="notebook-share-about">Copy this link to share.</p>' +
+        '<input class="notebook-share-link notebook-share-input" readonly>' +
+      '</div>' +
     '</div>'
   ));
 
   // Keep a static reference to the notebook contents element.
   this._contentsEl = this.el.lastChild.firstChild;
+
+  // Trigger all the update methods.
+  this.update();
 
   return this;
 };

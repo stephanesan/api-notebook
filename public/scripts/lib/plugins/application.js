@@ -24,6 +24,21 @@ middleware.use('application:start', function (options, next) {
     postMessage.trigger('height', height);
   });
 
+  // Listen for any changes to the current url and update the target.
+  postMessage.listenTo(config, 'change:url', (function () {
+    var base = document.getElementsByTagName('base')[0];
+    var head = document.head || document.getElementsByTagName('head')[0];
+
+    return function (_, url) {
+      if (base) { base.parentNode.removeChild(base); }
+
+      base = document.createElement('base');
+      base.setAttribute('href',   url);
+      base.setAttribute('target', '_parent');
+      head.appendChild(base);
+    };
+  })());
+
   // Listen for the parent frame to say its ready and pass use additional config
   // options.
   postMessage.on('ready', function (parentOptions) {
@@ -41,21 +56,6 @@ middleware.use('application:start', function (options, next) {
   postMessage.on('config', function () {
     config.set.apply(config, arguments);
   });
-
-  // Listen for any changes to the current url and update the target.
-  postMessage.listenTo(config, 'change:url', (function () {
-    var base = document.getElementsByTagName('base')[0];
-    var head = document.head || document.getElementsByTagName('head')[0];
-
-    return function (_, url) {
-      if (base) { base.parentNode.removeChild(base); }
-
-      base = document.createElement('base');
-      base.setAttribute('href',   url);
-      base.setAttribute('target', '_parent');
-      head.appendChild(base);
-    };
-  })());
 
   // Trigger config changes back to the parent frame.
   postMessage.listenTo(config, 'all', function (name, model, value) {

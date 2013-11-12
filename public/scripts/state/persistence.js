@@ -72,7 +72,7 @@ Persistence.prototype._changeState = function (state) {
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  if (!this.isReady || (!this.has('ownerId') && !this.has('userId'))) {
+  if (!this.isOwnerReady || (!this.has('ownerId') && !this.has('userId'))) {
     return true;
   }
 
@@ -85,7 +85,7 @@ Persistence.prototype.isOwner = function () {
  * @return {Boolean}
  */
 Persistence.prototype.isAuthenticated = function () {
-  return !this.isReady || this.has('userId');
+  return !this.isOwnerReady || this.has('userId');
 };
 
 /**
@@ -402,9 +402,9 @@ persistence.listenTo(middleware, 'application:ready', function () {
         this.set('ownerId', this.get('userId'));
       }
 
-      // Set an `isReady` flag on the persistence model. This is used to check
-      // if the user is authenticated and if the user is the owner.
-      this.isReady = true;
+      // Set an `isOwnerReady` flag on the persistence model. This is used to
+      // check if the user is authenticated and if the user is the owner.
+      this.isOwnerReady = true;
     }, this)
   );
 });

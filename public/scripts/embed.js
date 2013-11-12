@@ -382,14 +382,14 @@ Notebook.prototype.config = function () {
     if (typeof script.getAttribute('data-notebook') === 'string') { break; }
   }
 
-  var data = getDataAttributes(script);
+  var data     = getDataAttributes(script);
+  var selector = data.selector;
 
-  if (!data.selector) { return; }
+  // Allow manual creation of embeddable notebooks.
+  if ('manual' in data) { return; }
 
-  var el = document.querySelector(data.selector);
-  // Remove the selector and pass the rest of the options to the notebook
-  delete data.selector;
   // TODO: Discuss replacing this implementation with something more
   // cross-browser. Probably just stick with element ids.
+  var el = selector ? document.querySelector(selector) : script.parentNode;
   return new Notebook(el, data);
 })(document.getElementsByTagName('script'));
