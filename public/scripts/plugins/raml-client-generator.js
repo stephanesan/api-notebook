@@ -17,30 +17,33 @@ var DESCRIPTION_PROPERTY = '@description';
  * @param  {String}  url
  * @return {Q.defer}
  */
-var injectedReader = new ramlParser.FileReader(function (url) {
-  var deferred = this.q.defer();
+var createReader = function (config) {
+  return new ramlParser.FileReader(function (url) {
+    var deferred = this.q.defer();
 
-  App.middleware.trigger('ajax', {
-    url: url,
-    headers: {
-      'Accept': 'application/raml+yaml, */*'
-    }
-  }, function (err, xhr) {
-    if (err) {
-      return deferred.reject(err);
-    }
+    App.middleware.trigger('ajax', {
+      url: url,
+      proxy: config.proxy,
+      headers: {
+        'Accept': 'application/raml+yaml, */*'
+      }
+    }, function (err, xhr) {
+      if (err) {
+        return deferred.reject(err);
+      }
 
-    if (Math.floor(xhr.status / 100) !== 2) {
-      return deferred.reject(
-        new Error('Received status code ' + xhr.status + ' loading ' + url)
-      );
-    }
+      if (Math.floor(xhr.status / 100) !== 2) {
+        return deferred.reject(
+          new Error('Received status code ' + xhr.status + ' loading ' + url)
+        );
+      }
 
-    return deferred.resolve(xhr.responseText);
+      return deferred.resolve(xhr.responseText);
+    });
+
+    return deferred.promise;
   });
-
-  return deferred.promise;
-});
+};
 
 /**
  * The Api object is used in the execution context.
@@ -76,7 +79,9 @@ API.createClient = function (name, url, config, done) {
 
   // Pass our url to the RAML parser for processing and transform the promise
   // back into a callback format.
-  ramlParser.loadFile(url, { reader: injectedReader }).then(function (data) {
+  ramlParser.loadFile(url, {
+    reader: createReader(config)
+  }).then(function (data) {
     var client;
 
     try {
