@@ -56,13 +56,19 @@ var API = {};
  * @param {String}   [url]
  * @param {Function} done
  */
-API.createClient = function (name, url, done) {
+API.createClient = function (name, url, config, done) {
   if (!_.isString(name)) {
     throw new Error('Provide a name for the generated client');
   }
 
   if (!_.isString(url)) {
     throw new Error('Provide a URL for the ' + name + ' RAML document');
+  }
+
+  // Allow the config object to be skipped.
+  if (typeof config === 'function') {
+    done   = arguments[2];
+    config = {};
   }
 
   App._executeContext.timeout(Infinity);
@@ -74,7 +80,7 @@ API.createClient = function (name, url, done) {
     var client;
 
     try {
-      client = clientGenerator(data);
+      client = clientGenerator(data, config);
       fromPath(App._executeWindow, name.split('.'), client);
     } catch (e) {
       return done(e);

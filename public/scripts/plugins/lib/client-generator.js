@@ -435,7 +435,7 @@ var httpRequest = function (nodes, method) {
     var headers = nodes.headers || {};
     var mime    = getMime(getHeader(headers, 'Content-Type'));
     var request = 'ajax';
-    var fullUrl = nodes.config.baseUri + '/' + nodes.join('/');
+    var fullUrl = nodes.client.baseUri + '/' + nodes.join('/');
     var response, error; // Weird async and sync code mixing.
 
     // No need to pass data through with `GET` or `HEAD` requests.
@@ -495,21 +495,22 @@ var httpRequest = function (nodes, method) {
       url:     fullUrl,
       data:    data,
       async:   async,
+      proxy:   nodes.config.proxy, // Disable proxying data.
       method:  method.method,
       headers: headers
     };
 
     // Iterate through `securedBy` methods and accept the first one we are
     // already authenticated for.
-    _.some(method.securedBy || nodes.config.securedBy, function (secured) {
+    _.some(method.securedBy || nodes.client.securedBy, function (secured) {
       // Skip unauthorized requests since we'll be doing that anyway if the
       // rest of the secure methods fail to exist.
       if (secured == null) {
         return false;
       }
 
-      var scheme        = nodes.config.securitySchemes[secured];
-      var authenticated = nodes.config.authentication[scheme.type];
+      var scheme        = nodes.client.securitySchemes[secured];
+      var authenticated = nodes.client.authentication[scheme.type];
 
       if (authenticated) {
         if (scheme.type === 'OAuth 2.0') {
@@ -786,7 +787,7 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
       function (err, auth) {
         // Set the client authentication details. This will be used with any
         // http requests that require the authentication type.
-        nodes.config.authentication[scheme.type] = _.extend({}, auth, options);
+        nodes.client.authentication[scheme.type] = _.extend({}, auth, options);
         return done(err, auth);
       }
     );
@@ -889,13 +890,14 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
  * @param  {Object} ast Passed through `sanitizeAST`
  * @return {Object}
  */
-var generateClient = function (ast) {
+var generateClient = function (ast, config) {
   // Generate the root node array. Set properties directly on this array to be
   // copied to the next execution part. In some cases we may need something to
   // be automatically set on *all* instances, so we use `config` since objects
   // are passed by reference.
   var nodes = _.extend([], {
-    config: {
+    config: config || {},
+    client: {
       baseUri:         ast.baseUri.replace(/\/+$/, ''),
       securedBy:       ast.securedBy,
       authentication:  {},
@@ -946,6 +948,6 @@ var generateClient = function (ast) {
  *
  * @return {Object} Dynamic object for constructing API requests from the AST.
  */
-module.exports = function (ast) {
-  return generateClient(sanitizeAST(ast));
+module.exports = function (ast, config) {
+  return generateClient(sanitizeAST(ast), config);
 };

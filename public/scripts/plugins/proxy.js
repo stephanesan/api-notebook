@@ -9,6 +9,11 @@ var PROXY_URL = process.env.PROXY_URL;
  * @param  {Function} next
  */
 var ajaxPlugin = function (data, next) {
+  // Allow the proxy to be bypassed completely.
+  if (data.proxy === false) {
+    return next();
+  }
+
   var url = App.Library.url.parse(data.url);
 
   // Attach the proxy if the url is not a relative url.
