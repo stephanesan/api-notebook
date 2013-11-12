@@ -75,7 +75,8 @@ API.createClient = function (name, url, config, done) {
   }
 
   App._executeContext.timeout(Infinity);
-  done = done || App._executeContext.async();
+  done   = done   || App._executeContext.async();
+  config = config || {};
 
   // Pass our url to the RAML parser for processing and transform the promise
   // back into a callback format.
