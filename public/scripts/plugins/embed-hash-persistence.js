@@ -22,7 +22,7 @@ module.exports = function (Notebook) {
     notebook.config('id', window.location.hash.substr(1));
 
     notebook.on('config:id', function (id) {
-      window.location.hash = id == null ? '' : id;
+      window.location.hash = id;
     });
 
     notebooks.push(notebook);

@@ -41,6 +41,25 @@ Persistence.prototype.initialize = function () {
 };
 
 /**
+ * Hook into the set function using the hidden validate property to sanitize
+ * set properties.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype._validate = function (attrs) {
+  _.each(attrs, function (value, property) {
+    // Skip attributes that don't need to be sanitized.
+    if (!_.contains(['id', 'originalId', 'userId', 'ownerId'], property)) {
+      return;
+    }
+
+    attrs[property] = (value == null ? '' : '' + value);
+  });
+
+  return Backbone.Model.prototype._validate.apply(this, arguments);
+};
+
+/**
  * Represent persistence states in event listeners as numerical entities.
  *
  * @type {Number}
