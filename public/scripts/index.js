@@ -5,7 +5,7 @@ require('./bootstrap');
  *
  * @type {Function}
  */
-var App = window.App = require('./views/app');
+var App = module.exports = window.App = {};
 
 // Exposes internally used libraries globally to avoid unneeded requests in
 // third-party middleware and plugins.
@@ -41,6 +41,7 @@ App.CodeMirror = {
 
 // Expose all application views
 App.View = {
+  App:            require('./views/app'),
   View:           require('./views/view'),
   Notebook:       require('./views/notebook'),
   EditNotebook:   require('./views/edit-notebook'),
@@ -88,7 +89,7 @@ App.start = function (el /*, options */, done) {
       return done && done(err);
     }
 
-    var app = new App().render().appendTo(el);
+    var app = new App.View.App().render().appendTo(el);
 
     // Send a `rendered` event back to the parent frame when we are embedded.
     if (App.postMessage) {
