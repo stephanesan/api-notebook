@@ -172,9 +172,11 @@ Notebook.prototype.makeFrame = function (el, options) {
     });
   });
 
-  // When a new height comes through, update the iframe height
+  // When a new height comes through, update the iframe height. Use the inline
+  // height tag since css should take a higher precendence (which allows simple
+  // height overrides to work alongside this).
   this.on('height', function (height) {
-    this.el.style.height = height + 'px';
+    this.el.height = height;
   });
 
   // Set up a single message listener that will trigger events from the frame
