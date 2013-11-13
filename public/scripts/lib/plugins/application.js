@@ -7,6 +7,8 @@ var config      = require('../../state/config');
 var middleware  = require('../../state/middleware');
 var PostMessage = require('../post-message');
 
+var headEl = document.head || document.getElementsByTagName('head')[0];
+
 /**
  * The first middleware for application start has to be the parent frame set up.
  *
@@ -26,16 +28,24 @@ middleware.use('application:start', function (options, next) {
 
   // Listen for any changes to the current url and update the target.
   postMessage.listenTo(config, 'change:url', (function () {
-    var base = document.getElementsByTagName('base')[0];
-    var head = document.head || document.getElementsByTagName('head')[0];
+    var baseEl = document.getElementsByTagName('base')[0];
 
     return function (_, url) {
-      if (base) { base.parentNode.removeChild(base); }
+      if (baseEl) { baseEl.parentNode.removeChild(baseEl); }
 
-      base = document.createElement('base');
-      base.setAttribute('href',   url);
-      base.setAttribute('target', '_parent');
-      head.appendChild(base);
+      baseEl = document.createElement('base');
+      baseEl.setAttribute('href',   url);
+      baseEl.setAttribute('target', '_parent');
+      headEl.appendChild(baseEl);
+    };
+  })());
+
+  // Listen for injected styles changes.
+  postMessage.listenTo(config, 'change:style', (function () {
+    var style = headEl.appendChild(document.createElement('style'));
+
+    return function (_, css) {
+      style.textContent = css;
     };
   })());
 
