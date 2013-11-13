@@ -37,6 +37,10 @@ var changeNotebook = function (fn) {
       this.contents.render().appendTo(this._contentsEl);
     }
 
+    // Add style classes for the view type.
+    var view = this.contents instanceof Notebook ? 'view' : 'edit';
+    this.el.classList.add('notebook-' + view + '-active');
+
     // Resize the parent frame since we have added notebook contents.
     messages.trigger('resize');
     return this;
@@ -65,7 +69,7 @@ App.prototype.events = {
   'click .notebook-save':  'saveNotebook',
   'click .notebook-list':  'listNotebooks',
   // Switch between application views.
-  'click .toggle-notebook-edit': 'renderNotebook',
+  'click .toggle-notebook-edit': 'toggleEdit',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -104,6 +108,8 @@ App.prototype.initialize = function () {
     (e || window.event).returnValue = confirmationMessage;
     return confirmationMessage;
   });
+
+  this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
 };
 
 /**
@@ -112,13 +118,20 @@ App.prototype.initialize = function () {
  * @return {App}
  */
 App.prototype.renderNotebook = changeNotebook(function () {
+  return this.notebook = new Notebook();
+});
+
+/**
+ * Toggle the view between edit and notebook view.
+ *
+ * @return {App}
+ */
+App.prototype.toggleEdit = changeNotebook(function () {
   if (this.notebook) {
     delete this.notebook;
-    this.el.classList.add('notebook-edit-active');
     return new EditNotebook();
   }
 
-  this.el.classList.add('notebook-view-active');
   return this.notebook = new Notebook();
 });
 

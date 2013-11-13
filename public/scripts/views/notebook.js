@@ -60,11 +60,6 @@ Notebook.prototype.initialize = function () {
 
   // Attach the sandbox specific completion as middleware.
   middleware.use(this.sandboxCompletion);
-
-  // When the user changes, we may have been given permission to do things like
-  // edit the notebook. Hence, we need to rerender certain aspects of the app.
-  this.listenTo(persistence, 'changeUser',     this.updateUser);
-  this.listenTo(persistence, 'changeNotebook', this.render);
 };
 
 /**
@@ -96,20 +91,6 @@ Notebook.prototype.update = function () {
 };
 
 /**
- * Updates the current users display status. E.g. Unauthorized users can't
- * edit notebook cells.
- *
- * @return {Notebook}
- */
-Notebook.prototype.updateUser = function () {
-  this.collection.each(function (model) {
-    model.view.renderEditor();
-  });
-
-  return this;
-};
-
-/**
  * Refresh the completion context object, used by the completion helper in code
  * cells to get completion results.
  *
@@ -134,11 +115,6 @@ Notebook.prototype.updateCompletion = function () {
  * @return {Notebook}
  */
 Notebook.prototype.render = function () {
-  this.stopListening(this.collection);
-  this.collection.each(function (model) {
-    model.view.remove();
-  });
-
   View.prototype.render.call(this);
   this.collection = new NotebookCollection();
 
