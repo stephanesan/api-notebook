@@ -8,8 +8,6 @@ var messages    = require('../../state/messages');
 var middleware  = require('../../state/middleware');
 var PostMessage = require('../post-message');
 
-var headEl = document.head || document.getElementsByTagName('head')[0];
-
 /**
  * The first middleware for application start has to be the parent frame set up.
  *
@@ -29,6 +27,7 @@ middleware.use('application:start', function (options, next) {
 
   // Listen for any changes to the current url and update the target.
   postMessage.listenTo(config, 'change:url', (function () {
+    var headEl = document.head || document.getElementsByTagName('head')[0];
     var baseEl = document.getElementsByTagName('base')[0];
 
     return function (_, url) {
@@ -38,15 +37,6 @@ middleware.use('application:start', function (options, next) {
       baseEl.setAttribute('href',   url);
       baseEl.setAttribute('target', '_parent');
       headEl.appendChild(baseEl);
-    };
-  })());
-
-  // Listen for injected styles changes.
-  postMessage.listenTo(config, 'change:style', (function () {
-    var style = headEl.appendChild(document.createElement('style'));
-
-    return function (_, css) {
-      style.textContent = css;
     };
   })());
 
@@ -79,9 +69,6 @@ middleware.use('application:start', function (options, next) {
 
     postMessage.trigger('config:' + name.substr(7), value);
   });
-
-  // Add a class name to identify embedded notebooks.
-  document.body.className += ' notebook-embedded';
 
   // Let the parent window know we are ready to receive.
   postMessage.trigger('ready');

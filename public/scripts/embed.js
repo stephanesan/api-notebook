@@ -156,6 +156,7 @@ Notebook.prototype.makeFrame = function (el, options) {
   options.config = extend({
     id:       options.id,
     url:      window.location.href,
+    embedded: true,
     contents: options.contents
   }, options.config);
 

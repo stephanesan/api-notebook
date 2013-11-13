@@ -13,6 +13,31 @@ var config = module.exports = new Backbone.Model({
 });
 
 /**
+ * Every time the style config changes, update the css.
+ */
+config.listenTo(config, 'change:style', (function () {
+  var headEl  = document.head || document.getElementsByTagName('head')[0];
+  var styleEl = headEl.appendChild(document.createElement('style'));
+
+  return function (_, css) {
+    styleEl.textContent = css;
+  };
+})());
+
+/**
+ * Listen for changes in the embedded config option and update conditional
+ * styles.
+ */
+config.listenTo(config, 'embedded', function (_, embedded) {
+  if (!embedded) {
+    return document.body.replace(' notebook-embedded', '');
+  }
+
+  // Add a class name to identify embedded notebooks.
+  return document.body.className += ' notebook-embedded';
+});
+
+/**
  * When the application is ready, start listening for live id changes.
  *
  * @param {Object}   app
