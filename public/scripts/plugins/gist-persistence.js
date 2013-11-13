@@ -31,6 +31,33 @@ var authOpts = {
 };
 
 /**
+ * Check whether a gist contents are a valid notebook.
+ *
+ * @param  {Object}  content
+ * @return {Boolean}
+ */
+var isNotebookContent = function (content) {
+  return content && content.files && content.files['notebook.md'];
+};
+
+/**
+ * Parse the link header for the specific links.
+ *
+ * @param  {String} header
+ * @return {Object}
+ */
+var parseLinkHeader = function (header) {
+  var obj = {};
+
+  _.each(header.split(', '), function (part) {
+    var matches = /^<([^>]+)>; *rel="([^"]+)"$/.exec(part);
+    return matches && (obj[matches[2]] = matches[1]);
+  });
+
+  return obj;
+};
+
+/**
  * Generate a custom store for the Github OAuth2 response tokens.
  *
  * @type {Object}
@@ -135,8 +162,8 @@ var loadPlugin = function (data, next, done) {
       return next(e);
     }
 
-    if (!content || !content.files || !content.files['notebook.md']) {
-      return next(new Error('Unexpected JSON response'));
+    if (!isNotebookContent(content)) {
+      return next(new Error('Unexpected notebook response'));
     }
 
     data.id       = content.id;
@@ -172,6 +199,7 @@ var savePlugin = function (data, next, done) {
     url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
     method: data.id ? 'PATCH' : 'POST',
     data: JSON.stringify({
+      description: data.meta.title,
       files: {
         'notebook.md': {
           content: data.contents
@@ -200,6 +228,41 @@ var savePlugin = function (data, next, done) {
 };
 
 /**
+ * Push all suitable gists into the list of notebooks.
+ *
+ * @param {Array}    list
+ * @param {Function} next
+ * @param {Function} done
+ */
+var listPlugin = function (list, next, done) {
+  (function recurse (link) {
+    App.middleware.trigger('ajax:oauth2', {
+      url:     link,
+      method: 'GET',
+      oauth2: oauth2Store.toJSON()
+    }, function (err, xhr) {
+      if (err) { return done(err); }
+
+      var nextLink = parseLinkHeader(xhr.getResponseHeader('link')).next;
+
+      _.each(JSON.parse(xhr.responseText), function (content) {
+        if (!isNotebookContent(content)) { return; }
+
+        list.push({
+          id: content.id,
+          meta: {
+            title: content.description
+          }
+        });
+      });
+
+      // Proceed to the next link or return done.
+      return nextLink ? recurse(nextLink) : done();
+    });
+  })('https://api.github.com/gists');
+};
+
+/**
  * A { key: function } map of all middleware used in the plugin.
  *
  * @type {Object}
@@ -209,5 +272,6 @@ module.exports = {
   'persistence:authenticate':  authenticatePlugin,
   'persistence:authenticated': authenticatedPlugin,
   'persistence:load':          loadPlugin,
-  'persistence:save':          savePlugin
+  'persistence:save':          savePlugin,
+  'persistence:list':          listPlugin
 };

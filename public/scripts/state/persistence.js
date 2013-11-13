@@ -22,6 +22,9 @@ var stringProps = {
 var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
+    meta: {
+      title: 'New Notebook'
+    },
     state:      0,
     notebook:   [],
     contents:   '',
@@ -38,18 +41,6 @@ var Persistence = Backbone.Model.extend({
  */
 Persistence.prototype.isNew = function () {
   return !this.has('id');
-};
-
-/**
- * Initialize the persistence model and attach the related meta data model.
- */
-Persistence.prototype.initialize = function () {
-  // Set the `meta` property on the persistence model to be its own model.
-  this.meta = new (Backbone.Model.extend({
-    defaults: {
-      title: 'New Notebook'
-    }
-  }))();
 };
 
 /**
@@ -164,7 +155,7 @@ Persistence.prototype.deserialize = function (done) {
       notebook: null
     }),
     _.bind(function (err, data) {
-      this.meta.set(data.meta);
+      this.set('meta',     data.meta);
       this.set('notebook', data.notebook);
 
       return done && done(err);
@@ -234,7 +225,6 @@ Persistence.prototype.authenticate = function (done) {
  */
 Persistence.prototype.getMiddlewareData = function () {
   return _.extend(this.toJSON(), {
-    meta:            this.meta.toJSON(),
     save:            _.bind(this.save, this),
     clone:           _.bind(this.clone, this),
     isNew:           _.bind(this.isNew, this),
@@ -297,6 +287,19 @@ Persistence.prototype.load = function (done) {
 };
 
 /**
+ * Generate a list of all loadable notebooks.
+ *
+ * @param {Function} done
+ */
+Persistence.prototype.list = function (done) {
+  if (!this.isAuthenticated()) {
+    return done && done(new Error('Not authenticated'));
+  }
+
+  return middleware.trigger('persistence:list', [], done);
+};
+
+/**
  * Clone the notebook and reset the persistence layer to look normal again.
  */
 Persistence.prototype.clone = function (done) {
@@ -320,7 +323,6 @@ Persistence.prototype.clone = function (done) {
  */
 Persistence.prototype.reset = function () {
   this.set(this.defaults);
-  this.meta.set(this.meta.defaults);
 };
 
 /**
@@ -370,8 +372,7 @@ var deserialize = syncProtection(function () {
 /**
  * Keeps the serialized notebook in sync with the deserialized version.
  */
-persistence.listenTo(persistence,      'change:notebook', serialize);
-persistence.listenTo(persistence.meta, 'change',          serialize);
+persistence.listenTo(persistence, 'change:notebook change:meta', serialize);
 
 /**
  * Keeps the deserialized notebook contents in sync with the serialized content.

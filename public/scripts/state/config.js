@@ -28,7 +28,7 @@ config.listenTo(config, 'change:style', (function () {
  * Listen for changes in the embedded config option and update conditional
  * styles.
  */
-config.listenTo(config, 'embedded', function (_, embedded) {
+config.listenTo(config, 'change:embedded', function (_, embedded) {
   if (!embedded) {
     return document.body.replace(' notebook-embedded', '');
   }

@@ -63,6 +63,7 @@ App.prototype.events = {
   'click .notebook-clone': 'cloneNotebook',
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
+  'click .notebook-list':  'listNotebooks',
   // Switch between application views.
   'click .toggle-notebook-edit': 'renderNotebook',
   // Listen for `Enter` presses and blur the input.
@@ -74,7 +75,7 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.meta.set('title', e.srcElement.value);
+    persistence.get('meta').title = e.target.value;
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
@@ -204,7 +205,7 @@ App.prototype.updateUrl = function () {
  * @return {App}
  */
 App.prototype.updateTitle = function () {
-  var title   = persistence.meta.get('title');
+  var title   = persistence.get('meta').title;
   var titleEl = this.el.querySelector('.notebook-title');
 
   // Only attempt to update when out of sync.
@@ -313,6 +314,7 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="toolbar-inner">' +
+        '<button class="ir notebook-list">List notebooks</button>' +
         '<div class="auth-status text-status"></div>' +
         '<div class="save-status text-status"></div>' +
         '<div class="toolbar-buttons">' +
@@ -337,11 +339,11 @@ App.prototype.render = function () {
   ));
 
   // Listens to different application state changes and updates accordingly.
-  this.listenTo(persistence,      'changeUser',   this.updateUser);
-  this.listenTo(persistence,      'change:state', this.updateState);
-  this.listenTo(persistence,      'change:id',    this.updateId);
-  this.listenTo(config,           'change:url',   this.updateUrl);
-  this.listenTo(persistence.meta, 'change:title', this.updateTitle);
+  this.listenTo(persistence, 'changeUser',   this.updateUser);
+  this.listenTo(persistence, 'change:state', this.updateState);
+  this.listenTo(persistence, 'change:id',    this.updateId);
+  this.listenTo(config,      'change:url',   this.updateUrl);
+  this.listenTo(persistence, 'change:meta',  this.updateTitle);
 
   this.el.appendChild(domify(
     '<div class="notebook clearfix">' +
@@ -403,4 +405,29 @@ App.prototype.cloneNotebook = function () {
  */
 App.prototype.saveNotebook = function () {
   return persistence.save();
+};
+
+/**
+ * List all notebooks in a modal and allow selection.
+ */
+App.prototype.listNotebooks = function () {
+  var itemTemplate = _.template(
+    '<li><a href="#<%- id %>" data-notebook="<%- id %>">' +
+      '<% print(meta.title || id) %>' +
+    '</a></li>'
+  );
+
+  return persistence.list(function (err, list) {
+    middleware.trigger('ui:modal', {
+      title:   'List Notebooks',
+      content: '<ul>' + _.map(list, itemTemplate).join('\n') + '</ul>',
+      afterRender: function (modal) {
+        Backbone.$(modal.el).on('click', '[data-notebook]', function (e) {
+          e.preventDefault();
+          modal.close();
+          return config.set('id', this.getAttribute('data-notebook'));
+        });
+      }
+    });
+  });
 };
