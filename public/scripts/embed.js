@@ -76,6 +76,7 @@ var defaultStyles = {
   width:   '100%',
   border:  'none',
   display: 'block',
+  margin:  '0 auto',
   padding: '0'
 };
 
