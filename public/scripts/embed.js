@@ -146,7 +146,7 @@ Notebook.unsubscribe = function (fn) {
 Notebook.prototype.makeFrame = function (el, options) {
   var that  = this;
   var src   = NOTEBOOK_URL + '/embed.html';
-  var frame = this.frame = document.createElement('iframe');
+  var frame = this.el = document.createElement('iframe');
 
   // Configure base frame options.
   frame.src       = src;
@@ -174,7 +174,7 @@ Notebook.prototype.makeFrame = function (el, options) {
 
   // When a new height comes through, update the iframe height
   this.on('height', function (height) {
-    this.frame.style.height = height + 'px';
+    this.el.style.height = height + 'px';
   });
 
   // Set up a single message listener that will trigger events from the frame
@@ -203,7 +203,7 @@ Notebook.prototype.makeFrame = function (el, options) {
  * @return {Notebook}
  */
 Notebook.prototype.styleFrame = function (styles) {
-  css(this.frame, styles);
+  css(this.el, styles);
   return this;
 };
 
@@ -240,8 +240,8 @@ Notebook.prototype.getVariable = function (key, done) {
  */
 Notebook.prototype.removeFrame = function () {
   global.removeEventListener('message', this._messageListener);
-  this.frame.parentNode.removeChild(this.frame);
-  delete this.frame;
+  this.el.parentNode.removeChild(this.el);
+  delete this.el;
 
   return this;
 };
@@ -359,7 +359,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   }
 
   args = __slice.call(arguments, 0);
-  this.frame.contentWindow.postMessage(Kamino.stringify(args), NOTEBOOK_URL);
+  this.el.contentWindow.postMessage(Kamino.stringify(args), NOTEBOOK_URL);
   return this;
 };
 
