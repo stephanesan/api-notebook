@@ -313,8 +313,8 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="toolbar-inner">' +
-        '<div class="auth-status"></div>' +
-        '<div class="save-status"></div>' +
+        '<div class="auth-status text-status"></div>' +
+        '<div class="save-status text-status"></div>' +
         '<div class="toolbar-buttons">' +
           '<span class="btn-edit">' +
             '<button class="btn-text toggle-notebook-edit">' +
