@@ -4,6 +4,7 @@ var async       = require('async');
 var loadScript  = require('../browser/load-script');
 var state       = require('../../state/state');
 var config      = require('../../state/config');
+var messages    = require('../../state/messages');
 var middleware  = require('../../state/middleware');
 var PostMessage = require('../post-message');
 
@@ -67,6 +68,11 @@ middleware.use('application:start', function (options, next) {
     config.set.apply(config, arguments);
   });
 
+  // Trigger cross-frame messages.
+  postMessage.on('message', function () {
+    messages.trigger.apply(messages, arguments);
+  });
+
   // Trigger config changes back to the parent frame.
   postMessage.listenTo(config, 'all', function (name, model, value) {
     if (name.substr(0, 7) !== 'change:') { return; }
@@ -88,10 +94,10 @@ middleware.use('application:start', function (options, next) {
  * @param {Function} next
  */
 middleware.use('application:start', function (options, next) {
-  if (!options.content) { return next(); }
+  if (!options.contents) { return next(); }
 
   middleware.use('persistence:load', function (data, next, done) {
-    data.contents = options.content;
+    data.contents = options.contents;
     return done();
   });
 

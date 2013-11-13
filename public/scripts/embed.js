@@ -61,10 +61,10 @@ var getDataAttributes = function (el) {
  * @type {Object}
  */
 var defaultOptions = {
-  id:      null, // Initial id to pull content from
-  content: null, // Fallback content in case of no id
-  style:   {},   // Set styles on the iframe
-  alias:   {}    // Alias objects into the frame once available
+  id:       null, // Initial id to pull content from
+  contents: null, // Fallback content in case of no id
+  style:    {},   // Set styles on the iframe
+  alias:    {}    // Alias objects into the frame once available
 };
 
 /**
@@ -147,13 +147,17 @@ Notebook.prototype.makeFrame = function (el, options) {
   var that  = this;
   var src   = NOTEBOOK_URL + '/embed.html';
   var frame = this.frame = document.createElement('iframe');
-  frame.src = src;
+
+  // Configure base frame options.
+  frame.src       = src;
+  frame.className = options.className;
 
   // Extend basic configuration options.
-  extend(options.config || (options.config = {}), {
-    id:  options.id,
-    url: window.location.href
-  });
+  options.config = extend({
+    id:       options.id,
+    url:      window.location.href,
+    contents: options.contents
+  }, options.config);
 
   // When the app is ready to receive events, send configuration data and let
   // the frame know that we are ready to execute.
@@ -364,6 +368,13 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
  */
 Notebook.prototype.config = function () {
   this.trigger.apply(this, ['config'].concat(__slice.call(arguments)));
+};
+
+/**
+ * Shorthand for passing messages to the application.
+ */
+Notebook.prototype.message = function () {
+  this.trigger.apply(this, ['message'].concat(__slice.call(arguments)));
 };
 
 /**

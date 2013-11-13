@@ -34,6 +34,14 @@ middleware.use('application:ready', function (app, next) {
   });
 
   /**
+   * Trigger refreshes of the persistence layer when the contents change.
+   */
+  config.listenTo(config, 'change:contents', function () {
+    persistence.set('id', '');
+    return persistence.load();
+  });
+
+  /**
    * Listens for any changes of the persistence id. When it changes, we need to
    * navigate to the updated url.
    *
@@ -55,4 +63,21 @@ middleware.use('application:ready', function (app, next) {
  */
 middleware.use('application:ready', function (app, next) {
   return persistence.load(next);
+});
+
+/**
+ * If we have contents set in the config object, we should use them as the
+ * default load.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.use('persistence:load', function (data, next, done) {
+  if (config.has('contents')) {
+    data.contents = config.get('contents');
+    return done();
+  }
+
+  return next();
 });
