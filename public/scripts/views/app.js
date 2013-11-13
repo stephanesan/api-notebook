@@ -79,7 +79,9 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.get('meta').title = e.target.value;
+    persistence.set('meta', _.defaults({
+      title: e.target.value
+    }, persistence.get('meta')));
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
@@ -109,7 +111,14 @@ App.prototype.initialize = function () {
     return confirmationMessage;
   });
 
+  // Re-render the notebook when the notebook changes.
   this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
+
+  // Update the displayed title when the title changes.
+  this.listenTo(persistence, 'change:meta', function (_, meta) {
+    var titleEl = document.head.querySelector('title');
+    titleEl.textContent = meta.title ? meta.title + ' • Notebook' : 'Notebook';
+  });
 };
 
 /**
@@ -327,7 +336,7 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="toolbar-inner">' +
-        '<button class="ir notebook-list">List notebooks</button>' +
+        '<button class="notebook-list">List notebooks</button>' +
         '<div class="auth-status text-status"></div>' +
         '<div class="save-status text-status"></div>' +
         '<div class="toolbar-buttons">' +
