@@ -64,6 +64,9 @@ middleware.use('application:start', function (options, next) {
     postMessage.trigger('config:' + name.substr(7), value);
   });
 
+  // Add a class name to identify embedded notebooks.
+  document.body.className += ' notebook-embedded';
+
   // Let the parent window know we are ready to receive.
   postMessage.trigger('ready');
 });
