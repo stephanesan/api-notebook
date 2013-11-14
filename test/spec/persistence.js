@@ -105,10 +105,11 @@ describe('Persistence', function () {
     });
 
     App.start(fixture, function (err, app) {
+      expect(err).to.not.exist;
       expect(app.notebook.collection.at(0).get('value')).to.equal('# Simple Test');
 
       // Check the application titles match.
-      expect(App.persistence.meta.get('title')).to.equal('Test Notebook');
+      expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
       expect(app.el.querySelector('.notebook-title').value).to.equal('Test Notebook');
 
       app.remove();
@@ -127,7 +128,7 @@ describe('Persistence', function () {
       }]);
 
       expect(App.persistence.get('contents')).to.equal(
-        '---\ntitle: ' + App.persistence.meta.get('title') + '\n---\n\n' +
+        '---\ntitle: ' + App.persistence.get('meta').get('title') + '\n---\n\n' +
         '```javascript\nvar test = "again";\n```\n\n# Heading'
       );
     });

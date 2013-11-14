@@ -15,7 +15,7 @@ describe('Embeddable Widget', function () {
     var notebook = new Notebook(fixture);
 
     expect(fixture.childNodes.length).to.equal(1);
-    expect(fixture.childNodes[0]).to.equal(notebook.frame);
+    expect(fixture.childNodes[0]).to.equal(notebook.el);
 
     notebook.remove();
   });
@@ -28,7 +28,7 @@ describe('Embeddable Widget', function () {
     });
 
     expect(fixture.childNodes.length).to.equal(1);
-    expect(fixture.childNodes[0]).to.equal(notebook.frame);
+    expect(fixture.childNodes[0]).to.equal(notebook.el);
 
     notebook.remove();
   });
@@ -39,10 +39,10 @@ describe('Embeddable Widget', function () {
     });
 
     expect(fixture.childNodes.length).to.equal(1);
-    expect(fixture.childNodes[0]).to.equal(notebook.frame);
-    expect(notebook.frame.style.borderWidth).to.equal('1px');
-    expect(notebook.frame.style.borderStyle).to.equal('solid');
-    expect(notebook.frame.style.borderColor).to.equal('red');
+    expect(fixture.childNodes[0]).to.equal(notebook.el);
+    expect(notebook.el.style.borderWidth).to.equal('1px');
+    expect(notebook.el.style.borderStyle).to.equal('solid');
+    expect(notebook.el.style.borderColor).to.equal('red');
 
     notebook.remove();
   });

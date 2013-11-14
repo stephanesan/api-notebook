@@ -4,12 +4,14 @@
   "description": "Executable JavaScript environment for running API examples.",
   "private": true,
   "browserify": {
-    "transform": ["envify"]
+    "transform": [
+      "envify"
+    ]
   },
   "dependencies": {
     "underscore": "~1.5.2",
-    "backbone": "~1.0.0",
-    "codemirror": "~3.18.0",
+    "backbone": "~1.1.0",
+    "codemirror": "~3.19.0",
     "trim": "0.0.1",
     "marked": "~0.2.10",
     "domify": "~1.0.0",

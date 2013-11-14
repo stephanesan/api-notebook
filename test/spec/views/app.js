@@ -53,7 +53,7 @@ describe('App', function () {
         var titleEl = view.el.querySelector('.notebook-title');
         titleEl.value = 'Test Notebook';
         simulateEvent(titleEl, 'keyup');
-        expect(App.persistence.meta.get('title')).to.equal('Test Notebook');
+        expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
       });
     });
 

@@ -79,9 +79,7 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.set('meta', _.defaults({
-      title: e.target.value
-    }, persistence.get('meta')));
+    persistence.get('meta').set('title', e.target.value);
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
@@ -115,9 +113,9 @@ App.prototype.initialize = function () {
   this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
 
   // Update the displayed title when the title changes.
-  this.listenTo(persistence, 'change:meta', function (_, meta) {
+  this.listenTo(persistence.get('meta'), 'change:title', function (_, title) {
     var titleEl = document.head.querySelector('title');
-    titleEl.textContent = meta.title ? meta.title + ' • Notebook' : 'Notebook';
+    titleEl.textContent = title ? title + ' • Notebook' : 'Notebook';
   });
 };
 
@@ -227,7 +225,7 @@ App.prototype.updateUrl = function () {
  * @return {App}
  */
 App.prototype.updateTitle = function () {
-  var title   = persistence.get('meta').title;
+  var title   = persistence.get('meta').get('title');
   var titleEl = this.el.querySelector('.notebook-title');
 
   // Only attempt to update when out of sync.
@@ -365,7 +363,9 @@ App.prototype.render = function () {
   this.listenTo(persistence, 'change:state', this.updateState);
   this.listenTo(persistence, 'change:id',    this.updateId);
   this.listenTo(config,      'change:url',   this.updateUrl);
-  this.listenTo(persistence, 'change:meta',  this.updateTitle);
+
+  // Update meta data.
+  this.listenTo(persistence.get('meta'), 'change:title', this.updateTitle);
 
   this.el.appendChild(domify(
     '<div class="notebook clearfix">' +

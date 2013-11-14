@@ -22,9 +22,7 @@ var stringProps = {
 var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
-    meta: {
-      title: 'New Notebook'
-    },
+    meta:       new Backbone.Model({ title: 'New Notebook' }),
     state:      0,
     notebook:   [],
     contents:   '',
@@ -155,7 +153,7 @@ Persistence.prototype.deserialize = function (done) {
       notebook: null
     }),
     _.bind(function (err, data) {
-      this.set('meta',     data.meta);
+      this.get('meta').set(data.meta);
       this.set('notebook', data.notebook);
 
       return done && done(err);
@@ -225,6 +223,9 @@ Persistence.prototype.authenticate = function (done) {
  */
 Persistence.prototype.getMiddlewareData = function () {
   return _.extend(this.toJSON(), {
+    // Turn meta model into a regular object.
+    meta: this.get('meta').toJSON(),
+    // Useful helper functions.
     save:            _.bind(this.save, this),
     clone:           _.bind(this.clone, this),
     isNew:           _.bind(this.isNew, this),
@@ -372,7 +373,8 @@ var deserialize = syncProtection(function () {
 /**
  * Keeps the serialized notebook in sync with the deserialized version.
  */
-persistence.listenTo(persistence, 'change:notebook change:meta', serialize);
+persistence.listenTo(persistence,             'change:notebook', serialize);
+persistence.listenTo(persistence.get('meta'), 'change',          serialize);
 
 /**
  * Keeps the deserialized notebook contents in sync with the serialized content.
