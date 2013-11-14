@@ -38,6 +38,22 @@ var addStack = function (middleware, name, fn, method) {
 };
 
 /**
+ * Return a function that will only be run once.
+ *
+ * @param  {middleware} middleware
+ * @param  {String}     name
+ * @param  {Function}   fn
+ * @return {Function}
+ */
+var useOnce = function (middleware, name, fn) {
+  return function () {
+    middleware.disuse(name, fn);
+    fn.apply(this, arguments);
+    fn = null;
+  };
+};
+
+/**
  * An event based implementation of a namespaced middleware system. Provides a
  * method to register new plugins and a queue system to trigger plugin hooks
  * while still being capable of having a fallback function.
@@ -77,7 +93,7 @@ middleware.use = acceptObject(function (name, fn) {
 });
 
 /**
- * Regist a function plugin for the middleware event. This registers the plugin
+ * Register a plugin for the middleware event. This registers the plugin
  * at the beginning of the execution stack (as opposed to end, like usual).
  *
  * @param  {String}   name
@@ -86,6 +102,28 @@ middleware.use = acceptObject(function (name, fn) {
  */
 middleware.useFirst = acceptObject(function (name, fn) {
   return addStack(this, name, fn, 'unshift');
+});
+
+/**
+ * Register a plugin that will only run only once.
+ *
+ * @param  {String}   name
+ * @param  {Function} fn
+ * @return {this}
+ */
+middleware.useOnce = acceptObject(function (name, fn) {
+  return this.use(name, useOnce(this, name, fn));
+});
+
+/**
+ * Register a plugin that will only run first only once.
+ *
+ * @param  {String}   name
+ * @param  {Function} fn
+ * @return {this}
+ */
+middleware.useFirstOnce = acceptObject(function (name, fn) {
+  return this.useFirst(name, useOnce(this, name, fn));
 });
 
 /**

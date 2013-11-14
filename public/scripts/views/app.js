@@ -439,17 +439,19 @@ App.prototype.listNotebooks = function () {
     '</a></li>'
   );
 
-  return persistence.list(function (err, list) {
-    middleware.trigger('ui:modal', {
-      title:   'List Notebooks',
-      content: '<ul>' + _.map(list, itemTemplate).join('\n') + '</ul>',
-      afterRender: function (modal) {
-        Backbone.$(modal.el).on('click', '[data-notebook]', function (e) {
-          e.preventDefault();
-          modal.close();
-          return config.set('id', this.getAttribute('data-notebook'));
-        });
-      }
-    });
+  middleware.trigger('ui:modal', {
+    title:   'List Notebooks',
+    content: function (done) {
+      return persistence.list(function (err, list) {
+        done(null, '<ul>' + _.map(list, itemTemplate).join('\n') + '</ul>');
+      });
+    },
+    show: function (modal) {
+      Backbone.$(modal.el).on('click', '[data-notebook]', function (e) {
+        e.preventDefault();
+        modal.close();
+        return config.set('id', this.getAttribute('data-notebook'));
+      });
+    }
   });
 };

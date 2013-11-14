@@ -13,8 +13,8 @@ middleware.core('ajax', function (options, next) {
   var url     = options.url;
   var method  = options.method || 'GET';
   var xhr     = options.xhr = new XMLHttpRequest();
+  var async   = options.async !== false;
   var timeout = +options.timeout || AJAX_TIMEOUT;
-  var async   = options.async === false ? false : true;
   var ajaxTimeout;
 
   /**

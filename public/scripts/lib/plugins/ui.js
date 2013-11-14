@@ -36,13 +36,33 @@ var template = _.template([
  * @param {Function} done
  */
 middleware.core('ui:modal', function (options, next, done) {
-  var modal = {
-    el: domify(template(options)),
-    close: function (err) {
-      if (_.isFunction(options.beforeDestroy)) {
-        options.beforeDestroy(modal);
-      }
+  // Allow asynchronous template loads based on content and number of arguments.
+  // I drew this inspiration from mocha and really love the pattern.
+  var async = false;
+  var templateOptions = {
+    title:   options.title,
+    content: options.content
+  };
 
+  // Check if content is a function. If it is, just execute it or put the modal
+  // into async mode.
+  if (_.isFunction(options.content)) {
+    if (!options.content.length) {
+      templateOptions.content = options.content();
+    } else {
+      async = true;
+      templateOptions.content = [
+        '<p class="text-center">',
+        '<i class="icon-arrows-cw animate-spin"></i>',
+        '</p>'
+      ].join('');
+    }
+  }
+
+  // Render the modal with a close function.
+  var modal = {
+    el: domify(template(templateOptions)),
+    close: function (err) {
       messages.off('keydown:Esc', boundClose);
       document.body.removeChild(modal.el);
       document.body.classList.remove('modal-visible');
@@ -50,6 +70,18 @@ middleware.core('ui:modal', function (options, next, done) {
     },
     closed: false
   };
+
+  // Trigger the async function callback and render the modal body.
+  if (async) {
+    options.content(function (err, content) {
+      if (err) {
+        modal.close();
+        return done(err);
+      }
+
+      modal.el.querySelector('.modal-body').innerHTML = content;
+    });
+  }
 
   var boundClose = function () {
     modal.closed = true;
@@ -70,5 +102,5 @@ middleware.core('ui:modal', function (options, next, done) {
 
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
-  return _.isFunction(options.afterRender) && options.afterRender(modal);
+  return _.isFunction(options.show) && options.show(modal);
 });

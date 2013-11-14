@@ -46,7 +46,7 @@ module.exports = function (url, options, cb) {
       'You can revoke these permissions at any time.',
       '</p>',
     ].join('\n'),
-    afterRender: function (modal) {
+    show: function (modal) {
       openModal = modal;
 
       // Open a popup window when the authentication button is pressed.
