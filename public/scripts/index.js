@@ -15,6 +15,7 @@ App.Library = {
   crypto:      require('crypto'),
   querystring: require('querystring'),
   async:       require('async'),
+  changeCase:  require('change-case'),
   Backbone:    require('backbone')
 };
 
@@ -52,6 +53,7 @@ App.View = {
   TextCell:       require('./views/text-cell'),
   EditorCell:     require('./views/editor-cell'),
   ResultCell:     require('./views/result-cell'),
+  CellButtons:    require('./views/cell-buttons'),
   CellControls:   require('./views/cell-controls')
 };
 

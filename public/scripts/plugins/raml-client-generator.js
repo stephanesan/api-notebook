@@ -1,5 +1,6 @@
 /* global App */
 var _               = App._;
+var Backbone        = App.Library.Backbone;
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
 var fromPath        = require('../lib/from-path');
@@ -116,7 +117,6 @@ API.createClient[DESCRIPTION_PROPERTY] = {
  */
 var contextPlugin = function (context, next) {
   context.API = API;
-
   return next();
 };
 
@@ -128,3 +128,98 @@ var contextPlugin = function (context, next) {
 module.exports = {
   'sandbox:context': contextPlugin
 };
+
+/**
+ * [loadAPIDefinitions description]
+ * @param  {Function} done [description]
+ * @return {[type]}        [description]
+ */
+var loadAPIDefinitions = function (done) {
+  return App.middleware.trigger('ajax', {
+    url: 'http://api.apihub.com/v1/apis?specFormat=RAML'
+  }, function (err, xhr) {
+    return done(err, JSON.parse(xhr.responseText).items);
+  });
+};
+
+/**
+ * Show RAML definitions to users in a modal, and upon selection pass the
+ * selected definition back to the callback.
+ *
+ * @param {Function} done
+ */
+var selectAPIDefinition = function (done) {
+  var selected = false;
+
+  return App.middleware.trigger('ui:modal', {
+    title: 'Load an API Client',
+    content: function (done) {
+      return loadAPIDefinitions(function (err, items) {
+        if (err) { return done(err); }
+
+        return done(null, '<table><tr>' + _.map(items, function (item) {
+          var name = App.Library.changeCase.camelCase(item.title);
+          var url  = item.specs.RAML.url;
+          var link = [
+            '<a href="#" data-raml="' + url + '" data-name="' + name + '">',
+            item.title,
+            '</a>'
+          ].join('');
+
+          return '<td>' + link + '</td><td>' + item.description + '</td>';
+        }).join('</tr><tr>') + '</tr></table>');
+      });
+    },
+    show: function (modal) {
+      Backbone.$(modal.el).on('click', '[data-raml]', function (e) {
+        e.preventDefault();
+
+        // Close the modal behind ourselves.
+        modal.close();
+
+        return done(null, {
+          name: e.target.getAttribute('data-name'),
+          url:  e.target.getAttribute('data-raml')
+        });
+      });
+    }
+  }, function (err) {
+    return selected && done(err);
+  });
+};
+
+/**
+ * Inserts a new code cell above with a RAML API client and executes it.
+ */
+App.View.EditorCell.prototype.newRAMLAbove = function () {
+  return selectAPIDefinition(_.bind(function (err, api) {
+    this.notebook.prependCodeView(
+      this.el, 'API.createClient("' + api.name + '", "' + api.url + '");'
+    ).execute();
+
+    this.focus();
+  }, this));
+};
+
+/**
+ * Inserts a new code cell below with a RAML API client and executes it.
+ */
+App.View.EditorCell.prototype.newRAMLBelow = function () {
+  return selectAPIDefinition(_.bind(function (err, api) {
+    this.notebook.appendCodeView(
+      this.el, 'API.createClient("' + api.name + '", "' + api.url + '");'
+    ).execute();
+
+    this.focus();
+  }, this));
+};
+
+/**
+ * Insert a RAML document using the cell buttons.
+ *
+ * @type {String}
+ */
+App.View.CellButtons.controls.push({
+  label:   'Insert RAML Definition',
+  command: 'newRAML'
+});

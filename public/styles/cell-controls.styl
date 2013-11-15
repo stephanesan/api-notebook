@@ -21,17 +21,29 @@
     margin-top: -10px
     border: 10px solid transparent
     border-right-color: #333
+  &:before
+    content: ""
+    position: absolute
+    top: 50%
+    left: -22px
+    margin-top: -11px
+    border: 11px solid transparent
+    border-right-color: #eee
 
 @media only screen and (max-width: 70em)
   .cell-controls
     left: auto
     right: 37px
-
-  .cell-controls:after
-    left: auto
-    right: -20px
-    border-left-color: #333
-    border-right-color: transparent
+    &:after
+      left: auto
+      right: -20px
+      border-left-color: #333
+      border-right-color: transparent
+    &:before
+      left: auto
+      right: -22px
+      border-left-color: #eee
+      border-right-color: transparent
 
 .cell-controls button
   display: block
@@ -58,7 +70,7 @@
   font-size: .75em
   color: $color-cell-controls-keycode
 
-.btn-show-cell-controls
+.cell-controls-btn
   position: absolute
   top: 0
   right: 0
@@ -74,6 +86,6 @@
   border: 2px solid $color-cell-border
   background: #fff
 
-.cell-text.active > .btn-show-cell-controls
+.cell-text.active > .cell-controls-btn
   color: #fff
   background-color: #000

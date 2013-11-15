@@ -4,7 +4,6 @@ var View = require('./view');
 var CodeView           = require('./code-cell');
 var TextView           = require('./text-cell');
 var EditorView         = require('./editor-cell');
-var CellControls       = require('./cell-controls');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
@@ -25,8 +24,17 @@ var appendNewView = function (View) {
     var view = new View();
     this.appendView(view, el);
     view.setValue(value || '').moveCursorToEnd();
+    this.refreshFromView(view);
 
     return view;
+  };
+};
+
+var prependNewView = function (View) {
+  return function (el, value) {
+    return appendNewView(View).call(this, function (viewEl) {
+      el.parentNode.insertBefore(viewEl, el);
+    }, value);
   };
 };
 
@@ -46,7 +54,6 @@ var Notebook = module.exports = View.extend({
  */
 Notebook.prototype.initialize = function () {
   this.sandbox    = new Sandbox();
-  this.controls   = new CellControls().render();
   this.collection = new NotebookCollection();
 
   // Set up autocompletion environment.
@@ -73,7 +80,6 @@ Notebook.prototype.remove = function () {
 
   // Remove references
   delete this.sandbox;
-  delete this.controls;
   delete this.collection;
   delete this.completionOptions;
   delete this.sandboxCompletion;
@@ -121,7 +127,11 @@ Notebook.prototype.render = function () {
   // Empty all the current content to reset with new contents
   _.each(persistence.get('notebook'), function (cell) {
     var appendView = 'appendCodeView';
-    if (cell.type === 'text') { appendView = 'appendTextView'; }
+
+    if (cell.type === 'text') {
+      appendView = 'appendTextView';
+    }
+
     this[appendView](null, cell.value);
   }, this);
 
@@ -222,14 +232,12 @@ Notebook.prototype.refreshFromView = function (view) {
 };
 
 /**
- * Append a new code cell view instance.
+ * Append and prepend new cell view instances.
  */
-Notebook.prototype.appendCodeView = appendNewView(CodeView);
-
-/**
- * Append a new text cell view instance.
- */
-Notebook.prototype.appendTextView = appendNewView(TextView);
+Notebook.prototype.appendCodeView  = appendNewView(CodeView);
+Notebook.prototype.appendTextView  = appendNewView(TextView);
+Notebook.prototype.prependCodeView = prependNewView(CodeView);
+Notebook.prototype.prependTextView = prependNewView(TextView);
 
 /**
  * Append any view to the notebook. Sets up a few listeners on every view
@@ -270,27 +278,19 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
-      var newView = this.appendTextView(function (el) {
-        view.el.parentNode.insertBefore(el, view.el);
-      }).focus();
-      this.refreshFromView(newView);
+      this.prependTextView(view.el).focus();
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
-      var newView = this.appendCodeView(function (el) {
-        view.el.parentNode.insertBefore(el, view.el);
-      }).focus();
-      this.refreshFromView(newView);
+      this.prependCodeView(view.el).focus();
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
       this.appendTextView(view.el).focus();
-      this.refreshFromView(view);
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
       this.appendCodeView(view.el).focus();
-      this.refreshFromView(view);
     });
 
     // Listen to clone events and append the new views after the current view
@@ -299,7 +299,6 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
-      this.refreshFromView(clone);
     });
 
     this.listenTo(view, 'remove', function (view) {
@@ -332,26 +331,10 @@ Notebook.prototype.appendView = function (view, before) {
       newView.focus();
       if (cursor) { newView.editor.setCursor(cursor); }
     });
-
-    this.listenTo(view, 'showControls', function (view) {
-      this.controls.toggleView(view);
-    });
   }
 
   // Listening to different events for `text` cells
   if (view instanceof TextView) {
-    this.listenTo(view, 'code', function (view, code) {
-      // Either add a new code view (if we have code or it's the last view),
-      // and focus the next view.
-      if (code || this.el.lastChild === view.el) {
-        this.appendCodeView(view.el, code);
-      }
-
-      this.getNextView(view).moveCursorToEnd(0).focus();
-
-      if (!view.getValue()) { view.remove(); }
-    });
-
     this.listenTo(view, 'blur', function (view) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();

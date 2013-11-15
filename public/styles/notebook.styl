@@ -58,18 +58,18 @@
 .notebook-view > .cell-code-error
   > .CodeMirror,
   > .cell-result,
-  > .btn-show-cell-controls
+  > .cell-controls-btn
     border-color: $color-error-border
   > .cell-result
     color: $color-error-text
     background-color: $color-error-bg
 
-.cell > .cell-insert
+.cell > .cell-border
   top: -11px
   width: 100%
   position: absolute
   border-bottom: dotted 1px #e5e5e5
-  .insert-dot
+  .cell-border-btn
     cursor: pointer
     position: absolute
     top: 0
@@ -84,26 +84,24 @@
     &:hover
       color: #a5a5a5
 
-.cell > .cell-insert-bottom
-  display: none
+.cell > .cell-border-below
   top: auto
   bottom: -10px
+  display: none
 
-.cell:last-child > .cell-insert-bottom
+.cell:last-child > .cell-border-below
   display: block
 
-.cell-insert-buttons
-  display: none
+.cell-buttons
   position: absolute
-  left: 50%
+  width: 100%
   z-index: 1001
   margin-top: -10px
-  margin-left: -140px
-  .btn
-    width: @margin-left * -1
+  text-align: center
+  .action
     color: #333
-    float: left
-    padding: 0.6em 0.1em
+    display: inline-block
+    padding: 0.6em 1em
     font-size: 0.7em
     border: solid 1px #bfbfbf
     background: linear-gradient(#fff, #e6e6e6)
@@ -112,13 +110,12 @@
     &:hover
       color: #333333
       background: #e7e7e7
-  .btn:first-child
+    + .action
+      margin-left: -1px
+  .action:first-child
     border-radius: left 3px
-  .btn:last-child
-    margin-left: -1px
+  .action:last-child
     border-radius: right 3px
-  .cell-insert-hover &
-    display: block
 
 .markdown
   padding: 16px
