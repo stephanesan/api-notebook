@@ -243,7 +243,7 @@ var listPlugin = function (list, next, done) {
     }, function (err, xhr) {
       if (err) { return done(err); }
 
-      var nextLink = parseLinkHeader(xhr.getResponseHeader('link')).next;
+      var nextLink = parseLinkHeader(xhr.getResponseHeader('link') || '').next;
 
       _.each(JSON.parse(xhr.responseText), function (content) {
         if (!isNotebookContent(content)) { return; }

@@ -175,9 +175,9 @@ var selectAPIDefinition = function (done) {
 
           return '<li>' +
             '<div class="item-action">' + link + '</div>' +
-            '<div class="item-description">' +
-            item.title + ' | details </div>' +
-            '<div style="display:none;">' +
+            '<div class="item-description">' + item.title + ' | ' +
+            '<a href="#" data-details>details</a></div>' +
+            '<div class="item-details">' +
             item.description +
              '</div>' +
             '</li>';
@@ -185,17 +185,29 @@ var selectAPIDefinition = function (done) {
       });
     },
     show: function (modal) {
-      Backbone.$(modal.el).on('click', '[data-raml]', function (e) {
-        e.preventDefault();
+      Backbone.$(modal.el)
+        .on('click', '[data-details]', function (e) {
+          e.preventDefault();
 
-        // Close the modal behind ourselves.
-        modal.close();
+          var classList = e.target.parentNode.parentNode.classList;
 
-        return done(null, {
-          name: e.target.getAttribute('data-name'),
-          url:  e.target.getAttribute('data-raml')
+          if (!classList.contains('item-details-visible')) {
+            classList.add('item-details-visible');
+          } else {
+            classList.remove('item-details-visible');
+          }
+        })
+        .on('click', '[data-raml]', function (e) {
+          e.preventDefault();
+
+          // Close the modal behind ourselves.
+          modal.close();
+
+          return done(null, {
+            name: e.target.getAttribute('data-name'),
+            url:  e.target.getAttribute('data-raml')
+          });
         });
-      });
     }
   }, function (err) {
     return selected && done(err);
