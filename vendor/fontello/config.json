@@ -29,6 +29,12 @@
       "css": "floppy",
       "code": 59392,
       "src": "fontawesome"
+    },
+    {
+      "uid": "bc4b94dd7a9a1dd2e02f9e4648062596",
+      "css": "fork",
+      "code": 59396,
+      "src": "fontawesome"
     }
   ]
 }

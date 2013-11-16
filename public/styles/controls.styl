@@ -19,18 +19,26 @@ $button_color = #5B5B5B
 .controls-col-large
   width: 70%
 
-.btn-round
+.btn-base
   position: relative
   width: 26px
   height: @width
   padding: 0
   color: $button_color
-  line-height: @height - 2px
-  border: 2px solid $button_color
   background: transparent
-  border-radius: 50em
+  line-height: @height - 2px
+  background: transparent
   &[class*="icon-"]:before
     margin: 0 0.4em
+
+.btn-round
+  > .btn-base
+  border: 2px solid $button_color
+  border-radius: 50em
+
+.btn-square
+  > .btn-base
+  border: 0
 
 .edit-source
   width: 44px

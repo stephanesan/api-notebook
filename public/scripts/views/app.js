@@ -334,7 +334,9 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="toolbar-inner">' +
-        '<button class="notebook-list">List notebooks</button>' +
+        '<button class="btn-square icon-folder-open-empty notebook-list">' +
+          'List notebooks' +
+        '</button>' +
         '<div class="auth-status text-status"></div>' +
         '<div class="save-status text-status"></div>' +
         '<div class="toolbar-buttons">' +
@@ -344,7 +346,9 @@ App.prototype.render = function () {
             '</button>' +
           '</span>' +
           '<span class="btn-view">' +
-            '<button class="btn-text notebook-clone">Make a copy</button>' +
+            '<button class="btn-round icon-fork notebook-clone">' +
+              'Make a copy' +
+            '</button>' +
             '<button class="btn-round icon-floppy notebook-save">' +
               'Save notebook' +
             '</button>' +
