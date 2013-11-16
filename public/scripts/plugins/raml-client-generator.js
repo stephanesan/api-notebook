@@ -152,22 +152,36 @@ var selectAPIDefinition = function (done) {
   var selected = false;
 
   return App.middleware.trigger('ui:modal', {
-    title: 'Load an API Client',
+    title: 'Insert an API Client',
     content: function (done) {
       return loadAPIDefinitions(function (err, items) {
         if (err) { return done(err); }
 
-        return done(null, '<table><tr>' + _.map(items, function (item) {
+        return done(null, '<div class="modal-instructions">' +
+          'Insert an API client from a RAML specification.' +
+          ' <a href="http://raml.org/" target="_blank">' +
+          'Learn more about RAML</a>.' +
+          '</div>' +
+          '<ul class="item-list">' +
+          _.map(items, function (item) {
           var name = App.Library.changeCase.camelCase(item.title);
           var url  = item.specs.RAML.url;
           var link = [
-            '<a href="#" data-raml="' + url + '" data-name="' + name + '">',
-            item.title,
+            '<a href="#" class="btn btn-primary btn-small"',
+            'data-raml="' + url + '" data-name="' + name + '">',
+            'Add',
             '</a>'
           ].join('');
 
-          return '<td>' + link + '</td><td>' + item.description + '</td>';
-        }).join('</tr><tr>') + '</tr></table>');
+          return '<li>' +
+            '<div class="item-action">' + link + '</div>' +
+            '<div class="item-description">' +
+            item.title + ' | details </div>' +
+            '<div style="display:none;">' +
+            item.description +
+             '</div>' +
+            '</li>';
+        }).join('') + '</li>');
       });
     },
     show: function (modal) {
@@ -220,6 +234,6 @@ App.View.EditorCell.prototype.newRAMLBelow = function () {
  * @type {String}
  */
 App.View.CellButtons.controls.push({
-  label:   'Insert RAML Definition',
+  label:   'Insert API Client',
   command: 'newRAML'
 });
