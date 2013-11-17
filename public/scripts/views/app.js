@@ -447,7 +447,10 @@ App.prototype.listNotebooks = function () {
     title:   'List Notebooks',
     content: function (done) {
       return persistence.list(function (err, list) {
-        done(null, '<ul>' + _.map(list, itemTemplate).join('\n') + '</ul>');
+        done(null,
+          '<ul class="item-list">' +
+          _.map(list, itemTemplate).join('\n') +
+          '</ul>');
       });
     },
     show: function (modal) {
