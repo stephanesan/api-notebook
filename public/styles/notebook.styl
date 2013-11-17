@@ -20,10 +20,17 @@
   color: #fff
   font-size: 2em
   font-weight: bold
-  border: 0
+  border: solid 1px rgba(0,0,0,0.0)
   background-color: transparent
+  &:hover
+    background-color: rgba(255,255,255, .05)
   &:focus
     outline: 0
+    background-color: rgba(255,255,255, .1)
+    border: solid 1px #404040
+    border-top-color: #000
+    border-left-color: #000
+
 
 .notebook-view > .cell
   margin: 1.3em 0
