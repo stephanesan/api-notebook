@@ -175,10 +175,11 @@ var selectAPIDefinition = function (done) {
 
           return '<li>' +
             '<div class="item-action">' + link + '</div>' +
-            '<div class="item-description">' + item.title + ' | ' +
-            '<a href="#" data-details>details</a></div>' +
+            '<div class="item-description">' + item.title +
+            '<a href="#" class="item-details-link" data-details>details</a>' +
             '<div class="item-details">' +
             item.description +
+             '</div>' +
              '</div>' +
             '</li>';
         }).join('') + '</li>');

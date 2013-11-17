@@ -63,14 +63,22 @@
       list-style-type: none
       padding: 1em 0
       margin: 0
-      border-top: dotted 1px #eee
+      border-top: dotted 1px #C4C4C4
       > .item-action
         float: left
+        width: 10%
+        text-align: center
       > .item-description
         float: left
         padding-left: 0.5em
-      > .item-details
-        display: none
+        width: 90%
+        > .item-details-link
+          float: right
+        > .item-details
+          display: none
+          width: 90%
+          margin-top: 0.5em
     > .item-details-visible
-      > .item-details
-        display: block
+      > .item-description
+        > .item-details
+          display: block
