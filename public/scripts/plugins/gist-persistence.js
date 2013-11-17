@@ -250,6 +250,7 @@ var listPlugin = function (list, next, done) {
 
         list.push({
           id: content.id,
+          updatedAt: new Date(content.updated_at),
           meta: {
             title: content.description
           }
@@ -263,6 +264,21 @@ var listPlugin = function (list, next, done) {
 };
 
 /**
+ * Delete a single notebook from Github gists.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+var deletePlugin = function (data, next, done) {
+  return App.middleware.trigger('ajax:oauth2', {
+    url:    'https://api.github.com/gists/' + data.id,
+    method: 'DELETE',
+    oauth2: oauth2Store.toJSON()
+  }, done);
+};
+
+/**
  * A { key: function } map of all middleware used in the plugin.
  *
  * @type {Object}
@@ -273,5 +289,6 @@ module.exports = {
   'persistence:authenticated': authenticatedPlugin,
   'persistence:load':          loadPlugin,
   'persistence:save':          savePlugin,
-  'persistence:list':          listPlugin
+  'persistence:list':          listPlugin,
+  'persistence:delete':        deletePlugin
 };

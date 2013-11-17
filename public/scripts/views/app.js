@@ -438,9 +438,16 @@ App.prototype.saveNotebook = function () {
  */
 App.prototype.listNotebooks = function () {
   var itemTemplate = _.template(
-    '<li><a href="#<%- id %>" data-notebook="<%- id %>">' +
-      '<% print(meta.title || id) %>' +
-    '</a></li>'
+    '<li><div class="item-action">' +
+    '<a href="#" class="btn btn-primary btn-small" data-load="<%- id %>">' +
+    'Load</a></div>' +
+    '<div class="item-description"><% print(meta.title || id) %> ' +
+    '<% if (updatedAt) { %>' +
+    '<span class="text-em"><% print(updatedAt.toLocaleDateString()) %></span>' +
+    '<% } %>' +
+    '<a href="#" data-delete="<%- id %>">delete</a>' +
+    '</div>' +
+    '</li>'
   );
 
   middleware.trigger('ui:modal', {
@@ -454,11 +461,24 @@ App.prototype.listNotebooks = function () {
       });
     },
     show: function (modal) {
-      Backbone.$(modal.el).on('click', '[data-notebook]', function (e) {
-        e.preventDefault();
-        modal.close();
-        return config.set('id', this.getAttribute('data-notebook'));
-      });
+      Backbone.$(modal.el)
+        .on('click', '[data-delete]', function (e) {
+          e.preventDefault();
+
+          middleware.trigger('persistence:delete', {
+            id: this.getAttribute('data-delete')
+          }, function (err) {
+            if (err) { return; }
+
+            var listEl = e.target.parentNode.parentNode;
+            listEl.parentNode.removeChild(listEl);
+          });
+        })
+        .on('click', '[data-load]', function (e) {
+          e.preventDefault();
+          modal.close();
+          return config.set('id', this.getAttribute('data-load'));
+        });
     }
   });
 };
