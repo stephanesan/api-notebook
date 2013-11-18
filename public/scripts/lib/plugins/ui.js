@@ -122,10 +122,10 @@ middleware.core('ui:confirm', function (data, next, done) {
     });
 
     modal.el.querySelector('.modal-body').appendChild(domify(
-      '<p class="text-center">' +
-      '<button class="btn btn-danger" data-confirm>Cancel</button>' +
+      '<div class="btn-list text-center">' +
+      '<button class="btn btn-secondary" data-confirm>Cancel</button>' +
       '<button class="btn btn-primary" data-confirm=":)">OK</button>' +
-      '</p>'
+      '</div>'
     ));
   };
 

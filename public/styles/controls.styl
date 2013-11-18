@@ -84,15 +84,33 @@ $button_color = #5B5B5B
   font-size: 12px
   text-decoration: underline
 
-.btn-primary
+.btn-list
+  padding-top: 1em
+  > .btn
+    margin-right: 0.75em
+
+.btn-pill
   padding: 0.4em 1em
+  border-radius: 8px
+
+.btn-primary
+  @extends .btn-pill
   color: #FFF
   background-color: #428bca
   border: solid 1px #357ebd
-  border-radius: 8px
   &:hover
     background-color: #3276b1
     border-color: #285e8e
+
+.btn-secondary
+  @extends .btn-pill
+  color: #343434
+  background-color: #F3F3F3
+  border: solid 1px #B5B5B5
+  &:hover
+    background-color: #E4E4E4
+    border-color: #B1B1B1
+
 
 .btn-small
   padding: 0.6em

@@ -482,7 +482,8 @@ App.prototype.listNotebooks = function () {
 
           middleware.trigger('ui:confirm', {
             title: 'Delete Notebook',
-            content: 'Are you sure you want to delete this notebook forever?'
+            content: 'Are you sure you want to delete this notebook?' +
+            ' Deleted notebooks cannot be restored.'
           }, function (err, confirm) {
             if (err || !confirm) { return; }
 
