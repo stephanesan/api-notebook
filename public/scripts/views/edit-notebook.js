@@ -31,7 +31,7 @@ EditNotebook.prototype.render = function () {
   // Update the persistence code every time we change the content.
   this.listenTo(this.editor, 'change', function (cm) {
     direction = true;
-    messages.trigger('state:resize');
+    messages.trigger('resize');
     persistence.set('contents', cm.getValue());
   });
 

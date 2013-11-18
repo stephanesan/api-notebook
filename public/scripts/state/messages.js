@@ -13,7 +13,7 @@ var messages = module.exports = _.extend({}, Backbone.Events);
  * Proxy resize events to the current state.
  */
 messages.listenTo(Backbone.$(window), 'resize', function () {
-  messages.trigger('state:resize');
+  messages.trigger('resize');
 });
 
 // Push any keyboard events into the global messages object, avoids listening

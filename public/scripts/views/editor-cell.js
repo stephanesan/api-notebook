@@ -30,6 +30,9 @@ EditorCell.prototype.initialize = function () {
   Cell.prototype.initialize.apply(this, arguments);
   this.model       = this.model || new this.EditorModel();
   this.model.view  = this;
+
+  // Refresh the editor cells when refresh is triggered through messages.
+  this.listenTo(messages, 'refresh', this.refresh);
 };
 
 /**
@@ -70,7 +73,7 @@ EditorCell.prototype.editorOptions = {
  */
 EditorCell.prototype.remove = ownerProtect(function () {
   Cell.prototype.remove.call(this);
-  messages.trigger('state:resize');
+  messages.trigger('resize');
 
   return this;
 });
@@ -156,7 +159,9 @@ EditorCell.prototype.save = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.refresh = function () {
-  this.editor.refresh();
+  if (this.editor) {
+    this.editor.refresh();
+  }
 
   return this;
 };
@@ -189,7 +194,7 @@ EditorCell.prototype.bindEditor = function () {
   // Save the value of the model every time a change happens
   this.listenTo(this.editor, 'change', _.bind(function (cm, data) {
     this.save();
-    messages.trigger('state:resize');
+    messages.trigger('resize');
 
     // When the presented data looks line a new line has been added, emit an
     // event the notebook can listen to.
@@ -414,7 +419,7 @@ EditorCell.prototype.appendTo = function (el) {
     // Since the CodeMirror refresh appears to be async, push the resize event
     // into the following event loop.
     process.nextTick(function () {
-      messages.trigger('state:resize');
+      messages.trigger('resize');
     });
   }
 

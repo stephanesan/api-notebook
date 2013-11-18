@@ -135,7 +135,7 @@ CodeCell.prototype.execute = function (done) {
     // Trigger `execute` and set the result, each of which need an additional
     // flag to indicate whether the the
     this.resultCell.setResult(data, this.notebook.sandbox.window);
-    messages.trigger('state:resize');
+    messages.trigger('resize');
     this.trigger('execute', this, data);
     return done && done(err, data);
   }, this));

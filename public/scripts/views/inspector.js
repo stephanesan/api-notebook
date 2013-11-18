@@ -48,7 +48,7 @@ InspectorView.prototype.events = {
 InspectorView.prototype.open = function () {
   this.trigger('open', this);
   this.el.classList.add('open');
-  messages.trigger('state:resize');
+  messages.trigger('resize');
 };
 
 /**
@@ -57,7 +57,7 @@ InspectorView.prototype.open = function () {
 InspectorView.prototype.close = function () {
   this.trigger('close', this);
   this.el.classList.remove('open');
-  messages.trigger('state:resize');
+  messages.trigger('resize');
 };
 
 /**

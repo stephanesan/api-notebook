@@ -180,7 +180,7 @@ TextCell.prototype.renderEditor = function () {
   }
 
   process.nextTick(function () {
-    messages.trigger('state:resize');
+    messages.trigger('resize');
   }, 0);
 
   return this;

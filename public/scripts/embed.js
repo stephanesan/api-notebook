@@ -382,6 +382,13 @@ Notebook.prototype.message = function () {
 };
 
 /**
+ * Refresh the iframe.
+ */
+Notebook.prototype.refresh = function () {
+  this.message('refresh');
+};
+
+/**
  * Attempts to automatically create the initial notebook by scanning for the
  * correct script tag and using the data from it to generate the notebook.
  *

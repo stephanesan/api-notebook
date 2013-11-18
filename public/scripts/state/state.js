@@ -13,7 +13,7 @@ var state = module.exports = new Backbone.Model();
 /**
  * Listen to resize events through the messages and update the current state.
  */
-state.listenTo(messages, 'state:resize', _.throttle(function () {
+state.listenTo(messages, 'resize refresh', _.throttle(function () {
   state.set('viewportWidth',  window.innerWidth);
   state.set('viewportHeight', window.innerHeight);
   state.set('documentWidth',  document.documentElement.scrollWidth);
