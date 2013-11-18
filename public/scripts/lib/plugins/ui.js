@@ -113,5 +113,23 @@ middleware.core('ui:modal', function (options, next, done) {
  * @param {Function} done
  */
 middleware.core('ui:confirm', function (data, next, done) {
+  var confirmed = false;
 
+  data.show = function (modal) {
+    Backbone.$(modal.el).on('click', '[data-confirm]', function (e) {
+      confirmed = Boolean(e.target.getAttribute('data-confirm'));
+      return modal.close();
+    });
+
+    modal.el.querySelector('.modal-body').appendChild(domify(
+      '<p class="text-center">' +
+      '<button class="btn btn-danger" data-confirm>Cancel</button>' +
+      '<button class="btn btn-primary" data-confirm=":)">OK</button>' +
+      '</p>'
+    ));
+  };
+
+  return middleware.trigger('ui:modal', data, function (err) {
+    return done(err, confirmed);
+  });
 });

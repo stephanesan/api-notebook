@@ -469,13 +469,22 @@ App.prototype.listNotebooks = function () {
         .on('click', '[data-delete]', function (e) {
           e.preventDefault();
 
-          middleware.trigger('persistence:delete', {
-            id: this.getAttribute('data-delete')
-          }, function (err) {
-            if (err) { return; }
+          var id = this.getAttribute('data-delete');
 
-            var listEl = e.target.parentNode.parentNode;
-            listEl.parentNode.removeChild(listEl);
+          middleware.trigger('ui:confirm', {
+            title: 'Delete Notebook',
+            content: 'Are you sure you want to delete this notebook forever?'
+          }, function (err, confirm) {
+            if (err || !confirm) { return; }
+
+            middleware.trigger('persistence:delete', {
+              id: id
+            }, function (err) {
+              if (err) { return; }
+
+              var listEl = e.target.parentNode.parentNode;
+              listEl.parentNode.removeChild(listEl);
+            });
           });
         })
         .on('click', '[data-load]', function (e) {
