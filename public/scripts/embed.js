@@ -151,7 +151,7 @@ Notebook.prototype.makeFrame = function (el, options) {
 
   // Configure base frame options.
   frame.src       = src;
-  frame.className = options.className;
+  frame.className = options.className || '';
 
   // Extend basic configuration options.
   options.config = extend({

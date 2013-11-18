@@ -42,7 +42,7 @@ var changeNotebook = function (fn) {
     this.el.classList.add('notebook-' + view + '-active');
 
     // Resize the parent frame since we have added notebook contents.
-    messages.trigger('resize');
+    messages.trigger('state:resize');
     return this;
   };
 };

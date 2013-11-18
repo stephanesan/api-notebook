@@ -30,7 +30,7 @@ config.listenTo(config, 'change:style', (function () {
  */
 config.listenTo(config, 'change:embedded', function (_, embedded) {
   if (!embedded) {
-    return document.body.replace(' notebook-embedded', '');
+    return document.body.className.replace(' notebook-embedded', '');
   }
 
   // Add a class name to identify embedded notebooks.

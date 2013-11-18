@@ -9,10 +9,12 @@ var Backbone = require('backbone');
  */
 var messages = module.exports = _.extend({}, Backbone.Events);
 
-// Window resizes are pushed into the messages object for simplied listening.
-messages.listenTo(Backbone.$(window), 'resize', _.throttle(function () {
-  messages.trigger('window:resize');
-}, 100));
+/**
+ * Proxy resize events to the current state.
+ */
+messages.listenTo(Backbone.$(window), 'resize', function () {
+  messages.trigger('state:resize');
+});
 
 // Push any keyboard events into the global messages object, avoids listening
 // multiple times to the document. Augments the event name to match the key

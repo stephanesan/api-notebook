@@ -20,12 +20,17 @@ middleware.use('application:start', function (options, next) {
 
   var postMessage = App.postMessage = new PostMessage(window.parent);
 
-  // Listen for changes in the height of the document and update the parent.
+  /**
+   * Listen for changes in the document height and resize the parent frame.
+   */
   state.on('change:documentHeight', function (_, height) {
     postMessage.trigger('height', height);
   });
 
-  // Listen for any changes to the current url and update the target.
+  /**
+   * Listen for any changes to the configuration url and update the base
+   * element. This is required for correctly opening links in the parent frame.
+   */
   postMessage.listenTo(config, 'change:url', (function () {
     var headEl = document.head || document.getElementsByTagName('head')[0];
     var baseEl = document.getElementsByTagName('base')[0];
@@ -40,37 +45,40 @@ middleware.use('application:start', function (options, next) {
     };
   })());
 
-  // Listen for the parent frame to say its ready and pass use additional config
-  // options.
+  /**
+   * Listen to the parent frame to be ready and pass its config options.
+   */
   postMessage.on('ready', function (parentOptions) {
     _.extend(options, parentOptions);
     return next();
   });
 
-  // Run arbitrary code inside the frame by passed an evil string in.
+  /**
+   * Run arbitrary code inside the frame by passed an evil string in.
+   */
   postMessage.on('exec', function (evil) {
     /* jshint evil: true */
     postMessage.trigger('exec', window.eval(evil));
   });
 
-  // Listen to any configuration changes.
+  /**
+   * Listen to any configuration changes.
+   */
   postMessage.on('config', function () {
     config.set.apply(config, arguments);
   });
 
-  // Trigger cross-frame messages.
+  /**
+   * Trigger cross-frame messages easily.
+   */
   postMessage.on('message', function () {
     messages.trigger.apply(messages, arguments);
   });
 
-  // Trigger config changes back to the parent frame.
-  postMessage.listenTo(config, 'all', function (name, model, value) {
-    if (name.substr(0, 7) !== 'change:') { return; }
-
-    postMessage.trigger('config:' + name.substr(7), value);
-  });
-
-  // Let the parent window know we are ready to receive.
+  /**
+   * Trigger a ready event to the parent frame. This allows the frame to now
+   * send all its config options without risk of losing data.
+   */
   postMessage.trigger('ready');
 });
 
