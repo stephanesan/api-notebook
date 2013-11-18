@@ -62,7 +62,7 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
-  'click .modal-toggle':   'showShortcuts',
+  'click .notebook-help':  'showShortcuts',
   'click .notebook-exec':  'runNotebook',
   'click .notebook-clone': 'cloneNotebook',
   'click .notebook-auth':  'authNotebook',
@@ -335,8 +335,9 @@ App.prototype.render = function () {
 
       '<div class="toolbar-inner">' +
         '<div class="persistence-status">' +
-          '<button class="btn-square icon-folder-open-empty notebook-list">' +
-            'List notebooks' +
+          '<button class="btn-square notebook-list hint--bottom" ' +
+          'data-hint="List all notebooks">' +
+            '<i class="icon-folder-open-empty"></i>' +
           '</button>' +
           '<div class="auth-status text-status"></div>' +
           '<div class="save-status text-status"></div>' +
@@ -348,14 +349,22 @@ App.prototype.render = function () {
             '</button>' +
           '</span>' +
           '<span class="btn-view">' +
-            '<button class="btn-round icon-fork notebook-clone">' +
-              'Make a copy' +
+            '<button class="btn-round notebook-clone hint--bottom" ' +
+            'data-hint="Clone notebook">' +
+              '<i class="icon-fork"></i>' +
             '</button>' +
-            '<button class="btn-round icon-floppy notebook-save">' +
-              'Save notebook' +
+            '<button class="btn-round notebook-save hint--bottom" ' +
+            'data-hint="Save notebook">' +
+              '<i class="icon-floppy"></i>' +
             '</button>' +
-            '<button class="btn-round ir notebook-exec">Run All</button>' +
-            '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+            '<button class="btn-round notebook-exec hint--bottom" ' +
+            'data-hint="Execute notebook">' +
+              '<i class="icon"></i>' +
+            '</button>' +
+            '<button class="btn-round notebook-help hint--bottom" ' +
+            'data-hint="Notebook shortcuts">' +
+              '<i class="icon"></i>' +
+            '</button>' +
           '</span>' +
         '</div>' +
       '</div>' +
