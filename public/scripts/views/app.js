@@ -330,7 +330,10 @@ App.prototype.render = function () {
 
     '<div class="notebook-toolbar clearfix">' +
       '<div class="toolbar-end">' +
-        '<button class="edit-source toggle-notebook-edit"></button>' +
+        '<button class="edit-source toggle-notebook-edit hint--bottom" ' +
+        'data-hint="Edit notebook source">' +
+          '<i class="icon"></i>' +
+        '</button>' +
       '</div>' +
 
       '<div class="toolbar-inner">' +
