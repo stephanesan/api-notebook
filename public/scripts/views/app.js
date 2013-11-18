@@ -443,9 +443,11 @@ App.prototype.listNotebooks = function () {
     'Load</a></div>' +
     '<div class="item-description"><% print(meta.title || id) %> ' +
     '<% if (updatedAt) { %>' +
-    '<span class="text-em"><% print(updatedAt.toLocaleDateString()) %></span>' +
+    '<span class="text-em text-small">' +
+    '<% print(updatedAt.toLocaleDateString()) %>' +
+    '</span>' +
     '<% } %>' +
-    '<a href="#" data-delete="<%- id %>">delete</a>' +
+    '<a href="#" class="item-details-link" data-delete="<%- id %>">delete</a>' +
     '</div>' +
     '</li>'
   );
