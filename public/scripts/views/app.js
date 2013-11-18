@@ -334,11 +334,13 @@ App.prototype.render = function () {
       '</div>' +
 
       '<div class="toolbar-inner">' +
-        '<button class="btn-square icon-folder-open-empty notebook-list">' +
-          'List notebooks' +
-        '</button>' +
-        '<div class="auth-status text-status"></div>' +
-        '<div class="save-status text-status"></div>' +
+        '<div class="persistence-status">' +
+          '<button class="btn-square icon-folder-open-empty notebook-list">' +
+            'List notebooks' +
+          '</button>' +
+          '<div class="auth-status text-status"></div>' +
+          '<div class="save-status text-status"></div>' +
+        '</div>' +
         '<div class="toolbar-buttons">' +
           '<span class="btn-edit">' +
             '<button class="btn-text toggle-notebook-edit">' +

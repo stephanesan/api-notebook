@@ -144,8 +144,18 @@
   border: solid 1px #ccc
   background-color: #f4f4f4
   .toolbar-inner
-    padding: 0.5em 2em
+    padding: 0 2em 0 0
     overflow: hidden
+    .persistence-status
+      display: inline-block
+      border: solid 1px transparent
+      border-right-color: #E8E8E8
+      padding: 0.5em 1em 0.5em 2em
+      &:hover
+        background-color: #E8E8E8
+        border: solid 1px #fff
+        border-top-color: #e1e1e1
+        border-left-color: #e1e1e1
     .text-status
       display: inline-block
       margin-top: 0.35em
@@ -158,6 +168,7 @@
   .toolbar-buttons
     float: right
     text-align: right
+    padding: 0.5em 0
     button
       float: left
       margin-right: 1em
