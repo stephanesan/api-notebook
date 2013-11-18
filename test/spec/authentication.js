@@ -5,10 +5,10 @@ describe('Authentication', function () {
     var oldOpen, server;
 
     var authModalIntercept = function (data, next, done) {
-      var afterRender = data.afterRender;
+      var show = data.show;
 
-      data.afterRender = function (modal) {
-        afterRender(modal);
+      data.show = function (modal) {
+        show(modal);
         simulateEvent(modal.el.querySelector('[data-authenticate]'), 'click');
       };
 
@@ -29,7 +29,7 @@ describe('Authentication', function () {
       App.middleware.disuse('ui:modal', authModalIntercept);
     });
 
-    it('should be able to do the server-side code flow', function (done) {
+    it('should do the server-side code flow', function (done) {
       var tokenUri         = 'https://www.example.com/oauth2/token';
       var authorizationUri = 'https://www.example.com/oauth2/authorize';
 

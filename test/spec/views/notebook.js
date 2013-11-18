@@ -241,10 +241,10 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
-        var newButton = codeCells[0].el
-          .querySelector('.cell-insert-top .btn-insert-code');
+        var topBorder = codeCells[0].el.querySelector('.cell-border-above');
 
-        simulateEvent(newButton, 'click');
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
         expect(view.collection.at(viewIndex).get('type')).to.equal('code');
         expect(view.collection.length).to.equal(5);
@@ -254,10 +254,10 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
-        var newButton = codeCells[0].el
-          .querySelector('.cell-insert-top .btn-insert-text');
+        var topBorder = codeCells[0].el.querySelector('.cell-border-above');
 
-        simulateEvent(newButton, 'click');
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
         expect(view.collection.at(viewIndex).get('type')).to.equal('text');
         expect(view.collection.length).to.equal(5);
@@ -267,10 +267,10 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
-        var newButton = codeCells[0].el
-          .querySelector('.cell-insert-bottom .btn-insert-code');
+        var topBorder = codeCells[0].el.querySelector('.cell-border-below');
 
-        simulateEvent(newButton, 'click');
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
         expect(view.collection.at(viewIndex).get('type')).to.equal('code');
         expect(view.collection.length).to.equal(5);
@@ -280,47 +280,16 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
-        var newButton = codeCells[0].el
-          .querySelector('.cell-insert-bottom .btn-insert-text');
+        var topBorder = codeCells[0].el.querySelector('.cell-border-below');
 
-        simulateEvent(newButton, 'click');
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
         expect(view.collection.at(viewIndex).get('type')).to.equal('text');
         expect(view.collection.length).to.equal(5);
       });
 
       describe('Text Cell', function () {
-        it('should remove itself when initializing a code cell', function () {
-          expect(view.collection.length).to.equal(4);
-
-          textCells[0].trigger('code', textCells[0]);
-
-          expect(view.collection.length).to.equal(3);
-          expect(textCells[0].el.parentNode).to.not.exist;
-          expect(codeCells[0].el.nextSibling.className).to.contain('cell-code');
-          expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
-          expect(codeCells[1].hasFocus()).to.be.ok;
-        });
-
-        it('shouldn\'t remove itself when it has content', function () {
-          expect(view.collection.length).to.equal(4);
-
-          textCells[0].setValue('testing');
-          textCells[0].trigger('code', textCells[0]);
-
-          expect(view.collection.length).to.equal(4);
-          expect(textCells[0].el.nextSibling).to.equal(codeCells[1].el);
-          expect(codeCells[1].hasFocus()).to.be.ok;
-        });
-
-        it('should initialize the new cell with content when available', function () {
-          textCells[0].trigger('code', textCells[0], 'testing');
-
-          expect(view.collection.at(2).view.getValue()).to.equal('testing');
-          expect(view.collection.at(2).view.hasFocus()).to.be.ok;
-          expect(view.collection.at(2).view.editor.getCursor().ch).to.equal(7);
-        });
-
         it('should append a new code view on blur if its the last cell', function (done) {
           textCells.push(view.appendTextView().focus());
 
@@ -438,16 +407,12 @@ describe('Notebook', function () {
 
         describe('Overlay Menu', function () {
           var getButton = function (cell) {
-            return cell.el.getElementsByClassName('btn-show-cell-controls')[0];
+            return cell.el.querySelector('.cell-controls-btn');
           };
 
           var getMenu = function (cell) {
-            return cell.el.getElementsByClassName('cell-controls')[0];
+            return cell.el.querySelector('.cell-controls');
           };
-
-          it('should exist as one instance', function () {
-            expect(view.controls).to.be.an('object');
-          });
 
           it('should be appended to a cell when button is clicked', function() {
             var btn, menu;
@@ -466,7 +431,6 @@ describe('Notebook', function () {
 
             beforeEach(function () {
               simulateEvent(getButton(codeCells[0]), 'mousedown');
-
               menu = codeCells[0].el.querySelector('.cell-controls');
             });
 
@@ -474,7 +438,7 @@ describe('Notebook', function () {
               expect(view.collection.at(1)).to.equal(codeCells[0].model);
 
               var btn = menu.querySelector('[data-action="moveUp"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.at(0)).to.equal(codeCells[0].model);
             });
@@ -483,7 +447,7 @@ describe('Notebook', function () {
               expect(view.collection.at(1)).to.equal(codeCells[0].model);
 
               var btn = menu.querySelector('[data-action="moveDown"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.at(2)).to.equal(codeCells[0].model);
             });
@@ -492,7 +456,7 @@ describe('Notebook', function () {
               expect(view.collection.at(1).get('type')).to.equal('code');
 
               var btn = menu.querySelector('[data-action="switch"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.at(1).get('type')).to.equal('text');
             });
@@ -504,7 +468,7 @@ describe('Notebook', function () {
               codeCells[0].setValue('testing');
 
               var btn = menu.querySelector('[data-action="clone"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.length).to.equal(5);
               expect(view.collection.at(2).view.getValue()).to.equal('testing');
@@ -515,7 +479,7 @@ describe('Notebook', function () {
               expect(view.collection.at(1)).to.equal(codeCells[0].model);
 
               var btn = menu.querySelector('[data-action="remove"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.length).to.equal(3);
               expect(view.collection.at(1)).to.not.equal(codeCells[0].model);
@@ -526,7 +490,7 @@ describe('Notebook', function () {
               expect(view.collection.at(2)).to.equal(textCells[0].model);
 
               var btn = menu.querySelector('[data-action="appendNew"]');
-              simulateEvent(btn, 'click');
+              simulateEvent(btn, 'mousedown');
 
               expect(view.collection.length).to.equal(5);
               expect(view.collection.at(2)).to.not.equal(textCells[0].model);

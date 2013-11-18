@@ -104,3 +104,14 @@ middleware.core('ui:modal', function (options, next, done) {
   // functionality to the modal.
   return _.isFunction(options.show) && options.show(modal);
 });
+
+/**
+ * Extends the modal middleware for providing a confirmation dialog window.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+middleware.core('ui:confirm', function (data, next, done) {
+
+});

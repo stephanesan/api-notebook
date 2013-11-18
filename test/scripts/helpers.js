@@ -112,7 +112,7 @@ window.simulateEvent = (function () {
 
     if (!eventType) {
       throw new SyntaxError(
-        'Only HTMLEvents and MouseEvents interfaces are supported'
+        'Only HTMLEvents, MouseEvents and KeyboardEvent interfaces are supported'
       );
     }
 
