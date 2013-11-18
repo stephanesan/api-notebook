@@ -54,7 +54,7 @@ middleware.core('persistence:serialize', function (data, next, done) {
  * @param  {Function} next
  */
 middleware.core('persistence:deserialize', function (data, next, done) {
-  var metaData = new RegExp([
+  var preambleRegExp = new RegExp([
     '^',
     META_DATA_DELIMITER,
     '\\n(.*\\n)+',
@@ -63,7 +63,7 @@ middleware.core('persistence:deserialize', function (data, next, done) {
   ].join(''));
 
   // Replace potential meta data with nothing and parse it separately.
-  var content = data.contents.replace(metaData, function (content, body) {
+  var content = data.contents.replace(preambleRegExp, function (content, body) {
     // Split each line of the metadata and set on the `data` export object.
     _.each(body.split('\n'), function (meta) {
       var parts = meta.split(': ');
