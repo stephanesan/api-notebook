@@ -138,9 +138,12 @@ InspectorView.prototype.renderChildren = function () {
   this.listenTo(this, 'open', this._renderChildren);
 
   this.listenTo(this, 'close', function () {
-    _.each(this.children, function (child) {
+    var child;
+
+    // Remove all the children from the DOM.
+    while (child = this.children.pop()) {
       child.remove();
-    });
+    }
   });
 
   return this;
@@ -302,15 +305,4 @@ InspectorView.prototype.render = function () {
   this.renderChildren();
 
   return this;
-};
-
-InspectorView.prototype.remove = function () {
-  if (this.parent) {
-    var indexOf = this.parent.children.indexOf(this);
-    if (indexOf > -1) {
-      this.parent.children.splice(indexOf, 1);
-    }
-  }
-
-  View.prototype.remove.call(this);
 };

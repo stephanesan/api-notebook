@@ -736,9 +736,11 @@ var attachResources = function attachResources (nodes, context, resources) {
           }).join(', ') + ')',
           // Generate documentation by joining all the template descriptions
           // together with new lines.
-          '!doc': _.map(_.uniq(tags), function (param) {
+          '!doc': _.chain(tags).uniq().filter(function (param) {
+            return !!param.description;
+          }).map(function (param) {
             return '"' + param.displayName + '": ' + param.description;
-          }).join('\n')
+          }).value().join('\n')
         };
 
         // Generate the return property for helping autocompletion.
