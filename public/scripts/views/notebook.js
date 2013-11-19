@@ -170,6 +170,10 @@ Notebook.prototype.appendTo = function () {
  * @param  {Function} done
  */
 Notebook.prototype.execute = function (done) {
+  if (this._execution) {
+    return done && done(new Error('Already executing notebook'));
+  }
+
   var that = this;
   this._execution = true;
 
