@@ -15,12 +15,12 @@ describe('Completion', function () {
 
     // Requires the built-in Tern.js description completion data.
     completion = App.CodeMirror.sandboxCompletion(window);
-    completion.attach(App.middleware);
+    App.middleware.use(completion);
   });
 
   afterEach(function () {
     delete window.test;
-    completion.detach(App.middleware);
+    App.middleware.disuse(completion);
     document.body.removeChild(editor.getWrapperElement());
   });
 

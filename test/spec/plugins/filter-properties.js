@@ -2,24 +2,18 @@
 
 describe('Filter Properties Plugin', function () {
   before(function () {
-    filterPropertiesPlugin.attach(App.middleware);
+    App.middleware.use(filterPropertiesPlugin);
   });
 
   after(function () {
-    filterPropertiesPlugin.detach(App.middleware);
+    App.middleware.disuse(filterPropertiesPlugin);
   });
 
   describe('Inspector', function () {
     it('should hide the internal prototype from display', function () {
       var inspector = new App.View.Inspector({ inspect: {} });
       inspector.render().trigger('open');
-
-      var visibleChildren = App._.filter(inspector.children, function (child) {
-        return child.el.className.indexOf('hide') < 0;
-      });
-
-      expect(visibleChildren.length).to.equal(0);
-      expect(inspector.children.length).to.equal(1);
+      expect(inspector.children).to.be.empty;
     });
   });
 

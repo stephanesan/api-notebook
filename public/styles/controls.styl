@@ -19,14 +19,26 @@ $button_color = #5B5B5B
 .controls-col-large
   width: 70%
 
-.btn-round
+.btn-base
   position: relative
   width: 26px
   height: @width
   padding: 0
-  border: 2px solid $button_color
+  color: $button_color
   background: transparent
+  line-height: @height - 2px
+  background: transparent
+  &[class*="icon-"]:before
+    margin: 0 0.4em
+
+.btn-round
+  @extends .btn-base
+  border: 2px solid $button_color
   border-radius: 50em
+
+.btn-square
+  @extends .btn-base
+  border: 2px solid transparent
 
 .edit-source
   width: 44px
@@ -34,12 +46,12 @@ $button_color = #5B5B5B
   border: 0
   background: transparent
 
-.edit-source:after
+.edit-source .icon:after
   content: '</>'
   color: $button_color
   font-size: 18px
 
-.notebook-exec:after
+.notebook-exec .icon:before
   content: ''
   position: absolute
   top: 6px
@@ -50,7 +62,7 @@ $button_color = #5B5B5B
   border: 5px solid transparent
   border-left: 9px solid $button_color
 
-.modal-toggle:after
+.notebook-help .icon:before
   content: '?'
   display: block
   position: absolute
@@ -60,6 +72,7 @@ $button_color = #5B5B5B
   color: $button_color
   height: @width
   text-align: center
+  font-style: normal
   text-indent: 0
   line-height: @height
 
@@ -70,3 +83,36 @@ $button_color = #5B5B5B
   color: $button_color
   font-size: 12px
   text-decoration: underline
+
+.btn-list
+  padding-top: 1em
+  > .btn
+    margin-right: 0.75em
+
+.btn-pill
+  padding: 0.4em 1em
+  border-radius: 8px
+
+.btn-primary
+  @extends .btn-pill
+  color: #FFF
+  background-color: #428bca
+  border: solid 1px #357ebd
+  &:hover
+    background-color: #3276b1
+    border-color: #285e8e
+
+.btn-secondary
+  @extends .btn-pill
+  color: #343434
+  background-color: #F3F3F3
+  border: solid 1px #B5B5B5
+  &:hover
+    background-color: #E4E4E4
+    border-color: #B1B1B1
+
+
+.btn-small
+  padding: 0.6em
+  font-size: 0.8em
+  border-radius: 0.4em

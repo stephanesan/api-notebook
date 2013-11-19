@@ -9,12 +9,12 @@ describe('RAML Client Generator Plugin', function () {
 
   before(function () {
     sandbox = new App.Sandbox();
-    ramlClientGeneratorPlugin.attach(App.middleware);
+    App.middleware.use(ramlClientGeneratorPlugin);
   });
 
   after(function () {
     sandbox.remove();
-    ramlClientGeneratorPlugin.detach(App.middleware);
+    App.middleware.disuse(ramlClientGeneratorPlugin);
   });
 
   it('should augment execution context with an `API` method', function (done) {
@@ -727,7 +727,7 @@ describe('RAML Client Generator Plugin', function () {
       };
 
       beforeEach(function () {
-        functionPropertyFilterPlugin.attach(App.middleware);
+        App.middleware.use(functionPropertyFilterPlugin);
 
         view = new App.View.CodeCell();
 
@@ -749,7 +749,7 @@ describe('RAML Client Generator Plugin', function () {
       });
 
       afterEach(function () {
-        functionPropertyFilterPlugin.detach(App.middleware);
+        App.middleware.disuse(functionPropertyFilterPlugin);
 
         view.remove();
       });

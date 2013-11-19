@@ -187,6 +187,36 @@ describe('Middleware', function () {
       expect(spy).to.have.been.calledOnce;
     });
 
+    it('should not be able to call done after calling next', function () {
+      var nextSpy = sinon.spy();
+      var doneSpy = sinon.spy();
+
+      middleware.use('test', function (data, next, done) {
+        next();
+        done();
+      });
+      middleware.use('test', nextSpy);
+      middleware.trigger('test', null, doneSpy);
+
+      expect(nextSpy).to.have.been.calledOnce;
+      expect(doneSpy).to.not.have.been.called;
+    });
+
+    it('should not be able to call next after calling done', function () {
+      var nextSpy = sinon.spy();
+      var doneSpy = sinon.spy();
+
+      middleware.use('test', function (data, next, done) {
+        done();
+        next();
+      });
+      middleware.use('test', nextSpy);
+      middleware.trigger('test', null, doneSpy);
+
+      expect(doneSpy).to.have.been.calledOnce;
+      expect(nextSpy).to.not.have.been.called;
+    });
+
     it('should be able to remove a middleware plugin', function () {
       var spy = sinon.spy();
 

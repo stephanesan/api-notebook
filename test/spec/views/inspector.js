@@ -104,9 +104,9 @@ describe('Inspector', function () {
 
         prop:
         for (var prop in properties) {
-          for (var i = 0; i < props.length; i++) {
-            if (props[i].property === prop) {
-              matchPreview(props[i], properties[prop]);
+          for (var key in props) {
+            if (props[key].property === prop) {
+              matchPreview(props[key], properties[prop]);
               continue prop;
             }
           }
@@ -162,14 +162,16 @@ describe('Inspector', function () {
         inspector.render();
         inspector.trigger('open');
 
-        var proto = inspector.children[inspector.children.length - 1];
+        var proto = App._.find(inspector.children, function (child) {
+          return child.internal === '[[Prototype]]';
+        });
         proto.trigger('open');
 
         prop:
         for (var prop in prototype) {
-          for (var i = 0; i < proto.children.length; i++) {
-            if (proto.children[i].property === prop) {
-              matchPreview(proto.children[i], prototype[prop]);
+          for (var key in proto.children) {
+            if (proto.children[key].property === prop) {
+              matchPreview(proto.children[key], prototype[prop]);
               continue prop;
             }
           }

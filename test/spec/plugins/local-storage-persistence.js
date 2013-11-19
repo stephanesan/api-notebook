@@ -4,14 +4,14 @@ describe('Local Storage Persistence Plugin', function () {
   var id       = '213';
   var notebook = '---\ntitle: Test Notebook\n---\n\n# Testing localStorage';
 
-  before(function () {
-    localStoragePersistencePlugin.attach(App.middleware);
+  beforeEach(function () {
+    App.persistence.reset();
+    App.middleware.use(localStoragePersistencePlugin);
   });
 
-  after(function () {
-    App.persistence.reset();
+  afterEach(function () {
     localStorage.removeItem('notebook-' + id);
-    localStoragePersistencePlugin.detach(App.middleware);
+    App.middleware.disuse(localStoragePersistencePlugin);
   });
 
   it('should save to localStorage with a made up id', function (done) {
@@ -19,6 +19,7 @@ describe('Local Storage Persistence Plugin', function () {
     App.persistence.set('contents', notebook);
 
     App.persistence.save(function (err) {
+      expect(err).to.not.exist;
       expect(App.persistence.get('id')).to.equal(id);
       expect(App.persistence.get('contents')).to.equal(notebook);
 
@@ -31,6 +32,7 @@ describe('Local Storage Persistence Plugin', function () {
     localStorage.setItem('notebook-' + id, notebook);
 
     App.persistence.load(function (err) {
+      expect(err).to.not.exist;
       expect(App.persistence.get('contents')).to.equal(notebook);
 
       return done();

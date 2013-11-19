@@ -4,7 +4,6 @@ var View = require('./view');
 var CodeView           = require('./code-cell');
 var TextView           = require('./text-cell');
 var EditorView         = require('./editor-cell');
-var CellControls       = require('./cell-controls');
 var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
@@ -25,8 +24,17 @@ var appendNewView = function (View) {
     var view = new View();
     this.appendView(view, el);
     view.setValue(value || '').moveCursorToEnd();
+    this.refreshFromView(view);
 
     return view;
+  };
+};
+
+var prependNewView = function (View) {
+  return function (el, value) {
+    return appendNewView(View).call(this, function (viewEl) {
+      el.parentNode.insertBefore(viewEl, el);
+    }, value);
   };
 };
 
@@ -46,7 +54,6 @@ var Notebook = module.exports = View.extend({
  */
 Notebook.prototype.initialize = function () {
   this.sandbox    = new Sandbox();
-  this.controls   = new CellControls().render();
   this.collection = new NotebookCollection();
 
   // Set up autocompletion environment.
@@ -59,12 +66,7 @@ Notebook.prototype.initialize = function () {
   this.sandboxCompletion = completionMiddleware(this.sandbox.window);
 
   // Attach the sandbox specific completion as middleware.
-  this.sandboxCompletion.attach(middleware);
-
-  // When the user changes, we may have been given permission to do things like
-  // edit the notebook. Hence, we need to rerender certain aspects of the app.
-  this.listenTo(persistence, 'changeUser',     this.updateUser);
-  this.listenTo(persistence, 'changeNotebook', this.render);
+  middleware.use(this.sandboxCompletion);
 };
 
 /**
@@ -74,11 +76,10 @@ Notebook.prototype.initialize = function () {
  */
 Notebook.prototype.remove = function () {
   this.sandbox.remove();
-  this.sandboxCompletion.detach(middleware);
+  middleware.disuse(this.sandboxCompletion);
 
   // Remove references
   delete this.sandbox;
-  delete this.controls;
   delete this.collection;
   delete this.completionOptions;
   delete this.sandboxCompletion;
@@ -93,20 +94,6 @@ Notebook.prototype.remove = function () {
  */
 Notebook.prototype.update = function () {
   persistence.set('notebook', this.collection.toJSON());
-};
-
-/**
- * Updates the current users display status. E.g. Unauthorized users can't
- * edit notebook cells.
- *
- * @return {Notebook}
- */
-Notebook.prototype.updateUser = function () {
-  this.collection.each(function (model) {
-    model.view.renderEditor();
-  });
-
-  return this;
 };
 
 /**
@@ -134,18 +121,17 @@ Notebook.prototype.updateCompletion = function () {
  * @return {Notebook}
  */
 Notebook.prototype.render = function () {
-  this.stopListening(this.collection);
-  this.collection.each(function (model) {
-    model.view.remove();
-  });
-
   View.prototype.render.call(this);
   this.collection = new NotebookCollection();
 
   // Empty all the current content to reset with new contents
   _.each(persistence.get('notebook'), function (cell) {
     var appendView = 'appendCodeView';
-    if (cell.type === 'text') { appendView = 'appendTextView'; }
+
+    if (cell.type === 'text') {
+      appendView = 'appendTextView';
+    }
+
     this[appendView](null, cell.value);
   }, this);
 
@@ -184,6 +170,10 @@ Notebook.prototype.appendTo = function () {
  * @param  {Function} done
  */
 Notebook.prototype.execute = function (done) {
+  if (this._execution) {
+    return done && done(new Error('Already executing notebook'));
+  }
+
   var that = this;
   this._execution = true;
 
@@ -246,14 +236,12 @@ Notebook.prototype.refreshFromView = function (view) {
 };
 
 /**
- * Append a new code cell view instance.
+ * Append and prepend new cell view instances.
  */
-Notebook.prototype.appendCodeView = appendNewView(CodeView);
-
-/**
- * Append a new text cell view instance.
- */
-Notebook.prototype.appendTextView = appendNewView(TextView);
+Notebook.prototype.appendCodeView  = appendNewView(CodeView);
+Notebook.prototype.appendTextView  = appendNewView(TextView);
+Notebook.prototype.prependCodeView = prependNewView(CodeView);
+Notebook.prototype.prependTextView = prependNewView(TextView);
 
 /**
  * Append any view to the notebook. Sets up a few listeners on every view
@@ -294,27 +282,19 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
-      var newView = this.appendTextView(function (el) {
-        view.el.parentNode.insertBefore(el, view.el);
-      }).focus();
-      this.refreshFromView(newView);
+      this.prependTextView(view.el).focus();
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
-      var newView = this.appendCodeView(function (el) {
-        view.el.parentNode.insertBefore(el, view.el);
-      }).focus();
-      this.refreshFromView(newView);
+      this.prependCodeView(view.el).focus();
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
       this.appendTextView(view.el).focus();
-      this.refreshFromView(view);
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
       this.appendCodeView(view.el).focus();
-      this.refreshFromView(view);
     });
 
     // Listen to clone events and append the new views after the current view
@@ -323,15 +303,16 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
-      this.refreshFromView(clone);
     });
 
     this.listenTo(view, 'remove', function (view) {
       // If it's the last node in the document, append a new code cell
       if (this.el.childNodes.length < 2) { this.appendCodeView(view.el); }
+
       // Focus in on the next/previous cell
       var newView = this.getNextView(view) || this.getPrevView(view);
-      if (newView) { newView.focus().moveCursorToEnd(); }
+      newView.focus().moveCursorToEnd();
+
       // Need to remove the model from the collection
       this.collection.remove(view.model);
       this.refreshFromView(newView);
@@ -354,31 +335,10 @@ Notebook.prototype.appendView = function (view, before) {
       newView.focus();
       if (cursor) { newView.editor.setCursor(cursor); }
     });
-
-    this.listenTo(view, 'appendNew', function (view) {
-      this.appendCodeView(view.el).focus();
-      this.refreshFromView(view);
-    });
-
-    this.listenTo(view, 'showControls', function (view) {
-      this.controls.toggleView(view);
-    });
   }
 
   // Listening to different events for `text` cells
   if (view instanceof TextView) {
-    this.listenTo(view, 'code', function (view, code) {
-      // Either add a new code view (if we have code or it's the last view),
-      // and focus the next view.
-      if (code || this.el.lastChild === view.el) {
-        this.appendCodeView(view.el, code);
-      }
-
-      this.getNextView(view).moveCursorToEnd(0).focus();
-
-      if (!view.getValue()) { view.remove(); }
-    });
-
     this.listenTo(view, 'blur', function (view) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
@@ -403,12 +363,6 @@ Notebook.prototype.appendView = function (view, before) {
       } else {
         this.getNextView(view).moveCursorToEnd().focus();
       }
-    });
-
-    this.listenTo(view, 'text', function (view, text) {
-      this.appendTextView(view.el, text).focus();
-
-      if (!view.getValue()) { view.remove(); }
     });
 
     this.listenTo(view, 'browseUp', function (view, currentCid) {

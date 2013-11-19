@@ -1,4 +1,3 @@
-var _           = require('underscore');
 var Backbone    = require('backbone');
 var middleware  = require('./middleware');
 var persistence = require('./persistence');
@@ -9,80 +8,101 @@ var persistence = require('./persistence');
  *
  * @type {Object}
  */
-var config = module.exports = new Backbone.Model();
+var config = module.exports = new Backbone.Model({
+  url: window.location.href
+});
 
 /**
- * Updates a base url tag when the referrer id changes.
+ * Every time the style config changes, update the css.
  */
-config.listenTo(config, 'change:referrer', (function () {
-  var base = document.getElementsByTagName('base')[0];
-  var head = document.head || document.getElementsByTagName('head')[0];
+config.listenTo(config, 'change:style', (function () {
+  var headEl  = document.head || document.getElementsByTagName('head')[0];
+  var styleEl = headEl.appendChild(document.createElement('style'));
 
-  return function (_, referrer) {
-    if (base) { base.parentNode.removeChild(base); }
-
-    base = document.createElement('base');
-    base.setAttribute('href', referrer);
-    base.setAttribute('target', '_parent');
-    head.appendChild(base);
+  return function (_, css) {
+    styleEl.textContent = css;
   };
 })());
 
 /**
- * Listen to requests to start a new notebook and use the content from the
- * config object.
- *
- * @param  {Object}   data
- * @param  {Function} next
- * @param  {Function} done
+ * Listen for changes in the embedded config option and update conditional
+ * styles.
  */
-middleware.use('persistence:load', function (data, next, done) {
-  if (config.has('content')) {
-    data.contents = config.get('content');
-    return done();
+config.listenTo(config, 'change:embedded', function (_, embedded) {
+  if (!embedded) {
+    return document.body.className.replace(' notebook-embedded', '');
   }
+
+  // Add a class name to identify embedded notebooks.
+  return document.body.className += ' notebook-embedded';
+});
+
+/**
+ * When the application is ready, start listening for live id changes.
+ *
+ * @param {Object}   app
+ * @param {Function} next
+ */
+middleware.use('application:ready', function (app, next) {
+  // Set the starting id since it has probably been set now.
+  persistence.set('id', config.get('id'));
+
+  /**
+   * Listens for global id changes and updates persistence. Primarily for
+   * loading a new notebook from the embed frame where the current url scheme
+   * is unlikely to be maintained.
+   */
+  config.listenTo(config, 'change:id', function (_, id) {
+    var persistId = persistence.get('id');
+    persistence.set('id', id);
+    return persistId === id || persistence.load();
+  });
+
+  /**
+   * Trigger refreshes of the persistence layer when the contents change.
+   */
+  config.listenTo(config, 'change:contents', function () {
+    persistence.set('id', '');
+    return persistence.load();
+  });
+
+  /**
+   * Listens for any changes of the persistence id. When it changes, we need to
+   * navigate to the updated url.
+   *
+   * @param {Object} _
+   * @param {String} id
+   */
+  config.listenTo(persistence, 'change:id', function (_, id) {
+    return config.set('id', id);
+  });
 
   return next();
 });
 
 /**
- * Listens to updates on the alias config and aliases the global variables.
+ * When the application is ready, finally attempt to load the initial content.
  *
- * @param  {Object} model
- * @param  {Object} alias
+ * @param {Object}   app
+ * @param {Function} next
  */
-config.listenTo(config, 'change:alias', function (model, alias) {
-  // Removes previous globals
-  _.each(model.previousAttributes().alias, function (_, key) {
-    delete global[key];
-  });
-
-  _.each(alias, function (value, key) {
-    global[key] = value;
-  });
+middleware.use('application:ready', function (app, next) {
+  return persistence.load(next);
 });
 
 /**
- * Listens for global id changes and updates persistence. Primarily for loading
- * a new notebook from the embed frame where the current url scheme is unlikely
- * to be maintained.
+ * If we have contents set in the config object, we should use them as the
+ * default load.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
-config.listenTo(config, 'change:id', function (_, id) {
-  persistence.set('id', id);
-  return persistence.load();
-});
+middleware.use('persistence:load', function (data, next, done) {
+  if (config.has('contents')) {
+    data.contents = config.get('contents');
+    return done();
+  }
 
-/**
- * Listens for content changes and cause a new persistence load.
- */
-config.listenTo(config, 'change:content', function () {
-  return persistence.load();
-});
-
-/**
- * Listens for execution content and eval it.
- */
-config.listenTo(config, 'change:exec', function (_, evil) {
-  /* jshint evil: true */
-  window.eval(evil);
+  return next();
 });

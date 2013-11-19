@@ -1,12 +1,18 @@
 var _            = require('underscore');
 var domify       = require('domify');
 var Cell         = require('./cell');
-var BtnControls  = require('./btn-cell-controls');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
-var persistence  = require('../state/persistence');
+var CellButtons  = require('./cell-buttons');
+var CellControls = require('./cell-controls');
 var ownerProtect = require('./lib/owner-protect');
+
+var triggerSelf = function (obj, method) {
+  obj[method] = ownerProtect(function () {
+    this.trigger(method, this);
+  });
+};
 
 /**
  * Create a generic editor cell instance view.
@@ -24,7 +30,9 @@ EditorCell.prototype.initialize = function () {
   Cell.prototype.initialize.apply(this, arguments);
   this.model       = this.model || new this.EditorModel();
   this.model.view  = this;
-  this.btnControls = new BtnControls();
+
+  // Refresh the editor cells when refresh is triggered through messages.
+  this.listenTo(messages, 'refresh', this.refresh);
 };
 
 /**
@@ -40,10 +48,9 @@ EditorCell.prototype.EditorModel = require('../models/cell');
  * @type {Object}
  */
 EditorCell.prototype.events = {
-  'click .cell-insert-top .btn-insert-text':    'newTextAbove',
-  'click .cell-insert-top .btn-insert-code':    'newCodeAbove',
-  'click .cell-insert-bottom .btn-insert-text': 'newTextBelow',
-  'click .cell-insert-bottom .btn-insert-code': 'newCodeBelow'
+  'mousedown .cell-controls-btn':  'showControls',
+  'touchstart .cell-controls-btn': 'showControls',
+  'mouseover .cell-border-btn':    'showButtons'
 };
 
 /**
@@ -72,34 +79,6 @@ EditorCell.prototype.remove = ownerProtect(function () {
 });
 
 /**
- * Moves the cells position in the notebook up by one cell.
- */
-EditorCell.prototype.moveUp = ownerProtect(function () {
-  this.trigger('moveUp', this);
-});
-
-/**
- * Moves the cells position in the notebook down by one cell.
- */
-EditorCell.prototype.moveDown = ownerProtect(function () {
-  this.trigger('moveDown', this);
-});
-
-/**
- * Navigate up to the previous cell with the cursor.
- */
-EditorCell.prototype.navigateUp = ownerProtect(function () {
-  this.trigger('navigateUp', this);
-});
-
-/**
- * Navigate down to the next cell with the cursor.
- */
-EditorCell.prototype.navigateDown = ownerProtect(function () {
-  this.trigger('navigateDown', this);
-});
-
-/**
  * Clones the editor cell and triggers a clone event with the cloned view.
  *
  * @return {EditorCell} Cloned view.
@@ -110,20 +89,6 @@ EditorCell.prototype.clone = ownerProtect(function () {
   }));
   this.trigger('clone', this, clone);
   return clone;
-});
-
-/**
- * Triggers a `switch` event to switch the cell mode.
- */
-EditorCell.prototype.switch = ownerProtect(function () {
-  this.trigger('switch', this);
-});
-
-/**
- * Append a new editor cell directly below the current cell.
- */
-EditorCell.prototype.appendNew = ownerProtect(function () {
-  this.trigger('appendNew', this);
 });
 
 /**
@@ -144,6 +109,9 @@ EditorCell.prototype.newLineBelow = ownerProtect(function () {
   });
 });
 
+/**
+ * Toggle comments in the current editor instance.
+ */
 EditorCell.prototype.toggleComment = ownerProtect(function () {
   this.editor.execCommand('toggleComment');
 });
@@ -191,7 +159,9 @@ EditorCell.prototype.save = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.refresh = function () {
-  this.editor.refresh();
+  if (this.editor) {
+    this.editor.refresh();
+  }
 
   return this;
 };
@@ -287,10 +257,10 @@ EditorCell.prototype.renderEditor = function () {
   // Initialize the codemirror editor.
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
-  }, this), _.extend({}, this.editorOptions, {
+  }, this), _.extend({
     view:     this,
     readOnly: !this.isOwner()
-  }));
+  }, this.editorOptions));
 
   // Add an extra css class for helping with styling read-only editors.
   if (this.editor.getOption('readOnly')) {
@@ -332,48 +302,60 @@ EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
 
-  var insertContents = [
-    '<span class="insert-dot icon-plus-circled"></span>',
-    '<div class="cell-insert-buttons">',
-    '<button class="btn btn-insert-text">Insert Comment Cell</button>',
-    '<button class="btn btn-insert-code">Insert Code Cell</button>',
-    '</div>',
-  ].join('\n');
+  this.el.appendChild(domify(
+    '<button class="btn cell-controls-btn">≡</button>'
+  ));
 
   this.el.appendChild(domify([
-    '<span class="cell-insert cell-insert-top">',
-    insertContents,
+    '<span class="cell-border cell-border-above">',
+    '<i class="cell-border-btn icon-plus-circled"></i>',
     '</span>',
-    '<span class="cell-insert cell-insert-bottom">',
-    insertContents,
+    '<span class="cell-border cell-border-below">',
+    '<i class="cell-border-btn icon-plus-circled"></i>',
     '</span>'
   ].join('\n')));
 
-  this.listenTo(this.btnControls, 'showControls', function () {
-    this.trigger('showControls', this);
-  }, this);
-  this.btnControls.render().prependTo(this.el);
-
-  /**
-   * Attach hover listeners to the cell insert bars, which will display the
-   * insert buttons.
-   */
-  _.each(this.el.querySelectorAll('.cell-insert'), function (el) {
-    var hoverTimeout;
-
-    el.addEventListener('mouseenter', function (e) {
-      hoverTimeout = setTimeout(function () {
-        e.target.classList.add('cell-insert-hover');
-      }, 300);
-    });
-
-    el.addEventListener('mouseleave', function (e) {
-      clearTimeout(hoverTimeout);
-      e.target.classList.remove('cell-insert-hover');
-    });
-  }, this);
-
   return this;
+};
+
+/**
+ * Create a cell controls instance and append to the editor cell.
+ *
+ * @param  {Object}       e
+ * @return {CellControls}
+ */
+EditorCell.prototype.showControls = function (e) {
+  e.preventDefault();
+  e.stopImmediatePropagation();
+
+  var controls = new CellControls().render().appendTo(this.el);
+
+  this.listenTo(controls, 'remove', this.stopListening);
+  this.listenTo(controls, 'action', function (_, action) {
+    return this[action]();
+  });
+
+  return controls;
+};
+
+/**
+ * Create a cell buttons instance and append to the correct border.
+ *
+ * @param  {Object}      e
+ * @return {CellButtons}
+ */
+EditorCell.prototype.showButtons = function (e) {
+  var buttons = new CellButtons().render().appendTo(e.target.parentNode);
+
+  this.listenTo(buttons, 'remove', this.stopListening);
+  this.listenTo(buttons, 'action', function (_, action) {
+    var below = buttons.el.parentNode.classList.contains('cell-border-below');
+
+    // Trigger the relevant event.
+    return this[action + (below ? 'Below' : 'Above')]();
+  });
+
+  return buttons;
 };
 
 /**
@@ -433,6 +415,7 @@ EditorCell.prototype.appendTo = function (el) {
   // need to refresh the CodeMirror UI so it becomes visible
   if (this.editor) {
     this.refresh();
+
     // Since the CodeMirror refresh appears to be async, push the resize event
     // into the following event loop.
     process.nextTick(function () {
@@ -450,23 +433,25 @@ EditorCell.prototype.appendTo = function (el) {
  * @return {Boolean}
  */
 EditorCell.prototype.isOwner = function () {
-  return persistence.isOwner();
+  return true;
 };
 
 /**
- * Inserts new cells around the current cell.
+ * Add a few simple binding for just proxying events.
  */
-var triggerSelfAndHideButtons = function (obj, method) {
-  obj[method] = ownerProtect(function () {
-    this.trigger(method, this);
-    this.el.classList.remove('cell-insert-hover');
-  });
-};
+triggerSelf(EditorCell.prototype, 'switch');
+triggerSelf(EditorCell.prototype, 'moveUp');
+triggerSelf(EditorCell.prototype, 'moveDown');
+triggerSelf(EditorCell.prototype, 'navigateUp');
+triggerSelf(EditorCell.prototype, 'navigateDown');
+triggerSelf(EditorCell.prototype, 'newTextAbove');
+triggerSelf(EditorCell.prototype, 'newCodeAbove');
+triggerSelf(EditorCell.prototype, 'newTextBelow');
+triggerSelf(EditorCell.prototype, 'newCodeBelow');
 
 /**
- * Attach numerous listeners that just trigger events.
+ * Alias the append new cell below function to creating a new code cell.
+ *
+ * @type {Function}
  */
-triggerSelfAndHideButtons(EditorCell.prototype, 'newTextAbove');
-triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeAbove');
-triggerSelfAndHideButtons(EditorCell.prototype, 'newTextBelow');
-triggerSelfAndHideButtons(EditorCell.prototype, 'newCodeBelow');
+EditorCell.prototype.appendNew = EditorCell.prototype.newCodeBelow;

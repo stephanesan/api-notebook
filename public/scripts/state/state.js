@@ -1,3 +1,4 @@
+var _        = require('underscore');
 var Backbone = require('backbone');
 var messages = require('./messages');
 
@@ -7,31 +8,14 @@ var messages = require('./messages');
  *
  * @type {Object}
  */
-var state = module.exports = new (Backbone.Model.extend())();
+var state = module.exports = new Backbone.Model();
 
-var updateScrollDimensions = function () {
+/**
+ * Listen to resize events through the messages and update the current state.
+ */
+state.listenTo(messages, 'resize refresh', _.throttle(function () {
+  state.set('viewportWidth',  window.innerWidth);
+  state.set('viewportHeight', window.innerHeight);
   state.set('documentWidth',  document.documentElement.scrollWidth);
   state.set('documentHeight', document.documentElement.scrollHeight);
-};
-
-var updateWindowDimensions = function () {
-  var width  = window.innerWidth;
-  var height = window.innerHeight;
-
-  state.set('viewportWidth',  width);
-  state.set('viewportHeight', height);
-
-  return updateScrollDimensions();
-};
-
-updateWindowDimensions();
-state.listenTo(messages, 'resize',        updateScrollDimensions);
-state.listenTo(messages, 'window:resize', updateWindowDimensions);
-
-state.listenTo(messages, 'keydown:Alt-Alt', function () {
-  state.set('showExtra', true);
-});
-
-state.listenTo(messages, 'keyup:Alt', function () {
-  state.set('showExtra', false);
-});
+}, 100));

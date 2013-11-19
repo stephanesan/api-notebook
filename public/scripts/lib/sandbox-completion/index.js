@@ -1,7 +1,8 @@
-var _        = require('underscore');
-var ecma5    = require('./ecma5.json');
-var browser  = require('./browser.json');
-var fromPath = require('../from-path');
+var _          = require('underscore');
+var ecma5      = require('./ecma5.json');
+var browser    = require('./browser.json');
+var fromPath   = require('../from-path');
+var middleware = require('../../state/middleware');
 
 /**
  * Recurse through the description structure and attach descriptions to nodes
@@ -46,7 +47,6 @@ var attachDescriptions = function (map, describe, global) {
  */
 module.exports = function (global) {
   var map     = new Map();
-  var exports = {};
   var plugins = {};
 
   // Attach pre-defined global description objects.
@@ -74,87 +74,69 @@ module.exports = function (global) {
   };
 
   /**
-   * Attach all the relevant middleware plugins.
+   * Middleware for looking up function return types for native functions.
    *
-   * @param {Object} middleware
+   * @param {Object}   data
+   * @param {Function} next
+   * @param {Function} done
    */
-  exports.attach = function (middleware) {
-    /**
-     * Middleware for looking up function return types for native functions.
-     *
-     * @param {Object}   data
-     * @param {Function} next
-     * @param {Function} done
-     */
-    plugins['completion:function'] = function (data, next, done) {
-      if (data.isConstructor || data.context === data.global.Array) {
-        return done(null, data.context.prototype);
+  plugins['completion:function'] = function (data, next, done) {
+    if (data.isConstructor || data.context === data.global.Array) {
+      return done(null, data.context.prototype);
+    }
+
+    // This may be a little dodgy, but as long as someone hasn't extended the
+    // native prototype object with something that has side-effects, we'll be
+    // fine.
+    if (!_.isObject(data.parent)) {
+      return done(null, data.context.call(data.parent));
+    }
+
+    // Use the documentation to detect the return types.
+    middleware.trigger('completion:describe', data, function (err, describe) {
+      if (err || !_.isObject(describe) || !/^fn\(/.test(describe['!type'])) {
+        return next(err);
       }
 
-      // This may be a little dodgy, but as long as someone hasn't extended the
-      // native prototype object with something that has side-effects, we'll be
-      // fine.
-      if (!_.isObject(data.parent)) {
-        return done(null, data.context.call(data.parent));
+      // Split the documentation type and get the return type.
+      var returnType = describe['!type'].split(' -> ').pop();
+
+      if (returnType === 'string') {
+        return done(null, data.global.String());
       }
 
-      // Use the documentation to detect the return types.
-      middleware.trigger('completion:describe', data, function (err, describe) {
-        if (err || !_.isObject(describe) || !/^fn\(/.test(describe['!type'])) {
-          return next(err);
-        }
+      if (returnType === 'number') {
+        return done(null, data.global.Number());
+      }
 
-        // Split the documentation type and get the return type.
-        var returnType = describe['!type'].split(' -> ').pop();
+      if (returnType === 'bool') {
+        return done(null, data.global.Boolean());
+      }
 
-        if (returnType === 'string') {
-          return done(null, data.global.String());
-        }
+      if (/\[.*\]/.test(returnType)) {
+        return done(null, data.global.Array());
+      }
 
-        if (returnType === 'number') {
-          return done(null, data.global.Number());
-        }
+      if (returnType === 'fn()') {
+        return done(null, data.global.Function());
+      }
 
-        if (returnType === 'bool') {
-          return done(null, data.global.Boolean());
-        }
+      // Returns its own instance.
+      if (returnType === '!this') {
+        return done(null, data.parent);
+      }
 
-        if (/\[.*\]/.test(returnType)) {
-          return done(null, data.global.Array());
-        }
+      // Instance type return.
+      if (/^\+/.test(returnType) && data.global[returnType.substr(1)]) {
+        return done(
+          null,
+          fromPath(data.global, returnType.substr(1).split('.')).prototype
+        );
+      }
 
-        if (returnType === 'fn()') {
-          return done(null, data.global.Function());
-        }
-
-        // Returns its own instance.
-        if (returnType === '!this') {
-          return done(null, data.parent);
-        }
-
-        // Instance type return.
-        if (/^\+/.test(returnType) && data.global[returnType.substr(1)]) {
-          return done(
-            null,
-            fromPath(data.global, returnType.substr(1).split('.')).prototype
-          );
-        }
-
-        return next();
-      });
-    };
-
-    middleware.use(plugins);
+      return next();
+    });
   };
 
-  /**
-   * Detach relevant middleware and cleanup memory.
-   *
-   * @param {Object} middleware
-   */
-  exports.detach = function (middleware) {
-    middleware.disuse(plugins);
-  };
-
-  return exports;
+  return plugins;
 };

@@ -4,7 +4,7 @@ describe('App', function () {
   var fixture = document.getElementById('fixture');
 
   it('should expose a global variable for testing', function () {
-    expect(App).to.be.a('function');
+    expect(App).to.be.an('object');
   });
 
   it('should expose views', function () {
@@ -23,7 +23,7 @@ describe('App', function () {
     var view;
 
     beforeEach(function () {
-      view = new App();
+      view = new App.View.App();
     });
 
     afterEach(function () {
@@ -53,7 +53,7 @@ describe('App', function () {
         var titleEl = view.el.querySelector('.notebook-title');
         titleEl.value = 'Test Notebook';
         simulateEvent(titleEl, 'keyup');
-        expect(App.persistence.get('title')).to.equal('Test Notebook');
+        expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
       });
     });
 

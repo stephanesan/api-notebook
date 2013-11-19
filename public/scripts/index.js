@@ -1,13 +1,11 @@
 require('./bootstrap');
 
-var loadScript = require('./lib/browser/load-script');
-
 /**
  * The main application is aliased to the `window` for external access.
  *
  * @type {Function}
  */
-var App = window.App = require('./views/app');
+var App = module.exports = window.App = {};
 
 // Exposes internally used libraries globally to avoid unneeded requests in
 // third-party middleware and plugins.
@@ -17,6 +15,7 @@ App.Library = {
   crypto:      require('crypto'),
   querystring: require('querystring'),
   async:       require('async'),
+  changeCase:  require('change-case'),
   Backbone:    require('backbone')
 };
 
@@ -27,7 +26,6 @@ App.nextTick = process.nextTick;
 App.state       = require('./state/state');
 App.store       = require('./state/store');
 App.config      = require('./state/config');
-App.router      = require('./state/router');
 App.messages    = require('./state/messages');
 App.middleware  = require('./state/middleware');
 App.persistence = require('./state/persistence');
@@ -44,6 +42,7 @@ App.CodeMirror = {
 
 // Expose all application views
 App.View = {
+  App:            require('./views/app'),
   View:           require('./views/view'),
   Notebook:       require('./views/notebook'),
   EditNotebook:   require('./views/edit-notebook'),
@@ -54,6 +53,7 @@ App.View = {
   TextCell:       require('./views/text-cell'),
   EditorCell:     require('./views/editor-cell'),
   ResultCell:     require('./views/result-cell'),
+  CellButtons:    require('./views/cell-buttons'),
   CellControls:   require('./views/cell-controls')
 };
 
@@ -70,49 +70,6 @@ App.Collection = {
 };
 
 /**
- * Set up the initial application state. This could be synchronous (accessing
- * the page directly) or asynchronous (embeddable widget).
- *
- * @param {Object}   config
- * @param {Function} done
- */
-var prepareState = function (config, done) {
-  if (window === window.parent) {
-    return done(null, config);
-  }
-
-  var postMessage = new App.PostMessage(window.parent);
-
-  // A config object can be passed from the parent frame with configuration
-  // options.
-  postMessage.on('config', function (data) {
-    App._.extend(config, data);
-  });
-
-  // Allow running code in the context of this window by passing it through as a
-  // string.
-  postMessage.on('exec', function (evil) {
-    /* jshint evil: true */
-    postMessage.trigger('exec', window.eval(evil));
-  });
-
-  // Listen to any resize triggers from the messages object and send the parent
-  // frame our updated iframe size.
-  App.state.on('change:documentHeight', function (_, height) {
-    postMessage.trigger('height', height);
-  });
-
-  // The parent frame will send back a ready response when setup is complete.
-  postMessage.on('ready', function () {
-    done(null, config, postMessage);
-  });
-
-  // Send a message to the parent frame and let it know we are ready to accept
-  // messages and data.
-  postMessage.trigger('ready');
-};
-
-/**
  * Define a custom start method so that the application can bind middleware and
  * prepare state before we actually append the notebook which relies on some of
  * the middleware being available.
@@ -121,32 +78,26 @@ var prepareState = function (config, done) {
  * @param {Object}           [config]
  * @param {Function}         done
  */
-App.start = function (el /*, config */, done) {
-  var config = {};
+App.start = function (el /*, options */, done) {
+  var options = {};
 
   if (typeof done === 'object') {
-    config = arguments[1];
-    done   = arguments[2];
+    options = arguments[1];
+    done    = arguments[2];
   }
 
-  return prepareState(config, function (err, config, postMessage) {
-    // Load all the injected scripts before starting the app.
-    App.Library.async.each(config.inject || [], loadScript, function (err) {
-      // Set the config object before the app starts since it interacts with
-      // different parts of the application.
-      App.config.set(config);
+  return App.middleware.trigger('application:start', options, function (err) {
+    if (err) {
+      return done && done(err);
+    }
 
-      var app = new App().render().appendTo(el);
+    var app = new App.View.App().render().appendTo(el);
 
-      // Allows different parts of the application to kickstart requests.
-      App.messages.trigger('ready');
-      if (postMessage) { postMessage.trigger('rendered'); }
+    // Send a `rendered` event back to the parent frame when we are embedded.
+    if (App.postMessage) {
+      App.postMessage.trigger('rendered');
+    }
 
-      // Passes the app instance to the callback function.
-      return done && done(err, app);
-    });
+    return App.middleware.trigger('application:ready', app, done);
   });
 };
-
-// Extend the application with core middleware functionality.
-require('./plugins/core')(App.middleware);

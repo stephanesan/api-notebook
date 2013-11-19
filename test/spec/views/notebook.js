@@ -237,38 +237,59 @@ describe('Notebook', function () {
         });
       });
 
+      it('should be able to prepend a code cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model);
+        var topBorder = codeCells[0].el.querySelector('.cell-border-above');
+
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to prepend a text cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model);
+        var topBorder = codeCells[0].el.querySelector('.cell-border-above');
+
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to append a code cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
+        var topBorder = codeCells[0].el.querySelector('.cell-border-below');
+
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+        expect(view.collection.length).to.equal(5);
+      });
+
+      it('should be able to append a text cell', function () {
+        expect(view.collection.length).to.equal(4);
+
+        var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
+        var topBorder = codeCells[0].el.querySelector('.cell-border-below');
+
+        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
+
+        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+        expect(view.collection.length).to.equal(5);
+      });
+
       describe('Text Cell', function () {
-        it('should remove itself when initializing a code cell', function () {
-          expect(view.collection.length).to.equal(4);
-
-          textCells[0].trigger('code', textCells[0]);
-
-          expect(view.collection.length).to.equal(3);
-          expect(textCells[0].el.parentNode).to.not.exist;
-          expect(codeCells[0].el.nextSibling.className).to.contain('cell-code');
-          expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
-          expect(codeCells[1].hasFocus()).to.be.ok;
-        });
-
-        it('shouldn\'t remove itself when it has content', function () {
-          expect(view.collection.length).to.equal(4);
-
-          textCells[0].setValue('testing');
-          textCells[0].trigger('code', textCells[0]);
-
-          expect(view.collection.length).to.equal(4);
-          expect(textCells[0].el.nextSibling).to.equal(codeCells[1].el);
-          expect(codeCells[1].hasFocus()).to.be.ok;
-        });
-
-        it('should initialize the new cell with content when available', function () {
-          textCells[0].trigger('code', textCells[0], 'testing');
-
-          expect(view.collection.at(2).view.getValue()).to.equal('testing');
-          expect(view.collection.at(2).view.hasFocus()).to.be.ok;
-          expect(view.collection.at(2).view.editor.getCursor().ch).to.equal(7);
-        });
-
         it('should append a new code view on blur if its the last cell', function (done) {
           textCells.push(view.appendTextView().focus());
 
@@ -293,41 +314,6 @@ describe('Notebook', function () {
       });
 
       describe('Code Cell', function () {
-        it('should replace itself when initializing a text cell', function () {
-          expect(view.collection.length).to.equal(4);
-
-          codeCells[0].trigger('text', codeCells[0]);
-
-          // Removes the empty cell actively converting it into a text node
-          expect(view.collection.length).to.equal(4);
-          expect(codeCells[0].el.parentNode).to.not.exist;
-          expect(textCells[0].el.previousSibling.className).to.contain('cell-text');
-          expect(view.collection.at(1)).to.be.an.instanceof(App.Model.TextEntry);
-          expect(view.collection.at(1).view.el.nextSibling).to.equal(textCells[0].el);
-          expect(view.collection.at(1).view.hasFocus()).to.be.ok;
-        });
-
-        it('shouldn\'t replace itself when it has content', function () {
-          expect(view.collection.length).to.equal(4);
-
-          codeCells[0].setValue('testing');
-          codeCells[0].trigger('text', codeCells[0]);
-
-          expect(view.collection.length).to.equal(5);
-          expect(codeCells[0].el.nextSibling.className).to.contain('cell-text');
-          expect(view.collection.at(2)).to.be.an.instanceof(App.Model.TextEntry);
-          expect(view.collection.at(2).view.el.nextSibling).to.equal(textCells[0].el);
-          expect(view.collection.at(2).view.hasFocus()).to.be.ok;
-        });
-
-        it('should initialize the new cell with content when available', function () {
-          codeCells[0].trigger('text', codeCells[0], 'testing');
-
-          expect(view.collection.at(1).view.getValue()).to.equal('testing');
-          expect(view.collection.at(1).view.hasFocus()).to.be.ok;
-          expect(view.collection.at(1).view.editor.getCursor().ch).to.equal(7);
-        });
-
         it('should create a new view upon code execution', function () {
           expect(view.collection.length).to.equal(4);
 
@@ -421,20 +407,12 @@ describe('Notebook', function () {
 
         describe('Overlay Menu', function () {
           var getButton = function (cell) {
-            return cell.el.getElementsByClassName('btn-show-cell-controls')[0];
+            return cell.el.querySelector('.cell-controls-btn');
           };
 
           var getMenu = function (cell) {
-            return cell.el.getElementsByClassName('cell-controls')[0];
+            return cell.el.querySelector('.cell-controls');
           };
-
-          var simulateClick = function (element) {
-            simulateEvent(element, 'click');
-          };
-
-          it('should exist as one instance', function () {
-            expect(view.controls).to.be.an('object');
-          });
 
           it('should be appended to a cell when button is clicked', function() {
             var btn, menu;
@@ -442,18 +420,82 @@ describe('Notebook', function () {
             btn = getButton(codeCells[0]);
             expect(btn).to.be.ok;
 
-            simulateClick(btn);
+            simulateEvent(btn, 'mousedown');
             menu = getMenu(codeCells[0]);
 
             expect(menu).to.be.ok;
           });
 
-          // TODO: add tests to menu functions
-          it.skip('should be able to move cells up');
-          it.skip('should be able to move cells down');
-          it.skip('should be able to move switch cell mode');
-          it.skip('should be able to clone the cell');
-          it.skip('should be able to delete the cell');
+          describe('Functionality', function () {
+            var menu;
+
+            beforeEach(function () {
+              simulateEvent(getButton(codeCells[0]), 'mousedown');
+              menu = codeCells[0].el.querySelector('.cell-controls');
+            });
+
+            it('should be able to move cells up', function () {
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="moveUp"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.at(0)).to.equal(codeCells[0].model);
+            });
+
+            it('should be able to move cells down', function () {
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="moveDown"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.at(2)).to.equal(codeCells[0].model);
+            });
+
+            it('should be able to move switch cell mode', function () {
+              expect(view.collection.at(1).get('type')).to.equal('code');
+
+              var btn = menu.querySelector('[data-action="switch"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.at(1).get('type')).to.equal('text');
+            });
+
+            it('should be able to clone the cell', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              codeCells[0].setValue('testing');
+
+              var btn = menu.querySelector('[data-action="clone"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.length).to.equal(5);
+              expect(view.collection.at(2).view.getValue()).to.equal('testing');
+            });
+
+            it('should be able to delete the cell', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(1)).to.equal(codeCells[0].model);
+
+              var btn = menu.querySelector('[data-action="remove"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.length).to.equal(3);
+              expect(view.collection.at(1)).to.not.equal(codeCells[0].model);
+            });
+
+            it('should create a new cell below', function () {
+              expect(view.collection.length).to.equal(4);
+              expect(view.collection.at(2)).to.equal(textCells[0].model);
+
+              var btn = menu.querySelector('[data-action="appendNew"]');
+              simulateEvent(btn, 'mousedown');
+
+              expect(view.collection.length).to.equal(5);
+              expect(view.collection.at(2)).to.not.equal(textCells[0].model);
+            });
+          });
         });
 
         describe('Line numbers', function () {
@@ -502,29 +544,6 @@ describe('Notebook', function () {
             expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
           });
         });
-      });
-    });
-
-    describe('Authentication integration', function () {
-      it('should re-render the notebook when the user changes', function () {
-        var clock = sinon.useFakeTimers();
-        view.render().appendTo(fixture);
-
-        var cell = view.appendCodeView();
-        expect(cell.editor.options.readOnly).to.be.false;
-
-        // Set different user and gist owners
-        App.persistence.isReady = true;
-        App.persistence.set('userId', 'test');
-
-        // User changes are throttled.
-        clock.tick(100);
-
-        expect(cell.editor.getOption('readOnly')).to.be.true;
-
-        view.remove();
-        clock.restore();
-        App.persistence.isReady = false;
       });
     });
   });

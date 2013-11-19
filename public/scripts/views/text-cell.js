@@ -3,7 +3,6 @@ var marked       = require('marked');
 var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var messages     = require('../state/messages');
-var stripInput   = require('../lib/codemirror/strip-input');
 var ownerProtect = require('./lib/owner-protect');
 
 /**
@@ -23,7 +22,7 @@ var TextCell = module.exports = EditorCell.extend({
 TextCell.prototype.events = _.extend({
   /**
    * When we click anywhere in the cell, trigger focus and editing mode. We
-   * should always ignore clicks on links, etc.
+   * should ignore any clicks on links, etc.
    *
    * @param {Object} e
    */
@@ -64,13 +63,6 @@ TextCell.prototype.editorOptions = _.extend(
  */
 TextCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
-
-  this.listenTo(this, 'change', function (view, data) {
-    var endCommentBlock = stripInput('*/', view.editor, data);
-    if (endCommentBlock !== false) {
-      return this.trigger('code', this, endCommentBlock);
-    }
-  });
 
   // Listen to itself since editor cells have a built in protection here.
   this.listenTo(this, 'blur', function () {
@@ -135,10 +127,6 @@ TextCell.prototype.renderMarkdown = function () {
     domify('<div class="markdown"></div>'), this.el.firstChild
   );
 
-  _.each(this.el.getElementsByClassName('comment'), function (el) {
-    el.style.display = 'none';
-  });
-
   marked(this.getValue(), {
     gfm: true,
     // highlight: function () {},
@@ -173,10 +161,6 @@ TextCell.prototype.removeMarkdown = function () {
     delete this.markdownElement;
   }
 
-  _.each(this.el.getElementsByClassName('comment'), function (el) {
-    el.style.display = 'block';
-  });
-
   return this;
 };
 
@@ -195,7 +179,9 @@ TextCell.prototype.renderEditor = function () {
     this.renderMarkdown();
   }
 
-  process.nextTick(function () { messages.trigger('resize'); }, 0);
+  process.nextTick(function () {
+    messages.trigger('resize');
+  }, 0);
 
   return this;
 };

@@ -6,6 +6,7 @@ var View         = require('./view');
 var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
 var controls     = require('../lib/controls');
+var config       = require('../state/config');
 var messages     = require('../state/messages');
 var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
@@ -36,6 +37,10 @@ var changeNotebook = function (fn) {
       this.contents.render().appendTo(this._contentsEl);
     }
 
+    // Add style classes for the view type.
+    var view = this.contents instanceof Notebook ? 'view' : 'edit';
+    this.el.classList.add('notebook-' + view + '-active');
+
     // Resize the parent frame since we have added notebook contents.
     messages.trigger('resize');
     return this;
@@ -57,14 +62,14 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
-  'click .modal-toggle':   'showShortcuts',
+  'click .notebook-help':  'showShortcuts',
   'click .notebook-exec':  'runNotebook',
-  'click .notebook-fork':  'forkNotebook',
-  'click .notebook-clone': 'forkNotebook',
+  'click .notebook-clone': 'cloneNotebook',
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
+  'click .notebook-list':  'listNotebooks',
   // Switch between application views.
-  'click .toggle-notebook-edit': 'renderNotebook',
+  'click .toggle-notebook-edit': 'toggleEdit',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -74,12 +79,16 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.set('title', e.srcElement.value);
+    persistence.get('meta').set('title', e.target.value);
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
     if (!persistence.isOwner()) { return; }
 
+    e.srcElement.select();
+  },
+  // Focus the share inputs automatically.
+  'click .notebook-share-input': function (e) {
     e.srcElement.select();
   }
 };
@@ -89,10 +98,24 @@ App.prototype.events = {
  * relevant events to respond to.
  */
 App.prototype.initialize = function () {
-  // Start up the history router, which will trigger the start of other
-  // subsystems such as persistence and authentication.
-  Backbone.history.start({
-    pushState: false
+  // Block attempts to close or refresh the window when the current persistence
+  // state is dirty.
+  this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
+    if (persistence.get('state') !== persistence.CHANGED) { return; }
+
+    var confirmationMessage = 'Your changes will be lost.';
+
+    (e || window.event).returnValue = confirmationMessage;
+    return confirmationMessage;
+  });
+
+  // Re-render the notebook when the notebook changes.
+  this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
+
+  // Update the displayed title when the title changes.
+  this.listenTo(persistence.get('meta'), 'change:title', function (_, title) {
+    var titleEl = document.head.querySelector('title');
+    titleEl.textContent = title ? title + ' • Notebook' : 'Notebook';
   });
 };
 
@@ -102,13 +125,20 @@ App.prototype.initialize = function () {
  * @return {App}
  */
 App.prototype.renderNotebook = changeNotebook(function () {
+  return this.notebook = new Notebook();
+});
+
+/**
+ * Toggle the view between edit and notebook view.
+ *
+ * @return {App}
+ */
+App.prototype.toggleEdit = changeNotebook(function () {
   if (this.notebook) {
     delete this.notebook;
-    this.el.classList.add('notebook-edit-active');
     return new EditNotebook();
   }
 
-  this.el.classList.add('notebook-view-active');
   return this.notebook = new Notebook();
 });
 
@@ -130,6 +160,7 @@ App.prototype.remove = function () {
  */
 App.prototype.update = function () {
   this.updateId();
+  this.updateUrl();
   this.updateUser();
   this.updateTitle();
   this.updateState();
@@ -143,8 +174,7 @@ App.prototype.update = function () {
  * @return {App}
  */
 App.prototype.updateUser = function () {
-  var auth    = this.el.querySelector('.auth-status');
-  var title   = this.el.querySelector('.notebook-title');
+  var authEl  = this.el.querySelector('.auth-status');
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
 
@@ -153,14 +183,8 @@ App.prototype.updateUser = function () {
   this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
   this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
 
-  // Allow/disallow editing of the title based on authentication status.
-  title.readOnly = !isOwner;
-
   // Update the auth display status with the user title.
-  auth.textContent = persistence.get('userTitle') + '.';
-
-  // Adding and removing some of these classes cause the container to resize.
-  messages.trigger('resize');
+  authEl.textContent = persistence.get('userTitle');
 
   return this;
 };
@@ -171,10 +195,26 @@ App.prototype.updateUser = function () {
  * @return {App}
  */
 App.prototype.updateId = function () {
+  var shareEl = this.el.querySelector('.notebook-share-script');
+  var id      = persistence.get('id');
   var isSaved = persistence.has('id');
 
   this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
   this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
+
+  shareEl.value = '<script src="' + process.env.EMBED_SCRIPT_URL + '"' +
+    (id ? ' data-id="' + id + '"' : '') + '></script>';
+
+  return this;
+};
+
+/**
+ * Update the sharable url.
+ *
+ * @return {App}
+ */
+App.prototype.updateUrl = function () {
+  this.el.querySelector('.notebook-share-link').value = config.get('url');
 
   return this;
 };
@@ -185,7 +225,13 @@ App.prototype.updateId = function () {
  * @return {App}
  */
 App.prototype.updateTitle = function () {
-  this.el.querySelector('.notebook-title').value = persistence.get('title');
+  var title   = persistence.get('meta').get('title');
+  var titleEl = this.el.querySelector('.notebook-title');
+
+  // Only attempt to update when out of sync.
+  if (titleEl.value !== title) {
+    titleEl.value = title;
+  }
 
   return this;
 };
@@ -226,15 +272,13 @@ App.prototype.updateState = function () {
   } else if (state === persistence.SAVING) {
     statusEl.textContent = 'Saving.';
   } else if (state === persistence.SAVE_FAIL) {
-    var saveEl = document.createElement('button');
-    saveEl.className   = 'btn-text notebook-save';
-    saveEl.textContent = 'Try again';
-
-    statusEl.appendChild(document.createTextNode('Save failed.'));
-    statusEl.appendChild(saveEl);
-    statusEl.appendChild(document.createTextNode('.'));
+    statusEl.textContent = 'Save failed.';
   } else if (state === persistence.SAVE_DONE) {
     statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
+  } else if (state === persistence.CHANGED) {
+    statusEl.textContent = 'Unsaved changes.';
+  } else if (state === persistence.CLONING) {
+    statusEl.textContent = 'Cloning notebook.';
   }
 
   return this;
@@ -285,13 +329,22 @@ App.prototype.render = function () {
     '</header>' +
 
     '<div class="notebook-toolbar clearfix">' +
-      '<div class="toolbar-end">'+
-        '<button class="edit-source toggle-notebook-edit"></button>' +
+      '<div class="toolbar-end">' +
+        '<button class="edit-source toggle-notebook-edit hint--bottom" ' +
+        'data-hint="Edit notebook source">' +
+          '<i class="icon"></i>' +
+        '</button>' +
       '</div>' +
 
       '<div class="toolbar-inner">' +
-        '<div class="auth-status"></div>' +
-        '<div class="save-status"></div>' +
+        '<div class="persistence-status">' +
+          '<button class="btn-square notebook-list hint--bottom" ' +
+          'data-hint="List all notebooks">' +
+            '<i class="icon-folder-open-empty"></i>' +
+          '</button>' +
+          '<div class="auth-status text-status"></div>' +
+          '<div class="save-status text-status"></div>' +
+        '</div>' +
         '<div class="toolbar-buttons">' +
           '<span class="btn-edit">' +
             '<button class="btn-text toggle-notebook-edit">' +
@@ -299,22 +352,25 @@ App.prototype.render = function () {
             '</button>' +
           '</span>' +
           '<span class="btn-view">' +
-            '<button class="btn-text notebook-fork">' +
-              'Make my own copy' +
+            '<button class="btn-round notebook-clone hint--bottom" ' +
+            'data-hint="Clone notebook">' +
+              '<i class="icon-fork"></i>' +
             '</button>' +
-            '<button class="btn-text notebook-clone">' +
-              'Make another copy' +
+            '<button class="btn-round notebook-save hint--bottom" ' +
+            'data-hint="Save notebook">' +
+              '<i class="icon-floppy"></i>' +
             '</button>' +
-            '<button class="btn-round ir notebook-exec">Run All</button>' +
-            '<button class="btn-round ir modal-toggle">Shortcuts</button>' +
+            '<button class="btn-round notebook-exec hint--bottom" ' +
+            'data-hint="Execute notebook">' +
+              '<i class="icon"></i>' +
+            '</button>' +
+            '<button class="btn-round notebook-help hint--bottom" ' +
+            'data-hint="Notebook shortcuts">' +
+              '<i class="icon"></i>' +
+            '</button>' +
           '</span>' +
         '</div>' +
       '</div>' +
-    '</div>' +
-
-    '<div class="notebook-banner notebook-auth">' +
-      '<p>Please <span class="text-underline">authenticate</span> ' +
-      'to save the notebook.</p>' +
     '</div>' +
 
     '<div class="modal-backdrop"></div>'
@@ -324,20 +380,30 @@ App.prototype.render = function () {
   this.listenTo(persistence, 'changeUser',   this.updateUser);
   this.listenTo(persistence, 'change:state', this.updateState);
   this.listenTo(persistence, 'change:id',    this.updateId);
-  this.listenTo(persistence, 'change:title', this.updateTitle);
+  this.listenTo(config,      'change:url',   this.updateUrl);
 
-  // Trigger all the update methods.
-  this.update();
+  // Update meta data.
+  this.listenTo(persistence.get('meta'), 'change:title', this.updateTitle);
 
   this.el.appendChild(domify(
     '<div class="notebook clearfix">' +
-    '<div class="notebook-content"></div>' +
-    '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
+      '<div class="notebook-content"></div>' +
+      '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
+      '<div class="notebook-share">' +
+        '<h3 class="notebook-share-title">Share this notebook</h3>' +
+        '<p class="notebook-share-about">Copy this code to embed.</p>' +
+        '<input class="notebook-share-script notebook-share-input" readonly>' +
+        '<p class="notebook-share-about">Copy this link to share.</p>' +
+        '<input class="notebook-share-link notebook-share-input" readonly>' +
+      '</div>' +
     '</div>'
   ));
 
   // Keep a static reference to the notebook contents element.
   this._contentsEl = this.el.lastChild.firstChild;
+
+  // Trigger all the update methods.
+  this.update();
 
   return this;
 };
@@ -364,19 +430,81 @@ App.prototype.runNotebook = function () {
  * Authenticate with the persistence layer.
  */
 App.prototype.authNotebook = function () {
-  persistence.authenticate();
+  return persistence.authenticate();
 };
 
 /**
- * Fork the current notebook in-memory.
+ * Clone the current notebook in-memory.
  */
-App.prototype.forkNotebook = function () {
-  persistence.fork();
+App.prototype.cloneNotebook = function () {
+  return persistence.clone();
 };
 
 /**
  * Manually attempt to save the notebook.
  */
 App.prototype.saveNotebook = function () {
-  persistence.save();
+  return persistence.save();
+};
+
+/**
+ * List all notebooks in a modal and allow selection.
+ */
+App.prototype.listNotebooks = function () {
+  var itemTemplate = _.template(
+    '<li><div class="item-action">' +
+    '<a href="#" class="btn btn-primary btn-small" data-load="<%- id %>">' +
+    'Load</a></div>' +
+    '<div class="item-description"><% print(meta.title || id) %> ' +
+    '<% if (updatedAt) { %>' +
+    '<span class="text-em text-small">' +
+    '<% print(updatedAt.toLocaleDateString()) %>' +
+    '</span>' +
+    '<% } %>' +
+    '<a href="#" class="item-details-link" data-delete="<%- id %>">delete</a>' +
+    '</div>' +
+    '</li>'
+  );
+
+  middleware.trigger('ui:modal', {
+    title:   'List Notebooks',
+    content: function (done) {
+      return persistence.list(function (err, list) {
+        done(null,
+          '<ul class="item-list">' +
+          _.map(list, itemTemplate).join('\n') +
+          '</ul>');
+      });
+    },
+    show: function (modal) {
+      Backbone.$(modal.el)
+        .on('click', '[data-delete]', function (e) {
+          e.preventDefault();
+
+          var id = this.getAttribute('data-delete');
+
+          middleware.trigger('ui:confirm', {
+            title: 'Delete Notebook',
+            content: 'Are you sure you want to delete this notebook?' +
+            ' Deleted notebooks cannot be restored.'
+          }, function (err, confirm) {
+            if (err || !confirm) { return; }
+
+            middleware.trigger('persistence:delete', {
+              id: id
+            }, function (err) {
+              if (err) { return; }
+
+              var listEl = e.target.parentNode.parentNode;
+              listEl.parentNode.removeChild(listEl);
+            });
+          });
+        })
+        .on('click', '[data-load]', function (e) {
+          e.preventDefault();
+          modal.close();
+          return config.set('id', this.getAttribute('data-load'));
+        });
+    }
+  });
 };
