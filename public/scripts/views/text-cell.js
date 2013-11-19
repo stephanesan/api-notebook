@@ -138,13 +138,7 @@ TextCell.prototype.renderMarkdown = function () {
     smartypants: false,
     langPrefix: 'lang-'
   }, _.bind(function (err, html) {
-    try {
-      html = domify(html);
-    } catch (e) {
-      html = document.createTextNode(html);
-    }
-
-    this.markdownElement.appendChild(html);
+    this.markdownElement.innerHTML = html;
   }, this));
 
   return this;

@@ -17,26 +17,18 @@ var completeResults = function (done) {
     var results = _.map(_.keys(data.results), function (key) {
       if (!_.isObject(data.results[key])) {
         return {
-          name:  key,
+          title: key,
           value: key
         };
       }
 
       return {
-        name:    key,
-        value:   data.results[key].value,
-        special: data.results[key].special
+        title: key,
+        type:  data.results[key].type,
+        value: data.results[key].value
       };
     }).sort(function (a, b) {
-      if (a.special && b.special) {
-        return a.value > b.value ? 1 : -1;
-      } else if (a.special) {
-        return 1;
-      } else if (b.special) {
-        return -1;
-      }
-
-      return a.value > b.value ? 1 : -1;
+      return a.title > b.title ? 1 : -1;
     });
 
     return done(err, {
@@ -80,41 +72,6 @@ var completeProperty = function (cm, token, options, done) {
 };
 
 /**
- * Provides completion suggestions for function arguments.
- *
- * @param  {CodeMirror} cm
- * @param  {Object}     token
- * @param  {Object}     options
- * @param  {Function}   done
- */
-var completeArguments = function (cm, token, options, done) {
-  var prevToken = tokenHelpers.eatSpaceAndMove(cm, token);
-
-  return tokenHelpers.getProperty(cm, prevToken, options, function (err, data) {
-    if (err || !_.isFunction(data.context)) {
-      return done(err);
-    }
-
-    middleware.trigger('completion:arguments', data, function (err, args) {
-      // No arguments provided.
-      if (err || !args.length) {
-        return done(err);
-      }
-
-      // Set the results array to be a single object with the arguments
-      // stringified.
-      data.results = [{
-        display: 'Arguments',
-        value:   args.join(', ') + ')',
-        special: true
-      }];
-
-      return completeResults(done)(err, data);
-    });
-  });
-};
-
-/**
  * Trigger the completion module by passing in the current codemirror instance.
  *
  * @param  {CodeMirror} cm
@@ -137,10 +94,6 @@ module.exports = function (cm, options, done) {
       from:    new Pos(cur.line, token.start)
     });
   };
-
-  if (type === null && token.string === '(') {
-    return completeArguments(cm, token, options, cb);
-  }
 
   if (type === 'keyword' || type === 'variable') {
     return completeVariable(cm, token, options, cb);

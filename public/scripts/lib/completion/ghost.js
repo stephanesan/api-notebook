@@ -15,14 +15,10 @@ var Ghost = module.exports = function (widget, data, result) {
   this.widget     = widget;
   this.completion = widget.completion;
 
-  if (result.special) {
-    text = result.value;
-  } else {
-    var substring = result.value.substr(0, this.data.to.ch - this.data.from.ch);
+  var substring = result.value.substr(0, this.data.to.ch - this.data.from.ch);
 
-    if (substring === data.token.string) {
-      text = result.value.substr(this.data.to.ch - this.data.from.ch);
-    }
+  if (substring === data.token.string) {
+    text = result.value.substr(this.data.to.ch - this.data.from.ch);
   }
 
   // Don't create the ghost element if there is no text to display. It makes for

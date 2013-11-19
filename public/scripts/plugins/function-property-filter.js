@@ -1,9 +1,8 @@
 /* global App */
 var _                = App._;
-var FILTER_PROPS     = ['@return', '@arguments', '@description'];
+var FILTER_PROPS     = ['@return', '@description'];
 var RETURN_PROP      = FILTER_PROPS[0];
-var ARGUMENTS_PROP   = FILTER_PROPS[1];
-var DESCRIPTION_PROP = FILTER_PROPS[2];
+var DESCRIPTION_PROP = FILTER_PROPS[1];
 
 /**
  * Filters `@return` from showing up in the inspector view.
@@ -36,21 +35,12 @@ var completionFunctionPlugin = function (data, next, done) {
 };
 
 /**
- * Augments the completion function with arguments.
+ * Provide a hook for completing descriptions from the `@description` property.
  *
  * @param {Object}   data
  * @param {Function} next
  * @param {Function} done
  */
-var completionArgumentsPlugin = function (data, next, done) {
-  // Completes the arguments property in functions, when available.
-  if (ARGUMENTS_PROP in data.context) {
-    return done(null, data.context[ARGUMENTS_PROP]);
-  }
-
-  return next();
-};
-
 var completionDescribePlugin = function (data, next, done) {
   if (DESCRIPTION_PROP in data.context) {
     return done(null, data.context[DESCRIPTION_PROP]);
@@ -65,8 +55,7 @@ var completionDescribePlugin = function (data, next, done) {
  * @type {Object}
  */
 module.exports = {
-  'inspector:filter':     inspectorFilterPlugin,
-  'completion:function':  completionFunctionPlugin,
-  'completion:describe':  completionDescribePlugin,
-  'completion:arguments': completionArgumentsPlugin
+  'inspector:filter':    inspectorFilterPlugin,
+  'completion:function': completionFunctionPlugin,
+  'completion:describe': completionDescribePlugin
 };
