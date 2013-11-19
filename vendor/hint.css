@@ -44,7 +44,6 @@
     -webkit-transform: translate3d(0, 0, 0);
     -moz-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
-    visibility: hidden;
     opacity: 0;
     z-index: 1000000;
     pointer-events: none;
@@ -52,7 +51,6 @@
     -moz-transition: 0.3s ease;
     transition: 0.3s ease; }
   .hint:hover:before, .hint:hover:after, [data-hint]:hover:before, [data-hint]:hover:after {
-    visibility: visible;
     opacity: 1; }
   .hint:before, [data-hint]:before {
     content: '';
@@ -245,8 +243,7 @@
  *
  */
 .hint--always:after, .hint--always:before {
-  opacity: 1;
-  visibility: visible; }
+  opacity: 1; }
 .hint--always.hint--top:after, .hint--always.hint--top:before {
   -webkit-transform: translate(-50%, -8px);
   -moz-transform: translate(-50%, -8px);
@@ -286,6 +283,6 @@
  *
  */
 .hint--bounce:before, .hint--bounce:after {
-  -webkit-transition: opacity 0.3s ease, visibility 0.3s ease, -webkit-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
-  -moz-transition: opacity 0.3s ease, visibility 0.3s ease, -moz-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
-  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24); }
+  -webkit-transition: opacity 0.3s ease, -webkit-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+  -moz-transition: opacity 0.3s ease, -moz-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24); }
