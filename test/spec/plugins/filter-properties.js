@@ -13,7 +13,7 @@ describe('Filter Properties Plugin', function () {
     it('should hide the internal prototype from display', function () {
       var inspector = new App.View.Inspector({ inspect: {} });
       inspector.render().trigger('open');
-      expect(inspector.children.length).to.equal(0);
+      expect(inspector.children).to.be.empty;
     });
   });
 

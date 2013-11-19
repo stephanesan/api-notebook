@@ -112,7 +112,7 @@ InspectorView.prototype._renderChild = function (property, inspect, internal) {
     property: property,
     internal: internal
   });
-  this.children.push(inspector);
+  this.children[inspector.cid] = inspector;
   inspector.render().appendTo(this.childrenEl);
 
   return this;
@@ -138,12 +138,9 @@ InspectorView.prototype.renderChildren = function () {
   this.listenTo(this, 'open', this._renderChildren);
 
   this.listenTo(this, 'close', function () {
-    var child;
-
-    // Remove all the children from the DOM.
-    while (child = this.children.pop()) {
+    _.each(this.children, function (child) {
       child.remove();
-    }
+    });
   });
 
   return this;
@@ -157,7 +154,7 @@ InspectorView.prototype.renderChildren = function () {
 InspectorView.prototype._renderChildrenEl = function () {
   var el = this.childrenEl = domify('<div class="children"></div>');
   this.el.appendChild(el);
-  this.children = [];
+  this.children = {};
   return this;
 };
 
@@ -305,4 +302,16 @@ InspectorView.prototype.render = function () {
   this.renderChildren();
 
   return this;
+};
+
+/**
+ * Remove the inspector from the current view. Also removes itself from its
+ * parent inspector view.
+ */
+InspectorView.prototype.remove = function () {
+  if (this.parent) {
+    delete this.parent.children[this.cid];
+  }
+
+  return View.prototype.remove.call(this);
 };
