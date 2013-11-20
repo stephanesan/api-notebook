@@ -91,6 +91,9 @@ module.exports = function (cm, options, done) {
       return done(err);
     }
 
+    // Use the token string for the function name.
+    var fnName = data.token.string;
+
     // If the context is a function, let's get the data available for the
     // tooltip and return it.
     middleware.trigger('completion:describe', data, function (err, describe) {
@@ -104,6 +107,9 @@ module.exports = function (cm, options, done) {
         to:          cur,
         from:        new Pos(cur.line, token.start)
       };
+
+      // Fix the completion tooltip type to display the current function name.
+      describe['!type'] = describe['!type'].replace(/^fn\(/, fnName + '(');
 
       return done(err, cache.data);
     });
