@@ -405,6 +405,13 @@ describe('Notebook', function () {
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
 
+        it('should be able to do completion based on context', function (done) {
+          testCompletion(codeCells[0].editor, 'win', function (results) {
+            expect(results).to.contain('window');
+            return done();
+          });
+        });
+
         describe('Overlay Menu', function () {
           var getButton = function (cell) {
             return cell.el.querySelector('.cell-controls-btn');
