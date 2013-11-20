@@ -32,15 +32,15 @@ describe('Gist Persistence Plugin', function () {
     });
     App.store._.github.clear();
     server = sinon.fakeServer.create();
-    App.middleware.use(gistPersistencePlugin);
-    App.middleware.use('ui:modal', authModalIntercept);
+    App.middleware.register(gistPersistencePlugin);
+    App.middleware.register('ui:modal', authModalIntercept);
   });
 
   after(function () {
     server.restore();
     window.open.restore();
-    App.middleware.disuse(gistPersistencePlugin);
-    App.middleware.disuse('ui:modal', authModalIntercept);
+    App.middleware.deregister(gistPersistencePlugin);
+    App.middleware.deregister('ui:modal', authModalIntercept);
   });
 
   it('should authenticate with github', function (done) {

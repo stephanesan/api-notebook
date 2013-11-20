@@ -16,6 +16,10 @@ describe('Notebook', function () {
       App.persistence.reset();
     });
 
+    afterEach(function () {
+      view.remove();
+    });
+
     it('should have a class', function () {
       expect(view.el.className).to.equal('notebook-view');
     });
@@ -120,10 +124,6 @@ describe('Notebook', function () {
         codeCells.push(view.appendCodeView());
         textCells.push(view.appendTextView());
         codeCells.push(view.appendCodeView());
-      });
-
-      afterEach(function () {
-        view.remove();
       });
 
       it('should be able to navigate up cells', function () {

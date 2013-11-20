@@ -15,12 +15,12 @@ describe('Completion', function () {
 
     // Requires the built-in Tern.js description completion data.
     completion = App.CodeMirror.sandboxCompletion(window);
-    App.middleware.use(completion);
+    App.middleware.register(completion);
   });
 
   afterEach(function () {
     delete window.test;
-    App.middleware.disuse(completion);
+    App.middleware.deregister(completion);
     document.body.removeChild(editor.getWrapperElement());
   });
 
@@ -406,11 +406,11 @@ describe('Completion', function () {
         next();
       });
 
-      App.middleware.use('completion:variable', spy);
+      App.middleware.register('completion:variable', spy);
 
       testAutocomplete('some', 'something')(function () {
         expect(spy).to.have.been.calledOnce;
-        App.middleware.disuse('completion:variable', spy);
+        App.middleware.deregister('completion:variable', spy);
         done();
       });
     });
@@ -421,11 +421,11 @@ describe('Completion', function () {
         done();
       });
 
-      App.middleware.use('completion:context', spy);
+      App.middleware.register('completion:context', spy);
 
       testAutocomplete('something.ran', 'random')(function () {
         expect(spy).to.have.been.calledOnce;
-        App.middleware.disuse('completion:context', spy);
+        App.middleware.deregister('completion:context', spy);
         done();
       });
     });
@@ -436,11 +436,11 @@ describe('Completion', function () {
         next();
       });
 
-      App.middleware.use('completion:property', spy);
+      App.middleware.register('completion:property', spy);
 
       testAutocomplete('moreOf.some', 'somethingElse')(function () {
         expect(spy).to.have.been.calledOnce;
-        App.middleware.disuse('completion:property', spy);
+        App.middleware.deregister('completion:property', spy);
         done();
       });
     });

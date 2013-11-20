@@ -20,13 +20,13 @@ describe('Authentication', function () {
       sinon.stub(window, 'open').returns({
         close: function () {}
       });
-      App.middleware.use('ui:modal', authModalIntercept);
+      App.middleware.register('ui:modal', authModalIntercept);
     });
 
     afterEach(function () {
       server.restore();
       window.open.restore();
-      App.middleware.disuse('ui:modal', authModalIntercept);
+      App.middleware.deregister('ui:modal', authModalIntercept);
     });
 
     it('should do the server-side code flow', function (done) {

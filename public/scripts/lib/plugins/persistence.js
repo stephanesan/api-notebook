@@ -11,7 +11,7 @@ var META_DATA_DELIMITER = '---';
  * @param  {Object}   data
  * @param  {Function} next
  */
-middleware.core('persistence:serialize', function (data, next, done) {
+middleware.register('persistence:serialize', function (data, next, done) {
   var hasContent = false;
 
   // Prepend the front matter.
@@ -53,7 +53,7 @@ middleware.core('persistence:serialize', function (data, next, done) {
  * @param  {Object}   data
  * @param  {Function} next
  */
-middleware.core('persistence:deserialize', function (data, next, done) {
+middleware.register('persistence:deserialize', function (data, next, done) {
   var preambleRegExp = new RegExp([
     '^',
     META_DATA_DELIMITER,
@@ -129,7 +129,7 @@ middleware.core('persistence:deserialize', function (data, next, done) {
  * @param  {Object}   data
  * @param  {Function} next
  */
-middleware.core('persistence:load', function (data, next, done) {
+middleware.register('persistence:load', function (data, next, done) {
   data.id       = null;
   data.contents = [
     OPEN_CODE_BLOCK, '', CLOSE_CODE_BLOCK

@@ -9,12 +9,65 @@ var middleware  = require('../../state/middleware');
 var PostMessage = require('../post-message');
 
 /**
+ * Alias any optional global variables passed in.
+ *
+ * @param {Object}   options
+ * @param {Function} next
+ */
+middleware.register('application:start', function (options, next) {
+  _.each(options.alias || {}, function (value, key) {
+    window[key] = value;
+  });
+
+  return next();
+});
+
+/**
+ * Execute arbitrary passed in scripts.
+ *
+ * @param {Object}   options
+ * @param {Function} next
+ */
+middleware.register('application:start', function (options, next) {
+  /* jshint evil: true */
+  window.eval(options.exec || '');
+  return next();
+});
+
+/**
+ * Load all injected script options.
+ *
+ * @param {Object}   options
+ * @param {Function} next
+ */
+middleware.register('application:start', function (options, next) {
+  return async.each(options.inject || [], loadScript, function () {
+    next();
+  });
+});
+
+/**
+ * Update the config object with the optional passed in config.
+ *
+ * @param {Object}   options
+ * @param {Function} next
+ */
+middleware.register('application:start', function (options, next) {
+  middleware.trigger(
+    'application:config', options.config || {}, function (err, configuration) {
+      config.set(configuration);
+      return next();
+    }
+  );
+});
+
+/**
  * The first middleware for application start has to be the parent frame set up.
  *
  * @param {Object}   options
  * @param {Function} next
  */
-middleware.use('application:start', function (options, next) {
+middleware.register('application:start', function (options, next) {
   // Skip middleware execution if we are the parent frame.
   if (window === window.parent) { return next(); }
 
@@ -90,74 +143,4 @@ middleware.use('application:start', function (options, next) {
    * send all its config options without risk of losing data.
    */
   postMessage.trigger('ready');
-});
-
-/**
- * If we are passed a default content object we should use it.
- *
- * @param {Object}   options
- * @param {Function} next
- */
-middleware.use('application:start', function (options, next) {
-  if (!options.contents) { return next(); }
-
-  middleware.use('persistence:load', function (data, next, done) {
-    data.contents = options.contents;
-    return done();
-  });
-
-  return next();
-});
-
-/**
- * Load all injected script options.
- *
- * @param {Object}   options
- * @param {Function} next
- */
-middleware.use('application:start', function (options, next) {
-  return async.each(options.inject || [], loadScript, function () {
-    next();
-  });
-});
-
-/**
- * Alias any optional global variables passed in.
- *
- * @param {Object}   options
- * @param {Function} next
- */
-middleware.use('application:start', function (options, next) {
-  _.each(options.alias || {}, function (value, key) {
-    window[key] = value;
-  });
-
-  return next();
-});
-
-/**
- * Execute arbitrary passed in scripts.
- *
- * @param {Object}   options
- * @param {Function} next
- */
-middleware.use('application:start', function (options, next) {
-  /* jshint evil: true */
-  window.eval(options.exec || '');
-  return next();
-});
-
-/**
- * Update the config object with the optional passed in config.
- *
- * @param {Object}   options
- * @param {Function} next
- */
-middleware.use('application:start', function (options, next) {
-  var configs = options.config || {};
-
-  middleware.trigger('application:config', configs, function (err, configs) {
-    config.set(configs);
-    return next();
-  });
 });

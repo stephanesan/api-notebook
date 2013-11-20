@@ -8,7 +8,7 @@ var middleware = require('../../../state/middleware');
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('authentication:basicAuth', function (data, next, done) {
+middleware.register('authentication:basicAuth', function (data, next, done) {
   if (!_.isString(data.username) || !_.isString(data.password)) {
     return next(new TypeError('Username and password must be defined'));
   }
@@ -23,7 +23,7 @@ middleware.core('authentication:basicAuth', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('ajax:basicAuth', function (data, next, done) {
+middleware.register('ajax:basicAuth', function (data, next, done) {
   if (!_.isObject(data.basicAuth)) {
     return done(new TypeError('"basicAuth" config object expected'));
   }

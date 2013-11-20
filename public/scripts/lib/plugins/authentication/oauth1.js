@@ -402,7 +402,7 @@ var proxyDone = function (done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('authenticate:oauth1', function (data, next, done) {
+middleware.register('authenticate:oauth1', function (data, next, done) {
   return oauth1Flow(data, proxyDone(done));
 });
 
@@ -414,7 +414,7 @@ middleware.core('authenticate:oauth1', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('ajax:oauth1', function (data, next, done) {
+middleware.register('ajax:oauth1', function (data, next, done) {
   if (!_.isObject(data.oauth1)) {
     return done(new TypeError('"oauth1" config object expected'), null);
   }

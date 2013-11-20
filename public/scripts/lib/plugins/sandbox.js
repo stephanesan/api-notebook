@@ -9,7 +9,7 @@ var ASYNC_TIMEOUT = 2000;
  * @param {Object}   context
  * @param {Function} next
  */
-middleware.core('sandbox:context', function (context, next) {
+middleware.register('sandbox:context', function (context, next) {
   // Unfortunately it isn't as easy as this since we have lexical scoping issues
   // with the wrong window object. It would load the script in the wrong window.
   context.load    = function (/* src, done */) {};
@@ -26,7 +26,7 @@ middleware.core('sandbox:context', function (context, next) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('sandbox:execute', function (data, next, done) {
+middleware.register('sandbox:execute', function (data, next, done) {
   /* global App */
   var code    = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
   var async   = false;

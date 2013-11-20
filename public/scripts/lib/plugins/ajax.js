@@ -9,7 +9,7 @@ var AJAX_TIMEOUT = 20000;
  * @param  {Object}   options
  * @param  {Function} next
  */
-middleware.core('ajax', function (options, next) {
+middleware.register('ajax', function (options, next) {
   var url     = options.url;
   var method  = options.method || 'GET';
   var xhr     = options.xhr = new XMLHttpRequest();

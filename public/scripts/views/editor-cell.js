@@ -325,7 +325,6 @@ EditorCell.prototype.render = function () {
  * @return {CellControls}
  */
 EditorCell.prototype.showControls = function (e) {
-  e.preventDefault();
   e.stopImmediatePropagation();
 
   var controls = new CellControls().render().appendTo(this.el);

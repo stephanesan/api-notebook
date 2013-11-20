@@ -2,11 +2,11 @@
 
 describe('Function Property Filter Plugin', function () {
   before(function () {
-    App.middleware.use(functionPropertyFilterPlugin);
+    App.middleware.register(functionPropertyFilterPlugin);
   });
 
   after(function () {
-    App.middleware.disuse(functionPropertyFilterPlugin);
+    App.middleware.deregister(functionPropertyFilterPlugin);
   });
 
   describe('Inspector', function () {
