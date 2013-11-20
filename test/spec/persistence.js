@@ -10,14 +10,14 @@ describe('Persistence', function () {
   it('should attempt to load from an id', function (done) {
     var loaded = false;
 
-    App.middleware.use('persistence:load', function loadNotebook (data, next) {
+    App.middleware.register('persistence:load', function loadNotebook (data, next, done) {
       // Persistence will cycle through twice thanks to the relative file urls
       if (data.id === '123456') {
         loaded = true;
-        App.middleware.disuse('persistence:load', loadNotebook);
+        App.middleware.deregister('persistence:load', loadNotebook);
       }
 
-      return next();
+      return done();
     });
 
     App.start(fixture, {
@@ -32,12 +32,12 @@ describe('Persistence', function () {
   });
 
   it('should update the notebook when the cells change', function (done) {
-    App.middleware.use('persistence:change', function changeNotebook (data, next) {
+    App.middleware.register('persistence:change', function changeNotebook (data, next) {
       expect(data.save).to.be.a('function');
       expect(data.contents).to.be.a('string');
       expect(data.notebook).to.be.an('array');
 
-      App.middleware.disuse('persistence:change', changeNotebook);
+      App.middleware.deregister('persistence:change', changeNotebook);
     });
 
     App.start(fixture, function (err, app) {
@@ -51,18 +51,18 @@ describe('Persistence', function () {
     var testContent  = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
     var contentMatch = false;
 
-    App.middleware.use('persistence:load', function loadNotebook (data, next, done) {
+    App.middleware.register('persistence:load', function loadNotebook (data, next, done) {
       data.contents = testContent;
-      App.middleware.disuse('persistence:load', loadNotebook);
+      App.middleware.deregister('persistence:load', loadNotebook);
       return done();
     });
 
-    App.middleware.use('persistence:deserialize', function deserializeNotebook (data, next, done) {
+    App.middleware.register('persistence:deserialize', function deserializeNotebook (data, next, done) {
       // Since the first notebook load would be deserializing an empty notebook,
       // we need to remove and pass the test on the correct callback.
       if (data.contents === testContent) {
         contentMatch = true;
-        App.middleware.disuse('persistence:deserialize', deserializeNotebook);
+        App.middleware.deregister('persistence:deserialize', deserializeNotebook);
       }
 
       return done();
@@ -78,9 +78,9 @@ describe('Persistence', function () {
   it('should serialize the notebook each change', function (done) {
     var serialized = false;
 
-    App.middleware.use('persistence:serialize', function serializeNotebook (data, next) {
+    App.middleware.register('persistence:serialize', function serializeNotebook (data, next) {
       serialized = true;
-      App.middleware.disuse('persistence:serialize', serializeNotebook);
+      App.middleware.deregister('persistence:serialize', serializeNotebook);
       return next();
     });
 
@@ -98,9 +98,9 @@ describe('Persistence', function () {
   it('should be able to load content', function (done) {
     var content = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
 
-    App.middleware.use('persistence:load', function load (data, next, done) {
+    App.middleware.register('persistence:load', function load (data, next, done) {
       data.contents = content;
-      App.middleware.disuse('persistence:load', load);
+      App.middleware.deregister('persistence:load', load);
       return done();
     });
 

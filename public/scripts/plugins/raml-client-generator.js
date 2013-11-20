@@ -130,9 +130,9 @@ module.exports = {
 };
 
 /**
- * [loadAPIDefinitions description]
- * @param  {Function} done [description]
- * @return {[type]}        [description]
+ * Load all the API definitions and return the items as an array.
+ *
+ * @param {Function} done
  */
 var loadAPIDefinitions = function (done) {
   return App.middleware.trigger('ajax', {

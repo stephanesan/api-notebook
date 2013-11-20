@@ -6,12 +6,12 @@ describe('Local Storage Persistence Plugin', function () {
 
   beforeEach(function () {
     App.persistence.reset();
-    App.middleware.use(localStoragePersistencePlugin);
+    App.middleware.register(localStoragePersistencePlugin);
   });
 
   afterEach(function () {
     localStorage.removeItem('notebook-' + id);
-    App.middleware.disuse(localStoragePersistencePlugin);
+    App.middleware.deregister(localStoragePersistencePlugin);
   });
 
   it('should save to localStorage with a made up id', function (done) {

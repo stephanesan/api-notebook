@@ -35,6 +35,7 @@ var varsToObject = function (scope) {
     if (typeof scope.name === 'string') {
       obj[scope.name] = true;
     }
+
     scope = scope.next;
   }
 
@@ -125,9 +126,8 @@ var getPropertyNames = function (obj, global) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.core('completion:variable', function (data, next, done) {
+middleware.register('completion:variable', function (data, next) {
   var token = data.token;
 
   _.extend(data.results, varsToObject(token.state.localVars));
@@ -143,7 +143,7 @@ middleware.core('completion:variable', function (data, next, done) {
   _.extend(data.results, keywords);
   _.extend(data.results, getPropertyNames(data.context, data.global));
 
-  return done();
+  return next();
 });
 
 /**
@@ -151,11 +151,10 @@ middleware.core('completion:variable', function (data, next, done) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.core('completion:property', function (data, next, done) {
+middleware.register('completion:property', function (data, next) {
   _.extend(data.results, getPropertyNames(data.context, data.global));
-  return done();
+  return next();
 });
 
 /**
@@ -172,7 +171,7 @@ middleware.core('completion:property', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('completion:context', function (data, next, done) {
+middleware.register('completion:context', function (data, next, done) {
   var token  = data.token;
   var type   = token.type;
   var string = token.string;
@@ -235,7 +234,7 @@ middleware.core('completion:context', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('completion:filter', function (data, next, done) {
+middleware.register('completion:filter', function (data, next, done) {
   var value  = data.result.value;
   var string = data.token.string;
   var length = value.length >= string.length;
@@ -251,7 +250,7 @@ middleware.core('completion:filter', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('completion:function', function (data, next, done) {
+middleware.register('completion:function', function (data, next, done) {
   // Intentionally return `null` as the data object.
   return done(null, null);
 });
@@ -263,7 +262,7 @@ middleware.core('completion:function', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('completion:describe', function (data, next, done) {
+middleware.register('completion:describe', function (data, next, done) {
   // Intentionally returning an empty description object.
   return done(null, {});
 });

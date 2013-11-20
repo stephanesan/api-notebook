@@ -1,6 +1,5 @@
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var middleware = require('../state/middleware');
+var _        = require('underscore');
+var Backbone = require('backbone');
 
 /**
  * Holds all the notebook cell contents.
@@ -15,28 +14,6 @@ var Notebook = module.exports = Backbone.Collection.extend({
     return _.indexOf(model.view.el.parentNode.childNodes, model.view.el);
   }
 });
-
-/**
- * Initialize the notebook cell collection.
- *
- * @return {Notebook}
- */
-Notebook.prototype.initialize = function () {
-  // Augments sandbox context collection result lookups
-  middleware.use('sandbox:context', _.bind(function (context, next) {
-    _.each(this.filter(function (model) {
-      return model.get('type') === 'code';
-    }), function (model, index) {
-      if (model.get('type') === 'code') {
-        context['$' + index] = model.get('result');
-      }
-    });
-
-    return next();
-  }, this));
-
-  return this;
-};
 
 /**
  * Return the next model in the collection.

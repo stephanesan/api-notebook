@@ -38,12 +38,22 @@ config.listenTo(config, 'change:embedded', function (_, embedded) {
 });
 
 /**
+ * When the application is ready, finally attempt to load the initial content.
+ *
+ * @param {Object}   app
+ * @param {Function} next
+ */
+middleware.register('application:ready', function (app, next) {
+  return persistence.load(next);
+});
+
+/**
  * When the application is ready, start listening for live id changes.
  *
  * @param {Object}   app
  * @param {Function} next
  */
-middleware.use('application:ready', function (app, next) {
+middleware.register('application:ready', function (app, next) {
   // Set the starting id since it has probably been set now.
   persistence.set('id', config.get('id'));
 
@@ -81,16 +91,6 @@ middleware.use('application:ready', function (app, next) {
 });
 
 /**
- * When the application is ready, finally attempt to load the initial content.
- *
- * @param {Object}   app
- * @param {Function} next
- */
-middleware.use('application:ready', function (app, next) {
-  return persistence.load(next);
-});
-
-/**
  * If we have contents set in the config object, we should use them as the
  * default load.
  *
@@ -98,7 +98,7 @@ middleware.use('application:ready', function (app, next) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.use('persistence:load', function (data, next, done) {
+middleware.register('persistence:load', function (data, next, done) {
   if (config.has('contents')) {
     data.contents = config.get('contents');
     return done();

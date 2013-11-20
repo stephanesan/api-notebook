@@ -22,11 +22,11 @@
           'plugins/function-property-filter.js'
         ],
         exec: [
-          'App.middleware.use(proxyPlugin);',
-          'App.middleware.use(gistPersistencePlugin);',
-          'App.middleware.use(filterPropertiesPlugin);',
-          'App.middleware.use(ramlClientGeneratorPlugin);',
-          'App.middleware.use(functionPropertyFilterPlugin);'
+          'App.middleware.register(proxyPlugin);',
+          'App.middleware.register(gistPersistencePlugin);',
+          'App.middleware.register(filterPropertiesPlugin);',
+          'App.middleware.register(ramlClientGeneratorPlugin);',
+          'App.middleware.register(functionPropertyFilterPlugin);'
         ].join('\n'),
         config: {
           style: [

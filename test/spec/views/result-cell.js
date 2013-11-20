@@ -54,7 +54,7 @@ describe('Result Cell', function () {
           return done();
         });
 
-        App.middleware.use('result:render', spy);
+        App.middleware.register('result:render', spy);
 
         view.setResult({
           result:  null,
@@ -72,7 +72,7 @@ describe('Result Cell', function () {
           next();
         });
 
-        App.middleware.use('result:empty', spy);
+        App.middleware.register('result:empty', spy);
 
         view.setResult({
           result: null,

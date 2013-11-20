@@ -1,7 +1,6 @@
 var _          = require('underscore');
 var domify     = require('domify');
 var Backbone   = require('backbone');
-var messages   = require('../../state/messages');
 var middleware = require('../../state/middleware');
 
 /**
@@ -35,7 +34,7 @@ var template = _.template([
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('ui:modal', function (options, next, done) {
+middleware.register('ui:modal', function (options, next, done) {
   // Allow asynchronous template loads based on content and number of arguments.
   // I drew this inspiration from mocha and really love the pattern.
   var async = false;
@@ -63,12 +62,19 @@ middleware.core('ui:modal', function (options, next, done) {
   var modal = {
     el: domify(template(templateOptions)),
     close: function (err) {
-      messages.off('keydown:Esc', boundClose);
+      modal.closed = true;
+      middleware.deregister('keydown:Esc', escMiddleware);
       document.body.removeChild(modal.el);
       document.body.classList.remove('modal-visible');
       return done(err);
     },
     closed: false
+  };
+
+  // Hook into the esc key and remove the modal.
+  var escMiddleware = function (event, next, done) {
+    modal.close();
+    return done();
   };
 
   // Trigger the async function callback and render the modal body.
@@ -83,22 +89,17 @@ middleware.core('ui:modal', function (options, next, done) {
     });
   }
 
-  var boundClose = function () {
-    modal.closed = true;
-    return modal.close();
-  };
-
   document.body.appendChild(modal.el);
   document.body.classList.add('modal-visible');
 
-  messages.on('keydown:Esc', boundClose);
+  middleware.register('keydown:Esc', escMiddleware);
   Backbone.$(modal.el)
     .on('click', function (e) {
       if (e.target !== modal.el) { return; }
 
-      return boundClose();
+      return modal.close();
     })
-    .on('click', '[data-dismiss]', boundClose);
+    .on('click', '[data-dismiss]', modal.close);
 
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
@@ -112,7 +113,7 @@ middleware.core('ui:modal', function (options, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('ui:confirm', function (data, next, done) {
+middleware.register('ui:confirm', function (data, next, done) {
   var confirmed = false;
 
   data.show = function (modal) {

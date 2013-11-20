@@ -1,8 +1,9 @@
-var _        = require('underscore');
-var domify   = require('domify');
-var Backbone = require('backbone');
-var View     = require('./view');
-var controls = require('../lib/controls').editor;
+var _          = require('underscore');
+var domify     = require('domify');
+var Backbone   = require('backbone');
+var View       = require('./view');
+var middleware = require('../state/middleware');
+var controls   = require('../lib/controls').editor;
 
 /**
  * Displays the cell controls overlay menu.
@@ -54,15 +55,23 @@ ControlsView.prototype.render = function () {
   this.listenTo($document, 'mousedown',  onBlur);
   this.listenTo($document, 'touchstart', onBlur);
 
-  this.listenTo($document, 'keydown', _.bind(function (e) {
-    var ESC = 27;
-
-    if (e.which === ESC) {
-      return this.remove();
-    }
-  }, this));
+  middleware.register(
+    'keydown:Esc',
+    this._keydownMiddleware = _.bind(function (event, next, done) {
+      this.remove();
+      return done();
+    }, this)
+  );
 
   return this;
+};
+
+/**
+ * Remove the middleware when we remove the element from the DOM.
+ */
+ControlsView.prototype.remove = function () {
+  middleware.deregister('keydown:Esc', this._keydownMiddleware);
+  return View.prototype.remove.call(this);
 };
 
 /**
@@ -75,5 +84,5 @@ ControlsView.prototype.onClick = function (e) {
   var target = e.target.tagName === 'SPAN' ? e.target.parentNode : e.target;
 
   this.trigger('action', this, target.getAttribute('data-action'));
-  this.remove();
+  return this.remove();
 };

@@ -56,17 +56,27 @@ Notebook.prototype.initialize = function () {
   this.sandbox    = new Sandbox();
   this.collection = new NotebookCollection();
 
-  // Set up autocompletion environment.
+  // Register a middleware hook for augmenting the sandbox context.
+  this._middleware = {
+    'sandbox:context': _.bind(function (context, next) {
+      _.each(this.collection.filter(function (model) {
+        return model.get('type') === 'code';
+      }), function (model, index) {
+        context['$' + index] = model.get('result');
+      });
+
+      return next();
+    }, this)
+  };
+
+  // The completion options object is shared between code views and used by
+  // the completion widget.
   this.completionOptions = {
     global: this.sandbox.window
   };
-  this.updateCompletion();
 
-  // Get the middleware listeners for autocompletion and attach.
-  this.sandboxCompletion = completionMiddleware(this.sandbox.window);
-
-  // Attach the sandbox specific completion as middleware.
-  middleware.use(this.sandboxCompletion);
+  _.extend(this._middleware, completionMiddleware(this.sandbox.window));
+  middleware.register(this._middleware);
 };
 
 /**
@@ -76,13 +86,12 @@ Notebook.prototype.initialize = function () {
  */
 Notebook.prototype.remove = function () {
   this.sandbox.remove();
-  middleware.disuse(this.sandboxCompletion);
+  middleware.deregister(this._middleware);
 
   // Remove references
   delete this.sandbox;
   delete this.collection;
-  delete this.completionOptions;
-  delete this.sandboxCompletion;
+  delete this._middleware;
 
   return View.prototype.remove.call(this);
 };
@@ -102,7 +111,7 @@ Notebook.prototype.update = function () {
  *
  * @return {Notebook}
  */
-Notebook.prototype.updateCompletion = function () {
+Notebook.prototype.refreshCompletion = function () {
   // Extends the context with additional inline completion results. Requires
   // using `Object.create` since you can't extend an object with every property
   // of the global object.
@@ -140,8 +149,10 @@ Notebook.prototype.render = function () {
   }
 
   // Start listening for changes again.
-  this.listenTo(this.collection, 'remove sort',        this.updateCompletion);
+  this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);
   this.listenTo(this.collection, 'remove sort change', this.update);
+
+  this.refreshCompletion();
 
   return this;
 };
@@ -352,7 +363,7 @@ Notebook.prototype.appendView = function (view, before) {
     // require new working cells to be appended to the notebook.
     this.listenTo(view, 'execute', function (view) {
       // Refresh all completion data when a cell is executed.
-      this.updateCompletion();
+      this.refreshCompletion();
 
       // Need a flag here so we don't cause an infinite loop when executing the
       // notebook contents. (E.g. Hitting the last cell and adding a new cell).

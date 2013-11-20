@@ -22,38 +22,6 @@ var acceptObject = function (fn) {
 };
 
 /**
- * Generic method for adding a plugin to the middleware stack.
- *
- * @param {middleware} middleware
- * @param {String}     name
- * @param {Function}   fn
- * @param {String}     method
- */
-var addStack = function (middleware, name, fn, method) {
-  var stack = middleware._stack[name] || (middleware._stack[name] = []);
-  middleware.trigger('newPlugin', fn);
-  middleware.trigger('newPlugin:' + name, fn);
-  stack[method](fn);
-  return middleware;
-};
-
-/**
- * Return a function that will only be run once.
- *
- * @param  {middleware} middleware
- * @param  {String}     name
- * @param  {Function}   fn
- * @return {Function}
- */
-var useOnce = function (middleware, name, fn) {
-  return function () {
-    middleware.disuse(name, fn);
-    fn.apply(this, arguments);
-    fn = null;
-  };
-};
-
-/**
  * An event based implementation of a namespaced middleware system. Provides a
  * method to register new plugins and a queue system to trigger plugin hooks
  * while still being capable of having a fallback function.
@@ -70,38 +38,23 @@ var middleware = module.exports = _.extend({}, Backbone.Events);
 middleware._stack = {};
 
 /**
- * The core is an object that contains middleware that should always be run last
- * in the stack. To avoid abuse of the system, it only allows a single plugin
- * to be registered per namespace compared to the stack.
- *
- * @type {Object}
- */
-middleware._core = {};
-
-/**
- * Register a function callback for the plugin hook. This is akin to the connect
- * middleware system, albeit with some modifications to play nicely using
- * Backbone Events and a custom callback syntax since we aren't dealing with
- * request/response applications.
+ * Register a function callback for the plugin hook. This is similar to connect
+ * middleware except plugins are passed a data object, next function and done
+ * function. The registered plugins also run in reverse to normal, since we add
+ * plugins after application initialization.
  *
  * @param  {String}   name
  * @param  {Function} fn
  * @return {this}
  */
-middleware.use = acceptObject(function (name, fn) {
-  return addStack(this, name, fn, 'push');
-});
-
-/**
- * Register a plugin for the middleware event. This registers the plugin
- * at the beginning of the execution stack (as opposed to end, like usual).
- *
- * @param  {String}   name
- * @param  {Function} fn
- * @return {this}
- */
-middleware.useFirst = acceptObject(function (name, fn) {
-  return addStack(this, name, fn, 'unshift');
+middleware.register = acceptObject(function (name, fn) {
+  var stack = this._stack[name] || (this._stack[name] = []);
+  this.trigger('middleware:register', {
+    name:   name,
+    plugin: fn
+  });
+  stack.push(fn);
+  return this;
 });
 
 /**
@@ -111,49 +64,30 @@ middleware.useFirst = acceptObject(function (name, fn) {
  * @param  {Function} fn
  * @return {this}
  */
-middleware.useOnce = acceptObject(function (name, fn) {
-  return this.use(name, useOnce(this, name, fn));
+middleware.registerOnce = acceptObject(function (name, fn) {
+  return this.register(name, function self () {
+    fn.apply(this, arguments);
+    middleware.unregister(name, self);
+    fn = null;
+  });
 });
 
 /**
- * Register a plugin that will only run first only once.
+ * Removes a function, or all functions, from a given middleware trigger.
  *
  * @param  {String}   name
  * @param  {Function} fn
  * @return {this}
  */
-middleware.useFirstOnce = acceptObject(function (name, fn) {
-  return this.useFirst(name, useOnce(this, name, fn));
-});
-
-/**
- * Register a core middleware plugin. Core middleware plugins function
- * identically to regular middleware, except you can only ever register one core
- * middleware per namespace and it will always be run last on the stack.
- *
- * @param  {String}   name
- * @param  {Function} fn
- * @return {this}
- */
-middleware.core = function (name, fn) {
-  this._core[name] = fn;
-  return this;
-};
-
-/**
- * Removes a function, or all functions, from a given namespace.
- *
- * @param  {String}   name
- * @param  {Function} fn
- * @return {this}
- */
-middleware.disuse = acceptObject(function (name, fn) {
+middleware.deregister = acceptObject(function (name, fn) {
   var stack = this._stack[name] || [];
 
   for (var i = 0; i < stack.length; i++) {
     if (arguments.length < 2 || stack[i] === fn) {
-      this.trigger('removePlugin', stack[i]);
-      this.trigger('removePlugin:' + name, stack[i]);
+      this.trigger('middleware:deregister', {
+        name:   name,
+        plugin: stack[i]
+      });
       stack.splice(i, 1);
       i -= 1; // Decrement the index by one with the function we just removed.
     }
@@ -174,7 +108,7 @@ middleware.disuse = acceptObject(function (name, fn) {
  * @return {Boolean}
  */
 middleware.exists = function (name) {
-  return !!(this._core[name] || this._stack[name] && this._stack[name].length);
+  return !!(this._stack[name] && this._stack[name].length);
 };
 
 /**
@@ -188,16 +122,9 @@ middleware.exists = function (name) {
  */
 middleware.listenTo(middleware, 'all', function (name, data, complete) {
   var sent  = false;
-  var index = 0;
+  var stack = this._stack[name] || [];
+  var index = stack.length;
   var prevData;
-
-  // Set up the initial stack.
-  var stack = _.toArray(this._stack[name]);
-
-  // Core plugins should always be appended to the end of the stack.
-  if (_.isFunction(this._core[name])) {
-    stack.push(this._core[name]);
-  }
 
   // Call the final function when we are done executing the middleware stack.
   // It should also be passed as a parameter of the data object to each
@@ -219,7 +146,7 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
   // Call the next function on the stack, passing errors from the previous
   // stack call so it could be handled within the stack by another middleware.
   (function move (err, data) {
-    var layer = stack[index++];
+    var layer = stack[--index];
 
     // If we were provided two arguments, the second argument would have been
     // an updated data object. If we weren't passed two arguments, use the

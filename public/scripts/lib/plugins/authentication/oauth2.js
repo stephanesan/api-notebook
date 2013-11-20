@@ -288,7 +288,7 @@ var proxyDone = function (done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('authenticate:oauth2', function (data, next, done) {
+middleware.register('authenticate:oauth2', function (data, next, done) {
   // Sanitize authorization grants to an array.
   if (_.isString(data.authorizationGrants)) {
     data.authorizationGrants = [data.authorizationGrants];
@@ -321,7 +321,7 @@ middleware.core('authenticate:oauth2', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('authenticate:oauth2:code', function (data, next, done) {
+middleware.register('authenticate:oauth2:code', function (data, next, done) {
   return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
 });
 
@@ -333,7 +333,7 @@ middleware.core('authenticate:oauth2:code', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('authenticate:oauth2:token', function (data, next, done) {
+middleware.register('authenticate:oauth2:token', function (data, next, done) {
   return oauth2TokenFlow(sanitizeOptions(data), proxyDone(done));
 });
 
@@ -345,7 +345,7 @@ middleware.core('authenticate:oauth2:token', function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-middleware.core('ajax:oauth2', function (data, next, done) {
+middleware.register('ajax:oauth2', function (data, next, done) {
   if (!_.isObject(data.oauth2)) {
     return done(new TypeError('"oauth2" config object expected'));
   }

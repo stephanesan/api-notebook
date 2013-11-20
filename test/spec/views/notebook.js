@@ -16,6 +16,10 @@ describe('Notebook', function () {
       App.persistence.reset();
     });
 
+    afterEach(function () {
+      view.remove();
+    });
+
     it('should have a class', function () {
       expect(view.el.className).to.equal('notebook-view');
     });
@@ -120,10 +124,6 @@ describe('Notebook', function () {
         codeCells.push(view.appendCodeView());
         textCells.push(view.appendTextView());
         codeCells.push(view.appendCodeView());
-      });
-
-      afterEach(function () {
-        view.remove();
       });
 
       it('should be able to navigate up cells', function () {
@@ -403,6 +403,13 @@ describe('Notebook', function () {
           codeCells[1].browseDown();
           expect(codeCells[1].editor.getCursor().ch).to.equal(4);
           expect(codeCells[1].editor.getCursor().line).to.equal(0);
+        });
+
+        it('should be able to do completion based on context', function (done) {
+          testCompletion(codeCells[0].editor, 'win', function (results) {
+            expect(results).to.contain('window');
+            return done();
+          });
         });
 
         describe('Overlay Menu', function () {

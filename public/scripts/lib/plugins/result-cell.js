@@ -10,7 +10,7 @@ var middleware     = require('../../state/middleware');
  * @param  {Function} next
  * @param  {Function} done
  */
-middleware.core('result:empty', function (view, next, done) {
+middleware.register('result:empty', function (view, next, done) {
   if (view instanceof Inspector) {
     view.remove();
     return done();
@@ -26,7 +26,7 @@ middleware.core('result:empty', function (view, next, done) {
  * @param  {Function} next
  * @param  {Function} done
  */
-middleware.core('result:render', function (data, next, done) {
+middleware.register('result:render', function (data, next, done) {
   var options = {
     inspect: data.inspect,
     context: data.context

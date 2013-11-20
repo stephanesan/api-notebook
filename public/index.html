@@ -21,7 +21,7 @@
     <script src="scripts/bundle.js"></script>
     <script src="plugins/hash-persistence.js"></script>
     <script>
-      App.middleware.use(hashPersistencePlugin);
+      App.middleware.register(hashPersistencePlugin);
 
       App.start(document.body);
     </script>
