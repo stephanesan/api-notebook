@@ -77,7 +77,6 @@ Notebook.prototype.initialize = function () {
 
   _.extend(this._middleware, completionMiddleware(this.sandbox.window));
   middleware.register(this._middleware);
-  this.refreshCompletion();
 };
 
 /**
@@ -152,6 +151,8 @@ Notebook.prototype.render = function () {
   // Start listening for changes again.
   this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);
   this.listenTo(this.collection, 'remove sort change', this.update);
+
+  this.refreshCompletion();
 
   return this;
 };
