@@ -1,4 +1,5 @@
 var _            = require('underscore');
+var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
@@ -123,7 +124,12 @@ CodeCell.prototype.execute = function (done) {
     this.moveCursorToEnd();
   }
 
+  // Add a class to the cell to display execution.
+  this.el.className += ' cell-execute';
+
   this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
+    this.el.className = this.el.className.replace(' cell-execute', '');
+
     if (data.isError) {
       this.model.unset('result');
       this.el.classList.add('cell-code-error');
@@ -222,6 +228,10 @@ CodeCell.prototype.unbindEditor = function () {
  */
 CodeCell.prototype.render = function () {
   EditorCell.prototype.render.call(this);
+
+  this.el.appendChild(domify(
+    '<i class="cell-ui-execute icon-arrows-cw animate-spin"></i>'
+  ));
 
   // Every code cell has an associated result
   this.resultCell = new ResultCell({ model: this.model });

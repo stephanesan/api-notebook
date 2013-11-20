@@ -41,6 +41,16 @@
 .notebook-view > .cell-text > .markdown
   border: 2px solid $color-cell-border
 
+.notebook-view > .cell-code
+  > .cell-ui-execute
+    display: none
+    position: absolute
+    top: 5px
+    right: 28px
+    color: $color-cell-border
+  &.cell-execute > .cell-ui-execute
+    display: block
+
 .notebook-view > .cell-code > .cell-result
   border: 2px solid $color-cell-border
   border-top: 0
@@ -70,6 +80,8 @@
   > .cell-result
     color: $color-error-text
     background-color: $color-error-bg
+  > .cell-ui-execute
+    color: $color-error-text
 
 .cell > .cell-border
   top: -11px
