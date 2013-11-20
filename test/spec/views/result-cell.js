@@ -49,36 +49,25 @@ describe('Result Cell', function () {
 
     describe('middleware', function () {
       it('should be able to hook onto the render', function (done) {
-        var spy = sinon.spy(function (data, next, done) {
+        var removeSpy = sinon.spy();
+
+        var renderSpy = sinon.spy(function (data, next, done) {
           data.el.appendChild(document.createTextNode('some testing here'));
-          return done();
+          return done(null, removeSpy);
         });
 
-        App.middleware.register('result:render', spy);
+        App.middleware.register('result:render', renderSpy);
 
         view.setResult({
           result:  null,
           isError: false
         }, window, function () {
-          expect(spy).to.have.been.calledOnce;
+          expect(renderSpy).to.have.been.calledOnce;
           expect(view.el.textContent).to.equal('some testing here');
-          return done();
-        });
-      });
 
-      it('should be able to hook onto the clear method', function (done) {
-        var spy = sinon.spy(function (data, next) {
-          data.el.innerHTML = '';
-          next();
-        });
+          view.remove();
+          expect(removeSpy).to.have.been.calledOnce;
 
-        App.middleware.register('result:empty', spy);
-
-        view.setResult({
-          result: null,
-          isError: true
-        }, window, function () {
-          expect(spy).to.have.been.calledOnce;
           return done();
         });
       });

@@ -17,16 +17,16 @@ var ResultCell = module.exports = Cell.extend({
  *
  * @param {Function} done
  */
-ResultCell.prototype._reset = function (done) {
-  middleware.trigger('result:empty', this._view, _.bind(function (err) {
-    delete this._view;
+ResultCell.prototype._reset = function () {
+  // Any views must subscribe to this API style.
+  if (this._remove) {
+    this._remove();
+    delete this._remove;
+  }
 
-    this._resultContent.innerHTML = '';
-    this.el.classList.remove('result-error');
-    this.el.classList.add('cell-result-pending');
-
-    return done && done(err);
-  }, this));
+  this._resultContent.innerHTML = '';
+  this.el.classList.remove('result-error');
+  this.el.classList.add('cell-result-pending');
 };
 
 /**
@@ -37,23 +37,22 @@ ResultCell.prototype._reset = function (done) {
  * @param {Function} done
  */
 ResultCell.prototype.setResult = function (data, context, done) {
-  this._reset(_.bind(function (err) {
-    if (err) { return done && done(err); }
+  this._reset();
 
-    if (data.isError) {
-      this.el.classList.add('result-error');
-    }
+  if (data.isError) {
+    this.el.classList.add('result-error');
+  }
 
-    middleware.trigger('result:render', {
-      el:      this._resultContent,
-      context: context,
-      inspect: data.result,
-      isError: data.isError
-    }, _.bind(function (err, view) {
-      this._view = view;
-      this.el.classList.remove('cell-result-pending');
-      return done && done(err);
-    }, this));
+  middleware.trigger('result:render', {
+    el:      this._resultContent,
+    model:   this.model,
+    context: context,
+    inspect: data.result,
+    isError: data.isError
+  }, _.bind(function (err, remove) {
+    this._remove = remove;
+    this.el.classList.remove('cell-result-pending');
+    return done && done(err);
   }, this));
 };
 
@@ -91,4 +90,12 @@ ResultCell.prototype.render = function () {
   ));
 
   return this;
+};
+
+/**
+ * Reset the result cell before removing.
+ */
+ResultCell.prototype.remove = function () {
+  this._reset();
+  return Cell.prototype.remove.call(this);
 };
