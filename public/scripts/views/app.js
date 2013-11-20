@@ -242,12 +242,13 @@ App.prototype.updateTitle = function () {
  * @return {App}
  */
 App.prototype.updateState = function () {
-  var state    = persistence.get('state');
-  var statusEl = this.el.querySelector('.save-status');
-  var now      = new Date();
-  var hours    = now.getHours();
-  var minutes  = now.getMinutes();
-  var suffix   = 'AM';
+  var state     = persistence.get('state');
+  var statusEl  = this.el.querySelector('.save-status');
+  var now       = new Date();
+  var hours     = now.getHours();
+  var minutes   = now.getMinutes();
+  var suffix    = 'AM';
+  var stateText = '';
 
   if (hours > 11) {
     hours  = hours - 12;
@@ -264,22 +265,32 @@ App.prototype.updateState = function () {
   statusEl.innerHTML = '';
 
   if (state === persistence.LOADING) {
+    stateText            = 'loading';
     statusEl.textContent = 'Loading.';
   } else if (state === persistence.LOAD_FAIL) {
+    stateText            = 'load-failed';
     statusEl.textContent = 'Load failed.';
   } else if (state === persistence.LOAD_DONE) {
+    stateText            = 'loaded';
     statusEl.textContent = persistence.isNew() ? '' : 'Loaded ' + stamp + '.';
   } else if (state === persistence.SAVING) {
+    stateText            = 'saving';
     statusEl.textContent = 'Saving.';
   } else if (state === persistence.SAVE_FAIL) {
+    stateText            = 'save-failed';
     statusEl.textContent = 'Save failed.';
   } else if (state === persistence.SAVE_DONE) {
+    stateText            = 'saved';
     statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
   } else if (state === persistence.CHANGED) {
+    stateText            = 'changed';
     statusEl.textContent = 'Unsaved changes.';
   } else if (state === persistence.CLONING) {
+    stateText            = 'cloning';
     statusEl.textContent = 'Cloning notebook.';
   }
+
+  document.body.setAttribute('data-state', stateText);
 
   return this;
 };
@@ -373,7 +384,9 @@ App.prototype.render = function () {
       '</div>' +
     '</div>' +
 
-    '<div class="modal-backdrop"></div>'
+    '<div class="modal ui-loading">' +
+      '<i class="ui-loading-icon icon-arrows-cw animate-spin"></i>' +
+    '</div>'
   ));
 
   // Listens to different application state changes and updates accordingly.

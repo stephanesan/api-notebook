@@ -5,3 +5,16 @@
   &.user-not-owner .notebook-clone,
   &.notebook-not-saved .notebook-clone
     display: none
+
+.ui-loading
+  display: none
+  [data-state="loading"] &
+    display: block
+
+.ui-loading-icon
+  position: absolute
+  top: 33%
+  left: 50%
+  font-size: 2em
+  margin-top: -0.7em
+  margin-left: -0.7em
