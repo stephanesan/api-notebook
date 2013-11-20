@@ -11,6 +11,14 @@ var keywords = _.object(('break case catch continue debugger default ' +
                'new null return switch throw true try typeof var void while ' +
                'with').split(' '), true);
 
+// Augment the keywords with type information.
+_.each(keywords, function (_, keyword) {
+  keywords[keyword] = {
+    value: keyword,
+    type: 'keyword'
+  };
+});
+
 /**
  * CodeMirror provides access to inline variables defined within the notebook
  * using nested objects to represent each scope level in the editor. This will
@@ -79,7 +87,9 @@ var mapObject = function (object, global) {
  * @return {Object}
  */
 var getPropertyNames = function (obj, global) {
-  var props = {};
+  // Create with a null prototype, otherwise we have issues trying to set the
+  // `__proto__` key.
+  var props = Object.create(null);
 
   /**
    * Adds the property to the property names object. Skips any property names
@@ -90,7 +100,10 @@ var getPropertyNames = function (obj, global) {
    */
   var addProp = function (property) {
     if (isValidVariableName(property)) {
-      props[property] = true;
+      props[property] = {
+        type:  typeof obj[property],
+        value: property
+      };
     }
   };
 
@@ -228,17 +241,6 @@ middleware.core('completion:filter', function (data, next, done) {
   var length = value.length >= string.length;
 
   return done(null, length && value.substr(0, string.length) === string);
-});
-
-/**
- * Provides completion suggestions for a functions arguments.
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.core('completion:arguments', function (data, next, done) {
-  return done(null, []);
 });
 
 /**

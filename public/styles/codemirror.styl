@@ -81,7 +81,6 @@
   font-size: 95%
   font-family: monospace
   overflow: hidden
-  overflow-y: auto
   list-style: none
   border: 1px solid #a8a8a8
   box-shadow: 1px 1px 3px #a8a8a8
@@ -95,7 +94,6 @@
 .CodeMirror-hint
   margin: 0
   padding: 0 4px
-  max-width: 19em
   border: 1px solid transparent
   color: #313942
   cursor: pointer
@@ -109,6 +107,12 @@
 
 .CodeMirror-hint-match
   font-weight: bold
+
+.CodeMirror-hint-type
+  float: right
+  color: #888
+  font-style: italic
+  margin-left: 0.5em
 
 .CodeMirror-tooltip
   @extends .CodeMirror-hints

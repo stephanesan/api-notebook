@@ -121,35 +121,39 @@ Widget.prototype.refresh = function (done) {
     // Loop through each of the results and append an item to the hints list
     _.each(results, function (result, index) {
       var el      = hints.appendChild(document.createElement('li'));
-      var isMatch = (result.name === result.value);
-      var indexOf, hint;
+      var isMatch = (result.title === result.value);
+      var hintEl  = document.createElement('span');
+      var indexOf;
 
       el.hintId      = index;
       el.className   = 'CodeMirror-hint';
       el.ghostResult = result;
 
       // Do Blink-style bolding of the completed text
-      if (isMatch && (indexOf = result.name.indexOf(text)) > -1) {
-        var prefix = result.name.substr(0, indexOf);
-        var match  = result.name.substr(indexOf, text.length);
-        var suffix = result.name.substr(indexOf + text.length);
+      if (isMatch && (indexOf = result.title.indexOf(text)) > -1) {
+        var prefix  = result.title.substr(0, indexOf);
+        var match   = result.title.substr(indexOf, text.length);
+        var suffix  = result.title.substr(indexOf + text.length);
+        var matchEl = document.createElement('span');
 
-        hint = document.createElement('span');
-        hint.className = 'CodeMirror-hint-match';
-        hint.appendChild(document.createTextNode(match));
-        el.appendChild(document.createTextNode(prefix));
-        el.appendChild(hint);
-        el.appendChild(document.createTextNode(suffix));
+        matchEl.className   = 'CodeMirror-hint-match';
+        matchEl.textContent = match;
+
+        hintEl.appendChild(document.createTextNode(prefix));
+        hintEl.appendChild(matchEl);
+        hintEl.appendChild(document.createTextNode(suffix));
       } else {
-        hint = document.createTextNode(result.name);
+        hintEl.textContent = result.title;
+      }
 
-        // Italicize special properties to make them distinct from regular
-        // completion results.
-        if (result.special) {
-          hint.className = 'CodeMirror-hint-special';
-        }
+      el.appendChild(hintEl);
 
-        el.appendChild(hint);
+      if (result.type) {
+        var typeEl = document.createElement('span');
+        typeEl.className   = 'CodeMirror-hint-type';
+        typeEl.textContent = result.type;
+
+        el.appendChild(typeEl);
       }
     });
 
@@ -298,11 +302,6 @@ Widget.prototype.accept = function () {
  * @param  {Function} done
  */
 Widget.prototype._filter = function (result, done) {
-  // Don't ever filter special properties.
-  if (result.special === true) {
-    return done(true);
-  }
-
   return middleware.trigger('completion:filter', {
     token:   this.data.token,
     result:  result,
