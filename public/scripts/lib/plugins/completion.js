@@ -35,6 +35,7 @@ var varsToObject = function (scope) {
     if (typeof scope.name === 'string') {
       obj[scope.name] = true;
     }
+
     scope = scope.next;
   }
 
@@ -125,9 +126,8 @@ var getPropertyNames = function (obj, global) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.register('completion:variable', function (data, next, done) {
+middleware.register('completion:variable', function (data, next) {
   var token = data.token;
 
   _.extend(data.results, varsToObject(token.state.localVars));
@@ -143,7 +143,7 @@ middleware.register('completion:variable', function (data, next, done) {
   _.extend(data.results, keywords);
   _.extend(data.results, getPropertyNames(data.context, data.global));
 
-  return done();
+  return next();
 });
 
 /**
@@ -151,11 +151,10 @@ middleware.register('completion:variable', function (data, next, done) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.register('completion:property', function (data, next, done) {
+middleware.register('completion:property', function (data, next) {
   _.extend(data.results, getPropertyNames(data.context, data.global));
-  return done();
+  return next();
 });
 
 /**

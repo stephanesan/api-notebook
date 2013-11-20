@@ -69,6 +69,12 @@ Notebook.prototype.initialize = function () {
     }, this)
   };
 
+  // The completion options object is shared between code views and used by
+  // the completion widget.
+  this.completionOptions = {
+    global: this.sandbox.window
+  };
+
   _.extend(this._middleware, completionMiddleware(this.sandbox.window));
   middleware.register(this._middleware);
   this.refreshCompletion();
