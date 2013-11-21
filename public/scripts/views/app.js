@@ -68,6 +68,7 @@ App.prototype.events = {
   'click .notebook-auth':  'authNotebook',
   'click .notebook-save':  'saveNotebook',
   'click .notebook-list':  'listNotebooks',
+  'click .notebook-share': 'shareNotebook',
   // Switch between application views.
   'click .toggle-notebook-edit': 'toggleEdit',
   // Listen for `Enter` presses and blur the input.
@@ -83,12 +84,6 @@ App.prototype.events = {
   },
   // Pre-select the notebook title before input.
   'click .notebook-title': function (e) {
-    if (!persistence.isOwner()) { return; }
-
-    e.srcElement.select();
-  },
-  // Focus the share inputs automatically.
-  'click .notebook-share-input': function (e) {
     e.srcElement.select();
   }
 };
@@ -160,7 +155,6 @@ App.prototype.remove = function () {
  */
 App.prototype.update = function () {
   this.updateId();
-  this.updateUrl();
   this.updateUser();
   this.updateTitle();
   this.updateState();
@@ -195,26 +189,10 @@ App.prototype.updateUser = function () {
  * @return {App}
  */
 App.prototype.updateId = function () {
-  var shareEl = this.el.querySelector('.notebook-share-script');
-  var id      = persistence.get('id');
   var isSaved = persistence.has('id');
 
   this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
   this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
-
-  shareEl.value = '<script src="' + process.env.EMBED_SCRIPT_URL + '"' +
-    (id ? ' data-id="' + id + '"' : '') + '></script>';
-
-  return this;
-};
-
-/**
- * Update the sharable url.
- *
- * @return {App}
- */
-App.prototype.updateUrl = function () {
-  this.el.querySelector('.notebook-share-link').value = config.get('url');
 
   return this;
 };
@@ -375,6 +353,10 @@ App.prototype.render = function () {
             'data-hint="Execute notebook">' +
               '<i class="icon"></i>' +
             '</button>' +
+            '<button class="btn-round notebook-share hint--bottom" ' +
+            'data-hint="Share notebook">' +
+              '<i class="icon-share"></i>' +
+            '</button>' +
             '<button class="btn-round notebook-help hint--bottom" ' +
             'data-hint="Notebook shortcuts">' +
               '<i class="icon"></i>' +
@@ -386,6 +368,11 @@ App.prototype.render = function () {
 
     '<div class="modal ui-loading">' +
       '<i class="ui-loading-icon icon-arrows-cw animate-spin"></i>' +
+    '</div>' +
+
+    '<div class="notebook clearfix">' +
+      '<div class="notebook-content"></div>' +
+      '<a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>' +
     '</div>'
   ));
 
@@ -393,24 +380,9 @@ App.prototype.render = function () {
   this.listenTo(persistence, 'changeUser',   this.updateUser);
   this.listenTo(persistence, 'change:state', this.updateState);
   this.listenTo(persistence, 'change:id',    this.updateId);
-  this.listenTo(config,      'change:url',   this.updateUrl);
 
   // Update meta data.
   this.listenTo(persistence.get('meta'), 'change:title', this.updateTitle);
-
-  this.el.appendChild(domify(
-    '<div class="notebook clearfix">' +
-      '<div class="notebook-content"></div>' +
-      '<a href="http://mulesoft.com/" class="ir powered-by-logo">Mulesoft</a>' +
-      '<div class="notebook-share">' +
-        '<h3 class="notebook-share-title">Share this notebook</h3>' +
-        '<p class="notebook-share-about">Copy this code to embed.</p>' +
-        '<input class="notebook-share-script notebook-share-input" readonly>' +
-        '<p class="notebook-share-about">Copy this link to share.</p>' +
-        '<input class="notebook-share-link notebook-share-input" readonly>' +
-      '</div>' +
-    '</div>'
-  ));
 
   // Keep a static reference to the notebook contents element.
   this._contentsEl = this.el.lastChild.firstChild;
@@ -458,6 +430,30 @@ App.prototype.cloneNotebook = function () {
  */
 App.prototype.saveNotebook = function () {
   return persistence.save();
+};
+
+/**
+ * Share the notebook inside a modal display.
+ */
+App.prototype.shareNotebook = function () {
+  var id          = persistence.get('id');
+  var shareScript = '<script src="' + process.env.EMBED_SCRIPT_URL + '"' +
+    (id ? ' data-id="' + id + '"' : '') + '></script>';
+
+  middleware.trigger('ui:modal', {
+    title: 'Share Notebook',
+    content: '<p class="notebook-share-about">Copy this code to embed.</p>' +
+      '<input class="notebook-share-input" ' +
+      'value="' + _.escape(shareScript) + '" readonly>' +
+      '<p class="notebook-share-about">Copy this link to share.</p>' +
+      '<input class="notebook-share-input" ' +
+      'value="' + config.get('url') + '" readonly>',
+    show: function (modal) {
+      Backbone.$(modal.el).on('click', '.notebook-share-input', function (e) {
+        e.target.select();
+      });
+    }
+  });
 };
 
 /**

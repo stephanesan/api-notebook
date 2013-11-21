@@ -35,8 +35,8 @@ var template = _.template([
  * @param {Function} done
  */
 middleware.register('ui:modal', function (options, next, done) {
-  // Allow asynchronous template loads based on content and number of arguments.
-  // I drew this inspiration from mocha and really love the pattern.
+  // Allow asynchronous template loads based on content type and number of
+  // function arguments.
   var async = false;
   var templateOptions = {
     title:   options.title,
@@ -92,6 +92,9 @@ middleware.register('ui:modal', function (options, next, done) {
   document.body.appendChild(modal.el);
   document.body.classList.add('modal-visible');
 
+  // Focus the current modal to make tabbing easier.
+  modal.el.focus();
+
   middleware.register('keydown:Esc', escMiddleware);
   Backbone.$(modal.el)
     .on('click', function (e) {
@@ -128,6 +131,8 @@ middleware.register('ui:confirm', function (data, next, done) {
       '<button class="btn btn-primary" data-confirm=":)">OK</button>' +
       '</div>'
     ));
+
+    modal.el.querySelector('[data-confirm=":)"]').focus();
   };
 
   return middleware.trigger('ui:modal', data, function (err) {
