@@ -66,8 +66,8 @@ middleware.register = acceptObject(function (name, fn) {
  */
 middleware.registerOnce = acceptObject(function (name, fn) {
   return this.register(name, function self () {
+    middleware.deregister(name, self);
     fn.apply(this, arguments);
-    middleware.unregister(name, self);
     fn = null;
   });
 });
