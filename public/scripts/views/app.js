@@ -1,8 +1,7 @@
 var _        = require('underscore');
-var domify   = require('domify');
 var Backbone = require('backbone');
 
-var View         = require('./view');
+var View         = require('./template');
 var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
 var controls     = require('../lib/controls');
@@ -32,10 +31,7 @@ var changeNotebook = function (fn) {
     // Sets the new notebook contents.
     this.contents = fn && fn.apply(this, arguments);
 
-    // If the function returned an object, assume it is a view and render it.
-    if (this.contents instanceof Backbone.View) {
-      this.contents.render().appendTo(this._contentsEl);
-    }
+    this.contents.render().appendTo(this.el.querySelector('.notebook-content'));
 
     // Add style classes for the view type.
     var view = this.contents instanceof Notebook ? 'view' : 'edit';
@@ -115,6 +111,13 @@ App.prototype.initialize = function () {
 };
 
 /**
+ * Precompile the appliction template.
+ *
+ * @type {Function}
+ */
+App.prototype.template = require('../../templates/views/app.hbs');
+
+/**
  * Switch between raw source edit mode and the normal notebook execution.
  *
  * @return {App}
@@ -143,7 +146,6 @@ App.prototype.toggleEdit = changeNotebook(function () {
  * @return {App}
  */
 App.prototype.remove = function () {
-  Backbone.history.stop();
   changeNotebook().call(this);
   return View.prototype.remove.call(this);
 };
@@ -156,7 +158,6 @@ App.prototype.remove = function () {
 App.prototype.update = function () {
   this.updateId();
   this.updateUser();
-  this.updateTitle();
   this.updateState();
 
   return this;
@@ -168,7 +169,6 @@ App.prototype.update = function () {
  * @return {App}
  */
 App.prototype.updateUser = function () {
-  var authEl  = this.el.querySelector('.auth-status');
   var isAuth  = persistence.isAuthenticated();
   var isOwner = persistence.isOwner();
 
@@ -176,9 +176,6 @@ App.prototype.updateUser = function () {
   this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
   this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
   this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
-
-  // Update the auth display status with the user title.
-  authEl.textContent = persistence.get('userTitle');
 
   return this;
 };
@@ -193,23 +190,6 @@ App.prototype.updateId = function () {
 
   this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
   this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
-
-  return this;
-};
-
-/**
- * Updates the application title when the notebook title changes.
- *
- * @return {App}
- */
-App.prototype.updateTitle = function () {
-  var title   = persistence.get('meta').get('title');
-  var titleEl = this.el.querySelector('.notebook-title');
-
-  // Only attempt to update when out of sync.
-  if (titleEl.value !== title) {
-    titleEl.value = title;
-  }
 
   return this;
 };
@@ -312,80 +292,10 @@ App.prototype.showShortcuts = function () {
 App.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this.el.appendChild(domify(
-    '<header class="notebook-header clearfix">' +
-      '<input class="notebook-title" autocomplete="off">' +
-    '</header>' +
-
-    '<div class="notebook-toolbar clearfix">' +
-      '<div class="toolbar-end">' +
-        '<button class="edit-source toggle-notebook-edit hint--bottom" ' +
-        'data-hint="Edit notebook source">' +
-          '<i class="icon"></i>' +
-        '</button>' +
-      '</div>' +
-
-      '<div class="toolbar-inner">' +
-        '<div class="persistence-status">' +
-          '<button class="btn-square notebook-list hint--bottom" ' +
-          'data-hint="List all notebooks">' +
-            '<i class="icon-folder-open-empty"></i>' +
-          '</button>' +
-          '<div class="auth-status text-status"></div>' +
-          '<div class="save-status text-status"></div>' +
-        '</div>' +
-        '<div class="toolbar-buttons">' +
-          '<span class="btn-edit">' +
-            '<button class="btn-text toggle-notebook-edit">' +
-              'Return to notebook view' +
-            '</button>' +
-          '</span>' +
-          '<span class="btn-view">' +
-            '<button class="btn-round notebook-clone hint--bottom" ' +
-            'data-hint="Clone notebook">' +
-              '<i class="icon-fork"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-save hint--bottom" ' +
-            'data-hint="Save notebook">' +
-              '<i class="icon-floppy"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-exec hint--bottom" ' +
-            'data-hint="Execute notebook">' +
-              '<i class="icon"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-share hint--bottom" ' +
-            'data-hint="Share notebook">' +
-              '<i class="icon-share"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-help hint--bottom" ' +
-            'data-hint="Notebook shortcuts">' +
-              '<i class="icon"></i>' +
-            '</button>' +
-          '</span>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="modal ui-loading">' +
-      '<i class="ui-loading-icon icon-arrows-cw animate-spin"></i>' +
-    '</div>' +
-
-    '<div class="notebook clearfix">' +
-      '<div class="notebook-content"></div>' +
-      '<a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>' +
-    '</div>'
-  ));
-
   // Listens to different application state changes and updates accordingly.
   this.listenTo(persistence, 'changeUser',   this.updateUser);
   this.listenTo(persistence, 'change:state', this.updateState);
   this.listenTo(persistence, 'change:id',    this.updateId);
-
-  // Update meta data.
-  this.listenTo(persistence.get('meta'), 'change:title', this.updateTitle);
-
-  // Keep a static reference to the notebook contents element.
-  this._contentsEl = this.el.lastChild.firstChild;
 
   // Trigger all the update methods.
   this.update();

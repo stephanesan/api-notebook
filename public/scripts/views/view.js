@@ -9,9 +9,17 @@ var Backbone = require('backbone');
 var View = module.exports = Backbone.View.extend();
 
 /**
+ * Initialize every view with a private data collection. This allows views to
+ * hold view specific logic that doesn't belong with a model.
+ */
+View.prototype.initialize = function () {
+  this.data = new Backbone.Model();
+};
+
+/**
  * Render the view instance.
  *
- * @return {View}
+ * @return {this}
  */
 View.prototype.render = function () {
   this.el.innerHTML = '';
@@ -21,7 +29,7 @@ View.prototype.render = function () {
 /**
  * Remove the view instance from the DOM.
  *
- * @return {View}
+ * @return {this}
  */
 View.prototype.remove = function () {
   // Trigger the `remove` event before actually removing the view since we may
@@ -33,8 +41,9 @@ View.prototype.remove = function () {
 
 /**
  * Insert an element last in the list of child nodes of this view.
- * @param    {Node} el  The element to append this view to.
- * @returns  {View}     This view.
+ *
+ * @param  {Node} el The element to append this view to.
+ * @return {this}
  */
 View.prototype.appendTo = function (el) {
   if (typeof el.appendChild === 'function') {
@@ -47,13 +56,12 @@ View.prototype.appendTo = function (el) {
 
 /**
  * Insert an element first in the list of child nodes of this element.
- * @param    {Node} el  The element to prepend this view to.
- * @returns  {View}     This view.
+ *
+ * @param  {Node} el The element to prepend this view to.
+ * @return {this}
  */
 View.prototype.prependTo = function (el) {
-  var thisEl = this.el;
-  this.appendTo(function () {
-    el.insertBefore(thisEl, el.firstChild);
+  return this.appendTo.call(this, function () {
+    el.insertBefore(this.el, el.firstChild);
   });
-  return this;
 };

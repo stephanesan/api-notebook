@@ -1,0 +1,51 @@
+<header class="notebook-header clearfix">
+  <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
+</header>
+
+<div class="notebook-toolbar clearfix">
+  <div class="toolbar-end">
+    <button class="edit-source toggle-notebook-edit hint--bottom" data-hint="Edit notebook source">
+      <i class="icon"></i>
+    </button>
+  </div>
+
+  <div class="toolbar-inner">
+    <div class="persistence-status">
+      <button class="btn-square notebook-list hint--bottom" data-hint="List all notebooks">
+        <i class="icon-folder-open-empty"></i>
+      </button>
+      <div class="auth-status text-status">{{@persistence.userTitle}}</div>
+      <div class="save-status text-status"></div>
+    </div>
+    <div class="toolbar-buttons">
+      <span class="btn-edit">
+        <button class="btn-text toggle-notebook-edit">
+          Return to notebook view
+        </button>
+      </span>
+      <span class="btn-view">
+        <button class="btn-round notebook-clone hint--bottom" data-hint="Clone notebook">
+          <i class="icon-fork"></i>
+        </button>
+        <button class="btn-round notebook-save hint--bottom" data-hint="Save notebook">
+          <i class="icon-floppy"></i>
+        </button>
+        <button class="btn-round notebook-exec hint--bottom" data-hint="Execute notebook">
+          <i class="icon"></i>
+        </button>
+        <button class="btn-round notebook-help hint--bottom" data-hint="Notebook shortcuts">
+          <i class="icon"></i>
+        </button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="modal ui-loading">
+  <i class="ui-loading-icon icon-arrows-cw animate-spin"></i>
+</div>
+
+<div class="notebook clearfix">
+  <div class="notebook-content"></div>
+  <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
+</div>

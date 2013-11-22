@@ -16,7 +16,8 @@ App.Library = {
   querystring: require('querystring'),
   async:       require('async'),
   changeCase:  require('change-case'),
-  Backbone:    require('backbone')
+  Backbone:    require('backbone'),
+  DOMBars:     require('dombars/runtime')
 };
 
 App._        = App.Library._ = require('underscore');
@@ -40,7 +41,7 @@ App.CodeMirror = {
   sandboxCompletion: require('./lib/sandbox-completion')
 };
 
-// Expose all application views
+// Expose all application views.
 App.View = {
   App:            require('./views/app'),
   View:           require('./views/view'),
