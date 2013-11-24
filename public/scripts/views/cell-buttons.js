@@ -1,6 +1,5 @@
-var _      = require('underscore');
-var domify = require('domify');
-var View   = require('./view');
+var View     = require('./template');
+var template = require('../../templates/views/cell-buttons.hbs');
 
 /**
  * Displays the cell controls overlay menu.
@@ -10,8 +9,8 @@ var View   = require('./view');
 var ButtonsView = module.exports = View.extend({
   className: 'cell-buttons',
   events: {
-    'click .action': 'onClick',
-    'mouseleave':    'remove'
+    'mouseleave':    'remove',
+    'click .action': 'onClick'
   }
 });
 
@@ -23,25 +22,11 @@ var ButtonsView = module.exports = View.extend({
 ButtonsView.controls = [];
 
 /**
- * Render the controls overlay.
+ * Require the buttons template.
  *
- * @return {ButtonsView}
+ * @type {Function}
  */
-ButtonsView.prototype.render = function () {
-  View.prototype.render.call(this);
-
-  // Transform the controls array into a DOM list and append to the view.
-  var html = _.map(this.constructor.controls, function (action) {
-    return [
-      '<button class="action" data-action="' + action.command + '">',
-      action.label,
-      '</button>'
-    ].join('');
-  }).join('\n');
-  this.el.appendChild(domify(html));
-
-  return this;
-};
+ButtonsView.prototype.template = template;
 
 /**
  * Event handler for clicks on control buttons. Pass thru for clicks on the
