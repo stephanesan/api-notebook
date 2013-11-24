@@ -16,6 +16,7 @@ App.Library = {
   querystring: require('querystring'),
   async:       require('async'),
   changeCase:  require('change-case'),
+  marked:      require('marked'),
   Backbone:    require('backbone'),
   DOMBars:     require('dombars/runtime')
 };
@@ -49,7 +50,6 @@ App.View = {
   EditNotebook:   require('./views/edit-notebook'),
   Inspector:      require('./views/inspector'),
   ErrorInspector: require('./views/error-inspector'),
-  Cell:           require('./views/cell'),
   CodeCell:       require('./views/code-cell'),
   TextCell:       require('./views/text-cell'),
   EditorCell:     require('./views/editor-cell'),

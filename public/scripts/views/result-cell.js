@@ -1,5 +1,5 @@
 var _          = require('underscore');
-var Cell       = require('./cell');
+var View       = require('./template');
 var template   = require('../../templates/views/result-cell.hbs');
 var middleware = require('../state/middleware');
 
@@ -8,7 +8,7 @@ var middleware = require('../state/middleware');
  *
  * @type {Function}
  */
-var ResultCell = module.exports = Cell.extend({
+var ResultCell = module.exports = View.extend({
   className: 'cell cell-result cell-result-pending'
 });
 
