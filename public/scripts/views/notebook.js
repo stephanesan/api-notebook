@@ -85,7 +85,10 @@ Notebook.prototype.initialize = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
-  this.sandbox.remove();
+  if (this.sandbox) {
+    this.sandbox.remove();
+  }
+
   middleware.deregister(this._middleware);
 
   // Remove references
@@ -153,24 +156,6 @@ Notebook.prototype.render = function () {
   this.listenTo(this.collection, 'remove sort change', this.update);
 
   this.refreshCompletion();
-
-  return this;
-};
-
-/**
- * Append the notebook view to an element.
- *
- * @return {Notebook}
- */
-Notebook.prototype.appendTo = function () {
-  View.prototype.appendTo.apply(this, arguments);
-
-  // Any editor cells will need refreshing to display properly.
-  this.collection.each(function (model) {
-    if (model.view && model.view.editor) {
-      model.view.editor.refresh();
-    }
-  });
 
   return this;
 };

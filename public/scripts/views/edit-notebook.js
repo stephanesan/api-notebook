@@ -1,3 +1,4 @@
+var _           = require('underscore');
 var View        = require('./view');
 var messages    = require('../state/messages');
 var persistence = require('../state/persistence');
@@ -34,6 +35,8 @@ EditNotebook.prototype.render = function () {
     messages.trigger('resize');
     persistence.set('contents', cm.getValue());
   });
+
+  this.listenTo(messages, 'refresh', _.bind(this.editor.refresh, this.editor));
 
   this.listenTo(persistence, 'change:contents', function () {
     if (!direction) {

@@ -194,17 +194,17 @@
       margin-right: 0
     .btn-text
       line-height: 28px
-    .notebook-view-active & > .btn-edit
-      display: none
-    .notebook-edit-active & > .btn-view
-      display: none
+  &.notebook-view-active .btn-edit
+    display: none
+  &.notebook-edit-active .btn-view
+    display: none
+  &.notebook-edit-active .toolbar-end
+    background: #f9f9f9
   .toolbar-end
     float: right
     height: 100%
     background: #e5e5e5
     border-left: 1px solid #b2b2b2
-  .notebook-edit-active & > .toolbar-end
-    background: #f9f9f9
 
 .notebook-raw > pre
   border: 0

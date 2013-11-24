@@ -41,3 +41,10 @@ DOMBars.unsubscribe = function (obj, property, fn) {
 
   obj.off('change:' + property, fn);
 };
+
+/**
+ * Register DOMBars helpers.
+ */
+DOMBars.registerHelper({
+  view: require('./helpers/view')
+});

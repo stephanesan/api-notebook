@@ -2,9 +2,9 @@
   <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
 </header>
 
-<div class="notebook-toolbar clearfix">
+<div class="notebook-toolbar clearfix user-{{#if @data.owner}}is{{else}}not{{/if}}-owner user-{{#if @data.authenticated}}is{{else}}not{{/if}}-authenticated notebook-{{#if @data.saved}}is{{else}}not{{/if}}-saved notebook-{{@data.activeView}}-active">
   <div class="toolbar-end">
-    <button class="edit-source toggle-notebook-edit hint--bottom" data-hint="Edit notebook source">
+    <button class="edit-source toggle-notebook hint--bottom" data-hint="Edit notebook source">
       <i class="icon"></i>
     </button>
   </div>
@@ -15,13 +15,11 @@
         <i class="icon-folder-open-empty"></i>
       </button>
       <div class="auth-status text-status">{{@persistence.userTitle}}</div>
-      <div class="save-status text-status"></div>
+      <div class="save-status text-status">{{#if @data.stateText}}{{@data.stateText}}.{{/if}}</div>
     </div>
     <div class="toolbar-buttons">
       <span class="btn-edit">
-        <button class="btn-text toggle-notebook-edit">
-          Return to notebook view
-        </button>
+        <button class="btn-text toggle-notebook">Return to notebook view</button>
       </span>
       <span class="btn-view">
         <button class="btn-round notebook-clone hint--bottom" data-hint="Clone notebook">
@@ -32,6 +30,9 @@
         </button>
         <button class="btn-round notebook-exec hint--bottom" data-hint="Execute notebook">
           <i class="icon"></i>
+        </button>
+        <button class="btn-round notebook-share hint--bottom" data-hint="Share notebook">
+          <i class="icon-share"></i>
         </button>
         <button class="btn-round notebook-help hint--bottom" data-hint="Notebook shortcuts">
           <i class="icon"></i>
@@ -46,6 +47,6 @@
 </div>
 
 <div class="notebook clearfix">
-  <div class="notebook-content"></div>
+  <div class="notebook-content">{{{view @data.notebook}}}</div>
   <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
 </div>

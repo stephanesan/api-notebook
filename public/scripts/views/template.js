@@ -37,7 +37,7 @@ TemplateView.prototype.templateData = {};
 TemplateView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this.el.appendChild(this.template.call(DOMBars, this.model, {
+  this.el.appendChild(this._el = this.template.call(DOMBars, this.model, {
     data: _.extend({
       view:        this,
       data:        this.data,
@@ -48,4 +48,14 @@ TemplateView.prototype.render = function () {
   }));
 
   return this;
+};
+
+/**
+ * Unsubscribe the template listeners before removal.
+ */
+TemplateView.prototype.remove = function () {
+  this._el.unsubscribe();
+  delete this._el;
+
+  return View.prototype.remove.call(this);
 };
