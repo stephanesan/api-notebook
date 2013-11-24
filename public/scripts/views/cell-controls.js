@@ -1,7 +1,7 @@
 var _          = require('underscore');
-var domify     = require('domify');
 var Backbone   = require('backbone');
-var View       = require('./view');
+var View       = require('./template');
+var template   = require('../../templates/views/cell-controls.hbs');
 var middleware = require('../state/middleware');
 var controls   = require('../lib/controls').editor;
 
@@ -30,6 +30,8 @@ ControlsView.controls = _.filter(controls, function (control) {
   );
 });
 
+ControlsView.prototype.template = template;
+
 /**
  * Render the controls overlay.
  *
@@ -38,40 +40,24 @@ ControlsView.controls = _.filter(controls, function (control) {
 ControlsView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  // Transform the controls array into a DOM list and append to the view.
-  var html = _.map(this.constructor.controls, function (action) {
-    return [
-      '<button class="action" data-action="' + action.command + '">',
-      action.label + '<span>' + action.keyCode + '</span>',
-      '</button>'
-    ].join('');
-  }).join('\n');
-  this.el.appendChild(domify(html));
-
-  // Any events on the regular document should cause focus to be lost.
+  // Any events on the document view should cause focus to be lost.
   var onBlur    = _.bind(this.remove, this);
   var $document = Backbone.$(document);
-
   this.listenTo($document, 'mousedown',  onBlur);
   this.listenTo($document, 'touchstart', onBlur);
 
-  middleware.register(
-    'keydown:Esc',
-    this._keydownMiddleware = _.bind(function (event, next, done) {
+  var keydownMiddleware = middleware.register(
+    'keydown:Esc', _.bind(function (event, next, done) {
       this.remove();
       return done();
     }, this)
   );
 
-  return this;
-};
+  this.listenTo(this, 'remove', function () {
+    middleware.deregister('keydown:Esc', keydownMiddleware);
+  });
 
-/**
- * Remove the middleware when we remove the element from the DOM.
- */
-ControlsView.prototype.remove = function () {
-  middleware.deregister('keydown:Esc', this._keydownMiddleware);
-  return View.prototype.remove.call(this);
+  return this;
 };
 
 /**
