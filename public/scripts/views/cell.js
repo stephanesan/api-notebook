@@ -1,4 +1,4 @@
-var View = require('./view');
+var View = require('./template');
 
 /**
  * Render a notebook cell view.

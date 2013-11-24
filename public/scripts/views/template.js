@@ -37,7 +37,7 @@ TemplateView.prototype.templateData = {};
 TemplateView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this.el.appendChild(this._el = this.template.call(DOMBars, this.model, {
+  this._el = this.template.call(DOMBars, this.model, {
     data: _.extend({
       view:        this,
       data:        this.data,
@@ -45,7 +45,11 @@ TemplateView.prototype.render = function () {
       config:      config,
       persistence: persistence,
     }, this.templateData)
-  }));
+  });
+
+  if (this._el) {
+    this.el.appendChild(this._el);
+  }
 
   return this;
 };
@@ -54,8 +58,10 @@ TemplateView.prototype.render = function () {
  * Unsubscribe the template listeners before removal.
  */
 TemplateView.prototype.remove = function () {
-  this._el.unsubscribe();
-  delete this._el;
+  if (this._el) {
+    this._el.unsubscribe();
+    delete this._el;
+  }
 
   return View.prototype.remove.call(this);
 };

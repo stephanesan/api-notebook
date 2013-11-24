@@ -1,6 +1,6 @@
 var _          = require('underscore');
-var domify     = require('domify');
 var Cell       = require('./cell');
+var template   = require('../../templates/views/result-cell.hbs');
 var middleware = require('../state/middleware');
 
 /**
@@ -11,6 +11,13 @@ var middleware = require('../state/middleware');
 var ResultCell = module.exports = Cell.extend({
   className: 'cell cell-result cell-result-pending'
 });
+
+/**
+ * The result cell template.
+ *
+ * @type {Function}
+ */
+ResultCell.prototype.template = template;
 
 /**
  * Reset the result cell view to the original state.
@@ -24,7 +31,7 @@ ResultCell.prototype._reset = function () {
     delete this._remove;
   }
 
-  this._resultContent.innerHTML = '';
+  this.el.querySelector('.result-content').innerHTML = '';
   this.el.classList.remove('result-error');
   this.el.classList.add('cell-result-pending');
 };
@@ -44,14 +51,13 @@ ResultCell.prototype.setResult = function (data, context, done) {
   }
 
   middleware.trigger('result:render', {
-    el:      this._resultContent,
-    model:   this.model,
+    el:      this.el.querySelector('.result-content'),
     context: context,
     inspect: data.result,
     isError: data.isError
-  }, _.bind(function (err, remove) {
-    this._remove = remove;
-    this.el.classList.remove('cell-result-pending');
+  }, _.bind(function (err, view) {
+  this._remove = remove;
+  this.el.classList.remove('cell-result-pending');
     return done && done(err);
   }, this));
 };
@@ -62,32 +68,7 @@ ResultCell.prototype.setResult = function (data, context, done) {
  * @return {ResultCell}
  */
 ResultCell.prototype.refresh = function () {
-  if (this._resultLabel) {
-    var index = this.model.collection.codeIndexOf(this.model);
-    this._resultLabel.textContent = '$' + index + '=';
-  }
-
-  return this;
-};
-
-/**
- * Render the result cell. This is a fairly simple view since all the rendering
- * will actually occur at a later time.
- *
- * @return {ResultCell}
- */
-ResultCell.prototype.render = function () {
-  Cell.prototype.render.call(this);
-
-  // Prepends a container for the result reference label.
-  this.el.appendChild(this._resultLabel = domify(
-    '<div class="result-label"></div>'
-  ));
-
-  // Appends a container for holding rendered result views.
-  this.el.appendChild(this._resultContent = domify(
-    '<div class="result-content"></div>'
-  ));
+  this.data.set('index', this.model.collection.codeIndexOf(this.model));
 
   return this;
 };

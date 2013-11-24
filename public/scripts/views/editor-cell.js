@@ -1,6 +1,6 @@
 var _            = require('underscore');
-var domify       = require('domify');
 var Cell         = require('./cell');
+var template     = require('../../templates/views/editor-cell.hbs');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
@@ -301,20 +301,7 @@ EditorCell.prototype.renderEditor = function () {
 EditorCell.prototype.render = function () {
   Cell.prototype.render.call(this);
   this.renderEditor();
-
-  this.el.appendChild(domify(
-    '<button class="btn cell-controls-btn">≡</button>'
-  ));
-
-  this.el.appendChild(domify([
-    '<span class="cell-border cell-border-above">',
-    '<i class="cell-border-btn icon-plus-circled"></i>',
-    '</span>',
-    '<span class="cell-border cell-border-below">',
-    '<i class="cell-border-btn icon-plus-circled"></i>',
-    '</span>'
-  ].join('\n')));
-
+  this.el.appendChild(template());
   return this;
 };
 
