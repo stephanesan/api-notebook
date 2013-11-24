@@ -43,15 +43,3 @@ EditNotebook.prototype.render = function () {
 
   return this;
 };
-
-/**
- * Append the editor to an element and refresh the CodeMirror editor (when it's
- * rendered off screen the view is broken).
- *
- * @return {EditNotebook}
- */
-EditNotebook.prototype.appendTo = function () {
-  View.prototype.appendTo.apply(this, arguments);
-  this.editor.refresh();
-  return this;
-};
