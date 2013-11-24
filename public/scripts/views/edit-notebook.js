@@ -27,11 +27,8 @@ EditNotebook.prototype.render = function () {
     viewportMargin: Infinity
   });
 
-  var direction = false;
-
   // Update the persistence code every time we change the content.
   this.listenTo(this.editor, 'change', function (cm) {
-    direction = true;
     messages.trigger('resize');
     persistence.set('contents', cm.getValue());
   });
@@ -39,11 +36,9 @@ EditNotebook.prototype.render = function () {
   this.listenTo(messages, 'refresh', _.bind(this.editor.refresh, this.editor));
 
   this.listenTo(persistence, 'change:contents', function () {
-    if (!direction) {
-      this.editor.setValue(persistence.get('contents'));
-    }
+    if (persistence.get('contents') === this.editor.getValue()) { return; }
 
-    direction = false;
+    this.editor.setValue(persistence.get('contents'));
   });
 
   return this;
