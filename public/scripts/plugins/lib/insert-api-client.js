@@ -15,31 +15,14 @@ var createApiClientCell = function (cell, invoke) {
 
     var url      = api.ramlUrl;
     var variable = App.Library.changeCase.camelCase(api.title);
-    var code     = 'API.createClient(\'' + variable + '\', \'' + url + '\');';
+    var code     = [
+      '// Read about the ' + api.title + ' at ' + api.portalUrl,
+      'API.createClient(\'' + variable + '\', \'' + url + '\');'
+    ].join('\n');
 
-    var view = cell.notebook[invoke + 'CodeView'](cell.el, code);
-
-    App.middleware.register('result:render', function self (data, next, done) {
-      // Because cells can still execute out of order.
-      if (data.model !== view.model || data.isError) {
-        return next();
-      }
-
-      var link = document.createElement('a');
-      link.href = link.textContent = api.portalUrl;
-
-      data.el.textContent = 'Read about the ' + api.title + ' at ';
-      data.el.appendChild(link);
-
-      App.middleware.deregister('result:render', self);
-
-      return done(null, function () {
-        data.el.innerHTML = '';
-      });
-    });
+    var view = cell.notebook[invoke + 'CodeView'](cell.el, code).execute();
 
     cell.focus();
-    view.execute();
 
     return view;
   };
