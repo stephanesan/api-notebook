@@ -1,9 +1,11 @@
 /* global App */
 var _               = App._;
-var Backbone        = App.Library.Backbone;
 var ramlParser      = require('raml-parser');
 var clientGenerator = require('./lib/client-generator');
 var fromPath        = require('../lib/from-path');
+
+// Require the view augmentation.
+require('./lib/insert-api-client');
 
 /**
  * Provided a special documentation property for functionsw with another plugin.
@@ -128,125 +130,3 @@ var contextPlugin = function (context, next) {
 module.exports = {
   'sandbox:context': contextPlugin
 };
-
-/**
- * Load all the API definitions and return the items as an array.
- *
- * @param {Function} done
- */
-var loadAPIDefinitions = function (done) {
-  return App.middleware.trigger('ajax', {
-    url: 'http://api.apihub.com/v1/apis?specFormat=RAML'
-  }, function (err, xhr) {
-    return done(err, JSON.parse(xhr.responseText).items);
-  });
-};
-
-/**
- * Show RAML definitions to users in a modal, and upon selection pass the
- * selected definition back to the callback.
- *
- * @param {Function} done
- */
-var selectAPIDefinition = function (done) {
-  var selected = false;
-
-  return App.middleware.trigger('ui:modal', {
-    title: 'Insert an API Client',
-    content: function (done) {
-      return loadAPIDefinitions(function (err, items) {
-        if (err) { return done(err); }
-
-        return done(null, '<div class="modal-instructions">' +
-          'Insert an API client from a RAML specification.' +
-          ' <a href="http://raml.org/" target="_blank">' +
-          'Learn more about RAML</a>.' +
-          '</div>' +
-          '<ul class="item-list">' +
-          _.map(items, function (item) {
-          var name = App.Library.changeCase.camelCase(item.title);
-          var url  = item.specs.RAML.url;
-          var link = [
-            '<a href="#" class="btn btn-primary btn-small"',
-            'data-raml="' + url + '" data-name="' + name + '">',
-            'Add',
-            '</a>'
-          ].join('');
-
-          return '<li>' +
-            '<div class="item-action">' + link + '</div>' +
-            '<div class="item-description">' + item.title +
-            '<a href="#" class="item-details-link" data-details>details</a>' +
-            '<div class="item-details">' +
-            item.description +
-             '</div>' +
-             '</div>' +
-            '</li>';
-        }).join('') + '</li>');
-      });
-    },
-    show: function (modal) {
-      Backbone.$(modal.el)
-        .on('click', '[data-details]', function (e) {
-          e.preventDefault();
-
-          var classList = e.target.parentNode.parentNode.classList;
-
-          if (!classList.contains('item-details-visible')) {
-            classList.add('item-details-visible');
-          } else {
-            classList.remove('item-details-visible');
-          }
-        })
-        .on('click', '[data-raml]', function (e) {
-          e.preventDefault();
-
-          // Close the modal behind ourselves.
-          modal.close();
-
-          return done(null, {
-            name: e.target.getAttribute('data-name'),
-            url:  e.target.getAttribute('data-raml')
-          });
-        });
-    }
-  }, function (err) {
-    return selected && done(err);
-  });
-};
-
-/**
- * Inserts a new code cell above with a RAML API client and executes it.
- */
-App.View.EditorCell.prototype.newRAMLAbove = function () {
-  return selectAPIDefinition(_.bind(function (err, api) {
-    this.notebook.prependCodeView(
-      this.el, 'API.createClient("' + api.name + '", "' + api.url + '");'
-    ).execute();
-
-    this.focus();
-  }, this));
-};
-
-/**
- * Inserts a new code cell below with a RAML API client and executes it.
- */
-App.View.EditorCell.prototype.newRAMLBelow = function () {
-  return selectAPIDefinition(_.bind(function (err, api) {
-    this.notebook.appendCodeView(
-      this.el, 'API.createClient("' + api.name + '", "' + api.url + '");'
-    ).execute();
-
-    this.focus();
-  }, this));
-};
-
-/**
- * Insert a RAML document using the cell buttons.
- *
- * @type {String}
- */
-App.View.CellButtons.controls.push({
-  label:   'Insert API Client',
-  command: 'newRAML'
-});

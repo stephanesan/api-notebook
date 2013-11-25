@@ -1,23 +1,8 @@
+var _              = require('underscore');
 var typeOf         = require('../../lib/type');
 var Inspector      = require('../../views/inspector');
 var ErrorInspector = require('../../views/error-inspector');
 var middleware     = require('../../state/middleware');
-
-/**
- * Empty the result cell contents.
- *
- * @param  {Object}   data
- * @param  {Function} next
- * @param  {Function} done
- */
-middleware.register('result:empty', function (view, next, done) {
-  if (view instanceof Inspector) {
-    view.remove();
-    return done();
-  }
-
-  return next();
-});
 
 /**
  * Render the result cell contents.
@@ -41,11 +26,11 @@ middleware.register('result:render', function (data, next, done) {
 
   inspector.render().appendTo(data.el);
 
-  // Opens the inspector automatically when the type is an object
+  // Opens the inspector automatically when the type is an object.
   var type = typeOf(data.inspect);
   if (type === 'object' || type === 'array') {
     inspector.open();
   }
 
-  return done(null, inspector);
+  return done(null, _.bind(inspector.remove, inspector));
 });
