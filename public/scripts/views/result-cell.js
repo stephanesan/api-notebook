@@ -55,9 +55,9 @@ ResultCell.prototype.setResult = function (data, context, done) {
     context: context,
     inspect: data.result,
     isError: data.isError
-  }, _.bind(function (err, view) {
-  this._remove = remove;
-  this.el.classList.remove('cell-result-pending');
+  }, _.bind(function (err, remove) {
+    this._remove = remove;
+    this.el.classList.remove('cell-result-pending');
     return done && done(err);
   }, this));
 };
@@ -78,5 +78,5 @@ ResultCell.prototype.refresh = function () {
  */
 ResultCell.prototype.remove = function () {
   this._reset();
-  return Cell.prototype.remove.call(this);
+  return View.prototype.remove.call(this);
 };

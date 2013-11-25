@@ -299,6 +299,7 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
+      this.refreshFromView(clone);
     });
 
     this.listenTo(view, 'remove', function (view) {

@@ -20,14 +20,8 @@ var TextCell = module.exports = EditorCell.extend({
  * @type {Object}
  */
 TextCell.prototype.events = _.extend({
-  /**
-   * When we click anywhere in the cell, trigger focus and editing mode. We
-   * should ignore any clicks on links, etc.
-   *
-   * @param {Object} e
-   */
   'click': function (e) {
-    if (this.hasFocus() || e.target.tagName === 'A') {
+    if (this.hasFocus() || _.contains(['A', 'BUTTON'], e.target.tagName)) {
       return;
     }
 
@@ -133,7 +127,7 @@ TextCell.prototype.renderMarkdown = function () {
     tables: true,
     breaks: true,
     pedantic: false,
-    sanitize: true,
+    sanitize: false,
     smartLists: true,
     smartypants: false,
     langPrefix: 'lang-'

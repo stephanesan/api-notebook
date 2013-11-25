@@ -41,9 +41,11 @@ describe('Persistence', function () {
     });
 
     App.start(fixture, function (err, app) {
-      app.notebook.collection.at(0).view.setValue('test');
-      app.remove();
-      return done();
+      App.Library.DOMBars.VM.exec(function () {
+        app.data.get('notebook').collection.at(0).view.setValue('test');
+        app.remove();
+        return done();
+      });
     });
   });
 
@@ -85,7 +87,6 @@ describe('Persistence', function () {
     });
 
     App.start(fixture, function (err, app) {
-      app.notebook.collection.at(0).view.setValue('test');
       return app.remove();
     });
 
@@ -96,24 +97,27 @@ describe('Persistence', function () {
   });
 
   it('should be able to load content', function (done) {
-    var content = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
-
     App.middleware.register('persistence:load', function load (data, next, done) {
-      data.contents = content;
+      data.contents = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
       App.middleware.deregister('persistence:load', load);
       return done();
     });
 
     App.start(fixture, function (err, app) {
       expect(err).to.not.exist;
-      expect(app.notebook.collection.at(0).get('value')).to.equal('# Simple Test');
 
-      // Check the application titles match.
-      expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
-      expect(app.el.querySelector('.notebook-title').value).to.equal('Test Notebook');
+      App.Library.DOMBars.VM.exec(function () {
+        expect(
+          app.data.get('notebook').collection.at(0).get('value')
+        ).to.equal('# Simple Test');
 
-      app.remove();
-      return done();
+        // Check the application titles match.
+        expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
+        expect(app.el.querySelector('.notebook-title').value).to.equal('Test Notebook');
+
+        app.remove();
+        return done();
+      });
     });
   });
 

@@ -28,11 +28,8 @@ var EditorCell = module.exports = View.extend({
  */
 EditorCell.prototype.initialize = function () {
   View.prototype.initialize.apply(this, arguments);
-  this.model       = this.model || new this.EditorModel();
-  this.model.view  = this;
-
-  // Refresh the editor cells when refresh is triggered through messages.
-  this.listenTo(messages, 'refresh', this.refresh);
+  this.model      = this.model || new this.EditorModel();
+  this.model.view = this;
 };
 
 /**
@@ -84,7 +81,7 @@ EditorCell.prototype.remove = ownerProtect(function () {
  * @return {EditorCell} Cloned view.
  */
 EditorCell.prototype.clone = ownerProtect(function () {
-  var clone = new this.constructor(_.extend({}, this.options, {
+  var clone = new this.constructor(_.extend({}, {
     model: this.model.clone()
   }));
   this.trigger('clone', this, clone);
@@ -302,6 +299,10 @@ EditorCell.prototype.render = function () {
   View.prototype.render.call(this);
   this.renderEditor();
   this.el.appendChild(template());
+
+  // Refresh the editor cells when refresh is triggered through messages.
+  this.listenTo(messages, 'refresh', this.refresh);
+
   return this;
 };
 

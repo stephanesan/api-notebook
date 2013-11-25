@@ -63,7 +63,9 @@ describe('Result Cell', function () {
           isError: false
         }, window, function () {
           expect(renderSpy).to.have.been.calledOnce;
-          expect(view.el.textContent).to.equal('some testing here');
+          expect(
+            view.el.querySelector('.result-content').textContent
+          ).to.equal('some testing here');
 
           view.remove();
           expect(removeSpy).to.have.been.calledOnce;
