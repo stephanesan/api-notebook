@@ -1,6 +1,6 @@
 var _            = require('underscore');
-var domify       = require('domify');
-var Cell         = require('./cell');
+var View         = require('./template');
+var template     = require('../../templates/views/editor-cell.hbs');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
@@ -19,7 +19,7 @@ var triggerSelf = function (obj, method) {
  *
  * @type {Function}
  */
-var EditorCell = module.exports = Cell.extend({
+var EditorCell = module.exports = View.extend({
   className: 'cell cell-editor'
 });
 
@@ -27,12 +27,9 @@ var EditorCell = module.exports = Cell.extend({
  * Runs when we initialize the editor cell.
  */
 EditorCell.prototype.initialize = function () {
-  Cell.prototype.initialize.apply(this, arguments);
-  this.model       = this.model || new this.EditorModel();
-  this.model.view  = this;
-
-  // Refresh the editor cells when refresh is triggered through messages.
-  this.listenTo(messages, 'refresh', this.refresh);
+  View.prototype.initialize.apply(this, arguments);
+  this.model      = this.model || new this.EditorModel();
+  this.model.view = this;
 };
 
 /**
@@ -72,7 +69,7 @@ EditorCell.prototype.editorOptions = {
  * @return {EditorCell}
  */
 EditorCell.prototype.remove = ownerProtect(function () {
-  Cell.prototype.remove.call(this);
+  View.prototype.remove.call(this);
   messages.trigger('resize');
 
   return this;
@@ -84,7 +81,7 @@ EditorCell.prototype.remove = ownerProtect(function () {
  * @return {EditorCell} Cloned view.
  */
 EditorCell.prototype.clone = ownerProtect(function () {
-  var clone = new this.constructor(_.extend({}, this.options, {
+  var clone = new this.constructor(_.extend({}, {
     model: this.model.clone()
   }));
   this.trigger('clone', this, clone);
@@ -299,21 +296,12 @@ EditorCell.prototype.renderEditor = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.render = function () {
-  Cell.prototype.render.call(this);
+  View.prototype.render.call(this);
   this.renderEditor();
+  this.el.appendChild(template());
 
-  this.el.appendChild(domify(
-    '<button class="btn cell-controls-btn">≡</button>'
-  ));
-
-  this.el.appendChild(domify([
-    '<span class="cell-border cell-border-above">',
-    '<i class="cell-border-btn icon-plus-circled"></i>',
-    '</span>',
-    '<span class="cell-border cell-border-below">',
-    '<i class="cell-border-btn icon-plus-circled"></i>',
-    '</span>'
-  ].join('\n')));
+  // Refresh the editor cells when refresh is triggered through messages.
+  this.listenTo(messages, 'refresh', this.refresh);
 
   return this;
 };
@@ -408,7 +396,7 @@ EditorCell.prototype.moveCursorToEnd = function (line) {
  * @return {EditorCell}
  */
 EditorCell.prototype.appendTo = function (el) {
-  Cell.prototype.appendTo.call(this, el);
+  View.prototype.appendTo.call(this, el);
 
   // Since the `render` method is called before being appended to the DOM, we
   // need to refresh the CodeMirror UI so it becomes visible

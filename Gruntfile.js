@@ -64,11 +64,11 @@ var serverMiddleware = function (connect, options) {
  * @param {Object} grunt
  */
 module.exports = function (grunt) {
-  require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
+  require('load-grunt-tasks')(grunt);
 
   var jsRegex             = /\.js$/;
   var browserifyPlugins   = {};
-  var browserifyTransform = ['envify'];
+  var browserifyTransform = ['dombarsify', 'envify'];
 
   if (!DEV) {
     browserifyTransform.push('uglifyify');
@@ -248,7 +248,7 @@ module.exports = function (grunt) {
         tasks: ['newer:jshint:all']
       },
       scripts: {
-        files: ['public/**/*.js'],
+        files: ['public/**/*.{hbs,js}'],
         tasks: ['browserify']
       },
       styles: {

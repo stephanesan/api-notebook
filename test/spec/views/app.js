@@ -69,10 +69,13 @@ describe('App', function () {
       describe('Raw Notebook Editor', function () {
         var editor;
 
-        beforeEach(function () {
-          simulateEvent(view.el.querySelector('.toggle-notebook-edit'), 'click');
+        beforeEach(function (done) {
+          simulateEvent(view.el.querySelector('.toggle-notebook'), 'click');
 
-          editor = view.el.querySelector('.CodeMirror').CodeMirror;
+          App.Library.DOMBars.VM.exec(function () {
+            editor = view.el.querySelector('.CodeMirror').CodeMirror;
+            return done();
+          });
         });
 
         it('should switch to a raw notebook editor', function () {

@@ -1,5 +1,4 @@
 var _            = require('underscore');
-var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
@@ -25,7 +24,16 @@ CodeCell.prototype.initialize = function () {
   // Need a way of keeping the internal editor cell reference, since we can move
   // up and down between other statements.
   this._editorCid = this.model.cid;
+
+  this.resultCell = new ResultCell({ model: this.model }).render();
 };
+
+/**
+ * Code cell template.
+ *
+ * @type {Function}
+ */
+CodeCell.prototype.template = require('../../templates/views/code-cell.hbs');
 
 /**
  * Sets the editor model to fall back and initialize.
@@ -219,23 +227,4 @@ CodeCell.prototype.unbindEditor = function () {
   this._completion.remove();
   delete this._completion;
   return EditorCell.prototype.unbindEditor.call(this);
-};
-
-/**
- * Render the code cell and append a result cell to contain result data.
- *
- * @return {CodeCell}
- */
-CodeCell.prototype.render = function () {
-  EditorCell.prototype.render.call(this);
-
-  this.el.appendChild(domify(
-    '<i class="cell-ui-execute icon-arrows-cw animate-spin"></i>'
-  ));
-
-  // Every code cell has an associated result
-  this.resultCell = new ResultCell({ model: this.model });
-  this.resultCell.render().appendTo(this.el);
-
-  return this;
 };

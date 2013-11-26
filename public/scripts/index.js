@@ -16,7 +16,9 @@ App.Library = {
   querystring: require('querystring'),
   async:       require('async'),
   changeCase:  require('change-case'),
-  Backbone:    require('backbone')
+  marked:      require('marked'),
+  Backbone:    require('backbone'),
+  DOMBars:     require('dombars/runtime')
 };
 
 App._        = App.Library._ = require('underscore');
@@ -40,7 +42,7 @@ App.CodeMirror = {
   sandboxCompletion: require('./lib/sandbox-completion')
 };
 
-// Expose all application views
+// Expose all application views.
 App.View = {
   App:            require('./views/app'),
   View:           require('./views/view'),
@@ -48,7 +50,6 @@ App.View = {
   EditNotebook:   require('./views/edit-notebook'),
   Inspector:      require('./views/inspector'),
   ErrorInspector: require('./views/error-inspector'),
-  Cell:           require('./views/cell'),
   CodeCell:       require('./views/code-cell'),
   TextCell:       require('./views/text-cell'),
   EditorCell:     require('./views/editor-cell'),

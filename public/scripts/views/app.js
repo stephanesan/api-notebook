@@ -1,10 +1,11 @@
 var _        = require('underscore');
-var domify   = require('domify');
+var DOMBars  = require('dombars/runtime');
 var Backbone = require('backbone');
 
-var View         = require('./view');
+var View         = require('./template');
 var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
+var bounce       = require('../lib/bounce');
 var controls     = require('../lib/controls');
 var config       = require('../state/config');
 var messages     = require('../state/messages');
@@ -12,40 +13,6 @@ var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
 
 var ENTER_KEY = 13;
-
-/**
- * Helper function for removing old application contents and resizing the
- * viewport container.
- *
- * @param  {Function} fn
- * @return {Function}
- */
-var changeNotebook = function (fn) {
-  return function () {
-    // Remove the old application contents/notebook.
-    if (this.contents) {
-      this.contents.remove();
-      delete this.contents;
-      this.el.classList.remove('notebook-view-active', 'notebook-edit-active');
-    }
-
-    // Sets the new notebook contents.
-    this.contents = fn && fn.apply(this, arguments);
-
-    // If the function returned an object, assume it is a view and render it.
-    if (this.contents instanceof Backbone.View) {
-      this.contents.render().appendTo(this._contentsEl);
-    }
-
-    // Add style classes for the view type.
-    var view = this.contents instanceof Notebook ? 'view' : 'edit';
-    this.el.classList.add('notebook-' + view + '-active');
-
-    // Resize the parent frame since we have added notebook contents.
-    messages.trigger('resize');
-    return this;
-  };
-};
 
 /**
  * Create a central application view.
@@ -62,15 +29,14 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
-  'click .notebook-help':  'showShortcuts',
-  'click .notebook-exec':  'runNotebook',
-  'click .notebook-clone': 'cloneNotebook',
-  'click .notebook-auth':  'authNotebook',
-  'click .notebook-save':  'saveNotebook',
-  'click .notebook-list':  'listNotebooks',
-  'click .notebook-share': 'shareNotebook',
-  // Switch between application views.
-  'click .toggle-notebook-edit': 'toggleEdit',
+  'click .notebook-help':   'showShortcuts',
+  'click .notebook-exec':   'runNotebook',
+  'click .notebook-clone':  'cloneNotebook',
+  'click .notebook-auth':   'authNotebook',
+  'click .notebook-save':   'saveNotebook',
+  'click .notebook-list':   'listNotebooks',
+  'click .notebook-share':  'shareNotebook',
+  'click .toggle-notebook': 'toggleEdit',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -93,184 +59,131 @@ App.prototype.events = {
  * relevant events to respond to.
  */
 App.prototype.initialize = function () {
-  // Block attempts to close or refresh the window when the current persistence
-  // state is dirty.
+  View.prototype.initialize.apply(this, arguments);
+
+  /**
+   * Block attempts to close the window when the persistence state is dirty.
+   */
   this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
     if (persistence.get('state') !== persistence.CHANGED) { return; }
 
-    var confirmationMessage = 'Your changes will be lost.';
-
-    (e || window.event).returnValue = confirmationMessage;
-    return confirmationMessage;
+    return (e || window.event).returnValue = 'Your changes will be lost.';
   });
 
-  // Re-render the notebook when the notebook changes.
+  /**
+   * Re-render the notebook when the notebook changes.
+   */
   this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
 
-  // Update the displayed title when the title changes.
-  this.listenTo(persistence.get('meta'), 'change:title', function (_, title) {
+  /**
+   * Update the document title when the persistence meta data changes.
+   */
+  this.listenTo(persistence.get('meta'), 'change:title', bounce(function () {
+    var title   = persistence.get('meta').get('title');
     var titleEl = document.head.querySelector('title');
+
     titleEl.textContent = title ? title + ' • Notebook' : 'Notebook';
+  }, this));
+
+  /**
+   * Update user state data when the user changes.
+   */
+  this.listenTo(persistence, 'changeUser', bounce(function () {
+    this.data.set('owner',         persistence.isOwner());
+    this.data.set('authenticated', persistence.isAuthenticated());
+  }, this));
+
+  /**
+   * Update the saved view state when the id changes.
+   */
+  this.listenTo(persistence, 'change:id', bounce(function () {
+    this.data.set('saved', persistence.has('id'));
+  }, this));
+
+  /**
+   * Update state variables when the persistence state changes.
+   */
+  this.listenTo(persistence, 'change:state', bounce(function () {
+    var state     = persistence.get('state');
+    var timestamp = new Date().toLocaleTimeString();
+
+    var stateText  = '';
+    var stateClass = '';
+
+    if (state === persistence.LOADING) {
+      stateText  = 'Loading';
+      stateClass = 'loading';
+    } else if (state === persistence.LOAD_FAIL) {
+      stateText  = 'Load failed';
+      stateClass = 'load-failed';
+    } else if (state === persistence.LOAD_DONE) {
+      stateText  = persistence.isNew() ? '' : 'Loaded ' + timestamp;
+      stateClass = 'loaded';
+    } else if (state === persistence.SAVING) {
+      stateText  = 'Saving';
+      stateClass = 'saving';
+    } else if (state === persistence.SAVE_FAIL) {
+      stateText  = 'Save failed';
+      stateClass = 'save-failed';
+    } else if (state === persistence.SAVE_DONE) {
+      stateText  = persistence.isNew() ? '' : 'Saved ' + timestamp;
+      stateClass = 'saved';
+    } else if (state === persistence.CHANGED) {
+      stateText  = 'Unsaved changes';
+      stateClass = 'changed';
+    } else if (state === persistence.CLONING) {
+      stateText  = 'Cloning notebook';
+      stateClass = 'cloning';
+    }
+
+    this.data.set('stateText', stateText);
+
+    document.body.setAttribute('data-state', stateClass);
+  }, this));
+
+  /**
+   * Trigger a resize event any time the active notebook view changes.
+   */
+  this.listenTo(this.data, 'change:notebook', function () {
+    messages.trigger('resize');
   });
+
+  return this;
 };
+
+/**
+ * Precompile the appliction template.
+ *
+ * @type {Function}
+ */
+App.prototype.template = require('../../templates/views/app.hbs');
 
 /**
  * Switch between raw source edit mode and the normal notebook execution.
- *
- * @return {App}
  */
-App.prototype.renderNotebook = changeNotebook(function () {
-  return this.notebook = new Notebook();
-});
+App.prototype.renderNotebook = function () {
+  this.data.set('notebook', new Notebook());
+  this.data.set('activeView', 'view');
+
+  DOMBars.VM.exec(function () {
+    messages.trigger('refresh');
+  });
+};
 
 /**
  * Toggle the view between edit and notebook view.
- *
- * @return {App}
  */
-App.prototype.toggleEdit = changeNotebook(function () {
-  if (this.notebook) {
-    delete this.notebook;
-    return new EditNotebook();
+App.prototype.toggleEdit = function () {
+  if (this.data.get('activeView') === 'edit') {
+    return this.renderNotebook();
   }
 
-  return this.notebook = new Notebook();
-});
+  this.data.set('notebook', new EditNotebook());
+  this.data.set('activeView', 'edit');
 
-/**
- * Remove the application view from the DOM.
- *
- * @return {App}
- */
-App.prototype.remove = function () {
-  Backbone.history.stop();
-  changeNotebook().call(this);
-  return View.prototype.remove.call(this);
-};
-
-/**
- * Update all data "bound" methods.
- *
- * @return {App}
- */
-App.prototype.update = function () {
-  this.updateId();
-  this.updateUser();
-  this.updateTitle();
-  this.updateState();
-
-  return this;
-};
-
-/**
- * Updates the template when the user or document owner changes.
- *
- * @return {App}
- */
-App.prototype.updateUser = function () {
-  var authEl  = this.el.querySelector('.auth-status');
-  var isAuth  = persistence.isAuthenticated();
-  var isOwner = persistence.isOwner();
-
-  this.el.classList[isOwner  ? 'add' : 'remove']('user-is-owner');
-  this.el.classList[!isOwner ? 'add' : 'remove']('user-not-owner');
-  this.el.classList[isAuth   ? 'add' : 'remove']('user-is-authenticated');
-  this.el.classList[!isAuth  ? 'add' : 'remove']('user-not-authenticated');
-
-  // Update the auth display status with the user title.
-  authEl.textContent = persistence.get('userTitle');
-
-  return this;
-};
-
-/**
- * Updates the template when the persistence id changes.
- *
- * @return {App}
- */
-App.prototype.updateId = function () {
-  var isSaved = persistence.has('id');
-
-  this.el.classList[isSaved  ? 'add' : 'remove']('notebook-is-saved');
-  this.el.classList[!isSaved ? 'add' : 'remove']('notebook-not-saved');
-
-  return this;
-};
-
-/**
- * Updates the application title when the notebook title changes.
- *
- * @return {App}
- */
-App.prototype.updateTitle = function () {
-  var title   = persistence.get('meta').get('title');
-  var titleEl = this.el.querySelector('.notebook-title');
-
-  // Only attempt to update when out of sync.
-  if (titleEl.value !== title) {
-    titleEl.value = title;
-  }
-
-  return this;
-};
-
-/**
- * Update the displayed notebook persistence state.
- *
- * @return {App}
- */
-App.prototype.updateState = function () {
-  var state     = persistence.get('state');
-  var statusEl  = this.el.querySelector('.save-status');
-  var now       = new Date();
-  var hours     = now.getHours();
-  var minutes   = now.getMinutes();
-  var suffix    = 'AM';
-  var stateText = '';
-
-  if (hours > 11) {
-    hours  = hours - 12;
-    suffix = 'PM';
-  }
-
-  if (hours === 0) {
-    hours = 12;
-  }
-
-  var stamp = hours + ':' + ('0' + minutes).slice(-2) + suffix;
-
-  // Remove the content of the status display.
-  statusEl.innerHTML = '';
-
-  if (state === persistence.LOADING) {
-    stateText            = 'loading';
-    statusEl.textContent = 'Loading.';
-  } else if (state === persistence.LOAD_FAIL) {
-    stateText            = 'load-failed';
-    statusEl.textContent = 'Load failed.';
-  } else if (state === persistence.LOAD_DONE) {
-    stateText            = 'loaded';
-    statusEl.textContent = persistence.isNew() ? '' : 'Loaded ' + stamp + '.';
-  } else if (state === persistence.SAVING) {
-    stateText            = 'saving';
-    statusEl.textContent = 'Saving.';
-  } else if (state === persistence.SAVE_FAIL) {
-    stateText            = 'save-failed';
-    statusEl.textContent = 'Save failed.';
-  } else if (state === persistence.SAVE_DONE) {
-    stateText            = 'saved';
-    statusEl.textContent = persistence.isNew() ? '' : 'Saved ' + stamp + '.';
-  } else if (state === persistence.CHANGED) {
-    stateText            = 'changed';
-    statusEl.textContent = 'Unsaved changes.';
-  } else if (state === persistence.CLONING) {
-    stateText            = 'cloning';
-    statusEl.textContent = 'Cloning notebook.';
-  }
-
-  document.body.setAttribute('data-state', stateText);
-
-  return this;
+  DOMBars.VM.exec(function () {
+    messages.trigger('refresh');
+  });
 };
 
 /**
@@ -305,95 +218,6 @@ App.prototype.showShortcuts = function () {
 };
 
 /**
- * Render the applications `innerHTML`.
- *
- * @return {App}
- */
-App.prototype.render = function () {
-  View.prototype.render.call(this);
-
-  this.el.appendChild(domify(
-    '<header class="notebook-header clearfix">' +
-      '<input class="notebook-title" autocomplete="off">' +
-    '</header>' +
-
-    '<div class="notebook-toolbar clearfix">' +
-      '<div class="toolbar-end">' +
-        '<button class="edit-source toggle-notebook-edit hint--bottom" ' +
-        'data-hint="Edit notebook source">' +
-          '<i class="icon"></i>' +
-        '</button>' +
-      '</div>' +
-
-      '<div class="toolbar-inner">' +
-        '<div class="persistence-status">' +
-          '<button class="btn-square notebook-list hint--bottom" ' +
-          'data-hint="List all notebooks">' +
-            '<i class="icon-folder-open-empty"></i>' +
-          '</button>' +
-          '<div class="auth-status text-status"></div>' +
-          '<div class="save-status text-status"></div>' +
-        '</div>' +
-        '<div class="toolbar-buttons">' +
-          '<span class="btn-edit">' +
-            '<button class="btn-text toggle-notebook-edit">' +
-              'Return to notebook view' +
-            '</button>' +
-          '</span>' +
-          '<span class="btn-view">' +
-            '<button class="btn-round notebook-clone hint--bottom" ' +
-            'data-hint="Clone notebook">' +
-              '<i class="icon-fork"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-save hint--bottom" ' +
-            'data-hint="Save notebook">' +
-              '<i class="icon-floppy"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-exec hint--bottom" ' +
-            'data-hint="Execute notebook">' +
-              '<i class="icon"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-share hint--bottom" ' +
-            'data-hint="Share notebook">' +
-              '<i class="icon-share"></i>' +
-            '</button>' +
-            '<button class="btn-round notebook-help hint--bottom" ' +
-            'data-hint="Notebook shortcuts">' +
-              '<i class="icon"></i>' +
-            '</button>' +
-          '</span>' +
-        '</div>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="modal ui-loading">' +
-      '<i class="ui-loading-icon icon-arrows-cw animate-spin"></i>' +
-    '</div>' +
-
-    '<div class="notebook clearfix">' +
-      '<div class="notebook-content"></div>' +
-      '<a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>' +
-    '</div>'
-  ));
-
-  // Listens to different application state changes and updates accordingly.
-  this.listenTo(persistence, 'changeUser',   this.updateUser);
-  this.listenTo(persistence, 'change:state', this.updateState);
-  this.listenTo(persistence, 'change:id',    this.updateId);
-
-  // Update meta data.
-  this.listenTo(persistence.get('meta'), 'change:title', this.updateTitle);
-
-  // Keep a static reference to the notebook contents element.
-  this._contentsEl = this.el.lastChild.firstChild;
-
-  // Trigger all the update methods.
-  this.update();
-
-  return this;
-};
-
-/**
  * Append the application view to an element.
  *
  * @return {App}
@@ -408,7 +232,7 @@ App.prototype.appendTo = function () {
  * Runs the entire notebook sequentially.
  */
 App.prototype.runNotebook = function () {
-  return this.notebook && this.notebook.execute();
+  return this.data.get('notebook').execute();
 };
 
 /**

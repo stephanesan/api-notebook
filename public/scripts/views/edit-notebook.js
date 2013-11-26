@@ -1,3 +1,4 @@
+var _           = require('underscore');
 var View        = require('./view');
 var messages    = require('../state/messages');
 var persistence = require('../state/persistence');
@@ -26,34 +27,19 @@ EditNotebook.prototype.render = function () {
     viewportMargin: Infinity
   });
 
-  var direction = false;
-
   // Update the persistence code every time we change the content.
   this.listenTo(this.editor, 'change', function (cm) {
-    direction = true;
     messages.trigger('resize');
     persistence.set('contents', cm.getValue());
   });
 
-  this.listenTo(persistence, 'change:contents', function () {
-    if (!direction) {
-      this.editor.setValue(persistence.get('contents'));
-    }
+  this.listenTo(messages, 'refresh', _.bind(this.editor.refresh, this.editor));
 
-    direction = false;
+  this.listenTo(persistence, 'change:contents', function () {
+    if (persistence.get('contents') === this.editor.getValue()) { return; }
+
+    this.editor.setValue(persistence.get('contents'));
   });
 
-  return this;
-};
-
-/**
- * Append the editor to an element and refresh the CodeMirror editor (when it's
- * rendered off screen the view is broken).
- *
- * @return {EditNotebook}
- */
-EditNotebook.prototype.appendTo = function () {
-  View.prototype.appendTo.apply(this, arguments);
-  this.editor.refresh();
   return this;
 };
