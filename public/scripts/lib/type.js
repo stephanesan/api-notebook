@@ -18,12 +18,9 @@ module.exports = function (object) {
     return 'number';
   }
 
-  // Detect whether an object is an element using the `nodeType` property
+  // Detect whether an object is an element using the `nodeType` property.
   if (object && object.nodeType === +object.nodeType) { return 'element'; }
 
-  if (object === null)           { return 'null'; }
-  if (object === undefined)      { return 'undefined'; }
-  if (object === Object(object)) { return 'object'; }
-
-  return typeof object;
+  // Return a null type check or do the regular typeof.
+  return object === null ? 'null' : typeof object;
 };

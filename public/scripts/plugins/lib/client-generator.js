@@ -2,11 +2,11 @@
 var _      = App._;
 var qs     = App.Library.querystring;
 var trim   = require('trim');
-var cases  = require('change-case');
+var cases  = App.Library.changeCase;
 var escape = require('escape-regexp');
 var parser = require('uri-template');
 
-var toString             = Object.prototype.toString;
+var __toString           = Object.prototype.toString;
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
@@ -473,7 +473,7 @@ var httpRequest = function (nodes, method) {
     };
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (canSerialize[toString.call(data)]) {
+    if (canSerialize[__toString.call(data)]) {
       if (isJSON(mime)) {
         data = JSON.stringify(data);
       } else if (isUrlEncoded(mime)) {
