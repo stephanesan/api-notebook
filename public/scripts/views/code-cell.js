@@ -1,10 +1,12 @@
 var _            = require('underscore');
+var DOMBars      = require('../lib/dombars');
 var EditorCell   = require('./editor-cell');
 var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').code;
 var ownerProtect = require('./lib/owner-protect');
+var config       = require('../state/config');
 var messages     = require('../state/messages');
 
 /**
@@ -21,19 +23,38 @@ var CodeCell = module.exports = EditorCell.extend({
  */
 CodeCell.prototype.initialize = function () {
   EditorCell.prototype.initialize.apply(this, arguments);
+
   // Need a way of keeping the internal editor cell reference, since we can move
   // up and down between other statements.
   this._editorCid = this.model.cid;
 
   this.resultCell = new ResultCell({ model: this.model }).render();
+
+  this.listenTo(config, 'codeEditable', function () {
+    this.data.set('readOnly', !config.get('codeEditable'));
+    this.renderEditor();
+  });
 };
 
 /**
- * Code cell template.
+ * Merge the editor cell template with the code cell.
  *
  * @type {Function}
  */
-CodeCell.prototype.template = require('../../templates/views/code-cell.hbs');
+CodeCell.prototype.template = DOMBars.Utils.mergeTemplates(
+  EditorCell.prototype.template, require('../../templates/views/code-cell.hbs')
+);
+
+/**
+ * Extend the editor cell with an event for triggering execute.
+ *
+ * @type {Object}
+ */
+CodeCell.prototype.events = _.extend({
+  'click .cell-execute': function () {
+    return this.execute();
+  }
+}, EditorCell.prototype.events);
 
 /**
  * Sets the editor model to fall back and initialize.
@@ -133,10 +154,10 @@ CodeCell.prototype.execute = function (done) {
   }
 
   // Add a class to the cell to display execution.
-  this.el.className += ' cell-execute';
+  this.data.set('executing', true);
 
   this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-    this.el.className = this.el.className.replace(' cell-execute', '');
+    this.data.set('executing', false);
 
     if (data.isError) {
       this.model.unset('result');

@@ -7,7 +7,7 @@
  */
 module.exports = function (method) {
   return function () {
-    if (!this.isOwner()) {
+    if (this.isReadOnly()) {
       return this;
     }
 

@@ -1,47 +1,49 @@
-<header class="notebook-header clearfix">
-  <input class="notebook-title" autocomplete="off" value="{{{@persistence.meta.title}}}">
-</header>
+{{#if @config.header}}
+  <header class="notebook-header clearfix">
+    <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
+  </header>
 
-<div class="notebook-toolbar clearfix user-{{#if @data.owner}}is{{else}}not{{/if}}-owner user-{{#if @data.authenticated}}is{{else}}not{{/if}}-authenticated notebook-{{#if @data.saved}}is{{else}}not{{/if}}-saved notebook-{{@data.activeView}}-active">
-  <div class="toolbar-end">
-    <button class="edit-source toggle-notebook hint--bottom" data-hint="Edit notebook source">
-      <i class="icon"></i>
-    </button>
-  </div>
+  <div class="notebook-toolbar clearfix notebook-{{@data.activeView}}-active">
+    <div class="toolbar-end">
+      <button class="edit-source toggle-notebook hint--bottom" data-hint="Edit notebook source">
+        <i class="icon"></i>
+      </button>
+    </div>
 
-  <div class="toolbar-inner">
-    {{#if @data.stateText}}
-      <div class="persistence-status">{{@data.stateText}}.</div>
-    {{/if}}
-    <div class="toolbar-buttons">
-      <span class="btn-edit">
-        <button class="btn-text toggle-notebook">Return to notebook view</button>
-      </span>
-      <span class="btn-view">
-        <button class="btn-round notebook-clone hint--bottom" data-hint="Clone notebook">
-          <i class="icon-fork"></i>
-        </button>
-        <button class="btn-round notebook-save hint--bottom" data-hint="Save notebook">
-          <i class="icon-floppy"></i>
-        </button>
-        <button class="btn-round notebook-exec hint--bottom" data-hint="Execute notebook">
-          <i class="icon"></i>
-        </button>
-        <button class="btn-round notebook-share hint--bottom" data-hint="Share notebook">
-          <i class="icon-share"></i>
-        </button>
-        <button class="btn-round notebook-help hint--bottom" data-hint="Notebook shortcuts">
-          <i class="icon"></i>
-        </button>
-      </span>
+    <div class="toolbar-inner">
+      {{#if @data.stateText}}
+        <div class="persistence-status">{{@data.stateText}}.</div>
+      {{/if}}
+      <div class="toolbar-buttons">
+        <span class="btn-edit">
+          <button class="btn-text toggle-notebook">Return to notebook view</button>
+        </span>
+        <span class="btn-view">
+          {{#if @config.savable}}
+            {{#if @data.owner}}
+              {{#if @data.saved}}
+                <button class="btn-round notebook-clone hint--bottom" data-hint="Clone notebook">
+                  <i class="icon-fork"></i>
+                </button>
+              {{/if}}
+            {{/if}}
+            <button class="btn-round notebook-save hint--bottom" data-hint="Save notebook">
+              <i class="icon-floppy"></i>
+            </button>
+          {{/if}}
+          <button class="btn-round notebook-exec hint--bottom" data-hint="Execute notebook">
+            <i class="icon"></i>
+          </button>
+          <button class="btn-round notebook-share hint--bottom" data-hint="Share notebook">
+            <i class="icon-share"></i>
+          </button>
+          <button class="btn-round notebook-help hint--bottom" data-hint="Notebook shortcuts">
+            <i class="icon"></i>
+          </button>
+        </span>
+      </div>
     </div>
   </div>
-</div>
-
-{{#if @state.loading}}
-<div class="modal ui-loading">
-  <i class="ui-loading-icon icon-arrows-cw animate-spin"></i>
-</div>
 {{/if}}
 
 <div class="notebook">
@@ -54,3 +56,22 @@
     <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
   </div>
 </div>
+
+{{#if @state.loading}}
+  <div class="modal ui-loading">
+    <i class="ui-loading-icon icon-arrows-cw animate-spin"></i>
+  </div>
+{{/if}}
+
+{{#if @config.footer}}
+  <div class="notebook-footer">
+    <div class="footer-end">
+      <a href="{{@config.fullUrl}}">Open notebook</a>
+      <button class="notebook-exec">Play notebook</button>
+    </div>
+
+    <div class="footer-inner">
+      <a href="{{@config.fullUrl}}">{{@persistence.meta.title}}</a> hosted at <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+    </div>
+  </div>
+{{/if}}

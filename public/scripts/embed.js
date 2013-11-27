@@ -73,11 +73,12 @@ var defaultOptions = {
  * @type {Object}
  */
 var defaultStyles = {
-  width:   '100%',
-  border:  'none',
-  display: 'block',
-  margin:  '0 auto',
-  padding: '0'
+  width:       '100%',
+  border:      'none',
+  display:     'block',
+  marginLeft:  'auto',
+  marginRight: 'auto',
+  padding:     '0'
 };
 
 /**

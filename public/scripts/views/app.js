@@ -69,7 +69,7 @@ App.prototype.initialize = function () {
    * Block attempts to close the window when the persistence state is dirty.
    */
   this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
-    if (persistence.get('state') !== persistence.CHANGED) { return; }
+    if (!config.get('savable') || persistence.get('state') !== 7) { return; }
 
     return (e || window.event).returnValue = 'Your changes will be lost.';
   });

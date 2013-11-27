@@ -1,6 +1,8 @@
 var Backbone    = require('backbone');
+var bounce      = require('../lib/bounce');
 var middleware  = require('./middleware');
 var persistence = require('./persistence');
+var isMac       = require('../lib/browser/about').mac;
 
 /**
  * Configuration is a static backbone model that we listen to for changes in
@@ -9,8 +11,10 @@ var persistence = require('./persistence');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
-  url:     window.location.href,
-  sidebar: true
+  url:       window.location.href,
+  fullUrl:   process.env.NOTEBOOK_URL,
+  siteUrl:   process.env.NOTEBOOK_URL,
+  siteTitle: process.env.NOTEBOOK_TITLE
 });
 
 /**
@@ -20,23 +24,33 @@ config.listenTo(config, 'change:style', (function () {
   var headEl  = document.head || document.getElementsByTagName('head')[0];
   var styleEl = headEl.appendChild(document.createElement('style'));
 
-  return function (_, css) {
-    styleEl.textContent = css;
-  };
+  return bounce(function () {
+    styleEl.textContent = config.get('style');
+  });
 })());
 
 /**
  * Listen for changes in the embedded config option and update conditional
  * styles.
  */
-config.listenTo(config, 'change:embedded', function (_, embedded) {
-  if (!embedded) {
-    return document.body.className.replace(' notebook-embedded', '');
+config.listenTo(config, 'change:embedded', bounce(function () {
+  var bodyEl     = document.body;
+  var isEmbedded = config.get('embedded');
+
+  // Update other configuration options.
+  config.set('footer',       isEmbedded);
+  config.set('header',       !isEmbedded);
+  config.set('sidebar',      !isEmbedded);
+  config.set('savable',      !isEmbedded);
+  config.set('codeEditable', true);
+  config.set('textEditable', !isEmbedded);
+
+  if (isEmbedded) {
+    return bodyEl.className += ' notebook-embedded';
   }
 
-  // Add a class name to identify embedded notebooks.
-  return document.body.className += ' notebook-embedded';
-});
+  return bodyEl.className = bodyEl.className.replace(' notebook-embedded', '');
+}));
 
 /**
  * When the application is ready, finally attempt to load the initial content.
@@ -107,3 +121,17 @@ middleware.register('persistence:load', function (data, next, done) {
 
   return next();
 });
+
+/**
+ * Register a function to block the regular save button and override with saving
+ * to the persistence layer.
+ */
+middleware.register(
+  'keydown:' + (isMac ? 'Cmd' : 'Ctrl') + '-S',
+  function (event, next, done) {
+    if (!config.get('savable')) { return; }
+
+    event.preventDefault();
+    return persistence.save(done);
+  }
+);

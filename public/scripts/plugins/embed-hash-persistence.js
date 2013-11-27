@@ -1,12 +1,3 @@
-var notebooks  = [];
-
-window.addEventListener('hashchange', function () {
-  for (var i = 0; i < notebooks.length; i++) {
-    notebooks[i].config('id', window.location.hash.substr(1));
-    notebooks[i].config('url', window.location.href);
-  }
-});
-
 /**
  * Export the attaching functionality.
  *
@@ -19,26 +10,27 @@ module.exports = function (Notebook) {
    * @param {Object} notebook
    */
   Notebook.subscribe(function (notebook) {
-    notebook.config('id', window.location.hash.substr(1));
-
+    // Update the window hash when the id changes.
     notebook.on('config:id', function (id) {
       window.location.hash = id;
     });
 
-    notebooks.push(notebook);
-  });
+    // Update the id and url when the hash of the window changes.
+    var updateId = function () {
+      notebook.config('id',  window.location.hash.substr(1));
+      notebook.config('url', window.location.href);
+    };
 
-  /**
-   * Unsubscribe to a single notebook from hash changes.
-   *
-   * @param {Object} notebook
-   */
-  Notebook.unsubscribe(function (notebook) {
-    for (var i = 0; i < notebooks.length; i++) {
-      if (notebook === notebooks[i]) {
-        i--;
-        notebooks.pop();
-      }
-    }
+    updateId();
+    window.addEventListener('hashchange', updateId);
+
+    /**
+     * Unsubscribe to a single notebook from hash changes.
+     *
+     * @param {Object} notebook
+     */
+    Notebook.unsubscribe(function () {
+      window.removeEventListener('hashchange', updateId);
+    });
   });
 };

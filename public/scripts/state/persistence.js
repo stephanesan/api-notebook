@@ -1,7 +1,6 @@
 var _          = require('underscore');
 var Backbone   = require('backbone');
 var middleware = require('./middleware');
-var isMac      = require('../lib/browser/about').mac;
 
 /**
  * Properties that should always be considered strings.
@@ -452,15 +451,3 @@ persistence.listenTo(middleware, 'application:ready', function () {
     }, this)
   );
 });
-
-/**
- * Register a function to block the regular save button and override with saving
- * to the persistence layer.
- */
-middleware.register(
-  'keydown:' + (isMac ? 'Cmd' : 'Ctrl') + '-S',
-  function (event, next, done) {
-    event.preventDefault();
-    return persistence.save(done);
-  }
-);

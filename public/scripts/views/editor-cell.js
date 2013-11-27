@@ -24,6 +24,13 @@ var EditorCell = module.exports = View.extend({
 });
 
 /**
+ * Embed the editor cell template.
+ *
+ * @type {Function}
+ */
+EditorCell.prototype.template = template;
+
+/**
  * Runs when we initialize the editor cell.
  */
 EditorCell.prototype.initialize = function () {
@@ -45,9 +52,9 @@ EditorCell.prototype.EditorModel = require('../models/cell');
  * @type {Object}
  */
 EditorCell.prototype.events = {
-  'mousedown .cell-controls-btn':  'showControls',
-  'touchstart .cell-controls-btn': 'showControls',
-  'mouseover .cell-border-btn':    'showButtons'
+  'mousedown .cell-menu-toggle':  'showControls',
+  'touchstart .cell-menu-toggle': 'showControls',
+  'mouseover .cell-border-btn':   'showButtons'
 };
 
 /**
@@ -256,7 +263,7 @@ EditorCell.prototype.renderEditor = function () {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({
     view:     this,
-    readOnly: !this.isOwner()
+    readOnly: this.isReadOnly()
   }, this.editorOptions));
 
   // Add an extra css class for helping with styling read-only editors.
@@ -298,7 +305,6 @@ EditorCell.prototype.renderEditor = function () {
 EditorCell.prototype.render = function () {
   View.prototype.render.call(this);
   this.renderEditor();
-  this.el.appendChild(template());
 
   // Refresh the editor cells when refresh is triggered through messages.
   this.listenTo(messages, 'refresh', this.refresh);
@@ -419,8 +425,8 @@ EditorCell.prototype.appendTo = function (el) {
  *
  * @return {Boolean}
  */
-EditorCell.prototype.isOwner = function () {
-  return true;
+EditorCell.prototype.isReadOnly = function () {
+  return this.data.get('readOnly');
 };
 
 /**
