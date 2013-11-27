@@ -42,9 +42,11 @@
   </div>
 </div>
 
+{{#if @state.loading}}
 <div class="modal ui-loading">
   <i class="ui-loading-icon icon-arrows-cw animate-spin"></i>
 </div>
+{{/if}}
 
 <div class="notebook clearfix">
   <div class="notebook-content">{{{view @data.notebook}}}</div>

@@ -7,6 +7,7 @@ var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
 var bounce       = require('../lib/bounce');
 var controls     = require('../lib/controls');
+var state        = require('../state/state');
 var config       = require('../state/config');
 var messages     = require('../state/messages');
 var middleware   = require('../state/middleware');
@@ -104,41 +105,21 @@ App.prototype.initialize = function () {
    * Update state variables when the persistence state changes.
    */
   this.listenTo(persistence, 'change:state', bounce(function () {
-    var state     = persistence.get('state');
     var timestamp = new Date().toLocaleTimeString();
 
-    var stateText  = '';
-    var stateClass = '';
+    var states = {
+      1: 'Saving',
+      2: 'Loading',
+      3: 'Save failed',
+      4: persistence.isNew() ? '' : 'Saved ' + timestamp,
+      5: 'Load Failed',
+      6: persistence.isNew() ? '' : 'Loaded ' + timestamp,
+      7: 'Unsaved changes',
+      8: 'Cloning notebook'
+    };
 
-    if (state === persistence.LOADING) {
-      stateText  = 'Loading';
-      stateClass = 'loading';
-    } else if (state === persistence.LOAD_FAIL) {
-      stateText  = 'Load failed';
-      stateClass = 'load-failed';
-    } else if (state === persistence.LOAD_DONE) {
-      stateText  = persistence.isNew() ? '' : 'Loaded ' + timestamp;
-      stateClass = 'loaded';
-    } else if (state === persistence.SAVING) {
-      stateText  = 'Saving';
-      stateClass = 'saving';
-    } else if (state === persistence.SAVE_FAIL) {
-      stateText  = 'Save failed';
-      stateClass = 'save-failed';
-    } else if (state === persistence.SAVE_DONE) {
-      stateText  = persistence.isNew() ? '' : 'Saved ' + timestamp;
-      stateClass = 'saved';
-    } else if (state === persistence.CHANGED) {
-      stateText  = 'Unsaved changes';
-      stateClass = 'changed';
-    } else if (state === persistence.CLONING) {
-      stateText  = 'Cloning notebook';
-      stateClass = 'cloning';
-    }
-
-    this.data.set('stateText', stateText);
-
-    document.body.setAttribute('data-state', stateClass);
+    state.set('loading', state === persistence.LOADING);
+    this.data.set('stateText', states[persistence.get('state')]);
   }, this));
 
   /**
