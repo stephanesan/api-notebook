@@ -23,6 +23,7 @@ View.prototype.initialize = function () {
  */
 View.prototype.render = function () {
   this.el.innerHTML = '';
+  this.delegateEvents();
   return this;
 };
 
