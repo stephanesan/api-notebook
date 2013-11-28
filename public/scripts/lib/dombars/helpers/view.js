@@ -1,6 +1,12 @@
 var DOMBars = require('dombars/runtime');
 
-module.exports = function (view) {
+/**
+ * Register to DOMBars as the view helper.
+ *
+ * @param  {Backbone.View} view
+ * @return {Node}
+ */
+DOMBars.registerHelper('view', function (view) {
   if (!view) { return; }
 
   DOMBars.VM.unsubscribe(function () {
@@ -8,4 +14,4 @@ module.exports = function (view) {
   });
 
   return view.render().el;
-};
+});

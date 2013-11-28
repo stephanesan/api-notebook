@@ -1,5 +1,5 @@
 <header class="notebook-header clearfix">
-  <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
+  <input class="notebook-title" autocomplete="off" value="{{{@persistence.meta.title}}}">
 </header>
 
 <div class="notebook-toolbar clearfix user-{{#if @data.owner}}is{{else}}not{{/if}}-owner user-{{#if @data.authenticated}}is{{else}}not{{/if}}-authenticated notebook-{{#if @data.saved}}is{{else}}not{{/if}}-saved notebook-{{@data.activeView}}-active">
@@ -10,13 +10,9 @@
   </div>
 
   <div class="toolbar-inner">
-    <div class="persistence-status">
-      <button class="btn-square notebook-list hint--bottom" data-hint="List all notebooks">
-        <i class="icon-folder-open-empty"></i>
-      </button>
-      <div class="auth-status text-status">{{@persistence.userTitle}}</div>
-      <div class="save-status text-status">{{#if @data.stateText}}{{@data.stateText}}.{{/if}}</div>
-    </div>
+    {{#if @data.stateText}}
+      <div class="persistence-status">{{@data.stateText}}.</div>
+    {{/if}}
     <div class="toolbar-buttons">
       <span class="btn-edit">
         <button class="btn-text toggle-notebook">Return to notebook view</button>
@@ -48,7 +44,13 @@
 </div>
 {{/if}}
 
-<div class="notebook clearfix">
-  <div class="notebook-content">{{{view @data.notebook}}}</div>
-  <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
+<div class="notebook">
+  {{#if @config.sidebar}}
+    {{{view @data.sidebar}}}
+  {{/if}}
+
+  <div class="notebook-content">
+    {{{view @data.notebook}}}
+    <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
+  </div>
 </div>

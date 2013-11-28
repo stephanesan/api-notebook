@@ -43,8 +43,7 @@ DOMBars.unsubscribe = function (obj, property, fn) {
 };
 
 /**
- * Register DOMBars helpers.
+ * Require all the helpers from the helpers directory.
  */
-DOMBars.registerHelper({
-  view: require('./helpers/view')
-});
+require('./helpers/view');
+require('./helpers/equal');

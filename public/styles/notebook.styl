@@ -1,9 +1,14 @@
 .notebook
-  padding: 0.5em 2em
+  display: flex
+  width: 100%
   border: 1px solid #ccc
   border-top: 0
   border-radius: 0 0 5px 5px
   background: #fff
+
+.notebook-content
+  flex: 1
+  padding: 0.5em 1em
 
 .notebook-header
   padding: 1em 2em
@@ -168,22 +173,7 @@
     .persistence-status
       display: inline-block
       height: 100%
-      border: solid 1px transparent
-      border-right-color: #E8E8E8
-      padding: 0.5em 1em 0.5em 2em
-      &:hover
-        background-color: #E8E8E8
-        border: solid 1px #fff
-        border-top-color: #e1e1e1
-        border-left-color: #e1e1e1
-    .text-status
-      display: inline-block
-      margin-top: 0.35em
-    .text-status + .text-status
-      margin-left: 0.4em
-    .auth-status
-      font-weight: bold
-    .save-status
+      padding: 1em
       font-style: italic
   .toolbar-buttons
     float: right
@@ -221,6 +211,7 @@
   float: right
   width: 179px
   height: 40px
+  margin: 0 1em 0.5em 0.5em
   background-image: url("../images/powered-by-mulesoft.png")
 
 .notebook-share-about,

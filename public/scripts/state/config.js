@@ -9,7 +9,8 @@ var persistence = require('./persistence');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
-  url: window.location.href
+  url:     window.location.href,
+  sidebar: true
 });
 
 /**

@@ -1,0 +1,58 @@
+<div class="sidebar-toggle">
+  <i class="icon"></i>
+</div>
+
+<div class="sidebar-content">
+  <div class="sidebar-user">
+    {{#if @persistence.userId}}
+      <i class="sidebar-user-icon icon-folder-open-empty"></i>
+    {{/if}}
+    <div class="sidebar-user-title" title="{{@persistence.userTitle}}">
+      {{@persistence.userTitle}}
+    </div>
+  </div>
+
+  {{#if @data.updating}}
+    <p class="sidebar-updating text-center">
+      <i class="icon-arrows-cw animate-spin"></i>
+    </p>
+  {{else}}
+    <ul class="sidebar-list">
+      {{!-- Hard code the first element as the current persistence model --}}
+      <li class="item {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
+        <div class="item-description">
+          <div class="item-title">
+            {{#if @persistence.meta.title}}
+              {{@persistence.meta.title}}
+            {{else}}
+              &nbsp;
+            {{/if}}
+          </div>
+
+          <div class="item-timestamp">
+            {{#if @persistence.updatedAt}}
+              {{dateFormat @persistence.updatedAt}}</div>
+            {{else}}
+              Unsaved
+            {{/if}}
+          </div>
+          </div>
+        </div>
+      </li>
+
+      {{#each @data.list}}
+        {{#notEqual id @persistence.id}}
+          <li class="item" data-load="{{id}}">
+            <div class="item-description">
+              <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
+
+              {{#if updatedAt}}
+                <div class="item-timestamp">{{dateFormat updatedAt}}</div>
+              {{/if}}
+            </div>
+          </li>
+        {{/notEqual}}
+      {{/each}}
+    </ul>
+  {{/if}}
+</div>
