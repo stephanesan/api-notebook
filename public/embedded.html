@@ -16,6 +16,29 @@
     </style>
   </head>
   <body>
-    <script src="scripts/embed.js" data-class-name="notebook"></script>
+    <script src="scripts/embed.js" data-manual></script>
+    <script src="plugins/embed-hash-persistence.js"></script>
+    <script>
+      // Attach a parent frame plugin to the embed script.
+      embedHashPersistencePlugin(Notebook);
+
+      new Notebook(document.body, {
+        inject: [
+          'plugins/proxy.js',
+          'plugins/gist-persistence.js',
+          'plugins/filter-properties.js',
+          'plugins/raml-client-generator.js',
+          'plugins/function-property-filter.js'
+        ],
+        exec: [
+          'App.middleware.register(proxyPlugin);',
+          'App.middleware.register(gistPersistencePlugin);',
+          'App.middleware.register(filterPropertiesPlugin);',
+          'App.middleware.register(ramlClientGeneratorPlugin);',
+          'App.middleware.register(functionPropertyFilterPlugin);'
+        ].join('\n'),
+        className: 'notebook'
+      });
+    </script>
   </body>
 </html>

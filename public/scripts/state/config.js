@@ -69,7 +69,6 @@ middleware.register('application:ready', function (app, next) {
  * @param {Function} next
  */
 middleware.register('application:ready', function (app, next) {
-  // Set the starting id since it has probably been set now.
   persistence.set('id', config.get('id'));
 
   /**

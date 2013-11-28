@@ -1,4 +1,4 @@
-{{#if @config.header}}
+{{#unless @config.embedded}}
   <header class="notebook-header clearfix">
     <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
   </header>
@@ -44,17 +44,17 @@
       </div>
     </div>
   </div>
-{{/if}}
+{{/unless}}
 
-<div class="notebook">
+<div class="notebook clearfix">
   {{#if @config.sidebar}}
     {{{view @data.sidebar}}}
   {{/if}}
 
-  <div class="notebook-content">
-    {{{view @data.notebook}}}
+  <div class="notebook-content">{{{view @data.notebook}}}</div>
+  {{#unless @config.embedded}}
     <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
-  </div>
+  {{/unless}}
 </div>
 
 {{#if @state.loading}}
@@ -63,11 +63,11 @@
   </div>
 {{/if}}
 
-{{#if @config.footer}}
-  <div class="notebook-footer">
+{{#if @config.embedded}}
+  <div class="notebook-footer clearfix">
     <div class="footer-end">
-      <a href="{{@config.fullUrl}}">Open notebook</a>
-      <button class="notebook-exec">Play notebook</button>
+      <button class="btn-footer notebook-exec">Play notebook</button>
+      <a href="{{@config.fullUrl}}" class="btn-footer">Open notebook</a>
     </div>
 
     <div class="footer-inner">

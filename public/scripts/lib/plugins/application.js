@@ -132,11 +132,24 @@ middleware.register('application:start', function (options, next) {
    * Trigger changes on the config object to the parent frame. This is
    * incredibly useful for helping the parent frame with integration.
    */
-  postMessage.listenTo(config, 'all', function (name, model, value) {
-    if (name.substr(0, 7) !== 'change:') { return; }
+  postMessage.listenTo(config, 'all', (function () {
+    var updates = {};
 
-    postMessage.trigger('config:' + name.substr(7), value);
-  });
+    return function (name) {
+      if (name.substr(0, 7) !== 'change:') { return; }
+
+      var option = name.substr(7);
+
+      // Clear any previous timeout for the same option.
+      clearTimeout(updates[option]);
+
+      // Trigger the update asap. Required since the config options are firing
+      // out of order for updates.
+      updates[option] = setTimeout(function () {
+        postMessage.trigger('config:' + option, config.get(option));
+      }, 0);
+    };
+  })());
 
   /**
    * Trigger a ready event to the parent frame. This allows the frame to now

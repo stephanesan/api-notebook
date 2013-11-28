@@ -2,9 +2,10 @@
   display: flex
   width: 100%
   border: 1px solid #ccc
-  border-top: 0
-  border-radius: 0 0 5px 5px
   background: #fff
+  border-radius: 0 0 5px 5px
+  .notebook-embedded &
+    border-radius: 5px 5px 0 0
 
 .notebook-content
   flex: 1
@@ -161,6 +162,7 @@
   height: 3.2em
   font-size: .8em
   border: solid 1px #ccc
+  border-bottom: 0
   background-color: #f4f4f4
   .toolbar-inner
     height: 100%
@@ -227,3 +229,21 @@
   max-width: 380px
   margin: 0 0 10px
   padding: 4px
+
+.notebook-footer
+  border: 1px solid #ccc
+  font-size: 0.9em
+  border-top: 0
+  border-radius: 0 0 5px 5px
+  .footer-inner
+    padding: 0.8em
+    overflow: hidden
+  .footer-end
+    float: right
+  .btn-footer
+    float: right
+    height: 100%
+    padding: 0.8em
+    border: 0
+    background: none
+    border-left: 1px solid #ccc
