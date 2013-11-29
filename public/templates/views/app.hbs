@@ -66,12 +66,16 @@
 {{#if @config.embedded}}
   <div class="notebook-footer clearfix">
     <div class="footer-end">
-      <button class="btn-footer notebook-exec">Play notebook</button>
-      <a href="{{@config.fullUrl}}" class="btn-footer">Open notebook</a>
+      <button class="btn-footer notebook-exec hint--top" data-hint="Execute all cells">
+        Play notebook <i class="icon-play"></i>
+      </button>
+      <a href="{{@config.fullUrl}}" class="btn-footer hint--top" data-hint="Open Notebook on {{@config.siteTitle}}">
+        Open notebook <i class="icon-popup"></i>
+      </a>
     </div>
 
     <div class="footer-inner">
-      <a href="{{@config.fullUrl}}">{{@persistence.meta.title}}</a> hosted at <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+      <a href="{{@config.fullUrl}}">{{@persistence.meta.title}}</a> hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
     </div>
   </div>
 {{/if}}
