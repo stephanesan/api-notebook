@@ -1,18 +1,27 @@
 <!doctype html>
-<html style="height: 100%;">
+<html>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Manual Embedded Notebook Example</title>
+    <title>Embedded Notebook Example</title>
+    <style>
+      body {
+        margin: 0;
+      }
+
+      .notebook {
+        margin: 1em auto;
+        max-width: 42em;
+      }
+    </style>
   </head>
-  <body style="margin: 0; height: 100%; background-color: #eee;">
+  <body>
     <script src="scripts/embed.js" data-manual></script>
     <script src="plugins/embed-hash-persistence.js"></script>
     <script>
       // Attach a parent frame plugin to the embed script.
       embedHashPersistencePlugin(Notebook);
 
-      // Generate a regular notebook with all the injected plugins.
       new Notebook(document.body, {
         inject: [
           'plugins/proxy.js',
@@ -28,16 +37,7 @@
           'App.middleware.register(ramlClientGeneratorPlugin);',
           'App.middleware.register(functionPropertyFilterPlugin);'
         ].join('\n'),
-        config: {
-          style: [
-            'body { padding: 1em; }',
-            '.application { max-width: 52em; margin: 0 auto; }'
-          ].join('\n'),
-          embedded: false
-        }
-      }, {
-        width:  '100%',
-        height: '100%'
+        className: 'notebook'
       });
     </script>
   </body>

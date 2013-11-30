@@ -8,6 +8,7 @@ var NotebookCollection = require('../collections/notebook');
 
 var Sandbox     = require('../lib/sandbox');
 var insertAfter = require('../lib/browser/insert-after');
+var config      = require('../state/config');
 var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
 
@@ -353,7 +354,7 @@ Notebook.prototype.appendView = function (view, before) {
 
       // Need a flag here so we don't cause an infinite loop when executing the
       // notebook contents. (E.g. Hitting the last cell and adding a new cell).
-      if (this._execution) { return; }
+      if (this._execution || config.get('embedded')) { return; }
 
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();

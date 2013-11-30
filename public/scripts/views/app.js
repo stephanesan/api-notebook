@@ -69,7 +69,7 @@ App.prototype.initialize = function () {
    * Block attempts to close the window when the persistence state is dirty.
    */
   this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
-    if (persistence.get('state') !== persistence.CHANGED) { return; }
+    if (!config.get('savable') || persistence.get('state') !== 7) { return; }
 
     return (e || window.event).returnValue = 'Your changes will be lost.';
   });
@@ -121,16 +121,25 @@ App.prototype.initialize = function () {
       8: 'Cloning notebook'
     };
 
-    state.set('loading', state === persistence.LOADING);
+    state.set('loading',       persistence.get('state') === 2);
     this.data.set('stateText', states[persistence.get('state')]);
   }, this));
 
   /**
-   * Trigger a resize event any time the active notebook view changes.
+   * Add or remove a footer class depending on visibility.
    */
-  this.listenTo(this.data, 'change:notebook', function () {
-    messages.trigger('resize');
-  });
+  this.listenTo(config, 'change:header', bounce(function () {
+    var has = config.get('header');
+    this.el.classList[has ? 'add' : 'remove']('application-has-header');
+  }, this));
+
+  /**
+   * Add or remove a footer class depending on visibility.
+   */
+  this.listenTo(config, 'change:footer', bounce(function () {
+    var has = config.get('footer');
+    this.el.classList[has ? 'add' : 'remove']('application-has-footer');
+  }, this));
 
   return this;
 };

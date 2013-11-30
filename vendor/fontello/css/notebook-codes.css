@@ -2,6 +2,8 @@
 .icon-plus-circled:before { content: '\e801'; } /* '' */
 .icon-folder-open-empty:before { content: '\e802'; } /* '' */
 .icon-arrows-cw:before { content: '\e803'; } /* '' */
+.icon-play:before { content: '\e807'; } /* '' */
 .icon-floppy:before { content: '\e800'; } /* '' */
 .icon-fork:before { content: '\e804'; } /* '' */
 .icon-share:before { content: '\e805'; } /* '' */
+.icon-popup:before { content: '\e806'; } /* '' */

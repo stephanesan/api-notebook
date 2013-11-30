@@ -30,8 +30,9 @@ App.config.on('change:id', function (_, id) {
  * A user can use the forward and back buttons to navigate between notebooks.
  */
 window.addEventListener('hashchange', function () {
-  App.config.set('id', window.location.hash.substr(1));
-  App.config.set('url', window.location.href);
+  App.config.set('id',      window.location.hash.substr(1));
+  App.config.set('url',     window.location.href);
+  App.config.set('fullUrl', window.location.href);
 });
 
 /**

@@ -1,11 +1,4 @@
-var notebooks  = [];
-
-window.addEventListener('hashchange', function () {
-  for (var i = 0; i < notebooks.length; i++) {
-    notebooks[i].config('id', window.location.hash.substr(1));
-    notebooks[i].config('url', window.location.href);
-  }
-});
+var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
 
 /**
  * Export the attaching functionality.
@@ -19,26 +12,28 @@ module.exports = function (Notebook) {
    * @param {Object} notebook
    */
   Notebook.subscribe(function (notebook) {
-    notebook.config('id', window.location.hash.substr(1));
+    // Update the id and url when the hash of the window changes.
+    var updateId = function () {
+      notebook.config('id',  window.location.hash.substr(1));
+      notebook.config('url', window.location.href);
+    };
 
+    updateId();
+    window.addEventListener('hashchange', updateId);
+
+    // Update the window hash when the id changes.
     notebook.on('config:id', function (id) {
-      window.location.hash = id;
+      window.location.hash = (id == null ? '' : id);
+      notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
     });
 
-    notebooks.push(notebook);
-  });
-
-  /**
-   * Unsubscribe to a single notebook from hash changes.
-   *
-   * @param {Object} notebook
-   */
-  Notebook.unsubscribe(function (notebook) {
-    for (var i = 0; i < notebooks.length; i++) {
-      if (notebook === notebooks[i]) {
-        i--;
-        notebooks.pop();
-      }
-    }
+    /**
+     * Unsubscribe to a single notebook from hash changes.
+     *
+     * @param {Object} notebook
+     */
+    Notebook.unsubscribe(function () {
+      window.removeEventListener('hashchange', updateId);
+    });
   });
 };

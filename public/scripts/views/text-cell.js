@@ -2,6 +2,7 @@ var _            = require('underscore');
 var marked       = require('marked');
 var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
+var config       = require('../state/config');
 var messages     = require('../state/messages');
 var ownerProtect = require('./lib/owner-protect');
 
@@ -13,6 +14,18 @@ var ownerProtect = require('./lib/owner-protect');
 var TextCell = module.exports = EditorCell.extend({
   className: 'cell cell-text'
 });
+
+/**
+ * Initialize the text cell and set default options.
+ */
+TextCell.prototype.initialize = function () {
+  EditorCell.prototype.initialize.apply(this, arguments);
+
+  this.listenTo(config, 'textReadOnly', function () {
+    this.data.set('readOnly', !config.get('textReadOnly'));
+    this.renderEditor();
+  });
+};
 
 /**
  * Listen for events on text cell instances.
