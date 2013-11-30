@@ -121,7 +121,7 @@ App.prototype.initialize = function () {
       8: 'Cloning notebook'
     };
 
-    state.set('loading', state === persistence.LOADING);
+    state.set('loading',       persistence.get('state') === 2);
     this.data.set('stateText', states[persistence.get('state')]);
   }, this));
 
