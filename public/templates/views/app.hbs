@@ -51,10 +51,13 @@
     {{{view @data.sidebar}}}
   {{/if}}
 
-  <div class="notebook-content">{{{view @data.notebook}}}</div>
-  {{#unless @config.embedded}}
-    <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
-  {{/unless}}
+  <div class="notebook-content">
+    {{{view @data.notebook}}}
+
+    {{#unless @config.embedded}}
+      <a href="http://mulesoft.com" class="ir powered-by-logo">Mulesoft</a>
+    {{/unless}}
+  </div>
 </div>
 
 {{#if @state.loading}}

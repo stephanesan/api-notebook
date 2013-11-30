@@ -1,3 +1,4 @@
+var _        = require('underscore');
 var Backbone = require('backbone');
 var bounce   = require('../lib/bounce');
 
@@ -8,10 +9,11 @@ var bounce   = require('../lib/bounce');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
-  url:       window.location.href,
-  fullUrl:   process.env.NOTEBOOK_URL,
-  siteUrl:   process.env.NOTEBOOK_URL,
-  siteTitle: process.env.NOTEBOOK_TITLE
+  url:          window.location.href,
+  fullUrl:      process.env.NOTEBOOK_URL,
+  siteUrl:      process.env.NOTEBOOK_URL,
+  siteTitle:    process.env.NOTEBOOK_TITLE,
+  codeReadOnly: false
 });
 
 /**
@@ -31,20 +33,27 @@ config.listenTo(config, 'change:style', (function () {
  * styles.
  */
 config.listenTo(config, 'change:embedded', bounce(function () {
-  var bodyEl     = document.body;
   var isEmbedded = config.get('embedded');
 
-  // Update other configuration options.
-  config.set('footer',       isEmbedded);
-  config.set('header',       !isEmbedded);
-  config.set('sidebar',      !isEmbedded);
-  config.set('savable',      !isEmbedded);
-  config.set('codeEditable', true);
-  config.set('textEditable', !isEmbedded);
-
-  if (isEmbedded) {
-    return bodyEl.className += ' notebook-embedded';
+  // Iterate over the updates object and update options that have not been set.
+  if (isEmbedded != null) {
+    _.each({
+      footer:       isEmbedded,
+      header:       !isEmbedded,
+      sidebar:      !isEmbedded,
+      savable:      !isEmbedded,
+      textReadOnly: !isEmbedded
+    }, function (value, option) {
+      if (!config.has(option)) {
+        config.set(option, value);
+      }
+    });
   }
 
-  return bodyEl.className = bodyEl.className.replace(' notebook-embedded', '');
+  var className = document.body.className.replace(' notebook-embedded', '');
+
+  // If the notebook is embedded add the embedded class.
+  if (isEmbedded) {
+    document.body.className = className + ' notebook-embedded';
+  }
 }));

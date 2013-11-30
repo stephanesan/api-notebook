@@ -21,8 +21,8 @@ var TextCell = module.exports = EditorCell.extend({
 TextCell.prototype.initialize = function () {
   EditorCell.prototype.initialize.apply(this, arguments);
 
-  this.listenTo(config, 'textEditable', function () {
-    this.data.set('readOnly', !config.get('textEditable'));
+  this.listenTo(config, 'textReadOnly', function () {
+    this.data.set('readOnly', !config.get('textReadOnly'));
     this.renderEditor();
   });
 };

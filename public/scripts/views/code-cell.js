@@ -30,8 +30,8 @@ CodeCell.prototype.initialize = function () {
 
   this.resultCell = new ResultCell({ model: this.model }).render();
 
-  this.listenTo(config, 'codeEditable', function () {
-    this.data.set('readOnly', !config.get('codeEditable'));
+  this.listenTo(config, 'codeReadOnly', function () {
+    this.data.set('readOnly', config.get('codeReadOnly'));
     this.renderEditor();
   });
 };
