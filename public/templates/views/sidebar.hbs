@@ -19,7 +19,7 @@
   {{else}}
     <ul class="sidebar-list">
       {{!-- Hard code the first element as the current persistence model --}}
-      <li class="item {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
+      <li class="item item-active {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
         <div class="item-description">
           <div class="item-title">
             {{#if @persistence.meta.title}}
