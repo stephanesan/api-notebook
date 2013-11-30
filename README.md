@@ -18,9 +18,10 @@ Some environment variables are required by the script at compile time for correc
 
 ```
 export NOTEBOOK_URL="http://localhost:3000"
+export NOTEBOOK_TITLE="My Notebook Site"
 export EMBED_SCRIPT_URL="http://localhost:3000/scripts/embed.js"
 export GITHUB_CLIENT_ID=""
-# export GITHUB_CLIENT_SECRET=""
+export GITHUB_CLIENT_SECRET=""
 ```
 
 [Register a new application on Github](https://github.com/settings/applications/new), then export the keys in your `.bash_profile`.
