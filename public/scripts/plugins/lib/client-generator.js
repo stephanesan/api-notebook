@@ -73,18 +73,20 @@ var fullPrompt = function (type, options, done) {
     }
 
     var title = {
-      oauth1:    'Provide Your OAuth1 Keys',
-      oauth2:    'Provide Your OAuth2 Keys',
-      basicAuth: 'Enter Your Username and Password'
+      oauth1:    'Please Enter Your OAuth1 Keys',
+      oauth2:    'Please Enter Your OAuth2 Keys',
+      basicAuth: 'Please Enter Your Username and Password'
     }[type];
 
     return App.middleware.trigger('ui:modal', {
       title: title,
       content: [
         '<p>',
-        'Provide some text here. You might want to provide different text',
-        'depending on the type of keys. E.g. Basic Auth, OAuth1, OAuth2.',
-        '</p>'
+        'This API requires authentication. Please enter your application keys.',
+        '</p>',
+        '<p><em>',
+        'We will not store your keys.',
+        '</em></p>'
       ].concat([
         '<form>',
         _.map(requiredOptions(type, options), function (required) {
@@ -97,7 +99,9 @@ var fullPrompt = function (type, options, done) {
             '</div>'
           ].join('');
         }).join('\n'),
-        '<button type="submit" class="btn">Submit</button>',
+        '<div class="form-footer">',
+        '<button type="submit" class="btn btn-primary">Submit</button>',
+        '</div>',
         '<form>'
       ]).join('\n'),
       show: function (modal) {
