@@ -1,8 +1,7 @@
-var _       = require('underscore');
-var View    = require('./view');
-var DOMBars = require('../lib/dombars');
+var _    = require('underscore');
+var View = require('./view');
 
-// State modules should be provided as data with every view.
+// State modules should be provided as the default data with every view.
 var state       = require('../state/state');
 var config      = require('../state/config');
 var persistence = require('../state/persistence');
@@ -27,7 +26,18 @@ TemplateView.prototype.template = function () {};
  *
  * @type {Object}
  */
-TemplateView.prototype.templateData = {};
+TemplateView.prototype.templateData = {
+  state:       state,
+  config:      config,
+  persistence: persistence
+};
+
+/**
+ * Allow custom helpers to be passed into the template render.
+ *
+ * @type {Object}
+ */
+TemplateView.prototype.templateHelpers = {};
 
 /**
  * Render the template using the element using the template function.
@@ -37,14 +47,12 @@ TemplateView.prototype.templateData = {};
 TemplateView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this._el = this.template.call(DOMBars, this.model, {
+  this._el = this.template(this.model, {
     data: _.extend({
-      view:        this,
-      data:        this.data,
-      state:       state,
-      config:      config,
-      persistence: persistence,
-    }, this.templateData)
+      view: this,
+      data: this.data
+    }, this.templateData),
+    helpers: this.templateHelpers
   });
 
   if (this._el) {

@@ -39,7 +39,7 @@
     "grunt-cli": "0.1.9",
     "uglifyify": "0.0.1",
     "envify": "0.2.0",
-    "dombars": "0.0.15",
+    "dombars": "0.0.21",
     "dombarsify": "0.0.3",
     "grunt-shell": "0.3.1",
     "mocha-phantomjs": "3.1.2",

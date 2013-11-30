@@ -1,8 +1,9 @@
 var _        = require('underscore');
-var DOMBars  = require('dombars/runtime');
+var DOMBars  = require('../lib/dombars');
 var Backbone = require('backbone');
 
 var View         = require('./template');
+var Sidebar      = require('./sidebar');
 var Notebook     = require('./notebook');
 var EditNotebook = require('./edit-notebook');
 var bounce       = require('../lib/bounce');
@@ -35,7 +36,6 @@ App.prototype.events = {
   'click .notebook-clone':  'cloneNotebook',
   'click .notebook-auth':   'authNotebook',
   'click .notebook-save':   'saveNotebook',
-  'click .notebook-list':   'listNotebooks',
   'click .notebook-share':  'shareNotebook',
   'click .toggle-notebook': 'toggleEdit',
   // Listen for `Enter` presses and blur the input.
@@ -61,6 +61,9 @@ App.prototype.events = {
  */
 App.prototype.initialize = function () {
   View.prototype.initialize.apply(this, arguments);
+
+  // Set a sidebar instance to render.
+  this.data.set('sidebar', new Sidebar());
 
   /**
    * Block attempts to close the window when the persistence state is dirty.
@@ -257,68 +260,6 @@ App.prototype.shareNotebook = function () {
       Backbone.$(modal.el).on('click', '.notebook-share-input', function (e) {
         e.target.select();
       });
-    }
-  });
-};
-
-/**
- * List all notebooks in a modal and allow selection.
- */
-App.prototype.listNotebooks = function () {
-  var itemTemplate = _.template(
-    '<li><div class="item-action">' +
-    '<a href="#" class="btn btn-primary btn-small" data-load="<%- id %>">' +
-    'Load</a></div>' +
-    '<div class="item-description"><% print(meta.title || id) %> ' +
-    '<% if (updatedAt) { %>' +
-    '<span class="text-em text-small">' +
-    '<% print(updatedAt.toLocaleDateString()) %>' +
-    '</span>' +
-    '<% } %>' +
-    '<a href="#" class="item-details-link" data-delete="<%- id %>">delete</a>' +
-    '</div>' +
-    '</li>'
-  );
-
-  middleware.trigger('ui:modal', {
-    title:   'List Notebooks',
-    content: function (done) {
-      return persistence.list(function (err, list) {
-        done(null,
-          '<ul class="item-list">' +
-          _.map(list, itemTemplate).join('\n') +
-          '</ul>');
-      });
-    },
-    show: function (modal) {
-      Backbone.$(modal.el)
-        .on('click', '[data-delete]', function (e) {
-          e.preventDefault();
-
-          var id = this.getAttribute('data-delete');
-
-          middleware.trigger('ui:confirm', {
-            title: 'Delete Notebook',
-            content: 'Are you sure you want to delete this notebook?' +
-            ' Deleted notebooks cannot be restored.'
-          }, function (err, confirm) {
-            if (err || !confirm) { return; }
-
-            middleware.trigger('persistence:delete', {
-              id: id
-            }, function (err) {
-              if (err) { return; }
-
-              var listEl = e.target.parentNode.parentNode;
-              listEl.parentNode.removeChild(listEl);
-            });
-          });
-        })
-        .on('click', '[data-load]', function (e) {
-          e.preventDefault();
-          modal.close();
-          return config.set('id', this.getAttribute('data-load'));
-        });
     }
   });
 };

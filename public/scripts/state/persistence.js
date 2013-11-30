@@ -179,9 +179,9 @@ Persistence.prototype.save = function (done) {
         return done && done(err);
       }
 
-      this.set('id',      data.id);
-      this.set('ownerId', data.ownerId);
-
+      this.set('id',        data.id);
+      this.set('ownerId',   data.ownerId);
+      this.set('updatedAt', new Date());
       this._changeState(Persistence.SAVE_DONE);
       return done && done();
     }, this)
@@ -260,10 +260,11 @@ Persistence.prototype.load = function (done) {
         return done && done(err);
       }
 
-      this.set('id',       data.id);
-      this.set('ownerId',  data.ownerId);
-      this.set('contents', data.contents, { silent: true });
-      this.set('notebook', data.notebook, { silent: true });
+      this.set('id',        data.id);
+      this.set('ownerId',   data.ownerId);
+      this.set('contents',  data.contents, { silent: true });
+      this.set('notebook',  data.notebook, { silent: true });
+      this.set('updatedAt', data.updatedAt);
 
       var complete = _.bind(function () {
         delete this._loading;

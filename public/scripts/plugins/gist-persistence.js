@@ -166,9 +166,10 @@ var loadPlugin = function (data, next, done) {
       return next(new Error('Unexpected notebook response'));
     }
 
-    data.id       = content.id;
-    data.ownerId  = content.user && content.user.id;
-    data.contents = content.files['notebook.md'].content;
+    data.id        = content.id;
+    data.ownerId   = content.user && content.user.id;
+    data.contents  = content.files['notebook.md'].content;
+    data.updatedAt = new Date(content.updated_at);
     return done();
   });
 };
