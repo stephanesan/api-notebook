@@ -126,11 +126,20 @@ App.prototype.initialize = function () {
   }, this));
 
   /**
-   * Trigger a resize event any time the active notebook view changes.
+   * Add or remove a footer class depending on visibility.
    */
-  this.listenTo(this.data, 'change:notebook', function () {
-    messages.trigger('resize');
-  });
+  this.listenTo(config, 'change:header', bounce(function () {
+    var has = config.get('header');
+    this.el.classList[has ? 'add' : 'remove']('application-has-header');
+  }, this));
+
+  /**
+   * Add or remove a footer class depending on visibility.
+   */
+  this.listenTo(config, 'change:footer', bounce(function () {
+    var has = config.get('footer');
+    this.el.classList[has ? 'add' : 'remove']('application-has-footer');
+  }, this));
 
   return this;
 };

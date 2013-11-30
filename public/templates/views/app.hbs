@@ -1,4 +1,4 @@
-{{#unless @config.embedded}}
+{{#if @config.header}}
   <header class="notebook-header clearfix">
     <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
   </header>
@@ -44,7 +44,7 @@
       </div>
     </div>
   </div>
-{{/unless}}
+{{/if}}
 
 <div class="notebook clearfix">
   {{#if @config.sidebar}}
@@ -63,7 +63,7 @@
   </div>
 {{/if}}
 
-{{#if @config.embedded}}
+{{#if @config.footer}}
   <div class="notebook-footer clearfix">
     <div class="footer-end">
       <button class="btn-footer notebook-exec hint--top" data-hint="Execute all cells">

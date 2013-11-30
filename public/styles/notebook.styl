@@ -3,9 +3,13 @@
   width: 100%
   border: 1px solid #ccc
   background: #fff
-  border-radius: 0 0 5px 5px
-  .notebook-embedded &
-    border-radius: 5px 5px 0 0
+  border-radius: 5px
+  .application-has-header &
+    border-top-left-radius: 0
+    border-top-right-radius: 0
+  .application-has-footer &
+    border-bottom-left-radius: 0
+    border-bottom-right-radius: 0
 
 .notebook-content
   flex: 1
