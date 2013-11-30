@@ -48,6 +48,7 @@
   overflow: scroll
   color: #555
   .item
+    position: relative
     margin: 0
     list-style: none
     padding: 0.8em
@@ -57,8 +58,16 @@
       border-bottom: none
   [data-load]
     cursor: pointer
-  .item-active:before
+  .item-unsaved:before
     content: ""
+    position: absolute
+    top: 50%
+    left: 0.95em
+    width: 8px
+    height: 8px
+    margin-top: -4px
+    border-radius: 50%
+    background-color: #555
   .item-description
     font-size: 0.8em
   .item-title
