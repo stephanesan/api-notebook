@@ -9,6 +9,11 @@
     {{/if}}
     <div class="sidebar-user-title" title="{{@persistence.userTitle}}">
       {{@persistence.userTitle}}
+      {{#unless @persistence.userID}}
+        <p class='sidebar-authenticate text-small'>
+          <a href="#">Connect to Github</a>
+        </p>
+      {{/unless}}
     </div>
   </div>
 
