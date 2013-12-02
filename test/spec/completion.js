@@ -291,6 +291,11 @@ describe('Completion', function () {
         'should complete arrays over multiple lines',
         testAutocomplete('[\n1, 2, 3\n].', 'concat')
       );
+
+      it(
+        'should complete after comment lines',
+        testAutocomplete('// Random comment\nwindow.', 'window')
+      );
     });
 
     describe('Function Returns', function () {

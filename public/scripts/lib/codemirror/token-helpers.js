@@ -10,7 +10,7 @@ var middleware = require('../../state/middleware');
  * @return {Boolean}
  */
 var canAccess = function (token) {
-  if (!_.contains([null, 'keyword', 'invalid'], token.type)) {
+  if (!_.contains([null, 'keyword', 'invalid', 'comment'], token.type)) {
     return true;
   }
 
