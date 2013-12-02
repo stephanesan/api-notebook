@@ -5,8 +5,8 @@
   "private": true,
   "browserify": {
     "transform": [
-      "envify",
-      "dombarsify"
+      "dombarsify",
+      "envify"
     ]
   },
   "dependencies": {
