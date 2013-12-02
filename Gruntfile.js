@@ -68,7 +68,7 @@ module.exports = function (grunt) {
 
   var jsRegex             = /\.js$/;
   var browserifyPlugins   = {};
-  var browserifyTransform = ['dombarsify', 'envify'];
+  var browserifyTransform = [];
 
   if (!DEV) {
     browserifyTransform.push('uglifyify');
