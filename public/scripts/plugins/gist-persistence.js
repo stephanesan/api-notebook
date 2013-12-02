@@ -293,6 +293,11 @@ var deletePlugin = function (data, next, done) {
 };
 
 /**
+ * Set the config option for the authentication text.
+ */
+App.config.set('authenticateText', 'Connect using Github');
+
+/**
  * A { key: function } map of all middleware used in the plugin.
  *
  * @type {Object}
