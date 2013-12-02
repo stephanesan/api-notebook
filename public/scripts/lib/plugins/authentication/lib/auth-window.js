@@ -46,6 +46,7 @@ module.exports = function (url, options, cb) {
       'You can revoke these permissions at any time.',
       '</p>',
     ].join('\n'),
+    btnText: 'Authenticate',
     show: function (modal) {
       openModal = modal;
 
@@ -76,7 +77,7 @@ module.exports = function (url, options, cb) {
   modalOptions.content += [
     '<p class="text-center">',
     '<button class="btn btn-primary" data-authenticate>',
-    (modalOptions.btnText || 'Authenticate'),
+    modalOptions.btnText,
     '</button>',
     '</p>'
   ].join('\n');

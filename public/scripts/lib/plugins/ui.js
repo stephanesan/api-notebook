@@ -102,7 +102,7 @@ middleware.register('ui:modal', function (options, next, done) {
 
       return modal.close();
     })
-    .on('click', '[data-dismiss]', modal.close);
+    .on('click', '[data-dismiss]', _.bind(modal.close, null, null));
 
   // Execute the after render function which can be used to attach more
   // functionality to the modal.
