@@ -38,6 +38,7 @@ App.prototype.events = {
   'click .notebook-save':   'saveNotebook',
   'click .notebook-share':  'shareNotebook',
   'click .toggle-notebook': 'toggleEdit',
+  'click .notebook-new':    'newNotebook',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
     if (e.which !== ENTER_KEY) { return; }
@@ -247,6 +248,14 @@ App.prototype.cloneNotebook = function () {
  */
 App.prototype.saveNotebook = function () {
   return persistence.save();
+};
+
+/**
+ * Manually create a new notebook.
+ */
+App.prototype.newNotebook = function () {
+  persistence.set('id', '');
+  return persistence.load();
 };
 
 /**

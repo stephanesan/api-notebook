@@ -1,4 +1,3 @@
-var _        = require('underscore');
 var Backbone = require('backbone');
 var bounce   = require('../lib/bounce');
 
@@ -13,6 +12,11 @@ var config = module.exports = new Backbone.Model({
   fullUrl:      process.env.NOTEBOOK_URL,
   siteUrl:      process.env.NOTEBOOK_URL,
   siteTitle:    process.env.NOTEBOOK_TITLE,
+  header:       true,
+  footer:       false,
+  sidebar:      true,
+  savable:      true,
+  textReadOnly: false,
   codeReadOnly: false
 });
 
@@ -37,16 +41,12 @@ config.listenTo(config, 'change:embedded', bounce(function () {
 
   // Iterate over the updates object and update options that have not been set.
   if (isEmbedded != null) {
-    _.each({
+    config.set({
       footer:       isEmbedded,
       header:       !isEmbedded,
       sidebar:      !isEmbedded,
       savable:      !isEmbedded,
       textReadOnly: !isEmbedded
-    }, function (value, option) {
-      if (!config.has(option)) {
-        config.set(option, value);
-      }
     });
   }
 
