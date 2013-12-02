@@ -76,7 +76,7 @@ module.exports = function (url, options, cb) {
   modalOptions.content += [
     '<p class="text-center">',
     '<button class="btn btn-primary" data-authenticate>',
-    (options.btnText || 'Authenticate'),
+    (modalOptions.btnText || 'Authenticate'),
     '</button>',
     '</p>'
   ].join('\n');

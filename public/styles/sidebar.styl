@@ -24,7 +24,7 @@
 .sidebar-list,
 .sidebar-updating
   position: absolute
-  top: 2.45em
+  top: 50px
   left: 0
   right: 1px
   bottom: 0
@@ -33,13 +33,17 @@
   padding: 1em
 
 .sidebar-user
+  height: 50px
   padding: 0.75em
   line-height: 1.2
   font-weight: bold
   font-size: 0.9em
   border-bottom: 1px solid #ccc
-  // Enforce some space below for the list.
-  margin-bottom: 8em
+  .persistence-unauthenticate
+    display: none
+  &:hover
+    .persistence-unauthenticate
+      display: block
 
 .sidebar-user-icon
   float: left
@@ -47,6 +51,7 @@
 
 .sidebar-user-title
   overflow: ellipsis
+  margin-left: 1.7em
 
 .sidebar-list
   overflow-y: scroll

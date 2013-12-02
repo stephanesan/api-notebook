@@ -31,7 +31,7 @@ var Persistence = Backbone.Model.extend({
     originalId: null,
     userId:     null,
     ownerId:    null,
-    userTitle:  'Unauthenticated'
+    userTitle:  ''
   }
 });
 
@@ -216,6 +216,24 @@ Persistence.prototype.authenticate = function (done) {
       if (!this.has('id') && !this.has('ownerId')) {
         this.set('ownerId', this.get('userId'));
       }
+
+      return done && done(err);
+    }, this)
+  );
+};
+
+/**
+ * Unauthenticate the persistence layer login.
+ *
+ * @param {Function} done
+ */
+Persistence.prototype.unauthenticate = function (done) {
+  middleware.trigger(
+    'persistence:unauthenticate',
+    this.getMiddlewareData(),
+    _.bind(function (err) {
+      this.set('userId',    '');
+      this.set('userTitle', '');
 
       return done && done(err);
     }, this)

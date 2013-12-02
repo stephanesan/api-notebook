@@ -8,7 +8,21 @@
       <i class="sidebar-user-icon icon-folder-open-empty"></i>
     {{/if}}
     <div class="sidebar-user-title" title="{{@persistence.userTitle}}">
-      {{@persistence.userTitle}}
+      {{#if @persistence.userId}}
+        {{@persistence.userTitle}}
+      {{else}}
+        Unauthenticated
+      {{/if}}
+
+      <p class="sidebar-authenticate text-small persistence-{{#if @persistence.userId}}un{{/if}}authenticate">
+        <a href="#">
+          {{#if @persistence.userId}}
+            {{@config.unauthenticateText}}
+          {{else}}
+            {{@config.authenticateText}}
+          {{/if}}
+        </a>
+      </p>
     </div>
   </div>
 
