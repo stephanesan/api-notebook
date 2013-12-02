@@ -32,7 +32,9 @@ SidebarView.prototype.events = {
     var isOpen = !this.el.classList.contains('sidebar-closed');
 
     this.el.classList[isOpen ? 'add' : 'remove']('sidebar-closed');
-  }
+  },
+  'click .persistence-authenticate':   'authenticate',
+  'click .persistence-unauthenticate': 'unauthenticate'
 };
 
 /**
@@ -83,6 +85,17 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
+};
+
+/**
+ * Authenticate to the notebook persistence layer.
+ */
+SidebarView.prototype.authenticate = function () {
+  return persistence.authenticate();
+};
+
+SidebarView.prototype.unauthenticate = function () {
+  return persistence.unauthenticate();
 };
 
 // middleware.trigger('ui:modal', {

@@ -223,6 +223,24 @@ Persistence.prototype.authenticate = function (done) {
 };
 
 /**
+ * Unauthenticate the persistence layer login.
+ *
+ * @param {Function} done
+ */
+Persistence.prototype.unauthenticate = function (done) {
+  middleware.trigger(
+    'persistence:unauthenticate',
+    this.getMiddlewareData(),
+    _.bind(function (err) {
+      this.set('userId',    '');
+      this.set('userTitle', '');
+
+      return done && done(err);
+    }, this)
+  );
+};
+
+/**
  * Get the persistence object in a format that is suitable for middleware.
  *
  * @return {Object}

@@ -8,16 +8,18 @@ var bounce   = require('../lib/bounce');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
-  url:          window.location.href,
-  fullUrl:      process.env.NOTEBOOK_URL,
-  siteUrl:      process.env.NOTEBOOK_URL,
-  siteTitle:    process.env.NOTEBOOK_TITLE,
-  header:       true,
-  footer:       false,
-  sidebar:      true,
-  savable:      true,
-  textReadOnly: false,
-  codeReadOnly: false
+  url:                window.location.href,
+  fullUrl:            process.env.NOTEBOOK_URL,
+  siteUrl:            process.env.NOTEBOOK_URL,
+  siteTitle:          process.env.NOTEBOOK_TITLE,
+  header:             true,
+  footer:             false,
+  sidebar:            true,
+  savable:            true,
+  textReadOnly:       false,
+  codeReadOnly:       false,
+  authenticateText:   'Authenticate',
+  unauthenticateText: 'Unauthenticate'
 });
 
 /**

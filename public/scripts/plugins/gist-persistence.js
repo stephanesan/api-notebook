@@ -18,12 +18,12 @@ var authOpts = {
   authorizationUri:    AUTH_URL,
   authorizationGrants: 'code',
   modal: {
-    title: 'Save Notebook',
+    title: 'Authenticate Notebook',
     content: [
       '<p>Notebooks are saved as gists to your GitHub account.</p>',
       '<p>',
       'Please authorize this application in order to ',
-      'save, edit, and share your notebook.',
+      'save, edit, and share your notebooks.',
       '</p>'
     ].join('\n'),
     btnText: 'Authorize With GitHub'
@@ -125,6 +125,19 @@ var authenticatePlugin = function (data, next, done) {
 
     return authenticatedUserId(done);
   });
+};
+
+/**
+ * Unauthenticate the user.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
+var unauthenticatePlugin = function (data, next, done) {
+  oauth2Store.clear();
+
+  return done();
 };
 
 /**
@@ -285,11 +298,12 @@ var deletePlugin = function (data, next, done) {
  * @type {Object}
  */
 module.exports = {
-  'persistence:change':        changePlugin,
-  'persistence:authenticate':  authenticatePlugin,
-  'persistence:authenticated': authenticatedPlugin,
-  'persistence:load':          loadPlugin,
-  'persistence:save':          savePlugin,
-  'persistence:list':          listPlugin,
-  'persistence:delete':        deletePlugin
+  'persistence:change':         changePlugin,
+  'persistence:authenticate':   authenticatePlugin,
+  'persistence:unauthenticate': unauthenticatePlugin,
+  'persistence:authenticated':  authenticatedPlugin,
+  'persistence:load':           loadPlugin,
+  'persistence:save':           savePlugin,
+  'persistence:list':           listPlugin,
+  'persistence:delete':         deletePlugin
 };
