@@ -31,7 +31,7 @@ var Persistence = Backbone.Model.extend({
     originalId: null,
     userId:     null,
     ownerId:    null,
-    userTitle:  'Unauthenticated'
+    userTitle:  ''
   }
 });
 
