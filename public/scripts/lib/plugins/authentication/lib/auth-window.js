@@ -84,6 +84,7 @@ module.exports = function (url, options, cb) {
 
   middleware.trigger('ui:modal', modalOptions, function () {
     openModal = null;
+    window.clearInterval(closeInterval);
     return !completed && cb(new Error('Modal closed without authenticating'));
   });
 
