@@ -251,7 +251,7 @@ var savePlugin = function (data, next, done) {
 var listPlugin = function (list, next, done) {
   (function recurse (link) {
     App.middleware.trigger('ajax:oauth2', {
-      url:     link,
+      url:    link,
       method: 'GET',
       oauth2: oauth2Store.toJSON()
     }, function (err, xhr) {

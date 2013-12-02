@@ -34,7 +34,10 @@ SidebarView.prototype.events = {
     this.el.classList[isOpen ? 'add' : 'remove']('sidebar-closed');
   },
   'click .persistence-authenticate':   'authenticate',
-  'click .persistence-unauthenticate': 'unauthenticate'
+  'click .persistence-unauthenticate': 'unauthenticate',
+  'click .sidebar-authenticate': function (e) {
+    e.preventDefault();
+  }
 };
 
 /**
