@@ -24,7 +24,7 @@ var stringProps = {
 var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
-    meta:       new Backbone.Model({ title: 'Untitled Notebook' }),
+    meta:       new Backbone.Model(),
     state:      0,
     notebook:   [],
     contents:   '',
@@ -156,7 +156,9 @@ Persistence.prototype.deserialize = function (done) {
       notebook: null
     }),
     _.bind(function (err, data) {
-      this.get('meta').clear().set(data.meta);
+      this.get('meta').clear().set(_.extend({
+        title: 'Untitled Notebook'
+      }, data.meta));
       this.set('notebook', data.notebook);
 
       return done && done(err);

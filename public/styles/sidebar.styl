@@ -74,8 +74,9 @@
       background-color: rgba(0,0,0,0.02)
     .icon-cancel-circled
       float: right
-      margin-top: 5px
       display: none
+      margin-top: 5px
+      cursor: pointer
     &:hover .icon-cancel-circled
       display: block
   .item-active
@@ -83,6 +84,8 @@
     border-bottom: solid 2px #D8D8D8
     &:hover
       background-color: #EAEAEA
+  .item-hidden
+    display: none
   [data-load]
     cursor: pointer
   .item-unsaved:before

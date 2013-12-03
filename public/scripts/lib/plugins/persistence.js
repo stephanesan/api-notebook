@@ -132,9 +132,6 @@ middleware.register('persistence:deserialize', function (data, next, done) {
 middleware.register('persistence:load', function (data, next, done) {
   data.id       = null;
   data.contents = [
-    META_DATA_DELIMITER,
-    'title: Untitled Notebook',
-    META_DATA_DELIMITER,
     OPEN_CODE_BLOCK,
     '',
     CLOSE_CODE_BLOCK

@@ -61,19 +61,17 @@
       </li>
 
       {{#each @data.list}}
-        {{#notEqual id @persistence.id}}
-          <li class="item" data-load="{{id}}">
-            <i class="icon-cancel-circled" data-delete="{{id}}"></i>
+        <li class="item {{#equal id @persistence.id}}item-hidden{{/equal}}" data-load="{{id}}">
+          <i class="icon-cancel-circled" data-delete="{{id}}"></i>
 
-            <div class="item-description">
-              <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
+          <div class="item-description">
+            <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
 
-              {{#if updatedAt}}
-                <div class="item-timestamp">{{dateFormat updatedAt}}</div>
-              {{/if}}
-            </div>
-          </li>
-        {{/notEqual}}
+            {{#if updatedAt}}
+              <div class="item-timestamp">{{dateFormat updatedAt}}</div>
+            {{/if}}
+          </div>
+        </li>
       {{/each}}
     </ul>
   {{/if}}
