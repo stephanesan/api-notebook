@@ -66,6 +66,7 @@ var serverMiddleware = function (connect, options) {
 module.exports = function (grunt) {
   require('load-grunt-tasks')(grunt);
 
+  var _                   = grunt.util._;
   var jsRegex             = /\.js$/;
   var browserifyPlugins   = {};
   var browserifyTransform = [];
@@ -75,14 +76,16 @@ module.exports = function (grunt) {
   }
 
   require('fs').readdirSync(PLUGIN_DIR).forEach(function (fileName) {
-    if (!jsRegex.test(fileName)) { return; }
+    if (fileName.charAt(0) === '.') { return; }
 
     // Remove trailing extension and transform to camelCase
-    var name = grunt.util._.camelize(fileName.replace(jsRegex, '')) + 'Plugin';
+    var name    = _.camelize(fileName.replace(jsRegex, '')) + 'Plugin';
+    var inFile  = fileName + (jsRegex.test(fileName) ? '' : '/index.js');
+    var outFile = fileName + (jsRegex.test(fileName) ? '' : '.js');
 
     browserifyPlugins[name] = {
-      src:  PLUGIN_DIR + '/' + fileName,
-      dest: 'build/plugins/' + fileName,
+      src:  PLUGIN_DIR + '/' + inFile,
+      dest: 'build/plugins/' + outFile,
       options: {
         debug:      DEV,
         transform:  browserifyTransform,
