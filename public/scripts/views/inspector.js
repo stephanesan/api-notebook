@@ -6,6 +6,20 @@ var messages   = require('../state/messages');
 var middleware = require('../state/middleware');
 
 /**
+ * Match anything that looks like a valid uri. This includes "data:", "mailto:",
+ * "http://", "https://", "ftp://" and anything else that may exist.
+ */
+var linkRegExp = new RegExp(
+  '(' +
+    '(?:\\w+:\\/{2}|(?:data|mailto)\\:)' +
+    '(?:' +
+      '[A-Za-z0-9\\.\\-_~:/\\?#\\[\\]@!\\$&\'\\(\\)\\*\\+,;=]|%[A-Fa-f0-9]{2}' +
+    ')+' +
+  ')',
+  'g'
+);
+
+/**
  * Creates a new inspector view instance.
  *
  * @type {Function}
@@ -242,13 +256,35 @@ InspectorView.prototype.renderPreview = function () {
   }, _.bind(function (err, filter) {
     if (!filter) { return this.remove(); }
 
-    var html    = '';
-    var prefix  = '';
-    var special = !!this.internal;
-    var preview = this.stringifyPreview();
+    var html        = '';
+    var prefix      = '';
+    var special     = !!this.internal;
+    var preview     = this.stringifyPreview(this.inspect);
+    var htmlPreview = '';
+
+    if (typeof this.inspect === 'string') {
+      var previous = 0;
+
+      preview.replace(linkRegExp, function (match, uri, index) {
+        var escapedUri = _.escape(uri);
+
+        // Append the html preview in multiple steps.
+        htmlPreview += _.escape(preview.slice(previous, index));
+        htmlPreview += '<a href="' + escapedUri + '">' + escapedUri + '</a>';
+
+        // Increment the previous marker to the current position.
+        previous = index + match.length;
+      });
+
+      htmlPreview += _.escape(preview.substr(previous));
+    } else {
+      htmlPreview = _.escape(preview);
+    }
 
     // If we have a property name, use it as the display prefix.
-    if (this.property) { prefix = this.property; }
+    if (this.property) {
+      prefix = this.property;
+    }
 
     // If we have a parent object, do some more advanced checks to establish
     // some more advanced properties such as the prefix and special display.
@@ -281,7 +317,7 @@ InspectorView.prototype.renderPreview = function () {
       html += '</span>: ';
     }
     html += '<span class="inspect" title="' + _.escape(preview) + '">';
-    html += _.escape(preview.split('\n').join('↵'));
+    html += htmlPreview.split('\n').join('↵');
     html += '</span>';
     html += '</div>';
 
