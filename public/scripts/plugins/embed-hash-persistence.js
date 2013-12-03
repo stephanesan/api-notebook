@@ -1,4 +1,4 @@
-var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
+var NOTEBOOK_URL = process.env.application.url;
 
 /**
  * Export the attaching functionality.

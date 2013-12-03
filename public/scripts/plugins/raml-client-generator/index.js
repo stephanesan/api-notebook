@@ -7,6 +7,7 @@ var fromPath        = require('../../lib/from-path');
 /**
  * Implementation helpers.
  */
+require('./inject-api-keys');
 require('./insert-api-client');
 
 /**

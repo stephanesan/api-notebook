@@ -4,7 +4,7 @@ var Kamino  = require('kamino');
 var __slice = Array.prototype.slice;
 
 // Set the location to load the notebook from
-var NOTEBOOK_URL = process.env.NOTEBOOK_URL;
+var NOTEBOOK_URL = process.env.application.url;
 
 /**
  * Extend any object with the properties from other objects, overriding of left

@@ -6,7 +6,7 @@
   "browserify": {
     "transform": [
       "dombarsify",
-      "envify"
+      "envify-config"
     ]
   },
   "dependencies": {
@@ -40,7 +40,6 @@
     "grunt-browserify": "1.2.11",
     "grunt-cli": "0.1.9",
     "uglifyify": "0.0.1",
-    "envify": "0.2.0",
     "dombars": "0.0.21",
     "dombarsify": "0.0.3",
     "grunt-shell": "0.3.1",
@@ -54,7 +53,8 @@
     "chai": "1.8.1",
     "mocha": "1.14.0",
     "load-grunt-tasks": "0.2.0",
-    "brfs": "0.0.8"
+    "brfs": "0.0.8",
+    "envify-config": "0.0.1"
   },
   "engines": {
     "node": "0.10.21"

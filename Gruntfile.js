@@ -1,3 +1,4 @@
+var url         = require('url');
 var request     = require('request');
 var DEV         = process.env.NODE_ENV !== 'production';
 var PLUGIN_DIR  = __dirname + '/public/scripts/plugins';
@@ -5,57 +6,22 @@ var BUILD_DIR   = __dirname + '/build';
 var TEST_DIR    = BUILD_DIR + '/test';
 var FIXTURE_DIR = TEST_DIR  + '/fixtures';
 var PORT        = process.env.PORT || 3000;
-var TEST_PORT   = process.env.TEST_PORT || 9876;
 
 /**
- * Generic middleware stack for running the connect server grunt tasks.
+ * Uses a simple object representation of urls to merge additional data with
+ * proxied requests. Port this to use RAML ASAP.
  *
- * @param  {Object} connect
- * @param  {Object} options
- * @return {Array}
+ * @type {Object}
  */
-var serverMiddleware = function (connect, options) {
-  var middleware = [];
-
-  // Enables cross-domain requests.
-  middleware.push(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin',  '*');
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
-    return next();
-  });
-
-  // Serve the regular static directory.
-  middleware.push(connect.static(options.base));
-
-  middleware.push(function (req, res, next) {
-    if (req.url.substr(0, 7) !== '/proxy/') {
-      return next();
-    }
-
-    var url = req.url.substr(7);
-
-    // Attach the client secret to any Github access token requests.
-    if (/^https?:\/\/(api\.)?github.com/.test(url)) {
-      url += (url.indexOf('?') > -1 ? '&' : '?');
-      url += 'client_secret=';
-      url += encodeURIComponent(process.env.GITHUB_CLIENT_SECRET);
-    }
-
-    var proxy = request(url);
-
-    // Send the proxy error to the client.
-    proxy.on('error', function (err) {
-      res.writeHead(500);
-      return res.end(err.message);
-    });
-
-    // Pipe the request data directly into the proxy request and back to the
-    // response object. This avoids having to buffer the request body in cases
-    // where they could be unexepectedly large and/or slow.
-    return req.pipe(proxy).pipe(res);
-  });
-
-  return middleware;
+var mergeData = {
+  'github.com': {
+    'client_id':     process.env.GITHUB_CLIENT_ID,
+    'client_secret': process.env.GITHUB_CLIENT_SECRET
+  },
+  'api.github.com': {
+    'client_id':     process.env.GITHUB_CLIENT_ID,
+    'client_secret': process.env.GITHUB_CLIENT_SECRET
+  }
 };
 
 /**
@@ -93,6 +59,56 @@ module.exports = function (grunt) {
       }
     };
   });
+
+  /**
+   * Generic middleware stack for running the connect server grunt tasks.
+   *
+   * @param  {Object} connect
+   * @param  {Object} options
+   * @return {Array}
+   */
+  var serverMiddleware = function (connect, options) {
+    var middleware = [];
+
+    // Enables cross-domain requests.
+    middleware.push(function (req, res, next) {
+      res.setHeader('Access-Control-Allow-Origin',  '*');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
+      return next();
+    });
+
+    // Serve the regular static directory.
+    middleware.push(connect.static(options.base));
+
+    middleware.push(function (req, res, next) {
+      if (req.url.substr(0, 7) !== '/proxy/') {
+        return next();
+      }
+
+      var data  = {};
+
+      var uri = data.uri = url.parse(req.url.substr(7));
+      var qs  = data.qs  = uri.query || {};
+
+      // Extends the query string with additonal query data.
+      _.defaults(qs, mergeData[uri.hostname]);
+
+      var proxy = request(data);
+
+      // Send the proxy error to the client.
+      proxy.on('error', function (err) {
+        res.writeHead(500);
+        return res.end(err.message);
+      });
+
+      // Pipe the request data directly into the proxy request and back to the
+      // response object. This avoids having to buffer the request body in cases
+      // where they could be unexepectedly large and/or slow.
+      return req.pipe(proxy).pipe(res);
+    });
+
+    return middleware;
+  };
 
   grunt.initConfig({
     /**
@@ -226,13 +242,6 @@ module.exports = function (grunt) {
           port: PORT,
           base: BUILD_DIR
         }
-      },
-      'test-server': {
-        options: {
-          middleware: serverMiddleware,
-          port: TEST_PORT,
-          base: BUILD_DIR
-        }
       }
     },
 
@@ -261,14 +270,9 @@ module.exports = function (grunt) {
     }
   });
 
-  // Set the notebook test url.
-  grunt.registerTask('test-notebook-url', function () {
-    process.env.NOTEBOOK_URL = 'http://localhost:' + TEST_PORT;
-  });
-
   // Test the application in a headless browser environment.
   grunt.registerTask('test-browser', [
-    'test-notebook-url', 'build', 'connect:test-server', 'shell:mocha-browser'
+    'build', 'connect:server', 'shell:mocha-browser'
   ]);
 
   // Test the application in a headless environment.
