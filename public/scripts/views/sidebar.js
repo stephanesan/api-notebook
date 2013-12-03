@@ -109,8 +109,12 @@ SidebarView.prototype.deleteId = function (id) {
     return confirmed && middleware.trigger('persistence:delete', {
       id: id
     }, _.bind(function () {
+      if (persistence.get('id') === id) {
+        this.updateId('');
+      }
+
       var listItemEl = this.el.querySelector('[data-load="' + id + '"]');
-      listItemEl.parentNode.removeChild(listItemEl);
+      return listItemEl && listItemEl.parentNode.removeChild(listItemEl);
     }, this));
   }, this));
 };
