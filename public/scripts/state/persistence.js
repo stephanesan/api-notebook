@@ -505,9 +505,7 @@ middleware.register('application:ready', function (app, next) {
    * is unlikely to be maintained.
    */
   config.listenTo(config, 'change:id', function (_, id) {
-    var persistId = persistence.get('id');
-    persistence.set('id', id);
-    return persistId === id || persistence.load();
+    return persistence.set('id', id);
   });
 
   /**
@@ -526,7 +524,9 @@ middleware.register('application:ready', function (app, next) {
    * @param {String} id
    */
   config.listenTo(persistence, 'change:id', function (_, id) {
-    return config.set('id', id);
+    config.set('id', id);
+
+    return persistence.load();
   });
 
   return next();
