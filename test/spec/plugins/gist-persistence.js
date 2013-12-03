@@ -117,11 +117,11 @@ describe('Gist Persistence Plugin', function () {
   });
 
   it('should load from a gist id', function (done) {
-    App.persistence.set('id', id);
+    App.persistence.set('id', id, { silent: true });
 
     server.respondWith(
       'GET',
-      'https://api.github.com/gists/' + id,
+      new RegExp('^https://api.github.com/gists/' + id),
       [
         200,
         {
