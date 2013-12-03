@@ -57,6 +57,8 @@
       {{#each @data.list}}
         {{#notEqual id @persistence.id}}
           <li class="item" data-load="{{id}}">
+            <i class="icon-cancel-circled" data-delete="{{id}}"></i>
+
             <div class="item-description">
               <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
 
