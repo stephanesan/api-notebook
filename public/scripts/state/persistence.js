@@ -272,9 +272,10 @@ Persistence.prototype.load = function (done) {
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
-      meta:     {},
-      contents: null,
-      notebook: null
+      meta:      {},
+      contents:  null,
+      notebook:  null,
+      updatedAt: null
     }),
     _.bind(function (err, data) {
       this._loading = true;
