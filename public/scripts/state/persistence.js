@@ -322,7 +322,11 @@ Persistence.prototype.list = function (done) {
     return done && done(new Error('Not authenticated'));
   }
 
-  return middleware.trigger('persistence:list', [], done);
+  return middleware.trigger('persistence:list', [], function (err, list) {
+    return done(err, list.sort(function (a, b) {
+      return +a.updatedAt > +b.updatedAt ? -1 : 1;
+    }));
+  });
 };
 
 /**
