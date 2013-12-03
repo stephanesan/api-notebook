@@ -5,6 +5,11 @@ var AUTH_URL     = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
 var VALIDATE_URL = 'https://api.github.com/user';
 
+// Append the client id to all urls so we can get a higher rate limit.
+AUTH_URL     += '?client_id=' + CLIENT_ID;
+TOKEN_URL    += '?client_id=' + CLIENT_ID;
+VALIDATE_URL += '?client_id=' + CLIENT_ID;
+
 /**
  * OAuth2 authentication options object.
  *
@@ -164,7 +169,7 @@ var loadPlugin = function (data, next, done) {
   }
 
   App.middleware.trigger('ajax', {
-    url: 'https://api.github.com/gists/' + data.id,
+    url: 'https://api.github.com/gists/' + data.id + '?client_id=' + CLIENT_ID,
     method: 'GET'
   }, function (err, xhr) {
     var content;

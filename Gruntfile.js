@@ -35,7 +35,7 @@ var serverMiddleware = function (connect, options) {
     var url = req.url.substr(7);
 
     // Attach the client secret to any Github access token requests.
-    if (/^https?:\/\/github.com\/login\/oauth\/access_token/.test(url)) {
+    if (/^https?:\/\/(api\.)?github.com/.test(url)) {
       url += (url.indexOf('?') > -1 ? '&' : '?');
       url += 'client_secret=';
       url += encodeURIComponent(process.env.GITHUB_CLIENT_SECRET);
