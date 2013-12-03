@@ -24,7 +24,7 @@ var stringProps = {
 var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
-    meta:       new Backbone.Model({ title: 'Untitled Notebook' }),
+    meta:       new Backbone.Model(),
     state:      0,
     notebook:   [],
     contents:   '',
@@ -151,11 +151,14 @@ Persistence.prototype.deserialize = function (done) {
   middleware.trigger(
     'persistence:deserialize',
     _.extend(this.getMiddlewareData(), {
+      meta:     {},
       ownerId:  null,
       notebook: null
     }),
     _.bind(function (err, data) {
-      this.get('meta').set(data.meta);
+      this.get('meta').clear().set(_.extend({
+        title: 'Untitled Notebook'
+      }, data.meta));
       this.set('notebook', data.notebook);
 
       return done && done(err);
@@ -271,17 +274,13 @@ Persistence.prototype.load = function (done) {
   return middleware.trigger(
     'persistence:load',
     _.extend(this.getMiddlewareData(), {
-      contents: null,
-      notebook: null
+      meta:      {},
+      contents:  null,
+      notebook:  null,
+      updatedAt: null
     }),
     _.bind(function (err, data) {
       this._loading = true;
-
-      if (err) {
-        delete this._loading;
-        this._changeState(Persistence.LOAD_FAIL);
-        return done && done(err);
-      }
 
       this.set('id',        data.id);
       this.set('ownerId',   data.ownerId);
@@ -292,8 +291,8 @@ Persistence.prototype.load = function (done) {
       var complete = _.bind(function () {
         delete this._loading;
         this.trigger('changeNotebook', this);
-        this._changeState(Persistence.LOAD_DONE);
-        return done && done();
+        this._changeState(err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
+        return done && done(err);
       }, this);
 
       // No post-processing required.

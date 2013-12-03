@@ -2,6 +2,7 @@ var _           = require('underscore');
 var View        = require('./template');
 var bounce      = require('../lib/bounce');
 var config      = require('../state/config');
+var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
 
 /**
@@ -22,6 +23,8 @@ SidebarView.prototype.events = {
   'click [data-load]': function (e) {
     var node = e.target;
 
+    if (node.hasAttribute('data-delete')) { return; }
+
     while (!node.hasAttribute('data-load')) {
       node = node.parentNode;
     }
@@ -35,6 +38,9 @@ SidebarView.prototype.events = {
   },
   'click .persistence-authenticate':   'authenticate',
   'click .persistence-unauthenticate': 'unauthenticate',
+  'click [data-delete]': function (e) {
+    this.deleteId(e.target.getAttribute('data-delete'));
+  },
   'click .sidebar-authenticate': function (e) {
     e.preventDefault();
   }
@@ -83,11 +89,34 @@ SidebarView.prototype.render = function () {
 /**
  * Load an id into the persistence layer.
  *
- * @param {String}   id
- * @param {Function} done
+ * @param {String} id
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
+};
+
+/**
+ * Delete an id using the persistence layer.
+ *
+ * @param {String} id
+ */
+SidebarView.prototype.deleteId = function (id) {
+  middleware.trigger('ui:confirm', {
+    title: 'Delete Notebook',
+    content: 'Are you sure you want to delete this notebook?' +
+    ' Deleted notebooks cannot be restored.'
+  }, _.bind(function (err, confirmed) {
+    return confirmed && middleware.trigger('persistence:delete', {
+      id: id
+    }, _.bind(function () {
+      if (persistence.get('id') === id) {
+        this.updateId('');
+      }
+
+      var listItemEl = this.el.querySelector('[data-load="' + id + '"]');
+      return listItemEl && listItemEl.parentNode.removeChild(listItemEl);
+    }, this));
+  }, this));
 };
 
 /**
@@ -97,48 +126,9 @@ SidebarView.prototype.authenticate = function () {
   return persistence.authenticate();
 };
 
+/**
+ * Unauthenticate from the notebook.
+ */
 SidebarView.prototype.unauthenticate = function () {
   return persistence.unauthenticate();
 };
-
-// middleware.trigger('ui:modal', {
-//   title:   'List Notebooks',
-//   content: function (done) {
-//     return persistence.list(function (err, list) {
-//       done(null,
-//         '<ul class="item-list">' +
-//         _.map(list, itemTemplate).join('\n') +
-//         '</ul>');
-//     });
-//   },
-//   show: function (modal) {
-//     Backbone.$(modal.el)
-//       .on('click', '[data-delete]', function (e) {
-//         e.preventDefault();
-
-//         var id = this.getAttribute('data-delete');
-
-//         middleware.trigger('ui:confirm', {
-//           title: 'Delete Notebook',
-//           content: 'Are you sure you want to delete this notebook?' +
-//           ' Deleted notebooks cannot be restored.'
-//         }, function (err, confirm) {
-//           if (err || !confirm) { return; }
-
-//           middleware.trigger('persistence:delete', {
-//             id: id
-//           }, function (err) {
-//             if (err) { return; }
-
-//             var listEl = e.target.parentNode.parentNode;
-//             listEl.parentNode.removeChild(listEl);
-//           });
-//         });
-//       })
-//       .on('click', '[data-load]', function (e) {
-//         e.preventDefault();
-//         modal.close();
-//         return config.set('id', this.getAttribute('data-load'));
-//       });
-//   }
-// });

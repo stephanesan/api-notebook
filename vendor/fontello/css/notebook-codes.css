@@ -1,4 +1,5 @@
 
+.icon-cancel-circled:before { content: '\e809'; } /* '' */
 .icon-plus-circled:before { content: '\e801'; } /* '' */
 .icon-doc:before { content: '\e808'; } /* '' */
 .icon-folder-open-empty:before { content: '\e802'; } /* '' */

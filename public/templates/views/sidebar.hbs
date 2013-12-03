@@ -34,6 +34,12 @@
     <ul class="sidebar-list">
       {{!-- Hard code the first element as the current persistence model --}}
       <li class="item item-active {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
+        {{#if @persistence.id}}
+          {{#equal @persistence.userId @persistence.ownerId}}
+            <i class="icon-cancel-circled" data-delete="{{@persistence.id}}"></i>
+          {{/equal}}
+        {{/if}}
+
         <div class="item-description">
           <div class="item-title">
             {{#if @persistence.meta.title}}
@@ -55,17 +61,17 @@
       </li>
 
       {{#each @data.list}}
-        {{#notEqual id @persistence.id}}
-          <li class="item" data-load="{{id}}">
-            <div class="item-description">
-              <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
+        <li class="item {{#equal id @persistence.id}}item-hidden{{/equal}}" data-load="{{id}}">
+          <i class="icon-cancel-circled" data-delete="{{id}}"></i>
 
-              {{#if updatedAt}}
-                <div class="item-timestamp">{{dateFormat updatedAt}}</div>
-              {{/if}}
-            </div>
-          </li>
-        {{/notEqual}}
+          <div class="item-description">
+            <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
+
+            {{#if updatedAt}}
+              <div class="item-timestamp">{{dateFormat updatedAt}}</div>
+            {{/if}}
+          </div>
+        </li>
       {{/each}}
     </ul>
   {{/if}}
