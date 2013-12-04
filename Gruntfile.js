@@ -94,7 +94,11 @@ module.exports = function (grunt) {
 
       // Attempt to avoid caching pages.
       proxy.on('response', function (res) {
-        res.headers['cache-control'] = 'no-cache';
+        if (!res.headers['cache-control']) { return; }
+
+        // Remove the max-age and other cache duration directives.
+        res.headers['cache-control'] = res.headers['cache-control']
+          .replace(/(max-age|s-maxage)=\d+/g, '$1=0');
       });
 
       // Pipe the request data directly into the proxy request and back to the
