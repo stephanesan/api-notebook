@@ -270,7 +270,9 @@ InspectorView.prototype.renderPreview = function () {
 
         // Append the html preview in multiple steps.
         htmlPreview += _.escape(preview.slice(previous, index));
-        htmlPreview += '<a href="' + escapedUri + '">' + escapedUri + '</a>';
+        htmlPreview += '<a href="' + escapedUri + '" target="_blank">';
+        htmlPreview += escapedUri;
+        htmlPreview += '</a>';
 
         // Increment the previous marker to the current position.
         previous = index + match.length;
