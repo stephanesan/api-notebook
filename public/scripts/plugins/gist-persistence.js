@@ -1,14 +1,8 @@
 /* global App */
 var _            = App._;
-var CLIENT_ID    = process.env.GITHUB_CLIENT_ID;
 var AUTH_URL     = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
 var VALIDATE_URL = 'https://api.github.com/user';
-
-// Append the client id to all urls so we can get a higher rate limit.
-AUTH_URL     += '?client_id=' + CLIENT_ID;
-TOKEN_URL    += '?client_id=' + CLIENT_ID;
-VALIDATE_URL += '?client_id=' + CLIENT_ID;
 
 /**
  * OAuth2 authentication options object.
@@ -17,8 +11,8 @@ VALIDATE_URL += '?client_id=' + CLIENT_ID;
  */
 var authOpts = {
   scopes:              ['gist'],
-  clientId:            CLIENT_ID,
-  clientSecret:        '', // Injected by proxy
+  clientId:            process.env.plugins.github.clientId,
+  clientSecret:        '',
   accessTokenUri:      TOKEN_URL,
   authorizationUri:    AUTH_URL,
   authorizationGrants: 'code',
@@ -169,7 +163,7 @@ var loadPlugin = function (data, next, done) {
   }
 
   App.middleware.trigger('ajax', {
-    url: 'https://api.github.com/gists/' + data.id + '?client_id=' + CLIENT_ID,
+    url: 'https://api.github.com/gists/' + data.id,
     method: 'GET'
   }, function (err, xhr) {
     var content;
@@ -263,8 +257,19 @@ var listPlugin = function (list, next, done) {
       if (err) { return done(err); }
 
       var nextLink = parseLinkHeader(xhr.getResponseHeader('link') || '').next;
+      var response;
 
-      _.each(JSON.parse(xhr.responseText), function (content) {
+      try {
+        response = JSON.parse(xhr.responseText);
+      } catch (e) {
+        return next(e);
+      }
+
+      if (typeof response !== 'object') {
+        return next(new Error('Unexpected response'));
+      }
+
+      _.each(response, function (content) {
         if (!isNotebookContent(content)) { return; }
 
         list.push({

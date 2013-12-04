@@ -1,5 +1,5 @@
 /* global App */
-var PROXY_URL = process.env.PROXY_URL;
+var PROXY_URL = process.env.plugins.proxy.url;
 
 /**
  * Augment the ajax middleware with proxy urls when we make requests to a

@@ -35,37 +35,59 @@ var requiredAuthKeys = {
 };
 
 /**
- * Return an array of keys that are still required to be filled.
+ * Returns an object of keys with whether they are required or not.
  *
- * @param  {Object}   options
- * @return {Array}
+ * @param  {String} type
+ * @param  {Object} options
+ * @return {Object}
  */
-var requiredOptions = function (type, options) {
+var requiredKeys = function (type, options) {
   var requiredKeys = _.extend({}, requiredAuthKeys[type]);
 
   // Special case is required for OAuth2 implicit auth flow.
   if (type === 'oauth2' && _.contains(options.authorizationGrants, 'token')) {
-    delete requiredKeys.clientSecret;
+    requiredKeys.clientSecret = false;
   }
 
-  return _.filter(_.keys(requiredKeys), function (key) {
-    return !options[key];
+  return requiredKeys;
+};
+
+/**
+ * Return an array of keys that are still required to be filled.
+ *
+ * @param  {String} type
+ * @param  {Object} options
+ * @return {Array}
+ */
+var requiredOptions = function (type, options) {
+  var keys = requiredKeys(type, options);
+
+  return _.filter(_.keys(keys), function (key) {
+    return keys[key] && !options[key];
   });
+};
+
+/**
+ * Trigger the middleware prompt for tokens.
+ *
+ * @param {String}   type
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var middlewarePrompt = function (type, options, done) {
+  return App.middleware.trigger('ramlClient:' + type, options, done);
 };
 
 /**
  * Execute the full authentication prompt. This includes requesting the
  * middleware and/or prompting the user to fill the values.
  *
+ * @param {String}   type
  * @param {Object}   options
  * @param {Function} done
  */
 var fullPrompt = function (type, options, done) {
-  var trigger = 'ramlClient:' + type;
-
-  // Trigger a RAML client specific middleware namespace. This allows the
-  // embedding page to use this plugin and provide its own API keys.
-  return App.middleware.trigger(trigger, options, function (err, options) {
+  return middlewarePrompt(type, options, function (err, options) {
     if (err) { return done(err); }
 
     if (!requiredOptions(type, options).length) {
@@ -926,36 +948,14 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
 };
 
 /**
- * Returns a function that can be used to authenticate with Oauth1.
+ * Map the supported auth types to the known triggers.
  *
- * @param  {Array}    nodes
- * @param  {Object}   scheme
- * @return {Function}
+ * @type {Object}
  */
-var authenticateOAuth1 = function (nodes, scheme) {
-  return authenticateMiddleware('oauth1', nodes, scheme);
-};
-
-/**
- * Returns a function that can be used to authenticate with OAuth2.
- *
- * @param  {Array}    nodes
- * @param  {Object}   scheme
- * @return {Function}
- */
-var authenticateOAuth2 = function (nodes, scheme) {
-  return authenticateMiddleware('oauth2', nodes, scheme);
-};
-
-/**
- * Returns a function that can be used to authentcate via Basic Authentication.
- *
- * @param  {Array}    nodes
- * @param  {Object}   scheme
- * @return {Function}
- */
-var authenticateBasicAuth = function (nodes, scheme) {
-  return authenticateMiddleware('basicAuth', nodes, scheme);
+var authTypes = {
+  'OAuth 1.0':            'oauth1',
+  'OAuth 2.0':            'oauth2',
+  'Basic Authentication': 'basicAuth'
 };
 
 /**
@@ -967,47 +967,24 @@ var authenticateBasicAuth = function (nodes, scheme) {
  * @return {Object}
  */
 var attachSecuritySchemes = function (nodes, context, schemes) {
-  // Loop through the available schemes and attach the available schemes.
+  // Loop through the available schemes and manually attach each of the
+  // available schemes.
   _.each(schemes, function (scheme, title) {
-    var methodName = 'authenticate' + cases.pascal(title);
+    if (!authTypes[scheme.type]) { return; }
 
-    if (scheme.type === 'OAuth 2.0') {
-      var isImplicit = _.contains(
-        scheme.settings.authorizationGrants, 'token'
-      ) ? '?' : '';
+    var type   = authTypes[scheme.type];
+    var method = 'authenticate' + cases.pascal(title);
+    var keys   = requiredKeys(type, scheme.settings);
 
-      context[methodName] = authenticateOAuth2(nodes, scheme);
-      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
-        toDescriptionObject(scheme),
-        {
-          '!type': [
-            'fn(options: {',
-            'clientId: string, clientSecret' + isImplicit + ': string',
-            '})'
-          ].join(' ')
-        }
-      );
-    } else if (scheme.type === 'OAuth 1.0') {
-      context[methodName] = authenticateOAuth1(nodes, scheme);
-      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
-        toDescriptionObject(scheme),
-        {
-          '!type': [
-            'fn(options: { ',
-            'consumerKey: string, consumerSecret: string',
-            '})'
-          ].join(' ')
-        }
-      );
-    } else if (scheme.type === 'Basic Authentication') {
-      context[methodName] = authenticateBasicAuth(nodes, scheme);
-      context[methodName][DESCRIPTION_PROPERTY] = _.extend(
-        toDescriptionObject(scheme),
-        {
-          '!type': 'fn(options: { username: string, password: string })'
-        }
-      );
-    }
+    context[method] = authenticateMiddleware(type, nodes, scheme);
+    context[method][DESCRIPTION_PROPERTY] = _.extend(
+      toDescriptionObject(scheme),
+      {
+        '!type': 'fn(options: {' + _.map(keys, function (value, key) {
+          return key + (value ? '' : '?') + ': string';
+        }).join(', ') + '})'
+      }
+    );
   });
 
   return context;

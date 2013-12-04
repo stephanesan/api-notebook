@@ -9,9 +9,9 @@ var bounce   = require('../lib/bounce');
  */
 var config = module.exports = new Backbone.Model({
   url:                window.location.href,
-  fullUrl:            process.env.NOTEBOOK_URL,
-  siteUrl:            process.env.NOTEBOOK_URL,
-  siteTitle:          process.env.NOTEBOOK_TITLE,
+  fullUrl:            process.env.application.url,
+  siteUrl:            process.env.application.url,
+  siteTitle:          process.env.application.title,
   header:             true,
   footer:             false,
   sidebar:            true,

@@ -15,7 +15,8 @@ var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
 var domListen    = require('../lib/dom-listen');
 
-var ENTER_KEY = 13;
+var ENTER_KEY    = 13;
+var EMBED_SCRIPT = process.env.embed.script;
 
 /**
  * Create a central application view.
@@ -264,7 +265,7 @@ App.prototype.newNotebook = function () {
  */
 App.prototype.shareNotebook = function () {
   var id          = persistence.get('id');
-  var shareScript = '<script src="' + process.env.EMBED_SCRIPT_URL + '"' +
+  var shareScript = '<script src="' + EMBED_SCRIPT + '"' +
     (id ? ' data-id="' + id + '"' : '') + '></script>';
 
   middleware.trigger('ui:modal', {

@@ -1,0 +1,10 @@
+{
+  "application": {
+    "url": "http://localhost:3000",
+    "title": "Notebook Site"
+  },
+  "embed": {
+    "script": "http://localhost:3000/scripts/embed.js"
+  },
+  "plugins": {}
+}

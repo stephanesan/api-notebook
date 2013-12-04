@@ -1,11 +1,14 @@
 /* global App */
 var _               = App._;
 var ramlParser      = require('raml-parser');
-var clientGenerator = require('./lib/client-generator');
-var fromPath        = require('../lib/from-path');
+var clientGenerator = require('./client-generator');
+var fromPath        = require('../../lib/from-path');
 
-// Require the view augmentation.
-require('./lib/insert-api-client');
+/**
+ * Implementation helpers.
+ */
+require('./inject-api-keys');
+require('./insert-api-client');
 
 /**
  * Provided a special documentation property for functionsw with another plugin.
