@@ -71,16 +71,6 @@ module.exports = function (grunt) {
   var serverMiddleware = function (connect, options) {
     var middleware = [];
 
-    // Enables cross-domain requests.
-    middleware.push(function (req, res, next) {
-      res.setHeader('Access-Control-Allow-Origin',  '*');
-      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
-      return next();
-    });
-
-    // Serve the regular static directory.
-    middleware.push(connect.static(options.base));
-
     middleware.push(function (req, res, next) {
       if (req.url.substr(0, 7) !== '/proxy/') {
         return next();
@@ -96,10 +86,15 @@ module.exports = function (grunt) {
 
       var proxy = request(data);
 
-      // Send the proxy error to the client.
+      // Proxy the error message back to the client.
       proxy.on('error', function (err) {
         res.writeHead(500);
         return res.end(err.message);
+      });
+
+      // Attempt to avoid caching pages.
+      proxy.on('response', function (res) {
+        res.headers['cache-control'] = 'no-cache';
       });
 
       // Pipe the request data directly into the proxy request and back to the
@@ -107,6 +102,16 @@ module.exports = function (grunt) {
       // where they could be unexepectedly large and/or slow.
       return req.pipe(proxy).pipe(res);
     });
+
+    // Enables cross-domain requests.
+    middleware.push(function (req, res, next) {
+      res.setHeader('Access-Control-Allow-Origin',  '*');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
+      return next();
+    });
+
+    // Serve the regular static directory.
+    middleware.push(connect.static(options.base));
 
     return middleware;
   };
