@@ -7,6 +7,7 @@ var messages     = require('../state/messages');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
 var ownerProtect = require('./lib/owner-protect');
+var cellControls = new CellControls();
 
 var triggerSelf = function (obj, method) {
   obj[method] = ownerProtect(function () {
@@ -319,9 +320,9 @@ EditorCell.prototype.render = function () {
  * @return {CellControls}
  */
 EditorCell.prototype.showControls = function (e) {
-  e.stopImmediatePropagation();
+  e.stopPropagation();
 
-  var controls = new CellControls().render().appendTo(this.el);
+  var controls = cellControls.render().appendTo(this.el);
 
   this.listenTo(controls, 'remove', this.stopListening);
   this.listenTo(controls, 'action', function (_, action) {

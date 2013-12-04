@@ -1,9 +1,9 @@
 var _          = require('underscore');
-var Backbone   = require('backbone');
 var View       = require('./template');
 var template   = require('../../templates/views/cell-controls.hbs');
 var middleware = require('../state/middleware');
 var controls   = require('../lib/controls').editor;
+var domListen  = require('../lib/dom-listen');
 
 /**
  * Displays the cell controls overlay menu.
@@ -41,10 +41,8 @@ ControlsView.prototype.render = function () {
   View.prototype.render.call(this);
 
   // Any events on the document view should cause focus to be lost.
-  var onBlur    = _.bind(this.remove, this);
-  var $document = Backbone.$(document);
-  this.listenTo($document, 'mousedown',  onBlur);
-  this.listenTo($document, 'touchstart', onBlur);
+  this.listenTo(domListen(document), 'mousedown',  this.remove);
+  this.listenTo(domListen(document), 'touchstart', this.remove);
 
   var keydownMiddleware = middleware.register(
     'keydown:Esc', _.bind(function (event, next, done) {

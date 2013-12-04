@@ -13,6 +13,7 @@ var config       = require('../state/config');
 var messages     = require('../state/messages');
 var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
+var domListen    = require('../lib/dom-listen');
 
 var ENTER_KEY = 13;
 
@@ -69,7 +70,7 @@ App.prototype.initialize = function () {
   /**
    * Block attempts to close the window when the persistence state is dirty.
    */
-  this.listenTo(Backbone.$(window), 'beforeunload', function (e) {
+  this.listenTo(domListen(window), 'beforeunload', function (e) {
     if (!config.get('savable') || persistence.get('state') !== 7) { return; }
 
     return (e || window.event).returnValue = 'Your changes will be lost.';
