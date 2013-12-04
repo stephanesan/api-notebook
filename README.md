@@ -6,22 +6,14 @@
 # Install dependencies
 npm install
 bower install
-# Running tests in the browser (requires the server running for embed tests)
+# Run tests in the browser (requires the server to be running)
 open test/index.html
-# Run static check and headless tests
-grunt check && grunt test
+# Run headless tests
+grunt test
 ```
 
-## Environment Variables
+## Configuration
 
-Some environment variables are required by the script at compile time for correct functionality.
+The project configuration is done using [node-config](https://github.com/lorenwest/node-config). To add or override config options, just add a file for your environment (E.g. `development.json`). All plugin config options should be stored under the `plugins` key, while other options are depicted in the `example.json` and `default.json` files.
 
-```
-export NOTEBOOK_URL="http://localhost:3000"
-export NOTEBOOK_TITLE="My Notebook Site"
-export EMBED_SCRIPT_URL="http://localhost:3000/scripts/embed.js"
-export GITHUB_CLIENT_ID=""
-export GITHUB_CLIENT_SECRET=""
-```
-
-[Register a new application on Github](https://github.com/settings/applications/new), then export the keys in your `.bash_profile`.
+To use the github plugin functionality, [register a new application on Github](https://github.com/settings/applications/new) and set your keys in under `plugins.github`.
