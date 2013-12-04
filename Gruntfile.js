@@ -78,7 +78,7 @@ module.exports = function (grunt) {
 
       var data  = {};
 
-      var uri = data.uri = url.parse(req.url.substr(7));
+      var uri = data.uri = url.parse(req.url.substr(7), true);
       var qs  = data.qs  = uri.query || {};
 
       // Extends the query string with additonal query data.

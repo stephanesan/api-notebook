@@ -7,7 +7,7 @@ var middleware = require('../../../../state/middleware');
  *
  * @type {Object}
  */
-var openPopup, openModal;
+var openPopup, openModal, closeInterval;
 
 /**
  * Closes previously opened windows and modals.
@@ -15,6 +15,11 @@ var openPopup, openModal;
 var closeAll = function () {
   if (openPopup) { openPopup.close(); }
   if (openModal) { openModal.close(); }
+
+  openPopup = null;
+  openModal = null;
+
+  window.clearInterval(closeInterval);
 };
 
 /**
@@ -30,7 +35,17 @@ module.exports = function (url, options, cb) {
   var top       = Math.min(100, (window.screen.availHeight - height) / 2);
   var left      = (window.screen.availWidth - width) / 2;
   var completed = false;
-  var closeInterval;
+
+  /**
+   * Close all the open modals and popups.
+   *
+   * @param  {Error}    err
+   * @return {Function}
+   */
+  var done = function (err) {
+    closeAll();
+    return cb(err);
+  };
 
   // Close previously open popup windows and modals.
   closeAll();
@@ -59,14 +74,15 @@ module.exports = function (url, options, cb) {
         );
 
         if (typeof openPopup !== 'object') {
-          return cb(new Error('Popup window blocked'));
+          openPopup = null;
+          return done(new Error('Popup window blocked'));
         }
 
         // Catch window closes before authentication is complete.
         closeInterval = window.setInterval(function () {
           if (openPopup.closed) {
-            window.clearInterval(closeInterval);
-            return cb(new Error('Popup window closed'));
+            openPopup = null;
+            return done(new Error('Popup window closed'));
           }
         }, 400);
       });
@@ -84,8 +100,7 @@ module.exports = function (url, options, cb) {
 
   middleware.trigger('ui:modal', modalOptions, function () {
     openModal = null;
-    window.clearInterval(closeInterval);
-    return !completed && cb(new Error('Modal closed without authenticating'));
+    return !completed && done(new Error('Modal closed without authenticating'));
   });
 
   return {
@@ -94,12 +109,7 @@ module.exports = function (url, options, cb) {
       completed = true;
 
       // Remove any references to open modals and windows.
-      closeAll();
-      openPopup = null;
-      openModal = null;
-
-      // Remove any possible reference to the open popup check interval.
-      window.clearInterval(closeInterval);
+      return closeAll();
     }
   };
 };
