@@ -68,18 +68,26 @@ var requiredOptions = function (type, options) {
 };
 
 /**
+ * Trigger the middleware prompt for tokens.
+ *
+ * @param {String}   type
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var middlewarePrompt = function (type, options, done) {
+  return App.middleware.trigger('ramlClient:' + type, options, done);
+};
+
+/**
  * Execute the full authentication prompt. This includes requesting the
  * middleware and/or prompting the user to fill the values.
  *
+ * @param {String}   type
  * @param {Object}   options
  * @param {Function} done
  */
 var fullPrompt = function (type, options, done) {
-  var trigger = 'ramlClient:' + type;
-
-  // Trigger a RAML client specific middleware namespace. This allows the
-  // embedding page to use this plugin and provide its own API keys.
-  return App.middleware.trigger(trigger, options, function (err, options) {
+  return middlewarePrompt(type, options, function (err, options) {
     if (err) { return done(err); }
 
     if (!requiredOptions(type, options).length) {

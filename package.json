@@ -28,7 +28,8 @@
     "es6-collections": "0.2.0",
     "raml-parser": "0.8.4",
     "normalize-css": "2.2.0",
-    "backbone.native": "~1.0.0"
+    "backbone.native": "~1.0.0",
+    "config": "~0.4.33"
   },
   "devDependencies": {
     "grunt-contrib-copy": "0.4.1",

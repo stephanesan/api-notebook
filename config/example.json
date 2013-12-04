@@ -16,6 +16,10 @@
     },
     "proxy": {
       "url": "/proxy"
+    },
+    "github": {
+      "clientId": "abc",
+      "clientSecret": "123"
     }
   }
 }

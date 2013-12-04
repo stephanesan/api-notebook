@@ -11,8 +11,8 @@ var VALIDATE_URL = 'https://api.github.com/user';
  */
 var authOpts = {
   scopes:              ['gist'],
-  clientId:            '',
-  clientSecret:        '', // Injected by proxy
+  clientId:            process.env.plugins.github.clientId,
+  clientSecret:        '',
   accessTokenUri:      TOKEN_URL,
   authorizationUri:    AUTH_URL,
   authorizationGrants: 'code',
