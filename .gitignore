@@ -3,3 +3,6 @@ npm-debug.log
 node_modules
 build
 .env
+config/*
+!config/example.json
+!config/default.json
