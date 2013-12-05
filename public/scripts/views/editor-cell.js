@@ -6,11 +6,11 @@ var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
-var ownerProtect = require('./lib/owner-protect');
+var embedProtect = require('./lib/embed-protect');
 var cellControls = new CellControls();
 
 var triggerSelf = function (obj, method) {
-  obj[method] = ownerProtect(function () {
+  obj[method] = embedProtect(function () {
     this.trigger(method, this);
   });
 };
@@ -76,7 +76,7 @@ EditorCell.prototype.editorOptions = {
  *
  * @return {EditorCell}
  */
-EditorCell.prototype.remove = ownerProtect(function () {
+EditorCell.prototype.remove = embedProtect(function () {
   View.prototype.remove.call(this);
   messages.trigger('resize');
 
@@ -88,7 +88,7 @@ EditorCell.prototype.remove = ownerProtect(function () {
  *
  * @return {EditorCell} Cloned view.
  */
-EditorCell.prototype.clone = ownerProtect(function () {
+EditorCell.prototype.clone = embedProtect(function () {
   var clone = new this.constructor(_.extend({}, {
     model: this.model.clone()
   }));
@@ -100,7 +100,7 @@ EditorCell.prototype.clone = ownerProtect(function () {
  * Inserts a new line directly below the current line. Keeps previous cursor
  * history so undo puts the cursor back to the same position.
  */
-EditorCell.prototype.newLineBelow = ownerProtect(function () {
+EditorCell.prototype.newLineBelow = function () {
   var line = this.editor.getCursor().line;
 
   this.editor.doc.replaceRange('\n', {
@@ -112,14 +112,14 @@ EditorCell.prototype.newLineBelow = ownerProtect(function () {
     cm:   Infinity,
     line: line
   });
-});
+};
 
 /**
  * Toggle comments in the current editor instance.
  */
-EditorCell.prototype.toggleComment = ownerProtect(function () {
+EditorCell.prototype.toggleComment = function () {
   this.editor.execCommand('toggleComment');
-});
+};
 
 /**
  * Focus the editor cell.

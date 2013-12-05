@@ -4,7 +4,7 @@ var domify       = require('domify');
 var EditorCell   = require('./editor-cell');
 var config       = require('../state/config');
 var messages     = require('../state/messages');
-var ownerProtect = require('./lib/owner-protect');
+var embedProtect = require('./lib/embed-protect');
 
 /**
  * Create a new text cell instance.
@@ -99,7 +99,7 @@ TextCell.prototype.refresh = function () {
  *
  * @return {TextCell}
  */
-TextCell.prototype.focus = ownerProtect(function () {
+TextCell.prototype.focus = embedProtect(function () {
   this._hasFocus = true;
   this.renderEditor();
   return EditorCell.prototype.focus.call(this);
