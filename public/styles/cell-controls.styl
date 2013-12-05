@@ -1,6 +1,6 @@
 .cell-controls
   top: 0
-  left: 100%
+  right: 37px
   z-index: 100
   position: absolute
   margin-top: 14px
@@ -17,33 +17,31 @@
     content: ""
     position: absolute
     top: 50%
-    left: -20px
+    right: -20px
     margin-top: -10px
     border: 10px solid transparent
-    border-right-color: #333
+    border-left-color: #333
   &:before
     content: ""
     position: absolute
     top: 50%
-    left: -22px
+    right: -22px
     margin-top: -11px
     border: 11px solid transparent
-    border-right-color: #eee
-
-@media only screen and (max-width: 70em)
-  .cell-controls
-    left: auto
-    right: 37px
+    border-left-color: #eee
+  &.pull-right
+    left: 100%
+    right: auto
     &:after
-      left: auto
-      right: -20px
-      border-left-color: #333
-      border-right-color: transparent
+      left: -20px
+      right: auto
+      border-left-color: transparent
+      border-right-color: #333
     &:before
-      left: auto
-      right: -22px
-      border-left-color: #eee
-      border-right-color: transparent
+      left: -22px
+      right: auto
+      border-left-color: transparent
+      border-right-color: #eee
 
 .cell-controls button
   display: block
