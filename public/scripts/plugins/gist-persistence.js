@@ -86,13 +86,24 @@ var changePlugin = function (data, next, done) {
  * @param {Function} done
  */
 var authenticatedUserId = function (done) {
+  if (!oauth2Store.has('accessToken')) {
+    return done(new Error('No known access token'));
+  }
+
   App.middleware.trigger('ajax:oauth2', {
     url:    VALIDATE_URL,
     oauth2: oauth2Store.toJSON()
   }, function (err, xhr) {
     var content;
 
+    // Proxy errors back to the user.
     if (err) { return done(err); }
+
+    // Check if the connection was rejected because of invalid credentials.
+    if (xhr.readyState === 4 && xhr.status !== 200) {
+      oauth2Store.clear();
+      return done(new Error('Invalid credentials'));
+    }
 
     try {
       content = JSON.parse(xhr.responseText);
@@ -102,7 +113,7 @@ var authenticatedUserId = function (done) {
 
     return done(null, {
       userId:    content.id,
-      userTitle: content.login + ' @ Github'
+      userTitle: content.login
     });
   });
 };

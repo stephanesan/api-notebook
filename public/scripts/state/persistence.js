@@ -210,8 +210,7 @@ Persistence.prototype.authenticate = function (done) {
     }),
     _.bind(function (err, data) {
       this.set('userId',    data.userId);
-      this.set('userTitle', this.has('userId') ?
-        data.userTitle || 'Authenticated' : this.defaults.userTitle);
+      this.set('userTitle', data.userTitle);
 
       // When we authenticate, the owner id will be out of sync here. If we
       // don't currently have an `id` and `ownerId`, we'll set the user to be
@@ -469,8 +468,7 @@ persistence.listenTo(middleware, 'application:ready', function () {
       userTitle: null
     }), _.bind(function (err, data) {
       this.set('userId',    data.userId);
-      this.set('userTitle', this.has('userId') ?
-        data.userTitle || 'Authenticated' : this.defaults.userTitle);
+      this.set('userTitle', data.userTitle);
 
       if (!this.has('id') && !this.has('ownerId')) {
         this.set('ownerId', this.get('userId'));
@@ -503,8 +501,8 @@ middleware.register('application:ready', function (app, next) {
    * loading a new notebook from the embed frame where the current url scheme
    * is unlikely to be maintained.
    */
-  config.listenTo(config, 'change:id', function (_, id) {
-    return persistence.set('id', id);
+  config.listenTo(config, 'change:id', function () {
+    return persistence.set('id', config.get('id'));
   });
 
   /**
@@ -522,8 +520,8 @@ middleware.register('application:ready', function (app, next) {
    * @param {Object} _
    * @param {String} id
    */
-  config.listenTo(persistence, 'change:id', function (_, id) {
-    config.set('id', id);
+  config.listenTo(persistence, 'change:id', function () {
+    config.set('id', persistence.get('id'));
 
     return persistence.load();
   });
