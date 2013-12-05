@@ -190,14 +190,24 @@ exports.getPrevToken = function (cm, token) {
 };
 
 /**
+ * Check if the token is empty (not useful to parsing).
+ *
+ * @param  {Object}  token
+ * @return {Boolean}
+ */
+exports.isEmptyToken = function (token) {
+  return exports.isWhitespaceToken(token) || token.type === 'comment';
+};
+
+/**
  * Returns the current token position, removing potential whitespace tokens.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
  * @return {Object}
  */
-exports.eatSpace = function (cm, token) {
-  while (token && exports.isWhitespaceToken(token)) {
+exports.eatEmpty = function (cm, token) {
+  while (token && exports.isEmptyToken(token)) {
     token = exports.getPrevToken(cm, token);
   }
 
@@ -205,17 +215,17 @@ exports.eatSpace = function (cm, token) {
 };
 
 /**
- * Similar to `eatSpace`, but also takes moves the current token position.
+ * Similar to `eatEmpty`, but also takes moves the current token position.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token
  * @return {Object}
  */
-exports.eatSpaceAndMove = function (cm, token) {
+exports.eatEmptyAndMove = function (cm, token) {
   // No token, break.
   if (!token) { return token; }
 
-  return exports.eatSpace(cm, exports.getPrevToken(cm, token));
+  return exports.eatEmpty(cm, exports.getPrevToken(cm, token));
 };
 
 /**
@@ -231,7 +241,7 @@ exports.eatSpaceAndMove = function (cm, token) {
 exports.getPropertyObject = function (cm, token, options, done) {
   // Defer to the `getProperty` function.
   return exports.getProperty(
-    cm, exports.eatSpaceAndMove(cm, token), options, done
+    cm, exports.eatEmptyAndMove(cm, token), options, done
   );
 };
 
@@ -276,7 +286,7 @@ exports.getPropertyPath = function (cm, token) {
    * @return {Object}
    */
   var eatToken = function (token) {
-    return exports.eatSpaceAndMove(cm, token);
+    return exports.eatEmptyAndMove(cm, token);
   };
 
   /**
