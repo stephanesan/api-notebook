@@ -12,6 +12,7 @@ var App = module.exports = window.App = {};
 App.Library = {
   url:         require('url'),
   path:        require('path'),
+  domify:      require('domify'),
   crypto:      require('crypto'),
   querystring: require('querystring'),
   async:       require('async'),
