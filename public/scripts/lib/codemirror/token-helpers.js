@@ -275,7 +275,7 @@ exports.getPropertyPath = function (cm, token) {
    * @type {Object}
    */
   var invalidToken = {
-    type:   'invalid',
+    type: 'invalid',
     string: null
   };
 
@@ -295,7 +295,7 @@ exports.getPropertyPath = function (cm, token) {
    * @param  {Object} token
    * @return {Object}
    */
-  var resolveProperty = function (token) {
+  var resolveToken = function (token) {
     context.push(token);
     return eatToken(token);
   };
@@ -375,17 +375,6 @@ exports.getPropertyPath = function (cm, token) {
   };
 
   /**
-   * Resolves any other token types.
-   *
-   * @param  {Object} token
-   * @return {Object}
-   */
-  var resolveOther = function (token) {
-    context.push(token);
-    return eatToken(token);
-  };
-
-  /**
    * Resolves the closing parenthesis to a possible function or context change.
    *
    * @param  {[type]} token [description]
@@ -457,18 +446,36 @@ exports.getPropertyPath = function (cm, token) {
       token = eatToken(token);
     }
 
+    // Special case variable tokens since we don't want the context to continue
+    // completing after we hit the beginning of the chain.
+    if (token.type === 'variable') {
+      token = resolveToken(token);
+      break;
+    }
+
+    // Attempt to resolve a dynmaic property or array literal.
     if (token.string === ']') {
       token = resolveDynamicProperty(token);
-    } else if (token.string === ')') {
-      token = resolvePossibleFunction(token);
-    } else if (token.type === 'property') {
-      token = resolveProperty(token);
-    } else if (canAccess(token)) {
-      token = resolveOther(token);
-    } else {
-      token = _.extend(token, invalidToken);
-      context.push(token);
+      continue;
     }
+
+    // Attempt to resolve a function invokation, simply using parenthesis to
+    // enclose a property/variable, using the parenthesis with `new`, etc.
+    if (token.string === ')') {
+      token = resolvePossibleFunction(token);
+      continue;
+    }
+
+    // Resolve any other property that allows access as normal.
+    if (canAccess(token)) {
+      token = resolveToken(token);
+      continue;
+    }
+
+    // If we made it to this point, the token is invalid.
+    token = _.extend(token, invalidToken);
+    context.push(token);
+    break;
   }
 
   // Using the new keyword doesn't actually require parens to invoke, so we need

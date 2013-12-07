@@ -321,6 +321,16 @@ describe('Completion', function () {
         'should complete with comment and period on the first line',
         testAutocomplete('document. // Comment\nget', 'getElementById')
       );
+
+      it(
+        'should complete code on a new line',
+        testAutocomplete('window.test;\ndocument.get', 'getElementById')
+      );
+
+      it(
+        'should complete code on a new line without line termination',
+        testAutocomplete('window.test\ndocument.get', 'getElementById')
+      );
     });
 
     describe('Function Returns', function () {
