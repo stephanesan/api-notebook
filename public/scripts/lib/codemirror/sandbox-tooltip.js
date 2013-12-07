@@ -58,7 +58,7 @@ module.exports = function (cm, options, done) {
   var cur     = cm.getCursor();
   var token   = getToken(cm, cur);
   var bracket = getPrevBracket(cm, token);
-  var before  = bracket && tokenHelpers.eatSpaceAndMove(cm, bracket);
+  var before  = bracket && tokenHelpers.eatEmptyAndMove(cm, bracket);
 
   // No token before the bracket can be found.
   if (!before) {

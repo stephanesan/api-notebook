@@ -261,6 +261,16 @@ describe('Completion', function () {
       testAutocomplete(')(w', 'window')
     );
 
+    it(
+      'should complete properties around comments',
+      testAutocomplete('document /* Test */ .get', 'getElementById')
+    );
+
+    it(
+      'should complete properties after period and comment',
+      testAutocomplete('document. /* Test */ get', 'getElementById')
+    );
+
     describe('Multiple Lines', function () {
       it(
         'should complete properties across multiple lines',
@@ -294,7 +304,22 @@ describe('Completion', function () {
 
       it(
         'should complete after comment lines',
-        testAutocomplete('// Random comment\nwindow.', 'window')
+        testAutocomplete('// Random comment\ndocument.get', 'getElementById')
+      );
+
+      it(
+        'should complete over comment lines',
+        testAutocomplete('document\n// Comment\n.get', 'getElementById')
+      );
+
+      it(
+        'should complete with comments at the end of a line',
+        testAutocomplete('document // Comment\n.get', 'getElementById')
+      );
+
+      it(
+        'should complete with comment and period on the first line',
+        testAutocomplete('document. // Comment\nget', 'getElementById')
       );
     });
 
