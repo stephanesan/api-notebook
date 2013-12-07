@@ -185,6 +185,12 @@ Widget.prototype.refresh = function (done) {
 
     CodeMirror.on(hints, 'click', function (e) {
       var el = e.target || e.srcElement;
+
+      while (el.tagName !== 'LI') {
+        el = el.parentNode;
+      }
+
+      // Ensure we have a hint id specified.
       if (isNaN(el.hintId)) { return; }
 
       that.setActive(el.hintId);
