@@ -5,7 +5,6 @@
 ```bash
 # Install dependencies
 npm install
-bower install
 # Run tests in the browser (requires the server to be running)
 open test/index.html
 # Run headless tests
