@@ -52,7 +52,7 @@ describe('Embeddable Widget', function () {
 
     notebook.on('ready', function () {
       notebook.remove();
-      done();
+      return done();
     });
   });
 
@@ -73,7 +73,7 @@ describe('Embeddable Widget', function () {
         notebook.getVariable('again', function (variable) {
           expect(variable).to.equal(alias.again);
           notebook.remove();
-          done();
+          return done();
         });
       });
     });
@@ -88,8 +88,25 @@ describe('Embeddable Widget', function () {
       notebook.getVariable('test', function (flag) {
         expect(flag).to.be.true;
         notebook.remove();
-        done();
+        return done();
       });
+    });
+  });
+
+  it('should be able to register ready functions that trigger when ready', function (done) {
+    var spy      = sinon.spy();
+    var notebook = new Notebook(fixture);
+
+    notebook.ready(spy);
+
+    notebook.on('ready', function () {
+      expect(spy).to.have.been.calledOnce;
+
+      notebook.ready(spy);
+      expect(spy).to.have.been.calledTwice;
+
+      notebook.remove();
+      return done();
     });
   });
 });

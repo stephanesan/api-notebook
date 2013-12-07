@@ -96,8 +96,28 @@ var Notebook = module.exports = function (el, options, styles) {
 
   var notebook = this;
 
-  notebook.makeFrame(el, extend({}, defaultOptions, options));
-  notebook.styleFrame(extend({}, defaultStyles, styles));
+  notebook._makeFrame(el, extend({}, defaultOptions, options));
+  notebook._styleFrame(extend({}, defaultStyles, styles));
+
+  // Listen to the ready event and set a flag for future ready functions.
+  notebook.once('ready', function () {
+    var notebook = this;
+
+    // Set a "private" ready flag to ensure that any future register ready
+    // functions are executed immediately.
+    this._ready = true;
+
+    // Iterate over the currently registered "ready" functions.
+    if (this._readyFunctions) {
+      each(this._readyFunctions, function (fn) {
+        fn.call(notebook);
+      });
+    }
+
+    // Delete the ready functions array since the functions shouldn't be used
+    // anymore.
+    delete this._readyFunctions;
+  });
 };
 
 /**
@@ -145,7 +165,7 @@ Notebook.unsubscribe = function (fn) {
  * @param  {Element|Function} el
  * @return {Notebook}
  */
-Notebook.prototype.makeFrame = function (el, options) {
+Notebook.prototype._makeFrame = function (el, options) {
   var that  = this;
   var src   = NOTEBOOK_URL + '/embed.html';
   var frame = this.el = document.createElement('iframe');
@@ -207,7 +227,7 @@ Notebook.prototype.makeFrame = function (el, options) {
  * @param  {Object}   style
  * @return {Notebook}
  */
-Notebook.prototype.styleFrame = function (styles) {
+Notebook.prototype._styleFrame = function (styles) {
   css(this.el, styles);
   return this;
 };
@@ -215,7 +235,8 @@ Notebook.prototype.styleFrame = function (styles) {
 /**
  * Evaluate text in the context of the notebook frame.
  *
- * @param {String} evil
+ * @param {String}   evil
+ * @param {Function} done
  */
 Notebook.prototype.exec = function (evil, done) {
   this.once('exec', function (result) {
@@ -233,9 +254,7 @@ Notebook.prototype.exec = function (evil, done) {
  * @param {Function} done
  */
 Notebook.prototype.getVariable = function (key, done) {
-  this.exec(key, function (result) {
-    return done(result);
-  });
+  this.exec(key, done);
 };
 
 /**
@@ -243,7 +262,7 @@ Notebook.prototype.getVariable = function (key, done) {
  *
  * @return {Notebook}
  */
-Notebook.prototype.removeFrame = function () {
+Notebook.prototype._removeFrame = function () {
   global.removeEventListener('message', this._messageListener);
   this.el.parentNode.removeChild(this.el);
   delete this.el;
@@ -271,7 +290,7 @@ Notebook.prototype.remove = function () {
 
   this.off();
 
-  return this.removeFrame();
+  return this._removeFrame();
 };
 
 /**
@@ -387,6 +406,19 @@ Notebook.prototype.message = function () {
  */
 Notebook.prototype.refresh = function () {
   this.message('refresh');
+};
+
+/**
+ * Execute a function when the notebook is ready to be interacted with.
+ *
+ * @param {Function} fn
+ */
+Notebook.prototype.ready = function (fn) {
+  if (this._ready) {
+    return fn.call(this);
+  }
+
+  (this._readyFunctions || (this._readyFunctions = [])).push(fn);
 };
 
 /**
