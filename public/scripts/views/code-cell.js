@@ -5,7 +5,7 @@ var ResultCell   = require('./result-cell');
 var Completion   = require('../lib/completion');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').code;
-var ownerProtect = require('./lib/owner-protect');
+var embedProtect = require('./lib/embed-protect');
 var config       = require('../state/config');
 var messages     = require('../state/messages');
 
@@ -179,31 +179,34 @@ CodeCell.prototype.execute = function (done) {
 /**
  * Browse up to the previous code view contents.
  */
-CodeCell.prototype.browseUp = ownerProtect(function () {
-  if (this.editor.doc.getCursor().line === 0) {
+CodeCell.prototype.browseUp = function () {
+  if (!config.get('embedded') && this.editor.doc.getCursor().line === 0) {
     return this.trigger('browseUp', this, this._editorCid);
   }
 
   this.editor.execCommand('goLineUp');
-});
+};
 
 /**
  * Browse down to the next code view contents.
  */
-CodeCell.prototype.browseDown = ownerProtect(function () {
-  if (this.editor.doc.getCursor().line === this.editor.doc.lastLine()) {
+CodeCell.prototype.browseDown = function () {
+  var currLine = this.editor.doc.getCursor().line;
+  var lastLine = this.editor.doc.lastLine();
+
+  if (!config.get('embedded') && currLine === lastLine) {
     return this.trigger('browseDown', this, this._editorCid);
   }
 
   this.editor.execCommand('goLineDown');
-});
+};
 
 /**
  * Create a new line in the editor.
  */
-CodeCell.prototype.newLine = ownerProtect(function () {
+CodeCell.prototype.newLine = function () {
   this.editor.execCommand('newlineAndIndent');
-});
+};
 
 /**
  * Browse to the contents of any code cell.
@@ -211,7 +214,7 @@ CodeCell.prototype.newLine = ownerProtect(function () {
  * @param  {Object}   newModel
  * @return {CodeCell}
  */
-CodeCell.prototype.browseToCell = ownerProtect(function (newModel) {
+CodeCell.prototype.browseToCell = embedProtect(function (newModel) {
   this._editorCid = newModel.cid;
   this.setValue(newModel.get('value'));
 
