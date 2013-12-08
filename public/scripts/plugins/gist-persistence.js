@@ -216,7 +216,7 @@ var savePlugin = function (data, next, done) {
   }
 
   if (!data.isOwner()) {
-    return done(), data.clone();
+    return done(), data.clone(), data.save();
   }
 
   App.middleware.trigger('ajax:oauth2', {

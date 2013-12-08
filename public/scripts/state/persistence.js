@@ -330,7 +330,7 @@ Persistence.prototype.list = function (done) {
 /**
  * Clone the notebook and reset the persistence layer to look normal again.
  */
-Persistence.prototype.clone = function (done) {
+Persistence.prototype.clone = function () {
   // Allows a reference back to the original notebook. Could be a useful for
   // someone to track where different notebooks originally come from.
   if (this.has('id')) {
@@ -340,10 +340,12 @@ Persistence.prototype.clone = function (done) {
   this._changeState(Persistence.CLONING);
 
   // Removes the notebook id and sets the user id to the current user.
-  this.set('id',      null);
+  this.set('id',      null, { silent: true });
   this.set('ownerId', this.get('userId'));
 
-  return this.save(done);
+  // Update the config url and reset the current state.
+  config.set('id', null);
+  this._changeState(Persistence.NULL);
 };
 
 /**
