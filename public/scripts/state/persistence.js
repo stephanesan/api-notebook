@@ -506,14 +506,6 @@ middleware.register('application:ready', function (app, next) {
   });
 
   /**
-   * Trigger refreshes of the persistence layer when the contents change.
-   */
-  config.listenTo(config, 'change:contents', function () {
-    persistence.set('id', '');
-    return persistence.load();
-  });
-
-  /**
    * Listens for any changes of the persistence id. When it changes, we need to
    * navigate to the updated url.
    *
@@ -523,6 +515,14 @@ middleware.register('application:ready', function (app, next) {
   config.listenTo(persistence, 'change:id', function () {
     config.set('id', persistence.get('id'));
 
+    return persistence.load();
+  });
+
+  /**
+   * Trigger refreshes of the persistence layer when the contents change.
+   */
+  config.listenTo(config, 'change:contents', function () {
+    persistence.set('id', '');
     return persistence.load();
   });
 

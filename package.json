@@ -41,7 +41,7 @@
     "grunt-browserify": "1.2.11",
     "grunt-cli": "0.1.9",
     "uglifyify": "0.0.1",
-    "dombars": "0.0.21",
+    "dombars": "0.1.1",
     "dombarsify": "0.0.3",
     "grunt-shell": "0.3.1",
     "mocha-phantomjs": "3.1.2",
