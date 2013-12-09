@@ -64,6 +64,15 @@ var parseLinkHeader = function (header) {
 var oauth2Store = App.store.customStore('github');
 
 /**
+ * Make saves to the server less frequently.
+ *
+ * @type {Function}
+ */
+var debounceSave = _.debounce(
+  _.bind(App.persistence.save, App.persistence), 600
+);
+
+/**
  * When a change occurs *and* we are already authenticated, we can automatically
  * save the update to a gist.
  *
@@ -76,7 +85,9 @@ var changePlugin = function (data, next, done) {
     return done();
   }
 
-  return setTimeout(_.bind(data.save, data, done), 600);
+  debounceSave();
+
+  return done();
 };
 
 /**
