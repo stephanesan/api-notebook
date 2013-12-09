@@ -49,12 +49,17 @@
 
 .notebook-view > .cell > .CodeMirror,
 .notebook-view > .cell-text > .markdown
-  border: 1px solid $color-cell-border
   &:hover
-    border-color: #BFBFBF
+    border: solid 1px #BFBFBF
     ~ .cell-controls-btn
       border-color: #BFBFBF
 
+.notebook-view > .cell > .CodeMirror
+  border: 1px solid $color-cell-border
+.notebook-view > .cell-text > .markdown
+  border: 1px dotted #F2F2F2
+.notebook-view > .cell-text
+  font-size: 0.85em
 
 .notebook-view > .cell-code > .cell-ui-execute
   position: absolute
@@ -97,7 +102,7 @@
   top: -11px
   width: 100%
   position: absolute
-  border-bottom: dotted 1px #e5e5e5
+  border-bottom: dotted 1px #F2F2F2
   .cell-border-btn
     cursor: pointer
     position: absolute
@@ -149,7 +154,7 @@
     border-radius: right 3px
 
 .markdown
-  padding: 16px 20px 16px 25px
+  padding: 8px 20px 8px 25px
   p,
   h1,
   h2,
@@ -159,7 +164,7 @@
   h6,
   ul,
   ol
-    margin: 0 0 18px
+    margin: 0 0 16px
 
 .notebook-toolbar
   position: relative
