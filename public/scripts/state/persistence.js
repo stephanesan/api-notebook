@@ -1,8 +1,9 @@
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var config     = require('./config');
-var middleware = require('./middleware');
-var isMac      = require('../lib/browser/about').mac;
+var _                = require('underscore');
+var Backbone         = require('backbone');
+var config           = require('./config');
+var middleware       = require('./middleware');
+var isMac            = require('../lib/browser/about').mac;
+var PersistenceItems = require('../collections/persistence-items');
 
 /**
  * Properties that should always be considered strings.
@@ -25,6 +26,7 @@ var Persistence = Backbone.Model.extend({
   defaults: {
     id:         null,
     meta:       new Backbone.Model(),
+    items:      new PersistenceItems(),
     state:      0,
     notebook:   [],
     contents:   '',
@@ -187,6 +189,8 @@ Persistence.prototype.save = function (done) {
         return done && done(err);
       }
 
+      this.get('items').add(data, { merge: true });
+
       this.set('id',        data.id);
       this.set('ownerId',   data.ownerId);
       this.set('updatedAt', new Date());
@@ -194,6 +198,27 @@ Persistence.prototype.save = function (done) {
       return done && done();
     }, this)
   );
+};
+
+/**
+ * Delete a given notebook, specified by its id, which is persistence
+ * engine-specific.
+ *
+ * @param {String}   id
+ * @param {Function} done
+ */
+Persistence.prototype.delete = function (id, done) {
+  middleware.trigger('persistence:delete', {
+    id: id
+  }, _.bind(function(err) {
+    if (err) {
+      return done && done(err);
+    }
+
+    this.get('items').remove(this.get('items').get(id));
+
+    return done && done();
+  }, this));
 };
 
 /**
@@ -236,6 +261,8 @@ Persistence.prototype.unauthenticate = function (done) {
     _.bind(function (err) {
       this.set('userId',    '');
       this.set('userTitle', '');
+
+      this.get('items').reset();
 
       return done && done(err);
     }, this)
@@ -311,7 +338,8 @@ Persistence.prototype.load = function (done) {
 };
 
 /**
- * Generate a list of all loadable notebooks.
+ * Generate a list of all loadable notebooks. Note that this will often
+ * involve going to the network or disk.
  *
  * @param {Function} done
  */
@@ -320,11 +348,13 @@ Persistence.prototype.list = function (done) {
     return done && done(new Error('Not authenticated'));
   }
 
-  return middleware.trigger('persistence:list', [], function (err, list) {
-    return done(err, list.sort(function (a, b) {
-      return +a.updatedAt > +b.updatedAt ? -1 : 1;
-    }));
-  });
+  return middleware.trigger(
+    'persistence:list', [], _.bind(function (err, list) {
+      this.get('items').set(list);
+
+      return done(err, this.get('items'));
+    }, this)
+  );
 };
 
 /**
@@ -342,6 +372,7 @@ Persistence.prototype.clone = function () {
   // Removes the notebook id and sets the user id to the current user.
   this.set('id',      null, { silent: true });
   this.set('ownerId', this.get('userId'));
+  this.get('meta').set('title', this.get('meta').get('title') + ' (cloned)');
 
   // Update the config url and reset the current state.
   config.set('id', null);
