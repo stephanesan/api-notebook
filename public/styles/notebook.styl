@@ -174,9 +174,8 @@
   border-bottom: 0
   background-color: #f4f4f4
   .toolbar-inner
-    height: 100%
-    padding: 0 2em 0 0
-    margin-right: 45px
+    margin-right: 25px
+    clearfix()
     .persistence-status
       display: inline-block
       height: 100%
@@ -185,12 +184,17 @@
   .toolbar-buttons
     float: right
     text-align: right
-    padding: 0.5em 0
+    padding: 0
     button
       float: left
       margin-right: 1em
     button:last-child
       margin-right: 0
+    .btn-group
+      display: inline-block
+      padding: 0 1.3em
+      margin: 0.5em 0 0 0
+      border-left: solid 1px #E0E0E0
     .btn-text
       line-height: 26px
   &.notebook-view-active .btn-edit
