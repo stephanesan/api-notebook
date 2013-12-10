@@ -62,23 +62,28 @@ var selectAPIDefinition = function (done) {
           '<input class="item-search" placeholder="Search">' +
           '<ul class="item-list">' +
           _.map(items, function (item) {
-          var link = [
-            '<a href="#" class="btn btn-primary btn-small" ',
-            'data-raml="' + item.specs.RAML.url + '" ',
-            'data-title="' + item.title + '" ',
-            'data-portal="' + item.apihubPortal + '">',
-            'Add',
-            '</a>'
-          ].join('');
+            var link = [
+              '<a href="#" class="btn btn-primary btn-small" ',
+              'data-raml="' + item.specs.RAML.url + '" ',
+              'data-title="' + item.title + '" ',
+              'data-portal="' + item.apihubPortal + '">',
+              'Add',
+              '</a>'
+            ].join('');
 
-          return '<li data-title="' + item.title + '">' +
-            '<div class="item-action">' + link + '</div>' +
-            '<div class="item-description">' + item.title +
-            '<a href="#" class="item-details-link" data-details>details</a>' +
-            '<div class="item-details">' + item.description + '</div>' +
-            '</div>' +
-            '</li>';
-        }).join('') + '</ul>');
+            return '<li data-title="' + item.title + '">' +
+              '<div class="item-action">' + link + '</div>' +
+              '<div class="item-description">' + item.title +
+              '<a href="#" class="item-details-link" data-details>details</a>' +
+              '<div class="item-details">' + item.description + '</div>' +
+              '</div>' +
+              '</li>';
+          }).join('') + '</ul>' +
+          '<p class="hide item-list-unavailable">No matching APIs found. ' +
+          'Please search on <a href="http://apihub.com/" target="_blank">' +
+          'APIhub</a> and submit a request for more documentation for this ' +
+          'API.</p>'
+        );
       });
     },
     show: function (modal) {
@@ -107,12 +112,18 @@ var selectAPIDefinition = function (done) {
           });
         })
         .on('keyup', '.item-search', function (e) {
-          _.each(modal.el.querySelectorAll('.item-list > li'), function (el) {
+          var listItemEls   = modal.el.querySelectorAll('.item-list > li');
+          var unavailableEl = modal.el.querySelector('.item-list-unavailable');
+
+          var hasResults = _.filter(listItemEls, function (el) {
             var title   = el.getAttribute('data-title').toLowerCase();
             var matches = title.indexOf(e.target.value.toLowerCase()) > -1;
 
             el.classList[matches ? 'remove' : 'add']('hide');
-          });
+            return matches;
+          }).length;
+
+          unavailableEl.classList[hasResults ? 'add' : 'remove']('hide');
         });
     }
   });
