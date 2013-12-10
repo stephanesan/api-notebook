@@ -57,9 +57,6 @@
     "brfs": "0.0.8",
     "envify-config": "0.0.1"
   },
-  "engines": {
-    "node": "0.10.21"
-  },
   "scripts": {
     "build": "./node_modules/.bin/grunt build",
     "test": "./node_modules/.bin/grunt test",
