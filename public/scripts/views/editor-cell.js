@@ -55,7 +55,8 @@ EditorCell.prototype.EditorModel = require('../models/cell');
 EditorCell.prototype.events = {
   'mousedown .cell-menu-toggle':  'showControls',
   'touchstart .cell-menu-toggle': 'showControls',
-  'mouseover .cell-border-btn':   'showButtons'
+  'mouseover .cell-border-above .cell-border-btn': 'showButtonsAbove',
+  'mouseover .cell-border-below .cell-border-btn': 'showButtonsBelow'
 };
 
 /**
@@ -333,20 +334,42 @@ EditorCell.prototype.showControls = function (e) {
 };
 
 /**
- * Create a cell buttons instance and append to the correct border.
+ * Create a cell buttons instance and show it above the notebook cell.
  *
- * @param  {Object}      e
  * @return {CellButtons}
  */
-EditorCell.prototype.showButtons = function (e) {
-  var buttons = new CellButtons().render().appendTo(e.target.parentNode);
+EditorCell.prototype.showButtonsAbove = function () {
+  var buttons = new CellButtons();
+  this.data.set('cellButtonsAbove', buttons);
 
-  this.listenTo(buttons, 'remove', this.stopListening);
+  this.listenTo(buttons, 'remove', function (view) {
+    this.stopListening(view);
+    this.data.unset('cellButtonsAbove');
+  });
+
   this.listenTo(buttons, 'action', function (_, action) {
-    var below = buttons.el.parentNode.classList.contains('cell-border-below');
+    return this[action + 'Above']();
+  });
 
-    // Trigger the relevant event.
-    return this[action + (below ? 'Below' : 'Above')]();
+  return buttons;
+};
+
+/**
+ * Create a cell buttons instance and show it below the notebook cell.
+ *
+ * @return {CellButtons}
+ */
+EditorCell.prototype.showButtonsBelow = function () {
+  var buttons = new CellButtons();
+  this.data.set('cellButtonsBelow', buttons);
+
+  this.listenTo(buttons, 'remove', function (view) {
+    this.stopListening(view);
+    this.data.unset('cellButtonsBelow');
+  });
+
+  this.listenTo(buttons, 'action', function (_, action) {
+    return this[action + 'Below']();
   });
 
   return buttons;

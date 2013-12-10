@@ -3,9 +3,15 @@
 
   <span class="cell-border cell-border-above">
     <i class="cell-border-btn icon-plus-circled"></i>
+    {{#if @data.cellButtonsAbove}}
+      {{{view @data.cellButtonsAbove}}}
+    {{/if}}
   </span>
 
   <span class="cell-border cell-border-below">
     <i class="cell-border-btn icon-plus-circled"></i>
+    {{#if @data.cellButtonsBelow}}
+      {{{view @data.cellButtonsBelow}}}
+    {{/if}}
   </span>
 {{/unless}}
