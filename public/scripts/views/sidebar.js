@@ -93,6 +93,7 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
+  persistence.load();
 };
 
 /**

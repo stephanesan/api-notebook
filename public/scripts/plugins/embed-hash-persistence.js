@@ -1,4 +1,5 @@
 var NOTEBOOK_URL = process.env.application.url;
+var currentId;
 
 /**
  * Export the attaching functionality.
@@ -14,8 +15,17 @@ module.exports = function (Notebook) {
   Notebook.subscribe(function (notebook) {
     // Update the id and url when the hash of the window changes.
     var updateId = function () {
-      notebook.config('id',  window.location.hash.substr(1));
-      notebook.config('url', window.location.href);
+      var id  = window.location.hash.substr(1);
+      var url = window.location.href;
+
+      notebook.config('id',  id);
+      notebook.config('url', url);
+
+      if (id !== currentId) {
+        notebook.message('load');
+      }
+
+      currentId = id;
     };
 
     updateId();
@@ -23,7 +33,7 @@ module.exports = function (Notebook) {
 
     // Update the window hash when the id changes.
     notebook.on('config:id', function (id) {
-      window.location.hash = (id == null ? '' : id);
+      window.location.hash = currentId = (id == null ? '' : id);
       notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
     });
 

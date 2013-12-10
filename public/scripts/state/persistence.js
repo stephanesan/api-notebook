@@ -1,6 +1,7 @@
 var _                = require('underscore');
 var Backbone         = require('backbone');
 var config           = require('./config');
+var messages         = require('./messages');
 var middleware       = require('./middleware');
 var isMac            = require('../lib/browser/about').mac;
 var PersistenceItems = require('../collections/persistence-items');
@@ -370,7 +371,7 @@ Persistence.prototype.clone = function () {
   this._changeState(Persistence.CLONING);
 
   // Removes the notebook id and sets the user id to the current user.
-  this.set('id',      null, { silent: true });
+  this.set('id',      null);
   this.set('ownerId', this.get('userId'));
   this.get('meta').set('title', this.get('meta').get('title') + ' (cloned)');
 
@@ -511,6 +512,13 @@ persistence.listenTo(middleware, 'application:ready', function () {
 });
 
 /**
+ * On load messages, reload the current persistence object.
+ */
+persistence.listenTo(messages, 'load', function () {
+  persistence.load();
+});
+
+/**
  * When the application is ready, finally attempt to load the initial content.
  *
  * @param {Object}   app
@@ -535,20 +543,15 @@ middleware.register('application:ready', function (app, next) {
    * is unlikely to be maintained.
    */
   config.listenTo(config, 'change:id', function () {
-    return persistence.set('id', config.get('id'));
+    persistence.set('id', config.get('id'));
   });
 
   /**
    * Listens for any changes of the persistence id. When it changes, we need to
    * navigate to the updated url.
-   *
-   * @param {Object} _
-   * @param {String} id
    */
   config.listenTo(persistence, 'change:id', function () {
     config.set('id', persistence.get('id'));
-
-    return persistence.load();
   });
 
   /**
@@ -556,7 +559,7 @@ middleware.register('application:ready', function (app, next) {
    */
   config.listenTo(config, 'change:contents', function () {
     persistence.set('id', '');
-    return persistence.load();
+    persistence.load();
   });
 
   return next();
