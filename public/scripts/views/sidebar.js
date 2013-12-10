@@ -93,6 +93,7 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
+  persistence.load();
 };
 
 /**
@@ -106,9 +107,13 @@ SidebarView.prototype.deleteId = function (id) {
     content: 'Are you sure you want to delete this notebook?' +
     ' Deleted notebooks cannot be restored.'
   }, _.bind(function (err, confirmed) {
-    return confirmed && middleware.trigger('persistence:delete', {
-      id: id
-    }, _.bind(function () {
+    return confirmed && persistence.delete(id, _.bind(function (err) {
+      if (err) {
+        return window.alert(
+          'Couldn\'t delete the Notebook. Refresh and try again.'
+        );
+      }
+
       if (persistence.get('id') === id) {
         this.updateId('');
       }

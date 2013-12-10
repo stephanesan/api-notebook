@@ -1,4 +1,5 @@
 /* global App */
+var currentId;
 
 /**
  * The notebook triggers a load id middleware event to get the starting id.
@@ -23,16 +24,25 @@ var configurePlugin = function (config, next) {
  * @param {Function} done
  */
 App.config.on('change:id', function (_, id) {
-  window.location.hash = id == null ? '' : id;
+  window.location.hash = currentId = (id == null ? '' : id);
 });
 
 /**
  * A user can use the forward and back buttons to navigate between notebooks.
  */
 window.addEventListener('hashchange', function () {
-  App.config.set('id',      window.location.hash.substr(1));
-  App.config.set('url',     window.location.href);
-  App.config.set('fullUrl', window.location.href);
+  var id  = window.location.hash.substr(1);
+  var url = window.location.href;
+
+  App.config.set('id',      id);
+  App.config.set('url',     url);
+  App.config.set('fullUrl', url);
+
+  if (id !== currentId) {
+    App.persistence.load();
+  }
+
+  currentId = id;
 });
 
 /**

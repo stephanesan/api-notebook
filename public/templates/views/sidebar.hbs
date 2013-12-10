@@ -59,7 +59,7 @@
         <i class="icon-arrows-cw animate-spin"></i>
       </li>
     {{else}}
-      {{#each @data.list}}
+      {{#collection @persistence.items}}
         <li class="item {{#equal id @persistence.id}}item-hidden{{/equal}}" data-load="{{id}}">
           <i class="icon-cancel-circled" data-delete="{{id}}"></i>
 
@@ -71,7 +71,7 @@
             {{/if}}
           </div>
         </li>
-      {{/each}}
+      {{/collection}}
     {{/if}}
   </ul>
 </div>
