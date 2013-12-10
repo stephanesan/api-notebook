@@ -59,7 +59,9 @@ var selectAPIDefinition = function (done) {
           ' <a href="http://raml.org/" target="_blank">' +
           'Learn more about RAML</a>.' +
           '</div>' +
+          '<div class="form-group">' +
           '<input class="item-search" placeholder="Search">' +
+          '</div>' +
           '<ul class="item-list">' +
           _.map(items, function (item) {
             var link = [
