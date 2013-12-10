@@ -31,7 +31,8 @@ var Persistence = Backbone.Model.extend({
     originalId: null,
     userId:     null,
     ownerId:    null,
-    userTitle:  ''
+    userTitle:  '',
+    readyState: false
   }
 });
 
@@ -467,8 +468,9 @@ persistence.listenTo(middleware, 'application:ready', function () {
       userId:    null,
       userTitle: null
     }), _.bind(function (err, data) {
-      this.set('userId',    data.userId);
-      this.set('userTitle', data.userTitle);
+      this.set('userId',     data.userId);
+      this.set('userTitle',  data.userTitle);
+      this.set('readyState', true);
 
       if (!this.has('id') && !this.has('ownerId')) {
         this.set('ownerId', this.get('userId'));
