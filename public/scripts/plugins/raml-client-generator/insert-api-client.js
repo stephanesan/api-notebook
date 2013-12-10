@@ -59,6 +59,7 @@ var selectAPIDefinition = function (done) {
           ' <a href="http://raml.org/" target="_blank">' +
           'Learn more about RAML</a>.' +
           '</div>' +
+          '<input class="item-search" placeholder="Search">' +
           '<ul class="item-list">' +
           _.map(items, function (item) {
           var link = [
@@ -70,14 +71,14 @@ var selectAPIDefinition = function (done) {
             '</a>'
           ].join('');
 
-          return '<li>' +
+          return '<li data-title="' + item.title + '">' +
             '<div class="item-action">' + link + '</div>' +
             '<div class="item-description">' + item.title +
             '<a href="#" class="item-details-link" data-details>details</a>' +
             '<div class="item-details">' + item.description + '</div>' +
             '</div>' +
             '</li>';
-        }).join('') + '</li>');
+        }).join('') + '</ul>');
       });
     },
     show: function (modal) {
@@ -103,6 +104,14 @@ var selectAPIDefinition = function (done) {
             title:     e.target.getAttribute('data-title'),
             ramlUrl:   e.target.getAttribute('data-raml'),
             portalUrl: e.target.getAttribute('data-portal')
+          });
+        })
+        .on('keyup', '.item-search', function (e) {
+          _.each(modal.el.querySelectorAll('.item-list > li'), function (el) {
+            var title   = el.getAttribute('data-title').toLowerCase();
+            var matches = title.indexOf(e.target.value.toLowerCase()) > -1;
+
+            el.classList[matches ? 'remove' : 'add']('hide');
           });
         });
     }
