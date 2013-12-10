@@ -354,7 +354,7 @@ Persistence.prototype.list = function (done) {
     'persistence:list', [], _.bind(function (err, list) {
       this.get('items').set(list);
 
-      return done(err, this.get('items'));
+      return done(err, this.get('items').toJSON());
     }, this)
   );
 };
