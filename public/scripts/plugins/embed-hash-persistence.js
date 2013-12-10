@@ -1,5 +1,5 @@
 var NOTEBOOK_URL = process.env.application.url;
-var currentId;
+var currentId    = '';
 
 /**
  * Export the attaching functionality.

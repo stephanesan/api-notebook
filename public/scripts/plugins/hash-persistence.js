@@ -1,5 +1,5 @@
 /* global App */
-var currentId;
+var currentId = '';
 
 /**
  * The notebook triggers a load id middleware event to get the starting id.
