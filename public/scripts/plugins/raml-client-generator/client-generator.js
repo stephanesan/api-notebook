@@ -974,17 +974,20 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
 
     var type   = authTypes[scheme.type];
     var method = 'authenticate' + cases.pascal(title);
-    var keys   = requiredKeys(type, scheme.settings);
 
     context[method] = authenticateMiddleware(type, nodes, scheme);
     context[method][DESCRIPTION_PROPERTY] = _.extend(
       toDescriptionObject(scheme),
       {
-        '!type': 'fn(options: {' + _.map(keys, function (value, key) {
-          return key + (value ? '' : '?') + ': string';
-        }).join(', ') + '})'
+        '!type': 'fn(options)'
       }
     );
+
+    context[method][DESCRIPTION_PROPERTY]['!doc'] = [
+      'Your credentials are optional here. See \'securityScheme.settings\' ' +
+        'in the RAML for available options.\n',
+      context[method][DESCRIPTION_PROPERTY]['!doc'] || ''
+    ].join('\n');
   });
 
   return context;

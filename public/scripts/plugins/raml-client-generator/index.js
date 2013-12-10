@@ -98,7 +98,9 @@ API.createClient = function (name, url, config, done) {
       return done(e);
     }
 
-    return done(null, client);
+    return done(
+      null, 'Type \'' + name + '.\' to explore this API with auto-completion'
+    );
   }, done);
 };
 
