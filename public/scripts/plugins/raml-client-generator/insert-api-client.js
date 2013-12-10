@@ -64,17 +64,13 @@ var selectAPIDefinition = function (done) {
           '</div>' +
           '<ul class="item-list">' +
           _.map(items, function (item) {
-            var link = [
-              '<a href="#" class="btn btn-primary btn-small" ',
-              'data-raml="' + item.specs.RAML.url + '" ',
-              'data-title="' + item.title + '" ',
-              'data-portal="' + item.apihubPortal + '">',
-              'Add',
-              '</a>'
-            ].join('');
-
-            return '<li data-title="' + item.title + '">' +
-              '<div class="item-action">' + link + '</div>' +
+            return '<li data-title="' + item.title + '" ' +
+              'data-raml="' + item.specs.RAML.url + '" ' +
+              'data-title="' + item.title + '" ' +
+              'data-portal="' + item.apihubPortal + '">' +
+              '<div class="item-action">' +
+              '<a href="#" class="btn btn-primary btn-small">Add</a>' +
+              '</div>' +
               '<div class="item-description">' + item.title +
               '<a href="#" class="item-details-link" data-details>details</a>' +
               '<div class="item-details">' + item.description + '</div>' +
@@ -92,6 +88,7 @@ var selectAPIDefinition = function (done) {
       Backbone.$(modal.el)
         .on('click', '[data-details]', function (e) {
           e.preventDefault();
+          e.stopImmediatePropagation();
 
           var classList = e.target.parentNode.parentNode.classList;
 
@@ -104,13 +101,19 @@ var selectAPIDefinition = function (done) {
         .on('click', '[data-raml]', function (e) {
           e.preventDefault();
 
+          var el = e.target;
+
+          while (el.tagName !== 'LI') {
+            el = el.parentNode;
+          }
+
           // Close the modal behind ourselves.
           modal.close();
 
           return done(null, {
-            title:     e.target.getAttribute('data-title'),
-            ramlUrl:   e.target.getAttribute('data-raml'),
-            portalUrl: e.target.getAttribute('data-portal')
+            title:     el.getAttribute('data-title'),
+            ramlUrl:   el.getAttribute('data-raml'),
+            portalUrl: el.getAttribute('data-portal')
           });
         })
         .on('keyup', '.item-search', function (e) {
