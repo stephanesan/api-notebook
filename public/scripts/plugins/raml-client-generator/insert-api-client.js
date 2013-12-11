@@ -59,31 +59,36 @@ var selectAPIDefinition = function (done) {
           ' <a href="http://raml.org/" target="_blank">' +
           'Learn more about RAML</a>.' +
           '</div>' +
+          '<div class="form-group">' +
+          '<input class="item-search" placeholder="Search">' +
+          '</div>' +
           '<ul class="item-list">' +
           _.map(items, function (item) {
-          var link = [
-            '<a href="#" class="btn btn-primary btn-small" ',
-            'data-raml="' + item.specs.RAML.url + '" ',
-            'data-title="' + item.title + '" ',
-            'data-portal="' + item.apihubPortal + '">',
-            'Add',
-            '</a>'
-          ].join('');
-
-          return '<li>' +
-            '<div class="item-action">' + link + '</div>' +
-            '<div class="item-description">' + item.title +
-            '<a href="#" class="item-details-link" data-details>details</a>' +
-            '<div class="item-details">' + item.description + '</div>' +
-            '</div>' +
-            '</li>';
-        }).join('') + '</li>');
+            return '<li data-title="' + item.title + '" ' +
+              'data-raml="' + item.specs.RAML.url + '" ' +
+              'data-title="' + item.title + '" ' +
+              'data-portal="' + item.apihubPortal + '">' +
+              '<div class="item-action">' +
+              '<a href="#" class="btn btn-primary btn-small">Add</a>' +
+              '</div>' +
+              '<div class="item-description">' + item.title +
+              '<a href="#" class="item-details-link" data-details>details</a>' +
+              '<div class="item-details">' + item.description + '</div>' +
+              '</div>' +
+              '</li>';
+          }).join('') + '</ul>' +
+          '<p class="hide item-list-unavailable">No matching APIs found. ' +
+          'Please search on <a href="http://apihub.com/" target="_blank">' +
+          'APIhub</a> and submit a request for more documentation for this ' +
+          'API.</p>'
+        );
       });
     },
     show: function (modal) {
       Backbone.$(modal.el)
         .on('click', '[data-details]', function (e) {
           e.preventDefault();
+          e.stopImmediatePropagation();
 
           var classList = e.target.parentNode.parentNode.classList;
 
@@ -96,14 +101,34 @@ var selectAPIDefinition = function (done) {
         .on('click', '[data-raml]', function (e) {
           e.preventDefault();
 
+          var el = e.target;
+
+          while (el.tagName !== 'LI') {
+            el = el.parentNode;
+          }
+
           // Close the modal behind ourselves.
           modal.close();
 
           return done(null, {
-            title:     e.target.getAttribute('data-title'),
-            ramlUrl:   e.target.getAttribute('data-raml'),
-            portalUrl: e.target.getAttribute('data-portal')
+            title:     el.getAttribute('data-title'),
+            ramlUrl:   el.getAttribute('data-raml'),
+            portalUrl: el.getAttribute('data-portal')
           });
+        })
+        .on('keyup', '.item-search', function (e) {
+          var listItemEls   = modal.el.querySelectorAll('.item-list > li');
+          var unavailableEl = modal.el.querySelector('.item-list-unavailable');
+
+          var hasResults = _.filter(listItemEls, function (el) {
+            var title   = el.getAttribute('data-title').toLowerCase();
+            var matches = title.indexOf(e.target.value.toLowerCase()) > -1;
+
+            el.classList[matches ? 'remove' : 'add']('hide');
+            return matches;
+          }).length;
+
+          unavailableEl.classList[hasResults ? 'add' : 'remove']('hide');
         });
     }
   });

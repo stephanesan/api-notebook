@@ -8,7 +8,7 @@
   right: 0
   bottom: 0
   z-index: 1000
-  overflow: auto
+  overflow: scroll
   background-color: rgba(0, 0, 0, 0.15)
   .notebook-embedded &
     border: 1px solid rgba(0, 0, 0, 0.2)
@@ -57,6 +57,9 @@
   font-size: 0.85em
   p
     margin-bottom: 24px
+  .item-search
+    width: 95%
+    padding: 6px
   .item-list
     width: 100%
     > li
@@ -65,6 +68,9 @@
       padding: 1em 0
       margin: 0
       border-top: dotted 1px #C4C4C4
+      cursor: pointer
+      &:hover
+        background-color: rgba(0,0,0,0.03)
       > .item-action
         float: left
         width: 10%
@@ -75,6 +81,7 @@
         width: 90%
         > .item-details-link
           float: right
+          padding-right: 0.5em
         > .item-details
           display: none
           width: 90%
@@ -92,5 +99,7 @@
       width: 150px
     input
       border: solid 1px #CCC
+      border-bottom-color: #eee
+      border-right-color: #eee
   .form-footer
     margin: 20px 0 0 150px
