@@ -137,7 +137,6 @@ Notebook.prototype.render = function () {
   View.prototype.render.call(this);
   this.collection = new NotebookCollection();
 
-  // Empty all the current content to reset with new contents
   _.each(persistence.get('notebook'), function (cell) {
     var appendView = 'appendCodeView';
 
@@ -150,6 +149,14 @@ Notebook.prototype.render = function () {
 
   if (!this.collection.length) {
     this.appendCodeView();
+  }
+
+  if (this.collection.length === 1) {
+    var model = this.collection.at(0);
+
+    if (!model.get('value')) {
+      model.view.showButtonsAbove();
+    }
   }
 
   // Start listening for changes again.
@@ -309,7 +316,10 @@ Notebook.prototype.appendView = function (view, before) {
 
     this.listenTo(view, 'remove', function (view) {
       // If it's the last node in the document, append a new code cell
-      if (this.el.childNodes.length < 2) { this.appendCodeView(view.el); }
+      if (this.el.childNodes.length < 2) {
+        var codeView = this.appendCodeView(view.el);
+        codeView.showButtonsAbove();
+      }
 
       // Focus in on the next/previous cell
       var newView = this.getNextView(view) || this.getPrevView(view);

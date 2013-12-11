@@ -251,56 +251,76 @@ describe('Notebook', function () {
         });
       });
 
-      it('should be able to prepend a code cell', function () {
+      it('should be able to prepend a code cell', function (done) {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
         var topBorder = codeCells[0].el.querySelector('.cell-border-above');
 
         simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
-        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
-        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
-        expect(view.collection.length).to.equal(5);
+        App.Library.DOMBars.VM.exec(function () {
+          simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
+
+          expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+          expect(view.collection.length).to.equal(5);
+
+          return done();
+        });
       });
 
-      it('should be able to prepend a text cell', function () {
+      it('should be able to prepend a text cell', function (done) {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
         var topBorder = codeCells[0].el.querySelector('.cell-border-above');
 
         simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
-        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
-        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
-        expect(view.collection.length).to.equal(5);
+        App.Library.DOMBars.VM.exec(function () {
+          simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
+
+          expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+          expect(view.collection.length).to.equal(5);
+
+          return done();
+        });
       });
 
-      it('should be able to append a code cell', function () {
+      it('should be able to append a code cell', function (done) {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
         var topBorder = codeCells[0].el.querySelector('.cell-border-below');
 
         simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
-        simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
-        expect(view.collection.at(viewIndex).get('type')).to.equal('code');
-        expect(view.collection.length).to.equal(5);
+        App.Library.DOMBars.VM.exec(function () {
+          simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
+
+          expect(view.collection.at(viewIndex).get('type')).to.equal('code');
+          expect(view.collection.length).to.equal(5);
+
+          return done();
+        });
       });
 
-      it('should be able to append a text cell', function () {
+      it('should be able to append a text cell', function (done) {
         expect(view.collection.length).to.equal(4);
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
         var topBorder = codeCells[0].el.querySelector('.cell-border-below');
 
         simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
-        simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
-        expect(view.collection.at(viewIndex).get('type')).to.equal('text');
-        expect(view.collection.length).to.equal(5);
+        App.Library.DOMBars.VM.exec(function () {
+          simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
+
+          expect(view.collection.at(viewIndex).get('type')).to.equal('text');
+          expect(view.collection.length).to.equal(5);
+
+          return done();
+        });
       });
 
       describe('Text Cell', function () {
