@@ -119,23 +119,51 @@ middleware.register('ui:modal', function (options, next, done) {
 middleware.register('ui:confirm', function (data, next, done) {
   var confirmed = false;
 
-  data.show = function (modal) {
-    Backbone.$(modal.el).on('click', '[data-confirm]', function (e) {
-      confirmed = Boolean(e.target.getAttribute('data-confirm'));
-      return modal.close();
-    });
+  return middleware.trigger('ui:modal', {
+    title: data.title,
+    content: data.content,
+    show: function (modal) {
+      Backbone.$(modal.el).on('click', '[data-confirm]', function () {
+        confirmed = true;
+        return modal.close();
+      });
 
-    modal.el.querySelector('.modal-body').appendChild(domify(
-      '<div class="btn-list text-center">' +
-      '<button class="btn btn-secondary" data-confirm>Cancel</button>' +
-      '<button class="btn btn-primary" data-confirm=":)">OK</button>' +
-      '</div>'
-    ));
+      modal.el.querySelector('.modal-body').appendChild(domify(
+        '<div class="btn-list text-center">' +
+        '<button class="btn btn-secondary" data-dismiss>Cancel</button>' +
+        '<button class="btn btn-primary" data-confirm>OK</button>' +
+        '</div>'
+      ));
 
-    modal.el.querySelector('[data-confirm=":)"]').focus();
-  };
-
-  return middleware.trigger('ui:modal', data, function (err) {
+      modal.el.querySelector('[data-confirm]').focus();
+    }
+  }, function (err) {
     return done(err, confirmed);
   });
+});
+
+/**
+ * Notify the user of something.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ */
+middleware.register('ui:notify', function (data, next) {
+  var title = '';
+
+  if (data.title) {
+    title = '<p class="text-center"><strong>' + data.title + '</strong></p>';
+  }
+
+  return middleware.trigger('ui:modal', {
+    content: [
+      title + '<p class="text-center">' + _.escape(data.message) + '</p>',
+      '<div class="text-center">',
+      '<button class="btn btn-primary" data-dismiss>OK</button>',
+      '</div>'
+    ].join('\n'),
+    show: function (modal) {
+      modal.el.querySelector('.btn').focus();
+    }
+  }, next);
 });

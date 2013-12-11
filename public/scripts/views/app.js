@@ -14,6 +14,7 @@ var messages     = require('../state/messages');
 var middleware   = require('../state/middleware');
 var persistence  = require('../state/persistence');
 var domListen    = require('../lib/dom-listen');
+var notifyError  = require('../lib/notify-error');
 
 var ENTER_KEY    = 13;
 var EMBED_SCRIPT = process.env.embed.script;
@@ -36,7 +37,6 @@ App.prototype.events = {
   'click .notebook-help':   'showShortcuts',
   'click .notebook-exec':   'runNotebook',
   'click .notebook-clone':  'cloneNotebook',
-  'click .notebook-auth':   'authNotebook',
   'click .notebook-save':   'saveNotebook',
   'click .notebook-share':  'shareNotebook',
   'click .toggle-notebook': 'toggleEdit',
@@ -238,24 +238,17 @@ App.prototype.runNotebook = function () {
 };
 
 /**
- * Authenticate with the persistence layer.
- */
-App.prototype.authNotebook = function () {
-  return persistence.authenticate();
-};
-
-/**
  * Clone the current notebook in-memory.
  */
 App.prototype.cloneNotebook = function () {
-  return persistence.clone();
+  return persistence.clone(notifyError('Could not clone notebook'));
 };
 
 /**
  * Manually attempt to save the notebook.
  */
 App.prototype.saveNotebook = function () {
-  return persistence.save();
+  return persistence.save(notifyError('Could not save notebook'));
 };
 
 /**
@@ -267,7 +260,7 @@ App.prototype.newNotebook = function () {
     if (err || !confirmed) { return; }
 
     persistence.set('id', '');
-    return persistence.load();
+    return persistence.load(notifyError('Could not create new notebook'));
   };
 
   // If the current notebook is already saved, immediately reload.
