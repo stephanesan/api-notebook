@@ -158,6 +158,10 @@ Notebook.prototype.render = function () {
 
   this.refreshCompletion();
 
+  if (config.get('autorun')) {
+    this.execute();
+  }
+
   return this;
 };
 
