@@ -147,32 +147,30 @@ CodeCell.prototype.execute = function (done) {
   // Set the value as our own model for executing
   this.model.set('value', this.editor.getValue());
 
-  // Make sure we have focus on the currently executing cell.
-  if (!this.hasFocus()) {
-    this.browseToCell(this.model);
-    this.moveCursorToEnd();
-  }
+  // First run previous cells if they need to be run
+  this.notebook.executePrevious(this, _.bind(function () {
+    // Add a class to the cell to display execution.
+    this.data.set('executing', true);
 
-  // Add a class to the cell to display execution.
-  this.data.set('executing', true);
+    this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
+      this.data.set('executing', false);
+      this.data.set('executed', true);
 
-  this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-    this.data.set('executing', false);
+      if (data.isError) {
+        this.model.unset('result');
+        this.el.classList.add('cell-code-error');
+      } else {
+        this.model.set('result', data.result);
+        this.el.classList.remove('cell-code-error');
+      }
 
-    if (data.isError) {
-      this.model.unset('result');
-      this.el.classList.add('cell-code-error');
-    } else {
-      this.model.set('result', data.result);
-      this.el.classList.remove('cell-code-error');
-    }
-
-    // Trigger `execute` and set the result, each of which need an additional
-    // flag to indicate whether the the
-    this.resultCell.setResult(data, this.notebook.sandbox.window);
-    messages.trigger('resize');
-    this.trigger('execute', this, data);
-    return done && done(err, data);
+      // Trigger `execute` and set the result, each of which need an additional
+      // flag to indicate whether the the
+      this.resultCell.setResult(data, this.notebook.sandbox.window);
+      messages.trigger('resize');
+      this.trigger('execute', this, data);
+      return done && done(err, data);
+    }, this));
   }, this));
 };
 

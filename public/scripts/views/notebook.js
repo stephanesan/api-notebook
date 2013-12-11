@@ -196,8 +196,28 @@ Notebook.prototype.execute = function (done) {
 
     // Only execute code cells, skips other cell types.
     if (view.model.get('type') === 'code') {
-      view.focus().moveCursorToEnd();
+      view.execute(function () {
+        execution(that.getNextView(view));
+      });
+    } else {
+      execution(that.getNextView(view));
+    }
+  })(this.collection.at(0).view);
+};
 
+Notebook.prototype.executePrevious = function (current, done) {
+  var that = this;
+  this._execution = true;
+
+  (function execution (view) {
+    // If no view is passed through, we must have hit the last view.
+    if (!view || current === view) {
+      that._execution = false;
+      return done && done();
+    }
+
+    // Only execute code cells, skips other cell types.
+    if (view.model.get('type') === 'code' && !view.data.get('executed')) {
       view.execute(function () {
         execution(that.getNextView(view));
       });
