@@ -24,6 +24,20 @@ describe('Notebook', function () {
       expect(view.el.className).to.equal('notebook-view');
     });
 
+    describe('#render', function () {
+      it('should autorun the notebook on render if autorun is true', function () {
+        var spy = sinon.stub(view, 'execute');
+
+        App.config.set('autorun', true);
+        view.render().appendTo(fixture);
+
+        App.config.unset('autorun');
+        view.remove();
+
+        expect(spy).to.have.been.calledOnce;
+      });
+    });
+
     describe('#appendView', function () {
       it('should append the view element to the notebook', function () {
         view.appendView(new App.View.CodeCell());
