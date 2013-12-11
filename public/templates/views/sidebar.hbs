@@ -26,9 +26,9 @@
     </div>
   </div>
 
-  <ul class="sidebar-list">
+  <div class="sidebar-list">
     {{!-- Hard code the first element as the current persistence model --}}
-    <li class="item item-active {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
+    <div class="list-item item item-active {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
       {{#if @persistence.id}}
         {{#equal @persistence.userId @persistence.ownerId}}
           <i class="icon-cancel-circled" data-delete="{{@persistence.id}}"></i>
@@ -52,15 +52,15 @@
           {{/if}}
         </div>
       </div>
-    </li>
+    </div>
 
     {{#if @data.updating}}
-      <li class="sidebar-updating text-center">
+      <div class="list-item sidebar-updating text-center">
         <i class="icon-arrows-cw animate-spin"></i>
-      </li>
+      </div>
     {{else}}
       {{#collection @persistence.items}}
-        <li class="item {{#equal id @persistence.id}}item-hidden{{/equal}}" data-load="{{id}}">
+        <div class="list-item item {{#equal id @persistence.id}}item-hidden{{/equal}}" data-load="{{id}}">
           <i class="icon-cancel-circled" data-delete="{{id}}"></i>
 
           <div class="item-description">
@@ -70,8 +70,8 @@
               <div class="item-timestamp">{{dateFormat updatedAt}}</div>
             {{/if}}
           </div>
-        </li>
+        </div>
       {{/collection}}
     {{/if}}
-  </ul>
+  </div>
 </div>

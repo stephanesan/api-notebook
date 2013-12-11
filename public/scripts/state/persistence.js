@@ -191,12 +191,13 @@ Persistence.prototype.save = function (done) {
         return done && done(err);
       }
 
-      this.get('items').add(data, { merge: true });
-
       this.set('id',        data.id);
       this.set('ownerId',   data.ownerId);
       this.set('updatedAt', new Date());
+
       this._changeState(Persistence.SAVE_DONE);
+      this.get('items').add(this.toJSON(), { merge: true });
+
       return done && done();
     }, this)
   );

@@ -9,12 +9,11 @@ var DOMBars = require('dombars/runtime');
  * @return {Node}
  */
 DOMBars.registerHelper('collection', function (collection, options) {
-  var fragment = document.createDocumentFragment();
-  var cache    = {};
-  var nodes    = {};
+  var element = document.createElement(options.hash.tagName || 'div');
+  var nodes   = {};
 
   if (!collection || arguments.length < 2) {
-    return fragment;
+    return element;
   }
 
   /**
@@ -25,8 +24,9 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @return {Node}
    */
   var render = function (model) {
-    var child = cache[model.cid] = options.fn(model);
+    var child = options.fn(model);
 
+    // TODO: Keep track of unsubscribing/removing individual renders.
     nodes[model.cid] = _.toArray(child.childNodes);
 
     return child;
@@ -42,27 +42,24 @@ DOMBars.registerHelper('collection', function (collection, options) {
   };
 
   /**
+   * Append a new model directly to the current element.
+   *
+   * @param {Object} model
+   */
+  var add = function (model) {
+    element.appendChild(render(model));
+  };
+
+  /**
    * Sort DOM nodes by removing from the DOM and re-adding in sorted order.
    */
   var sort = function () {
-    var parent;
-
     _.each(nodes, function (children) {
-      _.each(children, function (child) {
-        if (!parent) {
-          parent = child.parentNode;
-        }
-
-        return removeChild(child);
-      });
+      _.each(children, removeChild);
     });
 
     collection.each(function (model) {
-      var children = nodes[model.cid] || render(model);
-
-      _.each(children, function (child) {
-        parent.appendChild(child);
-      });
+      _.each(nodes[model.cid], element.appendChild, element);
     });
   };
 
@@ -72,11 +69,9 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @param {Object} model
    */
   var remove = function (model) {
-    cache[model.cid].unsubscribe();
     _.each(nodes[model.cid], removeChild);
 
     delete nodes[model.cid];
-    delete cache[model.cid];
   };
 
   /**
@@ -85,11 +80,6 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @return {[type]} [description]
    */
   var reset = function () {
-    _.each(cache, function (node, key) {
-      node.unsubscribe();
-      delete cache[key];
-    });
-
     _.each(nodes, function (children, key) {
       _.each(children, removeChild);
       delete nodes[key];
@@ -97,14 +87,18 @@ DOMBars.registerHelper('collection', function (collection, options) {
   };
 
   DOMBars.VM.unsubscribe(function () {
+    collection.off('add',    add);
     collection.off('sort',   sort);
     collection.off('reset',  reset);
     collection.off('remove', remove);
   });
 
-  collection.each(function (model) {
-    fragment.appendChild(render(model));
-  });
+  collection.on('add',    add);
+  collection.on('sort',   sort);
+  collection.on('reset',  reset);
+  collection.on('remove', remove);
 
-  return fragment;
+  collection.each(add);
+
+  return element;
 });
