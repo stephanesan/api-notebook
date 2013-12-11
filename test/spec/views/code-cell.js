@@ -17,6 +17,9 @@ describe('Code Cell', function () {
 
       view.notebook = {
         sandbox: sandbox,
+        executePrevious: function (cell, done) {
+          return done && done();
+        },
         completionOptions: {
           context: sandbox.window
         }

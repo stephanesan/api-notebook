@@ -247,7 +247,7 @@ describe('Notebook', function () {
         view.execute(function () {
           expect(codeCells[0].model.get('result')).to.equal(3874);
           expect(codeCells[1].model.get('result')).to.equal(3874);
-          done();
+          return done();
         });
       });
 

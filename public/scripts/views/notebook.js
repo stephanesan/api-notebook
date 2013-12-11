@@ -207,6 +207,12 @@ Notebook.prototype.execute = function (done) {
 
 Notebook.prototype.executePrevious = function (current, done) {
   var that = this;
+
+  // Don't need to executePrevious if we're already in a full execute
+  if (this._execution) {
+    return done && done();
+  }
+
   this._execution = true;
 
   (function execution (view) {
