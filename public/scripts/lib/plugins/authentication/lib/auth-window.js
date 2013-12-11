@@ -91,11 +91,11 @@ module.exports = function (url, options, cb) {
 
 
   modalOptions.content += [
-    '<p class="text-center">',
+    '<div class="text-center">',
     '<button class="btn btn-primary" data-authenticate>',
     modalOptions.btnText,
     '</button>',
-    '</p>'
+    '</div>'
   ].join('\n');
 
   middleware.trigger('ui:modal', modalOptions, function () {

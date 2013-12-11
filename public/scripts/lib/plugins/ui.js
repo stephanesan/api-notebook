@@ -51,10 +51,10 @@ middleware.register('ui:modal', function (options, next, done) {
     } else {
       async = true;
       templateOptions.content = [
-        '<p class="text-center">',
+        '<div class="text-center">',
         '<i class="icon-arrows-cw animate-spin"></i>',
-        '</p>'
-      ].join('');
+        '</div>'
+      ].join('\n');
     }
   }
 
