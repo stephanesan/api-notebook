@@ -152,7 +152,11 @@ middleware.register('ui:notify', function (data, next) {
   var title = '';
 
   if (data.title) {
-    title = '<p class="text-center"><strong>' + data.title + '</strong></p>';
+    title = [
+      '<p class="text-center">',
+      '<strong>' + _.escape(data.title) + '</strong>',
+      '</p>'
+    ].join('\n')
   }
 
   return middleware.trigger('ui:modal', {
