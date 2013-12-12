@@ -156,7 +156,7 @@ middleware.register('ui:notify', function (data, next) {
       '<p class="text-center">',
       '<strong>' + _.escape(data.title) + '</strong>',
       '</p>'
-    ].join('\n')
+    ].join('\n');
   }
 
   return middleware.trigger('ui:modal', {
