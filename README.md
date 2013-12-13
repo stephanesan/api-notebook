@@ -1,4 +1,4 @@
-# JSNotebook
+# API Notebook
 
 ## Development
 
