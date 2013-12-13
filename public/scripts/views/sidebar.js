@@ -134,9 +134,10 @@ SidebarView.prototype.deleteId = function (id) {
   }, _.bind(function (err, confirmed) {
     return confirmed && persistence.delete(id, _.bind(function (err) {
       if (err) {
-        return window.alert(
-          'Couldn\'t delete the Notebook. Refresh and try again.'
-        );
+        return middleware.trigger('ui:notify', {
+          title: 'Unable to delete the notebook',
+          message: 'Refresh and try again'
+        });
       }
 
       if (persistence.get('id') === id) {
