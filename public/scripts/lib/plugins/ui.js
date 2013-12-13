@@ -153,7 +153,7 @@ middleware.register('ui:notify', function (data, next) {
 
   if (data.title) {
     title = [
-      '<p>',
+      '<p class="modal-headline">',
       '<strong>' + _.escape(data.title) + '</strong>',
       '</p>'
     ].join('\n');
