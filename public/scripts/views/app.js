@@ -277,8 +277,16 @@ App.prototype.newNotebook = function () {
 
   // Confirm with the user that this is the action they want to do.
   return middleware.trigger('ui:confirm', {
-    title: 'Are you sure?',
-    content: 'Your changes will be lost.'
+    title: 'You have unsaved changes. Abandon changes?',
+    content: '<p>' +
+      'Save your work by pressing \'Cancel\' and ' +
+      'then clicking the save icon in the toolbar or using ' +
+      'the keystroke CMD + S (or CTRL + S).' +
+      '</p>' +
+      '<p>' +
+      'Press \'OK\' to abandon this notebook. ' +
+      'Your changes will be lost.' +
+      '</p>'
   }, newNotebook);
 };
 
