@@ -167,6 +167,7 @@ middleware.register('ui:notify', function (data, next) {
       '</div>'
     ].join('\n'),
     show: function (modal) {
+      modal.el.className += ' modal-notify';
       modal.el.querySelector('.btn').focus();
     }
   }, next);
