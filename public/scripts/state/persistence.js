@@ -196,7 +196,9 @@ Persistence.prototype.save = function (done) {
       this.set('updatedAt', new Date());
 
       this._changeState(Persistence.SAVE_DONE);
-      this.get('items').add(this.toJSON(), { merge: true });
+      this.get('items').add(_.extend(this.toJSON(), {
+        meta: this.get('meta').toJSON()
+      }), { merge: true });
 
       return done && done();
     }, this)
