@@ -928,6 +928,13 @@ var attachResources = function attachResources (nodes, context, resources) {
  */
 var authenticateMiddleware = function (trigger, nodes, scheme) {
   return function (data, done) {
+    // Allow the `data` argument to be omitted.
+    if (typeof arguments[0] === 'function') {
+      data = {};
+      done = arguments[0];
+    }
+
+    // If no callback function is provided, use the `async` function.
     if (!_.isFunction(done)) {
       done = App._executeContext.async();
     }
@@ -979,7 +986,7 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
     context[method][DESCRIPTION_PROPERTY] = _.extend(
       toDescriptionObject(scheme),
       {
-        '!type': 'fn(options)'
+        '!type': 'fn(options?: object, cb?: function(error, data))'
       }
     );
 
