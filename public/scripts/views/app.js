@@ -117,7 +117,8 @@ App.prototype.initialize = function () {
    * Update state variables when the persistence state changes.
    */
   this.listenTo(persistence, 'change:state', bounce(function () {
-    var timestamp = new Date().toLocaleTimeString();
+    var timestamp    = new Date().toLocaleTimeString();
+    var currentState = persistence.get('state');
 
     var states = {
       1: 'Saving',
@@ -130,8 +131,15 @@ App.prototype.initialize = function () {
       8: 'Cloning notebook'
     };
 
-    state.set('loading',       persistence.get('state') === 2);
-    this.data.set('stateText', states[persistence.get('state')]);
+    if (currentState === 5) {
+      middleware.trigger('ui:notify', {
+        title: 'Load failed!',
+        message: 'Could not load the notebook'
+      });
+    }
+
+    state.set('loading',       currentState === 2);
+    this.data.set('stateText', states[currentState]);
   }, this));
 
   /**
