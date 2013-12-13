@@ -974,6 +974,14 @@ var authTypes = {
  * @return {Object}
  */
 var attachSecuritySchemes = function (nodes, context, schemes) {
+  var description = 'Authentication parameters are optional. ' +
+    'For popular APIs, we provide keys. ' +
+    'If we need your keys we will prompt you via a modal. ' +
+    'Never enter keys directly into a Notebook unless ' +
+    'you explicitly intend to share them. ' +
+    'If you would like to know more about authenticating ' +
+    'with this API, see \'securityScheme.settings\' in the RAML file.';
+
   // Loop through the available schemes and manually attach each of the
   // available schemes.
   _.each(schemes, function (scheme, title) {
@@ -990,16 +998,13 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
       }
     );
 
-    context[method][DESCRIPTION_PROPERTY]['!doc'] = [
-      'Authentication parameters are optional. ' +
-      'For popular APIs, we provide keys. ' +
-      'If we need your keys we will prompt you via a modal. ' +
-      'Never enter keys directly into a Notebook unless ' +
-      'you explicitly intend to share them. ' +
-      'If you would like to know more about authenticating ' +
-      'with this API, see \'securityScheme.settings\' in the RAML file.\n\n' +
-      context[method][DESCRIPTION_PROPERTY]['!doc'] || ''
-    ].join('\n');
+    if (!context[method][DESCRIPTION_PROPERTY]['!doc']) {
+      context[method][DESCRIPTION_PROPERTY]['!doc'] = description;
+    } else {
+      context[method][DESCRIPTION_PROPERTY]['!doc'] = [
+        description, context[method][DESCRIPTION_PROPERTY]['!doc']
+      ].join('\n\n');
+    }
   });
 
   return context;
