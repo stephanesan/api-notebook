@@ -51,8 +51,6 @@ Widget.prototype.remove = function () {
 Widget.prototype.removeHints = function () {
   if (this._refreshing || !this.hints) { return this; }
 
-  // Remove all event listeners associated with the hints.
-  this.completion.cm.off('scroll', this.onScroll);
   this.completion.cm.removeKeyMap(this.hintKeyMap);
   state.off('change:viewportHeight change:viewportWidth', this.onResize);
   if (this.hints.parentNode) { this.hints.parentNode.removeChild(this.hints); }
@@ -216,15 +214,10 @@ Widget.prototype.refresh = function (done) {
  * @return {Widget}
  */
 Widget.prototype.reposition = function () {
-  if (this.onScroll) {
-    this.completion.cm.off('scroll', this.onScroll);
-  }
-
   var cm    = this.completion.cm;
   var pos   = cm.cursorCoords(this.data.from);
   var top   = pos.bottom;
   var left  = pos.left;
-  var that  = this;
   var hints = this.hints;
 
   hints.className    = hints.className.replace(' CodeMirror-hints-top', '');
@@ -270,22 +263,6 @@ Widget.prototype.reposition = function () {
       hints.style.height = (winHeight - winPos.bottom - padding) + 'px';
     }
   }
-
-  var startScroll = cm.getScrollInfo();
-  cm.on('scroll', this.onScroll = function () {
-    var curScroll = cm.getScrollInfo();
-    var newTop    = top + startScroll.top - curScroll.top;
-    var editor    = cm.getWrapperElement().getBoundingClientRect();
-    var point     = newTop - (window.pageYOffset ||
-      (document.documentElement || document.body).scrollTop);
-
-    if (point <= editor.top || point >= editor.bottom) {
-      return that.completion.remove();
-    }
-
-    that.hints.style.top  = newTop + 'px';
-    that.hints.style.left = (left + startScroll.left - curScroll.left) + 'px';
-  });
 
   return this;
 };
