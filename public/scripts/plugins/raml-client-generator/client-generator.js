@@ -991,8 +991,13 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
     );
 
     context[method][DESCRIPTION_PROPERTY]['!doc'] = [
-      'Your credentials are optional here. See \'securityScheme.settings\' ' +
-        'in the RAML for available options.\n',
+      'Authentication parameters are optional. ' +
+      'For popular APIs, we provide keys. ' +
+      'If we need your keys we will prompt you via a modal. ' +
+      'Never enter keys directly into a Notebook unless ' +
+      'you explicitly intend to share them. ' +
+      'If you would like to know more about authenticating ' +
+      'with this API, see \'securityScheme.settings\' in the RAML file.\n\n' +
       context[method][DESCRIPTION_PROPERTY]['!doc'] || ''
     ].join('\n');
   });
