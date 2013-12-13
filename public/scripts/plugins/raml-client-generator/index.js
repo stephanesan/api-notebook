@@ -99,7 +99,9 @@ API.createClient = function (name, url, config, done) {
     }
 
     return done(
-      null, 'Type \'' + name + '.\' to explore this API with auto-completion'
+      null,
+      'Create a new code cell and type \'' + name + '.\' ' +
+      'to explore this API.'
     );
   }, done);
 };

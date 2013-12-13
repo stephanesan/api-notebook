@@ -1,4 +1,5 @@
-$button_color = #5B5B5B
+$button_color = #7F7F7F
+$button_hover_color =#3F3F3F
 
 .controls-table
   width: 100%
@@ -35,6 +36,13 @@ $button_color = #5B5B5B
   @extends .btn-base
   border: 2px solid $button_color
   border-radius: 50em
+  &:hover
+    border-color: $button_hover_color
+    color: $button_hover_color
+  &.btn-disabled
+    text-shadow: 1px 1px rgba(255,255,255,0.8)
+    border-color: #ccc
+    color: #ccc
 
 .btn-square
   @extends .btn-base
@@ -51,16 +59,9 @@ $button_color = #5B5B5B
   color: $button_color
   font-size: 18px
 
-.notebook-exec .icon:before
-  content: ''
-  position: absolute
-  top: 6px
-  left: 8px
-  display: inline-block
-  width: 0
-  height: 0
-  border: 5px solid transparent
-  border-left: 9px solid $button_color
+.notebook-exec i:before
+  font-size: 0.9em
+  margin-left: 0.4em
 
 .notebook-help .icon:before
   content: '?'
@@ -69,7 +70,6 @@ $button_color = #5B5B5B
   top: 0
   left: 0
   width: 22px
-  color: $button_color
   height: @width
   text-align: center
   font-style: normal
