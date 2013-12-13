@@ -72,7 +72,7 @@ App.prototype.initialize = function () {
    * Block attempts to close the window when the persistence state is dirty.
    */
   this.listenTo(domListen(window), 'beforeunload', function (e) {
-    if (!config.get('savable') || persistence.get('state') !== 7) { return; }
+    if (!config.get('savable') || persistence.isSaved()) { return; }
 
     return (e || window.event).returnValue = 'Your changes will be lost.';
   });
@@ -259,11 +259,35 @@ App.prototype.saveNotebook = function () {
 };
 
 /**
- * Manually create a new notebook.
+ * Manually create a new notebook instance. Before we discard any current
+ * changes, check with the user.
  */
 App.prototype.newNotebook = function () {
-  persistence.set('id', '');
-  return persistence.load();
+  var newNotebook = function (err, confirmed) {
+    if (err || !confirmed) { return; }
+
+    persistence.set('id', '');
+    return persistence.load();
+  };
+
+  // If the current notebook is already saved, immediately reload.
+  if (persistence.isSaved()) {
+    return newNotebook(null, true);
+  }
+
+  // Confirm with the user that this is the action they want to do.
+  return middleware.trigger('ui:confirm', {
+    title: 'You have unsaved changes. Abandon changes?',
+    content: '<p>' +
+      'Save your work by pressing \'Cancel\' and ' +
+      'then clicking the save icon in the toolbar or using ' +
+      'the keystroke CMD + S (or CTRL + S).' +
+      '</p>' +
+      '<p>' +
+      'Press \'OK\' to abandon this notebook. ' +
+      'Your changes will be lost.' +
+      '</p>'
+  }, newNotebook);
 };
 
 /**

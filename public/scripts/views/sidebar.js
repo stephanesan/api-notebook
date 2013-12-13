@@ -23,13 +23,37 @@ SidebarView.prototype.events = {
   'click [data-load]': function (e) {
     var node = e.target;
 
+    // Don't propagate the delete button clicks.
     if (node.hasAttribute('data-delete')) { return; }
 
+    // Recurse up the parents until we have the correct node reference.
     while (!node.hasAttribute('data-load')) {
       node = node.parentNode;
     }
 
-    this.updateId(node.getAttribute('data-load'));
+    var id = node.getAttribute('data-load');
+
+    // If the current notebook has not been saved yet, prompt the user.
+    if (!persistence.isSaved()) {
+      return middleware.trigger('ui:confirm', {
+        title: 'You have unsaved changes. Abandon changes?',
+        content: '<p>' +
+          'Save your work by pressing \'Cancel\' and ' +
+          'then clicking the save icon in the toolbar or using ' +
+          'the keystroke CMD + S (or CTRL + S).' +
+          '</p>' +
+          '<p>' +
+          'Press \'OK\' to abandon this notebook. ' +
+          'Your changes will be lost.' +
+          '</p>'
+      }, _.bind(function (err, confirmed) {
+        if (err || !confirmed) { return; }
+
+        return this.updateId(id);
+      }, this));
+    }
+
+    return this.updateId(id);
   },
   'click .sidebar-toggle': function () {
     var isOpen = !this.el.classList.contains('sidebar-closed');
@@ -93,7 +117,7 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
-  persistence.load();
+  return persistence.load();
 };
 
 /**

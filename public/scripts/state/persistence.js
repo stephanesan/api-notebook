@@ -127,6 +127,26 @@ Persistence.prototype.isAuthenticated = function () {
 };
 
 /**
+ * Checks whether the current persistence item is unsaved.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype.isSaved = function () {
+  // Check against a map of the different states.
+  return ({
+    0: true,
+    1: false,
+    2: false,
+    3: false,
+    4: true,
+    5: true,
+    6: true,
+    7: false,
+    8: true
+  })[this.get('state')];
+};
+
+/**
  * Pass an array of cells that represent the notebook for serialization.
  *
  * @param {Array}    cells
