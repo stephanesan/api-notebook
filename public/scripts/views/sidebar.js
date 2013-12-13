@@ -4,6 +4,7 @@ var bounce      = require('../lib/bounce');
 var config      = require('../state/config');
 var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
+var notifyError = require('../lib/notify-error');
 
 /**
  * Create a new sidebar view class.
@@ -133,9 +134,10 @@ SidebarView.prototype.deleteId = function (id) {
   }, _.bind(function (err, confirmed) {
     return confirmed && persistence.delete(id, _.bind(function (err) {
       if (err) {
-        return window.alert(
-          'Couldn\'t delete the Notebook. Refresh and try again.'
-        );
+        return middleware.trigger('ui:notify', {
+          title: 'Unable to delete the notebook',
+          message: 'Refresh and try again'
+        });
       }
 
       if (persistence.get('id') === id) {
@@ -152,12 +154,12 @@ SidebarView.prototype.deleteId = function (id) {
  * Authenticate to the notebook persistence layer.
  */
 SidebarView.prototype.authenticate = function () {
-  return persistence.authenticate();
+  return persistence.authenticate(notifyError('Login failed!'));
 };
 
 /**
  * Unauthenticate from the notebook.
  */
 SidebarView.prototype.unauthenticate = function () {
-  return persistence.unauthenticate();
+  return persistence.unauthenticate(notifyError('Could not log out!'));
 };
