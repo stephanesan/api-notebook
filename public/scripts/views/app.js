@@ -272,7 +272,7 @@ App.prototype.newNotebook = function () {
 
   // If the current notebook is already saved, immediately reload.
   if (persistence.isSaved()) {
-    return newNotebook(null, false);
+    return newNotebook(null, true);
   }
 
   // Confirm with the user that this is the action they want to do.
