@@ -38,11 +38,11 @@ SidebarView.prototype.events = {
       return middleware.trigger('ui:confirm', {
         title: 'Are you sure?',
         content: 'Your changes will be lost.'
-      }, function (err, confirmed) {
+      }, _.bind(function (err, confirmed) {
         if (err || !confirmed) { return; }
 
         return this.updateId(id);
-      });
+      }, this));
     }
 
     return this.updateId(id);
