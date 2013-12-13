@@ -9,23 +9,6 @@ var FIXTURE_DIR = TEST_DIR  + '/fixtures';
 var PORT        = process.env.PORT || 3000;
 
 /**
- * Uses a simple object representation of urls to merge additional data with
- * proxied requests. Port this to use RAML ASAP.
- *
- * @type {Object}
- */
-var mergeData = {
-  'github.com': {
-    'client_id':     config.plugins.github.clientId,
-    'client_secret': config.plugins.github.clientSecret
-  },
-  'api.github.com': {
-    'client_id':     config.plugins.github.clientId,
-    'client_secret': config.plugins.github.clientSecret
-  }
-};
-
-/**
  * Exports the grunt configuration.
  *
  * @param {Object} grunt
@@ -76,15 +59,7 @@ module.exports = function (grunt) {
         return next();
       }
 
-      var data  = {};
-
-      var uri = data.uri = url.parse(req.url.substr(7), true);
-      var qs  = data.qs  = uri.query || {};
-
-      // Extends the query string with additonal query data.
-      _.defaults(qs, mergeData[uri.hostname]);
-
-      var proxy = request(data);
+      var proxy = request(req.url.substr(7));
 
       // Proxy the error message back to the client.
       proxy.on('error', function (err) {
