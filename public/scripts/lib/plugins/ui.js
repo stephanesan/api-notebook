@@ -153,7 +153,7 @@ middleware.register('ui:notify', function (data, next) {
 
   if (data.title) {
     title = [
-      '<p class="text-center">',
+      '<p>',
       '<strong>' + _.escape(data.title) + '</strong>',
       '</p>'
     ].join('\n');
@@ -161,7 +161,7 @@ middleware.register('ui:notify', function (data, next) {
 
   return middleware.trigger('ui:modal', {
     content: [
-      title + '<p class="text-center">' + _.escape(data.message) + '</p>',
+      title + '<p>' + _.escape(data.message) + '</p>',
       '<div class="text-center">',
       '<button class="btn btn-primary" data-dismiss>OK</button>',
       '</div>'
