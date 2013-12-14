@@ -21,18 +21,16 @@ middleware.register('authentication:basicAuth', function (data, next, done) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.register('ajax:basicAuth', function (data, next, done) {
-  if (!_.isObject(data.basicAuth)) {
-    return done(new TypeError('"basicAuth" config object expected'));
+middleware.register('ajax:basicAuth', function (data, next) {
+  // Check we have a basic auth object before mixing in our credentials.
+  if (_.isObject(data.basicAuth)) {
+    data.headers = _.extend({
+      'Authorization': 'Basic ' + new Buffer(
+        data.basicAuth.username + ':' + data.basicAuth.password
+      ).toString('base64')
+    }, data.headers);
   }
 
-  data.headers = _.extend({
-    'Authorization': 'Basic ' + new Buffer(
-      data.basicAuth.username + ':' + data.basicAuth.password
-    ).toString('base64')
-  }, data.headers);
-
-  return middleware.trigger('ajax', data, done);
+  return middleware.trigger('ajax', data, next);
 });

@@ -343,35 +343,29 @@ middleware.register('authenticate:oauth2:token', function (data, next, done) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.register('ajax:oauth2', function (data, next, done) {
-  if (!_.isObject(data.oauth2)) {
-    return done(new TypeError('"oauth2" config object expected'));
-  }
+middleware.register('ajax:oauth2', function (data, next) {
+  // Check that we have an access token to use for the request and mix it in.
+  if (_.isObject(data.oauth2) && data.oauth2.accessToken) {
+    if (data.oauth2.tokenType === 'bearer') {
+      data.headers = _.extend({
+        'Authorization': 'Bearer ' + data.oauth2.accessToken
+      }, data.headers);
+    } else {
+      // Add the access token to the request query.
+      var uri = url.parse(data.url, true);
+      uri.query.access_token = data.oauth2.accessToken;
+      delete uri.search;
 
-  if (!data.oauth2.accessToken) {
-    return done(new TypeError('"accessToken" expected'));
-  }
-
-  if (data.oauth2.tokenType === 'bearer') {
-    data.headers = _.extend({
-      'Authorization': 'Bearer ' + data.oauth2.accessToken
-    }, data.headers);
-  } else {
-    // Add the access token to the request query.
-    var uri = url.parse(data.url, true);
-    uri.query.access_token = data.oauth2.accessToken;
-    delete uri.search;
-
-    // Update ajax data headers and url.
-    data.url = url.format(uri);
-    data.headers = _.extend({
-      'Pragma':        'no-store',
-      'Cache-Control': 'no-store'
-    }, data.headers);
+      // Update ajax data headers and url.
+      data.url = url.format(uri);
+      data.headers = _.extend({
+        'Pragma':        'no-store',
+        'Cache-Control': 'no-store'
+      }, data.headers);
+    }
   }
 
   // Trigger the regular ajax method.
-  return middleware.trigger('ajax', data, done);
+  return middleware.trigger('ajax', data, next);
 });

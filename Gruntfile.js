@@ -1,5 +1,3 @@
-var url         = require('url');
-var config      = require('config');
 var request     = require('request');
 var DEV         = process.env.NODE_ENV !== 'production';
 var PLUGIN_DIR  = __dirname + '/public/scripts/plugins';

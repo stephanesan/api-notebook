@@ -1,8 +1,10 @@
 /* global App */
-var _            = App._;
-var AUTH_URL     = 'https://github.com/login/oauth/authorize';
-var TOKEN_URL    = 'https://github.com/login/oauth/access_token';
-var VALIDATE_URL = 'https://api.github.com/user';
+var _             = App._;
+var AUTH_URL      = 'https://github.com/login/oauth/authorize';
+var TOKEN_URL     = 'https://github.com/login/oauth/access_token';
+var VALIDATE_URL  = 'https://api.github.com/user';
+var CLIENT_ID     = process.env.plugins.github.clientId;
+var CLIENT_SECRET = process.env.plugins.github.clientSecret;
 
 /**
  * OAuth2 authentication options object.
@@ -11,8 +13,8 @@ var VALIDATE_URL = 'https://api.github.com/user';
  */
 var authOpts = {
   scopes:              ['gist'],
-  clientId:            process.env.plugins.github.clientId,
-  clientSecret:        process.env.plugins.github.clientSecret,
+  clientId:            CLIENT_ID,
+  clientSecret:        CLIENT_SECRET,
   accessTokenUri:      TOKEN_URL,
   authorizationUri:    AUTH_URL,
   authorizationGrants: 'code',
@@ -184,9 +186,13 @@ var loadPlugin = function (data, next, done) {
     return next();
   }
 
-  App.middleware.trigger('ajax', {
-    url: 'https://api.github.com/gists/' + data.id,
-    method: 'GET'
+  App.middleware.trigger('ajax:oauth2', {
+    // Add the application client id and secret to load requests to avoid rate
+    // limiting in the case that the user is unauthenticated.
+    url: 'https://api.github.com/gists/' + data.id +
+      '?client_id=' + CLIENT_ID + '&client_secret=' + CLIENT_SECRET,
+    method: 'GET',
+    oauth2: oauth2Store.toJSON()
   }, function (err, xhr) {
     var content;
 
@@ -270,6 +276,10 @@ var savePlugin = function (data, next, done) {
  * @param {Function} done
  */
 var listPlugin = function (list, next, done) {
+  if (!oauth2Store.has('accessToken')) {
+    return done(new Error('Listing notebooks requires authentication'));
+  }
+
   (function recurse (link) {
     App.middleware.trigger('ajax:oauth2', {
       url:    link,

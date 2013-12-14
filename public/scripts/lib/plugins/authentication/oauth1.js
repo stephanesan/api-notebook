@@ -412,46 +412,44 @@ middleware.register('authenticate:oauth1', function (data, next, done) {
  *
  * @param {Object}   data
  * @param {Function} next
- * @param {Function} done
  */
-middleware.register('ajax:oauth1', function (data, next, done) {
-  if (!_.isObject(data.oauth1)) {
-    return done(new TypeError('"oauth1" config object expected'), null);
+middleware.register('ajax:oauth1', function (data, next) {
+  // Check we have an oauth1 object for attempting to mixin keys.
+  if (_.isObject(data.oauth1)) {
+    if (!data.oauth1.signatureMethod) {
+      data.oauth1.signatureMethod = 'HMAC-SHA1';
+    }
+
+    // Parse the url for augmenting the query string parameters. Needed in
+    // multiple places throughout the flow, so we can minimize the number of
+    // parses by doing it once at the start.
+    data.url = url.parse(data.url, true);
+
+    // Delete parameters specific to re-adding the query string, since we need
+    // to regenerate the query string without OAuth params.
+    delete data.url.href;
+    delete data.url.path;
+    delete data.url.search;
+
+    var orderedParams = prepareParameters(data);
+    var authorization = buildAuthorizationHeaders(data, orderedParams);
+
+    data.headers.Authorization = authorization;
+
+    data.url.query = arrayToParams(
+      _.filter(paramsToArray(data.url.query), function (param) {
+        return !isParamAnOAuthParameter(param[0]);
+      })
+    );
+
+    // Reattach the query string if we have one available.
+    if (data.url.query) {
+      data.url.search = '?' + data.url.query;
+      data.url.path   = data.url.pathname + data.url.search;
+    }
+
+    data.url = url.format(data.url);
   }
-
-  if (!data.oauth1.signatureMethod) {
-    data.oauth1.signatureMethod = 'HMAC-SHA1';
-  }
-
-  // Parse the url for augmenting the query string parameters. Needed in
-  // multiple places throughout the flow, so we can minimize the number of
-  // parses by doing it once at the start.
-  data.url = url.parse(data.url, true);
-
-  // Delete parameters specific to re-adding the query string, since we need
-  // to regenerate the query string without OAuth params.
-  delete data.url.href;
-  delete data.url.path;
-  delete data.url.search;
-
-  var orderedParams = prepareParameters(data);
-  var authorization = buildAuthorizationHeaders(data, orderedParams);
-
-  data.headers.Authorization = authorization;
-
-  data.url.query = arrayToParams(
-    _.filter(paramsToArray(data.url.query), function (param) {
-      return !isParamAnOAuthParameter(param[0]);
-    })
-  );
-
-  // Reattach the query string if we have one available.
-  if (data.url.query) {
-    data.url.search = '?' + data.url.query;
-    data.url.path   = data.url.pathname + data.url.search;
-  }
-
-  data.url = url.format(data.url);
 
   return App.middleware.trigger('ajax', data, next);
 });
