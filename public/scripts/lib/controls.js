@@ -185,15 +185,3 @@ defineCodeShortcut({
   keyMap: ['Shift', 'Enter'],
   description: 'Insert a new line'
 });
-
-defineCodeShortcut({
-  label: 'Open Text Cell',
-  shortcut: '/*',
-  description: 'Open a new text cell'
-});
-
-defineTextShortcut({
-  label: 'Close Text Cell',
-  shortcut: '*/',
-  description: 'Close the current text cell'
-});
