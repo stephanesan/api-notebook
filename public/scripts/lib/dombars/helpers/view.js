@@ -7,7 +7,7 @@ var DOMBars = require('dombars/runtime');
  * @return {Node}
  */
 DOMBars.registerHelper('view', function (view) {
-  if (!view) { return; }
+  if (!view) { return document.createDocumentFragment(); }
 
   DOMBars.VM.unsubscribe(function () {
     return view.remove();
