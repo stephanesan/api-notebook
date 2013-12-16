@@ -34,6 +34,7 @@ var Persistence = Backbone.Model.extend({
     originalId: null,
     userId:     null,
     ownerId:    null,
+    updatedAt:  null,
     userTitle:  '',
     readyState: false
   }
@@ -395,13 +396,14 @@ Persistence.prototype.clone = function () {
   this._changeState(Persistence.CLONING);
 
   // Removes the notebook id and sets the user id to the current user.
-  this.set('id',      null);
+  this.unset('id');
+  this.unset('updatedAt');
   this.set('ownerId', this.get('userId'));
   this.get('meta').set('title', this.get('meta').get('title') + ' (cloned)');
 
   // Update the config url and reset the current state.
   config.set('id', null);
-  this._changeState(Persistence.NULL);
+  this._changeState(Persistence.CHANGED);
 };
 
 /**
