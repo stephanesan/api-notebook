@@ -49,35 +49,11 @@ var Notebook = module.exports = View.extend({
 });
 
 /**
- * Runs when a new notebook instance is created.
- *
- * @param  {Object} options
+ * Initialize the notebook view.
  */
 Notebook.prototype.initialize = function () {
-  this.sandbox    = new Sandbox();
   this.collection = new NotebookCollection();
-
-  // Register a middleware hook for augmenting the sandbox context.
-  this._middleware = {
-    'sandbox:context': _.bind(function (context, next) {
-      _.each(this.collection.filter(function (model) {
-        return model.get('type') === 'code';
-      }), function (model, index) {
-        context['$' + index] = model.get('result');
-      });
-
-      return next();
-    }, this)
-  };
-
-  // The completion options object is shared between code views and used by
-  // the completion widget.
-  this.completionOptions = {
-    global: this.sandbox.window
-  };
-
-  _.extend(this._middleware, completionMiddleware(this.sandbox.window));
-  middleware.register(this._middleware);
+  return View.prototype.initialize.apply(this, arguments);
 };
 
 /**
@@ -135,6 +111,8 @@ Notebook.prototype.refreshCompletion = function () {
  */
 Notebook.prototype.render = function () {
   View.prototype.render.call(this);
+
+  this.sandbox    = new Sandbox();
   this.collection = new NotebookCollection();
 
   _.each(persistence.get('notebook'), function (cell) {
@@ -158,6 +136,28 @@ Notebook.prototype.render = function () {
       model.view.showButtonsAbove();
     }
   }
+
+  // Register a middleware hook for augmenting the sandbox context.
+  this._middleware = {
+    'sandbox:context': _.bind(function (context, next) {
+      _.each(this.collection.filter(function (model) {
+        return model.get('type') === 'code';
+      }), function (model, index) {
+        context['$' + index] = model.get('result');
+      });
+
+      return next();
+    }, this)
+  };
+
+  // The completion options object is shared between code views and used by
+  // the completion widget.
+  this.completionOptions = {
+    global: this.sandbox.window
+  };
+
+  _.extend(this._middleware, completionMiddleware(this.sandbox.window));
+  middleware.register(this._middleware);
 
   // Start listening for changes again.
   this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);

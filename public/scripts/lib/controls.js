@@ -1,9 +1,9 @@
 var _     = require('underscore');
 var isMac = require('../lib/browser/about').mac;
 
-var codeControls   = exports.code   = [];
-var textControls   = exports.text   = [];
-var editorControls = exports.editor = [];
+exports.code   = [];
+exports.text   = [];
+exports.editor = [];
 
 // Used for mapping key names to their fancier visual output.
 var keyMap = {
@@ -67,7 +67,7 @@ var define = function (options) {
  * @param {Object} options
  */
 var defineEditorShortcut = function (options) {
-  editorControls.push(define(options));
+  exports.editor.push(define(options));
 };
 
 /**
@@ -76,16 +76,7 @@ var defineEditorShortcut = function (options) {
  * @param {Object} options
  */
 var defineCodeShortcut = function (options) {
-  codeControls.push(define(options));
-};
-
-/**
- * Define a shortcut for text cells.
- *
- * @param {Object} options
- */
-var defineTextShortcut = function (options) {
-  textControls.push(define(options));
+  exports.code.push(define(options));
 };
 
 defineEditorShortcut({

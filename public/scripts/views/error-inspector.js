@@ -1,6 +1,5 @@
 var _         = require('underscore');
 var trim      = require('trim');
-var domify    = require('domify');
 var type      = require('../lib/type');
 var Inspector = require('./inspector');
 
@@ -17,14 +16,8 @@ var ErrorInspector = module.exports = Inspector.extend();
 ErrorInspector.prototype.initialize = function () {
   Inspector.prototype.initialize.apply(this, arguments);
 
-  if (type(this.inspect) === 'error' && 'stack' in this.inspect) {
-    this._stackTrace = _.map(this.inspect.stack.split('\n'), trim.left);
-    this._preview    = this._stackTrace.shift();
-
-    // May as well delete the reference to the error, avoiding any potential
-    // memory leaks. Once rendered, we shouldn't need to use it again anyway.
-    delete this.inspect;
-  }
+  // Check whether we rendering an initialized error.
+  this._isError = (type(this.inspect) === 'error' && 'stack' in this.inspect);
 };
 
 /**
@@ -33,8 +26,8 @@ ErrorInspector.prototype.initialize = function () {
  * @return {Boolean}
  */
 ErrorInspector.prototype.isExpandable = function () {
-  if (this._stackTrace) {
-    return !!this._stackTrace.length;
+  if (this._isError) {
+    return !!this.inspect.stack.length;
   }
 
   return Inspector.prototype.isExpandable.call(this);
@@ -46,8 +39,8 @@ ErrorInspector.prototype.isExpandable = function () {
  * @return {String}
  */
 ErrorInspector.prototype.stringifyPreview = function () {
-  if (this._stackTrace) {
-    return this._preview;
+  if (this._isError) {
+    return Error.prototype.toString.call(this.inspect);
   }
 
   return Inspector.prototype.stringifyPreview.call(this);
@@ -64,16 +57,26 @@ ErrorInspector.prototype.renderChildren = function () {
   }
 
   // Stack trace rendering support.
-  if (this._stackTrace) {
+  if (this._isError) {
     this._renderChildrenEl();
-
     this.el.classList.add('can-expand');
 
-    this.childrenEl.appendChild(
-      domify(_.map(this._stackTrace, function (trace) {
-        return '<div class="trace">' + _.escape(trace) + '</div>';
-      }).join('\n'))
-    );
+    var stack   = this.inspect.stack;
+    var traceEl = document.createElement('div');
+    var message = Error.prototype.toString.call(this.inspect);
+
+    // Check for Chrome-style stack traces which include the error message.
+    if (stack.substr(0, message.length) === message) {
+      stack = _.map(stack.split('\n').slice(1), trim).join('\n');
+    }
+
+    // Remove useless Safari eval stack trace line.
+    stack = stack.replace(/^eval code\n/, '');
+
+    traceEl.className   = 'inspector-trace';
+    traceEl.textContent = stack;
+
+    this.childrenEl.appendChild(traceEl);
 
     return this;
   }
