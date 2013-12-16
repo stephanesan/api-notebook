@@ -21,7 +21,7 @@ var ajaxPlugin = function (data, next) {
   // Attach the proxy if the url is not a relative url.
   if (url.protocol && url.host) {
     data.url = App.Library.url.resolve(
-      window.location.href, proxy + '/' + data.url
+      window.location.href, (proxy ? proxy + '/' : '') + data.url
     );
   }
 
