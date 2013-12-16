@@ -2,7 +2,6 @@
 var _             = App._;
 var AUTH_URL      = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL     = 'https://github.com/login/oauth/access_token';
-var VALIDATE_URL  = 'https://api.github.com/user';
 var CLIENT_ID     = process.env.plugins.github.clientId;
 var CLIENT_SECRET = process.env.plugins.github.clientSecret;
 
@@ -100,20 +99,26 @@ var changePlugin = function (data, next, done) {
  */
 var authenticatedUserId = function (done) {
   if (!oauth2Store.has('accessToken')) {
-    return done(new Error('No known access token'));
+    return done(new Error('No access token'));
   }
 
-  App.middleware.trigger('ajax:oauth2', {
-    url:    VALIDATE_URL,
-    oauth2: oauth2Store.toJSON()
+  // Make a request to the check authorization url, which doesn't incur any
+  // rate limiting penalties.
+  App.middleware.trigger('ajax:basicAuth', {
+    url: 'https://api.github.com/applications/' + CLIENT_ID + '/tokens/' +
+      oauth2Store.get('accessToken'),
+    basicAuth: {
+      username: CLIENT_ID,
+      password: CLIENT_SECRET
+    }
   }, function (err, xhr) {
     var content;
 
-    // Proxy errors back to the user.
+    // Proxy any errors back to the user.
     if (err) { return done(err); }
 
     // Check if the connection was rejected because of invalid credentials.
-    if (xhr.readyState === 4 && xhr.status !== 200) {
+    if (xhr.status === 404) {
       oauth2Store.clear();
       return done(new Error('Invalid credentials'));
     }
@@ -125,8 +130,8 @@ var authenticatedUserId = function (done) {
     }
 
     return done(null, {
-      userId:    content.id,
-      userTitle: content.login
+      userId:    content.user.id,
+      userTitle: content.user.login
     });
   });
 };
