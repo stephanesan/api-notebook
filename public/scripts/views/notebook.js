@@ -115,6 +115,28 @@ Notebook.prototype.render = function () {
   this.sandbox    = new Sandbox();
   this.collection = new NotebookCollection();
 
+  // The completion options object is shared between all cells and used for
+  // completion. Make sure we set this connection up before rendering any cells.
+  this.completionOptions = {
+    global: this.sandbox.window
+  };
+
+  // Register a middleware hook for augmenting the sandbox context.
+  this._middleware = {
+    'sandbox:context': _.bind(function (context, next) {
+      _.each(this.collection.filter(function (model) {
+        return model.get('type') === 'code';
+      }), function (model, index) {
+        context['$' + index] = model.get('result');
+      });
+
+      return next();
+    }, this)
+  };
+
+  _.extend(this._middleware, completionMiddleware(this.sandbox.window));
+  middleware.register(this._middleware);
+
   _.each(persistence.get('notebook'), function (cell) {
     var appendView = 'appendCodeView';
 
@@ -136,28 +158,6 @@ Notebook.prototype.render = function () {
       model.view.showButtonsAbove();
     }
   }
-
-  // Register a middleware hook for augmenting the sandbox context.
-  this._middleware = {
-    'sandbox:context': _.bind(function (context, next) {
-      _.each(this.collection.filter(function (model) {
-        return model.get('type') === 'code';
-      }), function (model, index) {
-        context['$' + index] = model.get('result');
-      });
-
-      return next();
-    }, this)
-  };
-
-  // The completion options object is shared between code views and used by
-  // the completion widget.
-  this.completionOptions = {
-    global: this.sandbox.window
-  };
-
-  _.extend(this._middleware, completionMiddleware(this.sandbox.window));
-  middleware.register(this._middleware);
 
   // Start listening for changes again.
   this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);
