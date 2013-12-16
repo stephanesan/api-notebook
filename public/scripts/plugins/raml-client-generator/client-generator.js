@@ -651,7 +651,7 @@ var httpRequest = function (nodes, method) {
       url:     fullUrl,
       data:    data,
       async:   async,
-      proxy:   nodes.config.proxy, // Disable proxying data.
+      proxy:   nodes.config.proxy, // Change the proxy configuration.
       method:  method.method,
       headers: headers
     };
