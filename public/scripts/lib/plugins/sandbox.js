@@ -10,8 +10,8 @@ var ASYNC_TIMEOUT = 2000;
  * @param {Function} next
  */
 middleware.register('sandbox:context', function (context, next) {
-  // Unfortunately it isn't as easy as this since we have lexical scoping issues
-  // with the wrong window object. It would load the script in the wrong window.
+  // Unfortunately it isn't as easy as this since we have scoping issues with
+  // the wrong window object. It would load the script in the wrong window.
   context.load    = function (/* src, done */) {};
   context.async   = function () {};
   context.timeout = function () {};

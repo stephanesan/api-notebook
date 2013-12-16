@@ -125,7 +125,9 @@ API.createClient[DESCRIPTION_PROPERTY] = {
  * @param {Function} next
  */
 var contextPlugin = function (context, next) {
-  context.API = API;
+  // This is extremely janky, but is required for Safari 7.0 which seems to
+  // be ignoring direct property assignments under certain conditions.
+  Object.defineProperty(context, 'API', { value: API });
   return next();
 };
 
