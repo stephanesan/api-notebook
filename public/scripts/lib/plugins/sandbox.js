@@ -49,6 +49,7 @@ middleware.register('sandbox:execute', function (data, next, done) {
    */
   var complete = function (err, response) {
     window.clearTimeout(fallback);
+    delete App._executeWindow;
     delete App._executeContext;
     delete data.window.console._notebookApi;
     return done(err, response);
@@ -111,7 +112,7 @@ middleware.register('sandbox:execute', function (data, next, done) {
   data.window.eval([
     'console._notebookApi.load = function (src, done) {',
     '  console._notebookApi.timeout(Infinity);', // Increase AJAX timeout.
-    '  return (' + loadScript + ')(src, done || this.async());',
+    '  return (' + loadScript + ')(src, done || console._notebookApi.async());',
     '};'
   ].join('\n'));
 
