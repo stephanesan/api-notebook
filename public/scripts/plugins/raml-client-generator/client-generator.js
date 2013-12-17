@@ -506,6 +506,13 @@ var httpRequest = function (nodes, method) {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
+    // If we have no accept header set already, default to accepting
+    // everything. This is required because Firefox sets the base accept
+    // header to essentially be html/xml.
+    if (!getHeader(headers, 'Accept')) {
+      headers.Accept = mime = '*/*';
+    }
+
     // If we were passed in data, attempt to sanitize it to the correct type.
     if (_.isObject(data) && !(data instanceof FormData)) {
       if (isJSON(mime)) {
