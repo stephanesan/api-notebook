@@ -13,6 +13,6 @@ var messages = module.exports = _.extend({}, Backbone.Events);
 /**
  * Proxy resize events to the current state.
  */
-messages.listenTo(domListen(window), 'resize', function () {
+messages.listenTo(domListen(window), 'resize', _.throttle(function () {
   messages.trigger('resize');
-});
+}, 100));
