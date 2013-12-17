@@ -510,7 +510,7 @@ var httpRequest = function (nodes, method) {
     // everything. This is required because Firefox sets the base accept
     // header to essentially be html/xml.
     if (!getHeader(headers, 'Accept')) {
-      headers.Accept = mime = '*/*';
+      headers.accept = '*/*';
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
@@ -520,15 +520,11 @@ var httpRequest = function (nodes, method) {
       } else if (isUrlEncoded(mime)) {
         data = qs.stringify(data);
       } else if (isFormData(mime)) {
-        // Attempt to use the form data object - available in newer browsers.
-        var formData = new FormData();
-        _.each(data, function (value, key) {
+        // Reduce the data object to a form data instance.
+        data = _.reduce(data, function (formData, value, key) {
           formData.append(key, value);
-        });
-
-        // Set the data to the form data instance.
-        data     = formData;
-        formData = null;
+          return formData;
+        }, new FormData());
       }
     }
 
