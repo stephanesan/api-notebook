@@ -78,7 +78,8 @@ var defaultStyles = {
   display:     'block',
   marginLeft:  'auto',
   marginRight: 'auto',
-  padding:     '0'
+  padding:     '0',
+  overflow:    'hidden'
 };
 
 /**
@@ -173,6 +174,7 @@ Notebook.prototype._makeFrame = function (el, options) {
   // Configure base frame options.
   frame.src       = src;
   frame.className = options.className || '';
+  frame.scrolling = 'no';
 
   // Extend basic configuration options.
   options.config = extend({
