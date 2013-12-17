@@ -1,4 +1,5 @@
 /* global App */
+var _         = App._;
 var PROXY_URL = process.env.plugins.proxy.url;
 
 /**
@@ -14,12 +15,13 @@ var ajaxPlugin = function (data, next) {
     return next();
   }
 
-  var url = App.Library.url.parse(data.url);
+  var url   = App.Library.url.parse(data.url);
+  var proxy = _.isString(data.proxy) ? data.proxy : PROXY_URL;
 
   // Attach the proxy if the url is not a relative url.
-  if (url.protocol && url.host && url.host !== 'localhost') {
+  if (url.protocol && url.host) {
     data.url = App.Library.url.resolve(
-      window.location.href, PROXY_URL + '/' + data.url
+      window.location.href, (proxy ? proxy + '/' : '') + data.url
     );
   }
 

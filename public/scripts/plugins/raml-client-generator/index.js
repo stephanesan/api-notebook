@@ -110,7 +110,7 @@ API.createClient[DESCRIPTION_PROPERTY] = {
   '!type': 'fn(' + [
     'alias: string',
     'url: string',
-    'config?: { proxy: boolean }',
+    'config?: { proxy: string }',
     'cb?: fn(error, client)'
   ].join(', ') + ')',
   '!doc': [
