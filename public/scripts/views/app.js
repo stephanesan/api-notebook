@@ -34,6 +34,18 @@ var App = module.exports = View.extend({
  * @type {Object}
  */
 App.prototype.events = {
+  // Block clicks on a disabled button.
+  'click .toolbar-buttons button': function (e) {
+    var node = e.target;
+
+    while (node.tagName !== 'BUTTON') {
+      node = node.parentNode;
+    }
+
+    if (!node.classList.contains('btn-disabled')) { return; }
+
+    e.stopImmediatePropagation();
+  },
   'click .notebook-help':   'showShortcuts',
   'click .notebook-exec':   'runNotebook',
   'click .notebook-clone':  'cloneNotebook',
@@ -102,8 +114,22 @@ App.prototype.initialize = function () {
    * Update user state data when the user changes.
    */
   this.listenTo(persistence, 'changeUser', bounce(function () {
-    this.data.set('owner',         persistence.isOwner());
+    var isOwner = persistence.isOwner();
+
+    this.data.set('owner',         isOwner);
     this.data.set('authenticated', persistence.isAuthenticated());
+  }, this));
+
+  /**
+   * Update button display configs when different variables change.
+   */
+  this.listenTo(persistence, 'changeNotebook changeUser', bounce(function () {
+    var hasId   = !persistence.isNew();
+    var canSave = config.get('savable');
+    var isOwner = persistence.isOwner();
+
+    this.data.set('shareable', hasId);
+    this.data.set('cloneable', canSave && isOwner && hasId);
   }, this));
 
   /**
