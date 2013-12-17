@@ -175,7 +175,7 @@ Notebook.prototype.render = function () {
 /**
  * Execute the entire notebook sequentially.
  *
- * @param  {Function} done
+ * @param {Function} done
  */
 Notebook.prototype.execute = function (done) {
   if (this._execution) {
@@ -205,6 +205,12 @@ Notebook.prototype.execute = function (done) {
   })(this.collection.at(0).view);
 };
 
+/**
+ * Execute notebook cells sequentially until a certain view.
+ *
+ * @param {Backbone.View} current
+ * @param {Function}      done
+ */
 Notebook.prototype.executePrevious = function (current, done) {
   var that = this;
 
