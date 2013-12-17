@@ -201,7 +201,10 @@ Notebook.prototype._makeFrame = function (el, options) {
   // height tag since css should take a higher precendence (which allows simple
   // height overrides to work alongside this).
   this.on('height', function (height) {
-    this.el.height = height;
+    var top    = parseInt(this.el.style.paddingTop,    10);
+    var bottom = parseInt(this.el.style.paddingBottom, 10);
+
+    this.el.height = (height + top + bottom);
   });
 
   // Set up a single message listener that will trigger events from the frame
