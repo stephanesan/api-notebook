@@ -107,6 +107,7 @@ var authenticatedUserId = function (done) {
   App.middleware.trigger('ajax:basicAuth', {
     url: 'https://api.github.com/applications/' + CLIENT_ID + '/tokens/' +
       oauth2Store.get('accessToken'),
+    proxy: false,
     basicAuth: {
       username: CLIENT_ID,
       password: CLIENT_SECRET
@@ -194,8 +195,8 @@ var loadPlugin = function (data, next, done) {
   App.middleware.trigger('ajax:oauth2', {
     // Add the application client id and secret to load requests to avoid rate
     // limiting in the case that the user is unauthenticated.
-    url: 'https://api.github.com/gists/' + data.id +
-      '?client_id=' + CLIENT_ID + '&client_secret=' + CLIENT_SECRET,
+    url:    'https://api.github.com/gists/' + data.id,
+    proxy:  false,
     method: 'GET',
     oauth2: oauth2Store.toJSON()
   }, function (err, xhr) {
@@ -242,7 +243,8 @@ var savePlugin = function (data, next, done) {
   }
 
   App.middleware.trigger('ajax:oauth2', {
-    url: 'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
+    url:    'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
+    proxy:  false,
     method: data.id ? 'PATCH' : 'POST',
     data: JSON.stringify({
       description: data.meta.title,
@@ -288,6 +290,7 @@ var listPlugin = function (list, next, done) {
   (function recurse (link) {
     App.middleware.trigger('ajax:oauth2', {
       url:    link,
+      proxy:  false,
       method: 'GET',
       oauth2: oauth2Store.toJSON()
     }, function (err, xhr) {
@@ -334,6 +337,7 @@ var listPlugin = function (list, next, done) {
 var deletePlugin = function (data, next, done) {
   return App.middleware.trigger('ajax:oauth2', {
     url:    'https://api.github.com/gists/' + data.id,
+    proxy:  false,
     method: 'DELETE',
     oauth2: oauth2Store.toJSON()
   }, done);
