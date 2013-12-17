@@ -6,7 +6,6 @@ var cases  = App.Library.changeCase;
 var escape = require('escape-regexp');
 var parser = require('uri-template');
 
-var __toString           = Object.prototype.toString;
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
@@ -171,118 +170,6 @@ var authenticatePrompt = function (type, options, done) {
 };
 
 /**
- * Runs validation logic against uri parameters from the RAML spec. Throws an
- * error with the validation issue when the validation fails.
- *
- * @param  {*}      value
- * @param  {Object} param
- * @return {Boolean}
- */
-var validateParam = function (value, param) {
-  var stringify = JSON.stringify;
-
-  // Do an initial check for the required value and fail early.
-  if (param.required === true && value == null) {
-    throw new ReferenceError(param.displayName + ' is not defined');
-  }
-
-  // If it has a value, we can proceed with the rest of the checks.
-  if (value != null) {
-    if (param.type === 'string') {
-      // Check the passed in value is a number.
-      if (!_.isString(value)) {
-        throw new TypeError('Expected a string, but got ' + stringify(value));
-      }
-
-      // Validate against the enum list.
-      if (_.isArray(param.enum) && !_.contains(param.enum, value)) {
-        throw new Error([
-          'Expected a value of', param.enum.join(', ') + ',',
-          'but got', stringify(value)
-        ].join(' '));
-      }
-
-      // Validate the string length against the minimum required length.
-      var minLength = param.minLength;
-      if (minLength === +minLength && value.length < minLength) {
-        throw new Error([
-          'Expected a minimum length of', minLength + ',',
-          'but got a length of', value.length
-        ].join(' '));
-      }
-
-      // Validate the string length against the maximum allowed length.
-      var maxLength = param.maxLength;
-      if (maxLength === +maxLength && value.length > maxLength) {
-        throw new Error([
-          'Expected a maximum length of', maxLength + ',',
-          'but got a length of', value.length
-        ].join(' '));
-      }
-
-      // Validate the string against the pattern.
-      var pattern = param.pattern;
-      if (_.isString(pattern) && !(new RegExp(pattern).test(value))) {
-        throw new Error('Expected the value to match ' + pattern);
-      }
-    } else if (param.type === 'integer' || param.type === 'number') {
-      if (param.type === 'number') {
-        // Validates that the value is a number and not `NaN`.
-        if (value !== +value) {
-          throw new TypeError('Expected a number, but got' + stringify(value));
-        }
-      } else {
-        // Validates that the value is an integer and not `NaN`.
-        if (value !== parseInt(value, 10)) {
-          throw new TypeError(
-            'Expected an integer, but got ' + stringify(value)
-          );
-        }
-      }
-
-      if (param.minimum === +param.minimum && value < param.minimum) {
-        throw new Error('Expected a value larger than ' + param.minimum +
-          ', but got ' + stringify(value));
-      }
-
-      if (param.maximum === +param.maximum && value > param.maximum) {
-        throw new Error('Expected a value smaller than ' + param.minimum +
-          ', but got ' + stringify(value));
-      }
-    } else if (param.type === 'date') {
-      // Validate that the value is a date.
-      if (!_.isDate(value)) {
-        throw new TypeError('Expected a date, but got ' + stringify(value));
-      }
-    } else if (param.type === 'boolean') {
-      // Validate the value is a boolean.
-      if (!_.isBoolean(value)) {
-        throw new TypeError('Expected a boolean, but got ' + stringify(value));
-      }
-    }
-  }
-
-  return true;
-};
-
-/**
- * Pass a whole query params object through the param validation function.
- *
- * @param  {Object}  object
- * @param  {Object}  params
- * @return {Boolean}
- */
-var validateParams = function (object, params) {
-  object = object || {};
-
-  _.each(params, function (validate, param) {
-    return validateParam(object[param], validate);
-  });
-
-  return true;
-};
-
-/**
  * Accepts a params object and transforms it into a regex for matching the
  * tokens in the route.
  *
@@ -308,14 +195,11 @@ var template = function (string, params, context) {
   // If the context is an array, we need to transform the replacements into
   // index based positions for the uri template parser.
   if (_.isArray(context)) {
-    var index = -1;
+    var index = 0;
 
-    string = string.replace(uriParamRegex(params), function (match, param) {
-      validateParam(context[++index], params[param]);
-      return '{' + index + '}';
+    string = string.replace(uriParamRegex(params), function () {
+      return '{' + (index++) + '}';
     });
-  } else {
-    validateParams(context, params);
   }
 
   return parser.parse(string).expand(context);
@@ -610,12 +494,11 @@ var httpRequest = function (nodes, method) {
       query = qs.parse(query);
     }
 
-    // Pass the query parameters through validation and append to the url.
-    if (validateParams(query, method.queryParameters)) {
-      query = qs.stringify(query);
+    // Stringify the query string to append to the current url.
+    query = qs.stringify(query);
 
-      fullUrl += query ? '?' + query : '';
-    }
+    // Append the query string, if we have one.
+    fullUrl += query ? '?' + query : '';
 
     // Set the correct Content-Type header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
@@ -623,27 +506,25 @@ var httpRequest = function (nodes, method) {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
-    var canSerialize = {
-      '[object Array]':  true,
-      '[object Object]': true
-    };
+    // If we have no accept header set already, default to accepting
+    // everything. This is required because Firefox sets the base accept
+    // header to essentially be html/xml.
+    if (!getHeader(headers, 'Accept')) {
+      headers.accept = '*/*';
+    }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (canSerialize[__toString.call(data)]) {
+    if (_.isObject(data) && !(data instanceof FormData)) {
       if (isJSON(mime)) {
         data = JSON.stringify(data);
       } else if (isUrlEncoded(mime)) {
         data = qs.stringify(data);
       } else if (isFormData(mime)) {
-        // Attempt to use the form data object - available in newer browsers.
-        var formData = new FormData();
-        _.each(data, function (value, key) {
+        // Reduce the data object to a form data instance.
+        data = _.reduce(data, function (formData, value, key) {
           formData.append(key, value);
-        });
-
-        // Set the data to the form data instance.
-        data     = formData;
-        formData = null;
+          return formData;
+        }, new FormData());
       }
     }
 
