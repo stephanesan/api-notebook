@@ -302,11 +302,13 @@ App.prototype.shareNotebook = function () {
   middleware.trigger('ui:modal', {
     title: 'Share Notebook',
     content: '<p class="notebook-share-about">Copy this code to embed.</p>' +
-      '<input class="notebook-share-input" ' +
+      '<div class="form-group">' +
+      '<input class="notebook-share-input item-share" ' +
       'value="' + _.escape(shareScript) + '" readonly>' +
       '<p class="notebook-share-about">Copy this link to share.</p>' +
-      '<input class="notebook-share-input" ' +
-      'value="' + config.get('url') + '" readonly>',
+      '<input class="notebook-share-input item-share" ' +
+      'value="' + config.get('url') + '" readonly>' +
+      '</div>',
     show: function (modal) {
       Backbone.$(modal.el).on('click', '.notebook-share-input', function (e) {
         e.target.select();
