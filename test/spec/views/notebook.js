@@ -256,10 +256,14 @@ describe('Notebook', function () {
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
         var topBorder = codeCells[0].el.querySelector('.cell-border-above');
+        var clock     = sinon.useFakeTimers();
 
-        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder, 'mouseenter');
+        clock.tick(1000);
 
         App.Library.DOMBars.VM.exec(function () {
+          clock.restore();
+
           simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
           expect(view.collection.at(viewIndex).get('type')).to.equal('code');
@@ -274,10 +278,14 @@ describe('Notebook', function () {
 
         var viewIndex = view.collection.indexOf(codeCells[0].model);
         var topBorder = codeCells[0].el.querySelector('.cell-border-above');
+        var clock     = sinon.useFakeTimers();
 
-        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder, 'mouseenter');
+        clock.tick(1000);
 
         App.Library.DOMBars.VM.exec(function () {
+          clock.restore();
+
           simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
           expect(view.collection.at(viewIndex).get('type')).to.equal('text');
@@ -292,10 +300,14 @@ describe('Notebook', function () {
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
         var topBorder = codeCells[0].el.querySelector('.cell-border-below');
+        var clock     = sinon.useFakeTimers();
 
-        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder, 'mouseenter');
+        clock.tick(1000);
 
         App.Library.DOMBars.VM.exec(function () {
+          clock.restore();
+
           simulateEvent(topBorder.querySelector('[data-action="newCode"]'), 'click');
 
           expect(view.collection.at(viewIndex).get('type')).to.equal('code');
@@ -310,10 +322,14 @@ describe('Notebook', function () {
 
         var viewIndex = view.collection.indexOf(codeCells[0].model) + 1;
         var topBorder = codeCells[0].el.querySelector('.cell-border-below');
+        var clock     = sinon.useFakeTimers();
 
-        simulateEvent(topBorder.querySelector('.cell-border-btn'), 'mouseover');
+        simulateEvent(topBorder, 'mouseenter');
+        clock.tick(1000);
 
         App.Library.DOMBars.VM.exec(function () {
+          clock.restore();
+
           simulateEvent(topBorder.querySelector('[data-action="newText"]'), 'click');
 
           expect(view.collection.at(viewIndex).get('type')).to.equal('text');
