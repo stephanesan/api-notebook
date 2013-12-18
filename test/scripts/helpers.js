@@ -80,7 +80,7 @@ window.testCompletion = function (editor, text, done) {
 window.simulateEvent = (function () {
   var eventMatchers = {
     'HTMLEvents': /^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll|focusin|focusout)$/,
-    'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/,
+    'MouseEvents': /^(?:click|dblclick|mouse(?:enter|leave|down|up|over|move|out))$/,
     'KeyboardEvent': /^(?:key(?:down|press|up))$/
   };
 

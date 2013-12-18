@@ -4,6 +4,7 @@ var template     = require('../../templates/views/editor-cell.hbs');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
+var domListen    = require('../lib/dom-listen');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
 var embedProtect = require('./lib/embed-protect');
@@ -54,9 +55,7 @@ EditorCell.prototype.EditorModel = require('../models/cell');
  */
 EditorCell.prototype.events = {
   'mousedown .cell-menu-toggle':  'showControls',
-  'touchstart .cell-menu-toggle': 'showControls',
-  'mouseover .cell-border-above .cell-border-btn': 'showButtonsAbove',
-  'mouseover .cell-border-below .cell-border-btn': 'showButtonsBelow'
+  'touchstart .cell-menu-toggle': 'showControls'
 };
 
 /**
@@ -326,6 +325,29 @@ EditorCell.prototype.render = function () {
 
   // Refresh the editor cells when refresh is triggered through messages.
   this.listenTo(messages, 'refresh', this.refresh);
+
+  var timeout       = 200; // ms
+  var aboveListener = domListen(this.el.querySelector('.cell-border-above'));
+  var belowListener = domListen(this.el.querySelector('.cell-border-below'));
+
+  var showAboveTimeout;
+  var showBelowTimeout;
+
+  this.listenTo(aboveListener, 'mouseenter', function () {
+    showAboveTimeout = setTimeout(_.bind(this.showButtonsAbove, this), timeout);
+  });
+
+  this.listenTo(belowListener, 'mouseenter', function () {
+    showBelowTimeout = setTimeout(_.bind(this.showButtonsBelow, this), timeout);
+  });
+
+  this.listenTo(aboveListener, 'mouseleave', function () {
+    window.clearTimeout(showAboveTimeout);
+  });
+
+  this.listenTo(belowListener, 'mouseleave', function () {
+    window.clearTimeout(showBelowTimeout);
+  });
 
   return this;
 };
