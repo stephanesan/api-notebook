@@ -157,13 +157,13 @@ var authenticatePrompt = function (type, options, done) {
     if (err) { return done(err); }
 
     // Extend the options object with generated options.
-    _.extend(options, data);
-    return App.middleware.trigger('authenticate:' + type, options, done);
+    var trigger = 'authenticate:' + type;
+    return App.middleware.trigger(trigger, _.extend(options, data), done);
   };
 
   // Check against the required options.
   if (!requiredOptions(type, options).length) {
-    return cb();
+    return cb(null, {});
   }
 
   return fullPrompt(type, options, cb);
