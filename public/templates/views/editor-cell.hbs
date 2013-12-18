@@ -1,17 +1,19 @@
 {{#unless @config.embedded}}
   <button class="btn cell-controls-btn cell-menu-toggle">≡</button>
 
-  <span class="cell-border cell-border-above">
+  <div class="cell-border cell-border-above">
+    <span class="cell-border-line"></span>
     <i class="cell-border-btn icon-plus-circled"></i>
     {{#if @data.cellButtonsAbove}}
       {{{view @data.cellButtonsAbove}}}
     {{/if}}
-  </span>
+  </div>
 
-  <span class="cell-border cell-border-below">
+  <div class="cell-border cell-border-below">
+    <span class="cell-border-line"></span>
     <i class="cell-border-btn icon-plus-circled"></i>
     {{#if @data.cellButtonsBelow}}
       {{{view @data.cellButtonsBelow}}}
     {{/if}}
-  </span>
+  </div>
 {{/unless}}

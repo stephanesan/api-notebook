@@ -4,6 +4,7 @@ var template     = require('../../templates/views/editor-cell.hbs');
 var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
+var domListen    = require('../lib/dom-listen');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
 var embedProtect = require('./lib/embed-protect');
@@ -54,9 +55,7 @@ EditorCell.prototype.EditorModel = require('../models/cell');
  */
 EditorCell.prototype.events = {
   'mousedown .cell-menu-toggle':  'showControls',
-  'touchstart .cell-menu-toggle': 'showControls',
-  'mouseover .cell-border-above .cell-border-btn': 'showButtonsAbove',
-  'mouseover .cell-border-below .cell-border-btn': 'showButtonsBelow'
+  'touchstart .cell-menu-toggle': 'showControls'
 };
 
 /**
@@ -326,6 +325,18 @@ EditorCell.prototype.render = function () {
 
   // Refresh the editor cells when refresh is triggered through messages.
   this.listenTo(messages, 'refresh', this.refresh);
+
+  this.listenTo(
+    domListen(this.el.querySelector('.cell-border-above')),
+    'mouseenter',
+    _.bind(this.showButtonsAbove, this)
+  );
+
+  this.listenTo(
+    domListen(this.el.querySelector('.cell-border-below')),
+    'mouseenter',
+    _.bind(this.showButtonsBelow, this)
+  );
 
   return this;
 };
