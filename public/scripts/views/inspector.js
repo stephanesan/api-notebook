@@ -35,7 +35,7 @@ var InspectorView = module.exports = View.extend({
  */
 InspectorView.prototype.initialize = function (options) {
   _.extend(this, _.pick(
-    options, ['property', 'parent', 'inspect', 'internal']
+    options, ['property', 'parent', 'inspect', 'internal', 'window']
   ));
 
   if (this.parent) {
@@ -122,6 +122,7 @@ InspectorView.prototype.stringifyPreview = function () {
 InspectorView.prototype._renderChild = function (property, inspect, internal) {
   var inspector = new InspectorView({
     parent:   this,
+    window:   this.window,
     inspect:  inspect,
     property: property,
     internal: internal
@@ -144,18 +145,11 @@ InspectorView.prototype.renderChildren = function () {
 
   this._renderChildrenEl();
 
-  // If it should be expanded, add a class to show it can be. In no case should
-  // we expand an error to show more though, since it should be displaying a
-  // stack trace
+  // If it should be expanded, add a class to show it can be.
   this.el.classList.add('can-expand');
 
-  this.listenTo(this, 'open', this._renderChildren);
-
-  this.listenTo(this, 'close', function () {
-    _.each(this.children, function (child) {
-      child.remove();
-    });
-  });
+  this.listenTo(this, 'open',  this._renderChildren);
+  this.listenTo(this, 'close', this._removeChildren);
 
   return this;
 };
@@ -178,11 +172,18 @@ InspectorView.prototype._renderChildrenEl = function () {
  * @return {InspectorView}
  */
 InspectorView.prototype._renderChildren = function () {
+  // We need to use the `Object.*` functions from the correct window object.
+  // Firefox 26 returns `undefined` as the value for an arrays length property
+  // when accessed using the wrong frames `Object.getOwnPropertyDescriptor`.
+  var getPrototypeOf           = this.window.Object.getPrototypeOf;
+  var getOwnPropertyNames      = this.window.Object.getOwnPropertyNames;
+  var getOwnPropertyDescriptor = this.window.Object.getOwnPropertyDescriptor;
+
   // Convert to an object to remove duplicate property names. Chrome has a
   // pretty major bug where all `document` keys are returned twice. We also
   // want to sort the keys numerically, and then alphabetically.
   var propertyNames = _.keys(_.object(
-    Object.getOwnPropertyNames(this.inspect), true
+    getOwnPropertyNames(this.inspect), true
   )).sort(function (a, b) {
     var aNum = parseInt(a, 10);
     var bNum = parseInt(b, 10);
@@ -206,7 +207,7 @@ InspectorView.prototype._renderChildren = function () {
   });
 
   _.each(propertyNames, function (prop) {
-    var descriptor = Object.getOwnPropertyDescriptor(this.inspect, prop);
+    var descriptor = getOwnPropertyDescriptor(this.inspect, prop);
 
     // Even though we are iterating over our own property names, PhantomJS is
     // finding a way to return an `undefined` property descriptor.
@@ -227,8 +228,21 @@ InspectorView.prototype._renderChildren = function () {
     }
   }, this);
 
-  // Hidden prototype - super handy when debugging
-  this._renderChild(null, Object.getPrototypeOf(this.inspect), '[[Prototype]]');
+  // Render the internal prototype property.
+  this._renderChild(null, getPrototypeOf(this.inspect), '[[Prototype]]');
+
+  return this;
+};
+
+/**
+ * Remove all the currently rendered children.
+ *
+ * @return {InspectorView}
+ */
+InspectorView.prototype._removeChildren = function () {
+  _.each(this.children, function (child) {
+    child.remove();
+  });
 
   return this;
 };
@@ -243,13 +257,14 @@ InspectorView.prototype.renderPreview = function () {
   var desc;
 
   if (parent && !this.internal) {
-    desc = Object.getOwnPropertyDescriptor(parent, this.property);
+    desc = this.window.Object.getOwnPropertyDescriptor(parent, this.property);
   }
 
   // Run filter middleware to check if the property should be filtered from
   // the basic display.
   middleware.trigger('inspector:filter', {
     parent:     parent,
+    window:     this.window,
     property:   this.property,
     internal:   this.internal,
     descriptor: desc
@@ -292,17 +307,16 @@ InspectorView.prototype.renderPreview = function () {
     // some more advanced properties such as the prefix and special display.
     if (parent) {
       if (this.internal) {
-        // Internal properties are always special.
+        // Internal properties are always specially rendered properties.
         special = true;
-        // Getters and getters still have a descriptor available.
-        if (this.internal === '[[Getter]]' || this.internal === '[[Setter]]') {
-          if (this.internal === '[[Getter]]') {
-            prefix = 'get ' + this.property;
-          } else {
-            prefix = 'set ' + this.property;
-          }
-        // No other internal object property types can get a descriptive text,
-        // so we'll just use the internal property name as the prefix.
+
+        // Setters and getters still should still be rendered with their
+        // property names. Everything else can just be rendered using the
+        // internal property notation.
+        if (this.internal === '[[Getter]]') {
+          prefix = 'get ' + this.property;
+        } else if (this.internal === '[[Setter]]') {
+          prefix = 'set ' + this.property;
         } else {
           prefix = this.internal;
         }

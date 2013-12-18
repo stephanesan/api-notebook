@@ -120,8 +120,8 @@ var getPropertyNames = function (obj, global) {
   }
 
   do {
-    _.each(Object.getOwnPropertyNames(obj), addProp);
-  } while (obj = Object.getPrototypeOf(obj));
+    _.each(global.Object.getOwnPropertyNames(obj), addProp);
+  } while (obj = global.Object.getPrototypeOf(obj));
 
   return props;
 };
