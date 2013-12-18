@@ -69,7 +69,11 @@ module.exports = function (url, options, cb) {
       Backbone.$(modal.el).on('click', '[data-authenticate]', function () {
         openPopup = window.open(
           url, '', [
-            'top=' + top, 'left=' + left, 'width=' + width, 'height=' + height
+            'top=' + top,
+            'left=' + left,
+            'width=' + width,
+            'height=' + height,
+            'scrollbars=1'
           ].join(',')
         );
 
