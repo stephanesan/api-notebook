@@ -99,10 +99,9 @@ App.prototype.initialize = function () {
    */
   this.listenTo(persistence.get('meta'), 'change:title', bounce(function () {
     var title   = persistence.get('meta').get('title');
-    var titleEl = document.head.querySelector('title');
     var inputEl = this.el.querySelector('.notebook-title');
 
-    titleEl.textContent = title ? title + ' • Notebook' : 'Notebook';
+    document.title = title ? title + ' • Notebook' : 'Notebook';
 
     // Refresh the title manually to avoid stale value attributes.
     if (inputEl) {
