@@ -42,16 +42,13 @@ DOMBars.registerHelper('equal', function (/* ...args, options */) {
  * @return {*}
  */
 DOMBars.registerHelper('notEqual', function (/* ...args, options */) {
-  var args    = Array.prototype.slice.call(arguments);
-  var options = args.pop();
+  var options = arguments[arguments.length - 1];
 
-  if (!options.fn) {
-    return !isEqual(args);
-  }
+  var args = Array.prototype.slice.call(arguments, 0, -1).concat({
+    fn:      options.inverse,
+    inverse: options.fn,
+    hash:    options.hash
+  });
 
-  if (!isEqual(args)) {
-    return options.fn(this);
-  }
-
-  return options.inverse(this);
+  return DOMBars.helpers.equal.apply(this, args);
 });

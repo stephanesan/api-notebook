@@ -20,29 +20,23 @@
         </span>
         <span class="btn-view">
           <span class="btn-group">
-            <button class="btn-round notebook-new hint--bottom" data-hint="New Notebook">
+            <button class="btn-round notebook-new hint--bottom" data-hint="New notebook">
               <i class="icon-doc"></i>
             </button>
-            <button class="btn-round notebook-save hint--bottom" data-hint="Save Notebook">
+            <button class="btn-round notebook-save hint--bottom" data-hint="Save notebook">
               <i class="icon-floppy"></i>
             </button>
-            {{#if @config.savable}}
-              {{#if @data.owner}}
-                {{#if @data.saved}}
-                  <button class="btn-round notebook-clone hint--bottom" data-hint="Clone Notebook">
-                    <i class="icon-fork"></i>
-                  </button>
-                {{/if}}
-              {{/if}}
-            {{/if}}
-            <button class="btn-round notebook-share hint--bottom" data-hint="Share Notebook">
+            <button class="btn-round notebook-clone hint--bottom {{#unless @data.cloneable}}btn-disabled{{/unless}}" data-hint="{{#if @data.cloneable}}Clone notebook{{else}}Save notebook to fork{{/if}}">
+              <i class="icon-fork"></i>
+            </button>
+            <button class="btn-round notebook-share hint--bottom {{#unless @data.shareable}}btn-disabled{{/unless}}" data-hint="{{#if @data.shareable}}Share notebook{{else}}Save notebook to share{{/if}}">
               <i class="icon-share"></i>
             </button>
           </span><span class="btn-group">
-            <button class="btn-round notebook-exec hint--bottom" data-hint="Play Notebook">
+            <button class="btn-round notebook-exec hint--bottom" data-hint="Play notebook">
               <i class="icon-play"></i>
             </button>
-            <button class="btn-round notebook-help hint--bottom" data-hint="Notebook Shortcuts">
+            <button class="btn-round notebook-help hint--bottom" data-hint="Shortcuts">
               <i class="icon"></i>
             </button>
           </span>

@@ -80,6 +80,7 @@ DOMBars.Utils.mergeTemplates = function (/* ...templates */) {
 /**
  * Register DOMBars helpers.
  */
+require('./helpers/if');
 require('./helpers/view');
 require('./helpers/equal');
 require('./helpers/collection');
