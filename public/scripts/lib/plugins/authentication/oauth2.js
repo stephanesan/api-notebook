@@ -89,11 +89,14 @@ var erroredResponse = function (data) {
  */
 var sanitizeOptions = function (options) {
   // Fix up reference to the `scopes` array.
-  options.scope = options.scopes;
+  options.scope = options.scope || options.scopes;
 
   if (_.isArray(options.scope)) {
-    options.scope = options.scopes.join(' ');
+    options.scope = options.scope.join(' ');
   }
+
+  // Remove unused `scopes` property.
+  delete options.scopes;
 
   return options;
 };
@@ -110,8 +113,8 @@ var authResponse = function (options, response, done) {
   }
 
   var data = {
-    scope:       response.scope || options.scope,
-    response:    _.omit(response, [
+    scope: response.scope || options.scope,
+    response: _.omit(response, [
       'access_token', 'refresh_token', 'token_type', 'expires_in', 'scope',
       'state', 'error', 'error_description', 'error_uri'
     ]),
