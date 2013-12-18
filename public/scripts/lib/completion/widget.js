@@ -123,9 +123,19 @@ Widget.prototype.refresh = function (done) {
       var hintEl  = document.createElement('span');
       var indexOf;
 
-      el.hintId      = index;
-      el.className   = 'CodeMirror-hint';
-      el.ghostResult = result;
+      el.hintId        = index;
+      el.className     = 'CodeMirror-hint';
+      el.ghostResult   = result;
+      hintEl.className = 'CodeMirror-hint-text';
+
+      // Append the result type first so it floats correctly to this right.
+      if (result.type) {
+        var typeEl = document.createElement('span');
+        typeEl.className   = 'CodeMirror-hint-type';
+        typeEl.textContent = result.type;
+
+        el.appendChild(typeEl);
+      }
 
       // Do Blink-style bolding of the completed text
       if (isMatch && (indexOf = result.title.indexOf(text)) > -1) {
@@ -145,14 +155,6 @@ Widget.prototype.refresh = function (done) {
       }
 
       el.appendChild(hintEl);
-
-      if (result.type) {
-        var typeEl = document.createElement('span');
-        typeEl.className   = 'CodeMirror-hint-type';
-        typeEl.textContent = result.type;
-
-        el.appendChild(typeEl);
-      }
     });
 
     // Add the hinting keymap here instead of later or earlier since we need to
