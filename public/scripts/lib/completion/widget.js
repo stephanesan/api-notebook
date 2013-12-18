@@ -277,7 +277,8 @@ Widget.prototype.reposition = function () {
 Widget.prototype.accept = function () {
   this.ghost.accept();
 
-  return this;
+  // Remove the widget after we have accepted something.
+  return this.remove();
 };
 
 /**
@@ -314,6 +315,7 @@ Widget.prototype.setActive = function (i) {
   if (i < 0) { i = total + i; }
 
   if (!total) { return this.removeGhost(); }
+
   // Avoid reprocessing of the position if it's already set to that position.
   if (this.selectedHint === i) { return; }
 
@@ -332,6 +334,7 @@ Widget.prototype.setActive = function (i) {
   // with the text (This can be an issue on end of lines).
   this.removeGhost();
   this.ghost = new Ghost(this, this.data, node.ghostResult);
+
   this.reposition();
 
   if (node.offsetTop < this.hints.scrollTop) {
