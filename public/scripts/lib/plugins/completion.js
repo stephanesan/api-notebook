@@ -100,12 +100,17 @@ var getPropertyNames = function (obj, global) {
    * @param {String} property
    */
   var addProp = function (property) {
-    if (isValidVariableName(property)) {
-      props[property] = {
-        type:  typeof obj[property],
-        value: property
-      };
-    }
+    if (!isValidVariableName(property)) { return; }
+
+    var prop = props[property] = {};
+
+    // Checking typeof on the `window` prototype in Firefox 26 causes an error
+    // to be thrown: "Illegal operation on WrappedNative prototype object".
+    try {
+      prop.type = typeof obj[property];
+    } catch (e) {}
+
+    prop.value = property;
   };
 
   // Sanitize the object to a type that we can grab keys from. If it still isn't
