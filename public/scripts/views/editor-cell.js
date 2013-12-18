@@ -326,17 +326,28 @@ EditorCell.prototype.render = function () {
   // Refresh the editor cells when refresh is triggered through messages.
   this.listenTo(messages, 'refresh', this.refresh);
 
-  this.listenTo(
-    domListen(this.el.querySelector('.cell-border-above')),
-    'mouseenter',
-    _.bind(this.showButtonsAbove, this)
-  );
+  var timeout       = 200; // ms
+  var aboveListener = domListen(this.el.querySelector('.cell-border-above'));
+  var belowListener = domListen(this.el.querySelector('.cell-border-below'));
 
-  this.listenTo(
-    domListen(this.el.querySelector('.cell-border-below')),
-    'mouseenter',
-    _.bind(this.showButtonsBelow, this)
-  );
+  var showAboveTimeout;
+  var showBelowTimeout;
+
+  this.listenTo(aboveListener, 'mouseenter', function () {
+    showAboveTimeout = setTimeout(_.bind(this.showButtonsAbove, this), timeout);
+  });
+
+  this.listenTo(belowListener, 'mouseenter', function () {
+    showBelowTimeout = setTimeout(_.bind(this.showButtonsBelow, this), timeout);
+  });
+
+  this.listenTo(aboveListener, 'mouseleave', function () {
+    window.clearTimeout(showAboveTimeout);
+  });
+
+  this.listenTo(belowListener, 'mouseleave', function () {
+    window.clearTimeout(showBelowTimeout);
+  });
 
   return this;
 };
