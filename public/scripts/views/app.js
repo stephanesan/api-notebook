@@ -123,7 +123,7 @@ App.prototype.initialize = function () {
   /**
    * Update button display configs when different variables change.
    */
-  this.listenTo(persistence, 'changeNotebook changeUser', bounce(function () {
+  this.listenTo(persistence, 'change:id changeUser', bounce(function () {
     var hasId   = !persistence.isNew();
     var canSave = config.get('savable');
     var isOwner = persistence.isOwner();

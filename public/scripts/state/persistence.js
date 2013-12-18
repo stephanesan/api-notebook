@@ -111,11 +111,7 @@ Persistence.prototype._changeState = function (state) {
  * @return {Boolean}
  */
 Persistence.prototype.isOwner = function () {
-  if (!this.has('ownerId') && !this.has('userId')) {
-    return true;
-  }
-
-  return this.get('ownerId') === this.get('userId');
+  return !this.has('ownerId') || this.get('ownerId') === this.get('userId');
 };
 
 /**
@@ -213,7 +209,7 @@ Persistence.prototype.save = function (done) {
       }
 
       this.set('id',        data.id);
-      this.set('ownerId',   data.ownerId);
+      this.set('ownerId',   data.userId);
       this.set('updatedAt', new Date());
 
       this._changeState(Persistence.SAVE_DONE);
@@ -262,13 +258,6 @@ Persistence.prototype.authenticate = function (done) {
     _.bind(function (err, data) {
       this.set('userId',    data.userId);
       this.set('userTitle', data.userTitle);
-
-      // When we authenticate, the owner id will be out of sync here. If we
-      // don't currently have an `id` and `ownerId`, we'll set the user to be
-      // the notebook owner.
-      if (!this.has('id') && !this.has('ownerId')) {
-        this.set('ownerId', this.get('userId'));
-      }
 
       return done && done(err);
     }, this)
@@ -397,8 +386,8 @@ Persistence.prototype.clone = function () {
 
   // Removes the notebook id and sets the user id to the current user.
   this.unset('id');
+  this.unset('ownerId');
   this.unset('updatedAt');
-  this.set('ownerId', this.get('userId'));
   this.get('meta').set('title', this.get('meta').get('title') + ' (cloned)');
 
   // Update the config url and reset the current state.
