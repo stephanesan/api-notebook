@@ -253,7 +253,7 @@ describe('Completion', function () {
 
     it(
       'should not complete square brackets that can\'t be done statically',
-      testAutocomplete('window[1 + 2 + 3].w', null, 'window')
+      testAutocomplete('window[something].w', null, 'window')
     );
 
     it(
@@ -270,6 +270,18 @@ describe('Completion', function () {
       'should complete properties after period and comment',
       testAutocomplete('document. /* Test */ get', 'getElementById')
     );
+
+    describe('Tern.js Definitions', function () {
+      it(
+        'should complete simple constructors',
+        testAutocomplete('Number(10).to', 'toFixed')
+      );
+
+      it(
+        'should complete chained sequences',
+        testAutocomplete('new Date().getTime().to', 'toFixed')
+      );
+    });
 
     describe('Multiple Lines', function () {
       it(

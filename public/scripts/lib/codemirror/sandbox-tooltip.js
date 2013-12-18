@@ -101,15 +101,15 @@ module.exports = function (cm, options, done) {
       // changes in argument positions or types.
       cache.token = before;
       cache.data  = {
-        token:       token,
-        context:     data.context,
-        description: describe,
-        to:          cur,
-        from:        new Pos(cur.line, token.start)
+        token: token,
+        context: data.context,
+        // Extend the description to a new object where the `!type` is changed.
+        description: _.defaults({
+          '!type': describe['!type'].replace(/^fn\(/, fnName + '(')
+        }, describe),
+        to: cur,
+        from: new Pos(cur.line, token.start)
       };
-
-      // Fix the completion tooltip type to display the current function name.
-      describe['!type'] = describe['!type'].replace(/^fn\(/, fnName + '(');
 
       return done(err, cache.data);
     });
