@@ -251,6 +251,22 @@ EditorCell.prototype.removeEditor = function () {
 };
 
 /**
+ * Set the controls to display in the cell menu.
+ *
+ * @type {Array}
+ */
+EditorCell.prototype.cellControls = _.filter(controls, function (control) {
+  return {
+    moveUp:    true,
+    moveDown:  true,
+    switch:    true,
+    clone:     true,
+    remove:    true,
+    appendNew: true
+  }[control.command];
+});
+
+/**
  * Render a CodeMirror instance inside the view.
  *
  * @return {EditorCell}
@@ -322,6 +338,9 @@ EditorCell.prototype.render = function () {
  */
 EditorCell.prototype.showControls = function (e) {
   e.stopPropagation();
+
+  // Alias the displayed controls.
+  cellControls.controls = this.cellControls;
 
   var controls = cellControls.render().appendTo(this.el);
 

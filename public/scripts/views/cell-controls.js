@@ -2,7 +2,6 @@ var _          = require('underscore');
 var View       = require('./template');
 var template   = require('../../templates/views/cell-controls.hbs');
 var middleware = require('../state/middleware');
-var controls   = require('../lib/controls').editor;
 var domListen  = require('../lib/dom-listen');
 
 /**
@@ -19,17 +18,10 @@ var ControlsView = module.exports = View.extend({
 });
 
 /**
- * Keep an array of controls to display.
+ * Controls view template.
  *
- * @type {Array}
+ * @type {Function}
  */
-ControlsView.controls = _.filter(controls, function (control) {
-  return _.contains(
-    ['moveUp', 'moveDown', 'switch', 'clone', 'remove', 'appendNew'],
-    control.command
-  );
-});
-
 ControlsView.prototype.template = template;
 
 /**
@@ -65,8 +57,12 @@ ControlsView.prototype.render = function () {
  * @param {object} e The normalized event object.
  */
 ControlsView.prototype.onClick = function (e) {
-  var target = e.target.tagName === 'SPAN' ? e.target.parentNode : e.target;
+  var node = e.target;
 
-  this.trigger('action', this, target.getAttribute('data-action'));
+  while (!node.hasAttribute('data-action')) {
+    node = node.parentNode;
+  }
+
+  this.trigger('action', this, node.getAttribute('data-action'));
   return this.remove();
 };

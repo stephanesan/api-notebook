@@ -64,6 +64,20 @@ CodeCell.prototype.events = _.extend({
 CodeCell.prototype.EditorModel = require('../models/code-cell');
 
 /**
+ * Extend the editor cell controls with custom controls.
+ *
+ * @type {Array}
+ */
+CodeCell.prototype.cellControls = _.extend(
+  [], EditorCell.prototype.cellControls
+);
+
+// Push the execute command into the menu.
+CodeCell.prototype.cellControls.push(_.find(controls, function (control) {
+  return control.command === 'execute';
+}));
+
+/**
  * Sets the options to be used by the CodeMirror instance when initialized.
  *
  * @type {Object}
@@ -144,10 +158,10 @@ CodeCell.prototype.getPrevCodeView = function () {
  * @param {Function} done
  */
 CodeCell.prototype.execute = function (done) {
-  // Set the value as our own model for executing
+  // Set the value as our own model for executing.
   this.model.set('value', this.editor.getValue());
 
-  // First run previous cells if they need to be run
+  // First run previous cells if they need to be run.
   this.notebook.executePrevious(this, _.bind(function () {
     // Add a class to the cell to display execution.
     this.data.set('executing', true);
