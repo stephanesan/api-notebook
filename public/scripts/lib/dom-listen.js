@@ -13,7 +13,9 @@ module.exports = function (el) {
     on: function (event, fn, context) {
       var cb = _.bind(fn, context);
 
-      el.addEventListener(event, cb, false);
+      if (el) {
+        el.addEventListener(event, cb, false);
+      }
 
       listeners.push({
         event:   event,
@@ -38,7 +40,10 @@ module.exports = function (el) {
 
         // Check each of the arguments match and remove the listener.
         if (fns && events && contexts) {
-          el.removeEventListener(listener.event, listener.cb);
+          if (el) {
+            el.removeEventListener(listener.event, listener.cb);
+          }
+
           return true;
         }
       });
