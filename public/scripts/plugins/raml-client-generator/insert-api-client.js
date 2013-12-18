@@ -152,11 +152,17 @@ App.View.EditorCell.prototype.newRAMLBelow = function () {
 };
 
 /**
- * Insert a RAML document using the cell buttons.
- *
- * @type {String}
+ * Insert a RAML document by using the cell border buttons.
  */
 App.View.CellButtons.controls.push({
   label:   'Insert API Client',
   command: 'newRAML'
+});
+
+/**
+ * Insert a RAML document by using the cell menu buttons.
+ */
+App.View.CodeCell.prototype.cellControls.push({
+  label:   'Insert API Client',
+  command: 'newRAMLBelow'
 });
