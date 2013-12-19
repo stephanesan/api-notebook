@@ -40,10 +40,10 @@ ResultCell.prototype._reset = function () {
  * Render the result view.
  *
  * @param {Object}   data
- * @param {Object}   context
+ * @param {Object}   global
  * @param {Function} done
  */
-ResultCell.prototype.setResult = function (data, context, done) {
+ResultCell.prototype.setResult = function (data, global, done) {
   this._reset();
 
   if (data.isError) {
@@ -52,7 +52,7 @@ ResultCell.prototype.setResult = function (data, context, done) {
 
   middleware.trigger('result:render', {
     el:      this.el.querySelector('.result-content'),
-    context: context,
+    window:  global,
     inspect: data.result,
     isError: data.isError
   }, _.bind(function (err, remove) {

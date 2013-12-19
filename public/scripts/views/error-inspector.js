@@ -47,20 +47,13 @@ ErrorInspector.prototype.stringifyPreview = function () {
 };
 
 /**
- * Render all child nodes.
+ * Render the stack trace as the child.
  *
  * @return {ErrorInspector}
  */
-ErrorInspector.prototype.renderChildren = function () {
-  if (!this.isExpandable()) {
-    return this;
-  }
-
+ErrorInspector.prototype._renderChildren = function () {
   // Stack trace rendering support.
   if (this._isError) {
-    this._renderChildrenEl();
-    this.el.classList.add('can-expand');
-
     var stack   = this.inspect.stack;
     var traceEl = document.createElement('div');
     var message = Error.prototype.toString.call(this.inspect);
@@ -81,5 +74,20 @@ ErrorInspector.prototype.renderChildren = function () {
     return this;
   }
 
-  return Inspector.prototype.renderChildren.call(this);
+  return Inspector.prototype._renderChildren.call(this);
+};
+
+/**
+ * Remove the stack trace from display.
+ *
+ * @return {ErrorInspector}
+ */
+ErrorInspector.prototype._removeChildren = function () {
+  if (this._isError) {
+    this.childrenEl.innerHTML = '';
+
+    return this;
+  }
+
+  return Inspector.prototype._removeChildren.call(this);
 };

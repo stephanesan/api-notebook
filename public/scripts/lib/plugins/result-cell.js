@@ -13,8 +13,8 @@ var middleware     = require('../../state/middleware');
  */
 middleware.register('result:render', function (data, next, done) {
   var options = {
-    inspect: data.inspect,
-    context: data.context
+    window:  data.window,
+    inspect: data.inspect
   };
 
   var inspector;
