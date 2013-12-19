@@ -375,7 +375,7 @@ Persistence.prototype.list = function (done) {
 /**
  * Clone the notebook and reset the persistence layer to look normal again.
  */
-Persistence.prototype.clone = function () {
+Persistence.prototype.clone = function (done) {
   // Allows a reference back to the original notebook. Could be a useful for
   // someone to track where different notebooks originally come from.
   if (this.has('id')) {
@@ -388,11 +388,19 @@ Persistence.prototype.clone = function () {
   this.unset('id');
   this.unset('ownerId');
   this.unset('updatedAt');
-  this.get('meta').set('title', this.get('meta').get('title') + ' (cloned)');
 
-  // Update the config url and reset the current state.
-  config.set('id', null);
-  this._changeState(Persistence.CHANGED);
+  middleware.trigger(
+    'persistence:clone', this.getMiddlewareData(), _.bind(function (err, data) {
+      this.set('contents', data.contents);
+
+      // Set the updated meta data after the contents.
+      this.get('meta').clear().set(data.meta);
+
+      this._changeState(Persistence.CHANGED);
+
+      return done && done(err);
+    }, this)
+  );
 };
 
 /**
