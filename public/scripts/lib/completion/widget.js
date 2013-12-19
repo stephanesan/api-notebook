@@ -128,15 +128,6 @@ Widget.prototype.refresh = function (done) {
       el.ghostResult   = result;
       hintEl.className = 'CodeMirror-hint-text';
 
-      // Append the result type first so it floats correctly to this right.
-      if (result.type) {
-        var typeEl = document.createElement('span');
-        typeEl.className   = 'CodeMirror-hint-type';
-        typeEl.textContent = result.type;
-
-        el.appendChild(typeEl);
-      }
-
       // Do Blink-style bolding of the completed text
       if (isMatch && (indexOf = result.title.indexOf(text)) > -1) {
         var prefix  = result.title.substr(0, indexOf);
@@ -155,6 +146,15 @@ Widget.prototype.refresh = function (done) {
       }
 
       el.appendChild(hintEl);
+
+      // Render the result type if one is available.
+      if (result.type) {
+        var typeEl = document.createElement('span');
+        typeEl.className   = 'CodeMirror-hint-type';
+        typeEl.textContent = result.type;
+
+        el.appendChild(typeEl);
+      }
     });
 
     // Add the hinting keymap here instead of later or earlier since we need to
@@ -184,16 +184,16 @@ Widget.prototype.refresh = function (done) {
     this.setActive(0);
 
     CodeMirror.on(hints, 'click', function (e) {
-      var el = e.target || e.srcElement;
+      var node = e.target;
 
-      while (el.tagName !== 'LI') {
-        el = el.parentNode;
+      while (node.tagName !== 'LI') {
+        node = node.parentNode;
       }
 
       // Ensure we have a hint id specified.
-      if (isNaN(el.hintId)) { return; }
+      if (isNaN(node.hintId)) { return; }
 
-      that.setActive(el.hintId);
+      that.setActive(node.hintId);
       that.accept();
     });
 
