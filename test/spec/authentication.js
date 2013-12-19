@@ -58,7 +58,7 @@ describe('Authentication', function () {
       // Cheat and grab the state we passed through to the authentication server.
       var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
       window.authenticateOAuth(App.Library.url.resolve(
-        location.href, 'authentication/oauth.html?code=123&state=' + state
+        location.href, '/authenticate/oauth.html?code=123&state=' + state
       ));
 
       server.respond();

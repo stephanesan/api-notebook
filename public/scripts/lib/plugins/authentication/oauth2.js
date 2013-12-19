@@ -5,7 +5,7 @@ var url         = require('url');
 var authWindow  = require('./lib/auth-window');
 var middleware  = require('../../../state/middleware');
 var redirectUri = url.resolve(
-  global.location.href, 'authentication/oauth.html'
+  global.location.href, process.env.application.oauthCallback
 );
 
 /**
