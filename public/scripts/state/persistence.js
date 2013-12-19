@@ -3,6 +3,7 @@ var Backbone         = require('backbone');
 var config           = require('./config');
 var messages         = require('./messages');
 var middleware       = require('./middleware');
+var bounce           = require('../lib/bounce');
 var isMac            = require('../lib/browser/about').mac;
 var PersistenceItems = require('../collections/persistence-items');
 
@@ -538,9 +539,14 @@ persistence.listenTo(middleware, 'application:ready', function () {
 /**
  * On load messages, reload the current persistence object.
  */
-persistence.listenTo(messages, 'load', function () {
-  persistence.load();
-});
+persistence.listenTo(messages, 'load', _.bind(persistence.load, persistence));
+
+/**
+ * Keep the persistence meta data in sync with the config option.
+ */
+persistence.listenTo(config, 'change:url', bounce(function () {
+  persistence.get('meta').set('url', config.get('url'));
+}));
 
 /**
  * When the application is ready, finally attempt to load the initial content.
