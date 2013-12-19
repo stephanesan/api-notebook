@@ -16,6 +16,20 @@ var SidebarView = module.exports = View.extend({
 });
 
 /**
+ * Initialize the sidebar view.
+ */
+SidebarView.prototype.initialize = function () {
+  View.prototype.initialize.apply(this, arguments);
+
+  /**
+   * Check whether the current notebook has been saved.
+   */
+  this.listenTo(persistence, 'change:state', bounce(function () {
+    this.data.set('saved', persistence.isSaved());
+  }, this));
+};
+
+/**
  * An object of all events that trigger on the sidebar view.
  *
  * @type {Object}
@@ -96,7 +110,7 @@ SidebarView.prototype.templateHelpers = {
  * Override the render function to load the initial notebook list.
  */
 SidebarView.prototype.render = function () {
-  this.listenTo(persistence, 'changeUser', bounce(this.updateList, this));
+  this.listenTo(persistence, 'change:userId', bounce(this.updateList, this));
 
   return View.prototype.render.call(this);
 };

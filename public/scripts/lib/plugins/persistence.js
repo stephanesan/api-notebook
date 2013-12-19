@@ -1,4 +1,5 @@
 var _          = require('underscore');
+var config     = require('../../state/config');
 var middleware = require('../../state/middleware');
 
 var OPEN_CODE_BLOCK     = '```javascript';
@@ -6,10 +7,20 @@ var CLOSE_CODE_BLOCK    = '```';
 var META_DATA_DELIMITER = '---';
 
 /**
+ * Set the default contents into the config object.
+ */
+config.set('contents', [
+  OPEN_CODE_BLOCK,
+  '',
+  CLOSE_CODE_BLOCK
+].join('\n'));
+
+/**
  * Serialize the notebook to a string based format.
  *
- * @param  {Object}   data
- * @param  {Function} next
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
 middleware.register('persistence:serialize', function (data, next, done) {
   var hasContent = false;
@@ -50,8 +61,9 @@ middleware.register('persistence:serialize', function (data, next, done) {
 /**
  * Desserialize the notebook from a string into an array of cell data.
  *
- * @param  {Object}   data
- * @param  {Function} next
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
 middleware.register('persistence:deserialize', function (data, next, done) {
   var preambleRegExp = new RegExp([
@@ -126,16 +138,25 @@ middleware.register('persistence:deserialize', function (data, next, done) {
 /**
  * Default middleware that loads the initial notebook as a single code cell.
  *
- * @param  {Object}   data
- * @param  {Function} next
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
  */
 middleware.register('persistence:load', function (data, next, done) {
   data.id       = null;
-  data.contents = [
-    OPEN_CODE_BLOCK,
-    '',
-    CLOSE_CODE_BLOCK
-  ].join('\n');
+  data.contents = config.get('contents');
 
   return done();
+});
+
+/**
+ * Add a "(cloned)" marker to cloned notebook titles.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ */
+middleware.register('persistence:clone', function (data, next) {
+  data.meta.title += ' (cloned)';
+
+  return next();
 });
