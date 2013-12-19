@@ -1,9 +1,19 @@
 var _          = require('underscore');
+var config     = require('../../state/config');
 var middleware = require('../../state/middleware');
 
 var OPEN_CODE_BLOCK     = '```javascript';
 var CLOSE_CODE_BLOCK    = '```';
 var META_DATA_DELIMITER = '---';
+
+/**
+ * Set the default contents into the config object.
+ */
+config.set('contents', [
+  OPEN_CODE_BLOCK,
+  '',
+  CLOSE_CODE_BLOCK
+].join('\n'));
 
 /**
  * Serialize the notebook to a string based format.
@@ -131,11 +141,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
  */
 middleware.register('persistence:load', function (data, next, done) {
   data.id       = null;
-  data.contents = [
-    OPEN_CODE_BLOCK,
-    '',
-    CLOSE_CODE_BLOCK
-  ].join('\n');
+  data.contents = config.get('contents');
 
   return done();
 });

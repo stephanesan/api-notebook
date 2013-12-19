@@ -582,23 +582,6 @@ middleware.register('application:ready', function (app, next) {
 });
 
 /**
- * If we have contents set in the config object, we should use them as the
- * default load.
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.register('persistence:load', function (data, next, done) {
-  if (config.has('contents')) {
-    data.contents = config.get('contents');
-    return done();
-  }
-
-  return next();
-});
-
-/**
  * Register a function to block the regular save button and override with saving
  * to the persistence layer.
  */
