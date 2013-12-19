@@ -28,7 +28,7 @@
 
   <div class="sidebar-list">
     {{!-- Hard code the first element as the current persistence model --}}
-    <div class="list-item item item-active {{#equal @persistence.state 7}}item-unsaved{{/equal}}">
+    <div class="list-item item item-active {{#unless @data.saved}}item-unsaved{{/unless}}">
       {{#if @persistence.id}}
         {{#equal @persistence.userId @persistence.ownerId}}
           <i class="icon-cancel-circled" data-delete="{{@persistence.id}}"></i>
