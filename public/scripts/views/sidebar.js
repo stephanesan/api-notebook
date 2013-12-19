@@ -21,18 +21,8 @@ var SidebarView = module.exports = View.extend({
  * @type {Object}
  */
 SidebarView.prototype.events = {
-  'click [data-load]': function (e) {
-    var node = e.target;
-
-    // Don't propagate the delete button clicks.
-    if (node.hasAttribute('data-delete')) { return; }
-
-    // Recurse up the parents until we have the correct node reference.
-    while (!node.hasAttribute('data-load')) {
-      node = node.parentNode;
-    }
-
-    var id = node.getAttribute('data-load');
+  'click [data-load]': function (e, target) {
+    var id = target.getAttribute('data-load');
 
     // If the current notebook has not been saved yet, prompt the user.
     if (!persistence.isSaved()) {
@@ -118,7 +108,11 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
-  return persistence.load();
+
+  // Load the current item and focus to the top of the menu.
+  return persistence.load(_.bind(function () {
+    this.el.querySelector('.sidebar-list').scrollTop = 0;
+  }, this));
 };
 
 /**
