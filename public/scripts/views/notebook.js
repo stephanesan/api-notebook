@@ -9,6 +9,7 @@ var NotebookCollection = require('../collections/notebook');
 var Sandbox     = require('../lib/sandbox');
 var insertAfter = require('../lib/browser/insert-after');
 var config      = require('../state/config');
+var messages    = require('../state/messages');
 var middleware  = require('../state/middleware');
 var persistence = require('../state/persistence');
 
@@ -26,6 +27,11 @@ var appendNewView = function (View) {
     this.appendView(view, el);
     view.setValue(value || '').moveCursorToEnd();
     this.refreshFromView(view);
+
+    // Trigger a message to listen to, when we aren't rendering a notebook.
+    if (!this._rendering) {
+      messages.trigger('cell:new', view);
+    }
 
     return view;
   };
@@ -137,6 +143,9 @@ Notebook.prototype.render = function () {
   _.extend(this._middleware, completionMiddleware(this.sandbox.window));
   middleware.register(this._middleware);
 
+  // Set a rendering flag while we are rendering the initial collection.
+  this._rendering = true;
+
   _.each(persistence.get('notebook'), function (cell) {
     var appendView = 'appendCodeView';
 
@@ -151,6 +160,11 @@ Notebook.prototype.render = function () {
     this.appendCodeView();
   }
 
+  // Remove the rendering flag once the initial view has been set up.
+  delete this._rendering;
+
+  // When we only have one cell and no value (fresh notebook), show the first
+  // cells border buttons.
   if (this.collection.length === 1) {
     var model = this.collection.at(0);
 
@@ -347,6 +361,9 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'remove', function (view) {
+      // Trigger a remove event to trigger to the messages.
+      messages.trigger('cell:remove', view);
+
       // If it's the last node in the document, append a new code cell
       if (this.el.childNodes.length < 2) {
         var codeView = this.appendCodeView(view.el);
