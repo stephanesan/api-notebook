@@ -82,9 +82,9 @@ module.exports = function (global) {
    */
   plugins['completion:function'] = function (data, next, done) {
     var constructors = [
-      data.global.Array,
-      data.global.String,
-      data.global.Boolean
+      data.window.Array,
+      data.window.String,
+      data.window.Boolean
     ];
 
     // Constructor functions are relatively easy to handle.
@@ -112,23 +112,23 @@ module.exports = function (global) {
       returnType = returnType.length > 1 ? returnType.pop() : null;
 
       if (returnType === 'string') {
-        return done(null, data.global.String());
+        return done(null, data.window.String());
       }
 
       if (returnType === 'number') {
-        return done(null, data.global.Number());
+        return done(null, data.window.Number());
       }
 
       if (returnType === 'bool') {
-        return done(null, data.global.Boolean());
+        return done(null, data.window.Boolean());
       }
 
       if (/\[.*\]/.test(returnType)) {
-        return done(null, data.global.Array());
+        return done(null, data.window.Array());
       }
 
       if (returnType === 'fn()') {
-        return done(null, data.global.Function());
+        return done(null, data.window.Function());
       }
 
       // Returns its own instance.
@@ -137,10 +137,10 @@ module.exports = function (global) {
       }
 
       // Instance type return.
-      if (/^\+/.test(returnType) && data.global[returnType.substr(1)]) {
+      if (/^\+/.test(returnType) && data.window[returnType.substr(1)]) {
         return done(
           null,
-          fromPath(data.global, returnType.substr(1).split('.')).prototype
+          fromPath(data.window, returnType.substr(1).split('.')).prototype
         );
       }
 

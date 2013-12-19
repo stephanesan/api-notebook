@@ -14,7 +14,7 @@ describe('Function Property Filter Plugin', function () {
       var fn = function () {};
       fn['@return'] = 'test';
 
-      var inspector = new App.View.Inspector({ inspect: fn });
+      var inspector = new App.View.Inspector({ inspect: fn, window: window });
       inspector.render().trigger('open');
 
       var properties = App._.map(inspector.children, function (child) {
@@ -38,8 +38,7 @@ describe('Function Property Filter Plugin', function () {
       });
 
       new App.CodeMirror.Completion(editor, {
-        global:  window,
-        context: window
+        window: window
       });
     });
 

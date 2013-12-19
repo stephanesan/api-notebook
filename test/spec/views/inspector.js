@@ -19,7 +19,7 @@ describe('Inspector', function () {
     };
 
     var inputOutput = function (input, output, done) {
-      var inspector = new Inspector({ inspect: input, context: window });
+      var inspector = new Inspector({ inspect: input, window: window });
       matchPreview(inspector.render(), output);
     };
 
@@ -96,7 +96,7 @@ describe('Inspector', function () {
 
     describe('rendering properties', function () {
       var inputOutputChildren = function (input, properties) {
-        var inspector = new Inspector({ inspect: input, context: window });
+        var inspector = new Inspector({ inspect: input, window: window });
         inspector.render();
         inspector.trigger('open');
 
@@ -143,7 +143,7 @@ describe('Inspector', function () {
       });
 
       it('should not render duplicate properties', function () {
-        var inspector = new Inspector({ inspect: document, context: window });
+        var inspector = new Inspector({ inspect: document, window: window });
         inspector.render();
         inspector.trigger('open');
 
@@ -158,7 +158,7 @@ describe('Inspector', function () {
 
     describe('rendering prototypes', function () {
       var inputOutputPrototype = function (input, prototype) {
-        var inspector = new Inspector({ inspect: input, context: window });
+        var inspector = new Inspector({ inspect: input, window: window });
         inspector.render();
         inspector.trigger('open');
 

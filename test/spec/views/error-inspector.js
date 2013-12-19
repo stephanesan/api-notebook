@@ -18,7 +18,7 @@ describe('Error Inspector', function () {
     };
 
     var inputOutput = function (input, output, done) {
-      var inspector = new Inspector({ inspect: input, context: window });
+      var inspector = new Inspector({ inspect: input, window: window });
       matchPreview(inspector.render(), output);
     };
 

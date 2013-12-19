@@ -74,6 +74,7 @@ var doPropertyLookup = function (cm, tokens, options, done) {
 
   middleware.trigger('completion:context', _.extend({
     token:   tokens.pop(),
+    context: options.window,
     editor:  cm
   }, options), function again (err, data) {
     var token = data.token;

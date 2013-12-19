@@ -124,7 +124,7 @@ Notebook.prototype.render = function () {
   // The completion options object is shared between all cells and used for
   // completion. Make sure we set this connection up before rendering any cells.
   this.completionOptions = {
-    global: this.sandbox.window
+    window: this.sandbox.window
   };
 
   // Register a middleware hook for augmenting the sandbox context.

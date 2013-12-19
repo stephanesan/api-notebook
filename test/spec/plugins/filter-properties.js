@@ -11,7 +11,7 @@ describe('Filter Properties Plugin', function () {
 
   describe('Inspector', function () {
     it('should hide the internal prototype from display', function () {
-      var inspector = new App.View.Inspector({ inspect: {} });
+      var inspector = new App.View.Inspector({ inspect: {}, window: window });
       inspector.render().trigger('open');
       expect(inspector.children).to.be.empty;
     });
@@ -39,8 +39,7 @@ describe('Filter Properties Plugin', function () {
       });
 
       new App.CodeMirror.Completion(editor, {
-        global:  window,
-        context: window
+        window: window
       });
     });
 

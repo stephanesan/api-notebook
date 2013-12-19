@@ -146,7 +146,7 @@ middleware.register('completion:variable', function (data, next) {
 
   _.extend(data.results, varsToObject(token.state.globalVars));
   _.extend(data.results, keywords);
-  _.extend(data.results, getPropertyNames(data.context, data.global));
+  _.extend(data.results, getPropertyNames(data.context, data.window));
 
   return next();
 });
@@ -158,7 +158,7 @@ middleware.register('completion:variable', function (data, next) {
  * @param {Function} next
  */
 middleware.register('completion:property', function (data, next) {
-  _.extend(data.results, getPropertyNames(data.context, data.global));
+  _.extend(data.results, getPropertyNames(data.context, data.window));
   return next();
 });
 
@@ -187,29 +187,29 @@ middleware.register('completion:context', function (data, next, done) {
   }
 
   if (type === 'property') {
-    data.context = mapObject(data.context, data.global);
+    data.context = mapObject(data.context, data.window);
     data.context = data.context[string];
     return done();
   }
 
   if (type === 'array') {
-    data.context = new data.global.Array();
+    data.context = new data.window.Array();
     return done();
   }
 
   if (type === 'string') {
-    data.context = data.global.String(string.slice(1, -1));
+    data.context = data.window.String(string.slice(1, -1));
     return done();
   }
 
   if (type === 'number') {
-    data.context = data.global.Number(string);
+    data.context = data.window.Number(string);
     return done();
   }
 
   if (type === 'string-2') {
     var parts = token.string.split('/');
-    data.context = new data.global.RegExp(
+    data.context = new data.window.RegExp(
       parts[1].replace('\\', '\\\\'), parts[2]
     );
     return done();
@@ -217,7 +217,7 @@ middleware.register('completion:context', function (data, next, done) {
 
   if (type === 'atom') {
     if (string === 'true' || string === 'false') {
-      data.context = data.global.Boolean(string);
+      data.context = data.window.Boolean(string);
     } else if (string === 'null') {
       data.context = null;
     } else if (string === 'undefined') {

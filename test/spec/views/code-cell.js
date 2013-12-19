@@ -21,7 +21,7 @@ describe('Code Cell', function () {
           return done && done();
         },
         completionOptions: {
-          context: sandbox.window
+          window: sandbox.window
         }
       };
 

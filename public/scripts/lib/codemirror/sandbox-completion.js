@@ -51,6 +51,7 @@ var completeVariable = function (cm, token, options, done) {
   middleware.trigger('completion:variable', _.extend({
     token:   token,
     editor:  cm,
+    context: options.window,
     results: {}
   }, options), completeResults(done));
 };
@@ -66,7 +67,8 @@ var completeVariable = function (cm, token, options, done) {
 var completeProperty = function (cm, token, options, done) {
   tokenHelpers.getPropertyObject(cm, token, options, function (err, data) {
     middleware.trigger('completion:property', _.extend({
-      results: {}
+      results: {},
+      context: options.window
     }, data), completeResults(done));
   });
 };

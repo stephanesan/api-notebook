@@ -9,8 +9,7 @@ describe('Completion', function () {
     });
 
     new App.CodeMirror.Completion(editor, {
-      global:  window,
-      context: window
+      window: window
     });
 
     // Requires the built-in Tern.js description completion data.
