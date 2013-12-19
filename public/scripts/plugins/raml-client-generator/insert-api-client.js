@@ -24,6 +24,9 @@ var createApiClientCell = function (cell, invoke) {
 
     cell.focus();
 
+    // Trigger a raml client insertion message.
+    App.messages.trigger('ramlClient:insert');
+
     return view;
   };
 };
@@ -48,6 +51,9 @@ var loadAPIDefinitions = function (done) {
  * @param {Function} done
  */
 var selectAPIDefinition = function (done) {
+  // Trigger modal display messages.
+  App.messages.trigger('ramlClient:modal');
+
   return App.middleware.trigger('ui:modal', {
     title: 'Insert an API Client',
     content: function (done) {
@@ -101,22 +107,16 @@ var selectAPIDefinition = function (done) {
             classList.remove('item-details-visible');
           }
         })
-        .on('click', '[data-raml]', function (e) {
+        .on('click', '[data-raml]', function (e, target) {
           e.preventDefault();
-
-          var el = e.target;
-
-          while (el.tagName !== 'LI') {
-            el = el.parentNode;
-          }
 
           // Close the modal behind ourselves.
           modal.close();
 
           return done(null, {
-            title:     el.getAttribute('data-title'),
-            ramlUrl:   el.getAttribute('data-raml'),
-            portalUrl: el.getAttribute('data-portal')
+            title:     target.getAttribute('data-title'),
+            ramlUrl:   target.getAttribute('data-raml'),
+            portalUrl: target.getAttribute('data-portal')
           });
         })
         .on('keyup', '.item-search', function (e) {
