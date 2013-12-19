@@ -8,9 +8,13 @@ var bounce   = require('../lib/bounce');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
+  // The url is the embedding frame url.
   url:                window.location.href,
+  // The full url is the url that the full application is available at.
   fullUrl:            process.env.application.url,
+  // Site url is the sponsoring site location without any ids.
   siteUrl:            process.env.application.url,
+  // The site title is the name of the sponsoring site.
   siteTitle:          process.env.application.title,
   header:             true,
   footer:             false,
