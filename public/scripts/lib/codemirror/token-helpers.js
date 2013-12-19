@@ -483,14 +483,21 @@ exports.getPropertyPath = function (cm, token) {
   if (token && token.type === 'keyword' && token.string === 'new') {
     context.hasNew = true;
 
-    // Try to set the first function to be the constructor function.
-    _.some(context, function (token) {
-      if (!token.isFunction) { return; }
+    // Try to set the first function to be the constructor function. The
+    // context array is in reverse, so we need to iterate accordingly.
+    var length = context.length;
 
-      // Remove the `hasNew` flag and set the function to be a constructor
-      delete context.hasNew;
-      return token.isConstructor = true;
-    });
+    while (length--) {
+      // Remove the global context `hasNew` flag and set the found function
+      // to be a constructor.
+      if (context[length].isFunction) {
+        delete context.hasNew;
+        context[length].isConstructor = true;
+
+        // Break before setting any other context properties.
+        break;
+      }
+    }
   }
 
   return context;

@@ -81,7 +81,14 @@ module.exports = function (global) {
    * @param {Function} done
    */
   plugins['completion:function'] = function (data, next, done) {
-    if (data.isConstructor || data.context === data.global.Array) {
+    var constructors = [
+      data.global.Array,
+      data.global.String,
+      data.global.Boolean
+    ];
+
+    // Constructor functions are relatively easy to handle.
+    if (data.isConstructor || _.contains(constructors, data.context)) {
       return done(null, data.context.prototype);
     }
 
@@ -99,7 +106,10 @@ module.exports = function (global) {
       }
 
       // Split the documentation type and get the return type.
-      var returnType = describe['!type'].split(' -> ').pop();
+      var returnType = describe['!type'].split(' -> ');
+
+      // Update the return type string.
+      returnType = returnType.length > 1 ? returnType.pop() : null;
 
       if (returnType === 'string') {
         return done(null, data.global.String());
