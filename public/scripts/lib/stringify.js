@@ -1,5 +1,26 @@
 var _      = require('underscore');
+var trim   = require('trim');
 var typeOf = require('./type');
+
+/**
+ * A list of human consumable node type names.
+ *
+ * @type {Object}
+ */
+var nodeTypes = {
+  1:  'element',
+  2:  'attribute',
+  3:  'text',
+  4:  'cdata-section',
+  5:  'entity-reference',
+  6:  'entity',
+  7:  'processing-instruction',
+  8:  'comment',
+  9:  'document',
+  10: 'document-type',
+  11: 'document-fragment',
+  12: 'notation'
+};
 
 /**
  * Gets internal object name. Works like the Chrome console and grabs the
@@ -184,30 +205,37 @@ var stringifyElement = function (node) {
  * @return {String}
  */
 var stringify = module.exports = function (object) {
-  switch (typeOf(object)) {
-  case 'error':
+  var type = typeOf(object);
+
+  if (type === 'error') {
     return stringifyError(object);
-  case 'array':
-    return stringifyArray(object);
-  case 'object':
-    return stringifyObject(object);
-  case 'string':
-    return stringifyString(object);
-  case 'element':
-    return stringifyElement(object);
   }
 
-  // Every other type can safely be typecasted to the expected output
+  if (type === 'array') {
+    return stringifyArray(object);
+  }
+
+  if (type === 'object') {
+    return stringifyObject(object);
+  }
+
+  if (type === 'string') {
+    return stringifyString(object);
+  }
+
+  if (type === 'element') {
+    var stringifiedElement = stringifyElement(object);
+
+    // Ensure that stringified elements always have an output. Useful for cases
+    // where we might be attempting to stringify an empty fragment.
+    return trim(stringifiedElement) ? stringifiedElement :
+      ('#' + nodeTypes[object.nodeType]);
+  }
+
+  // Every other type can safely be typecasted to the expected output.
   return '' + object;
 };
 
-// Alias useful stringify functionality.
-stringify.error   = stringifyError;
-stringify.array   = stringifyArray;
-stringify.object  = stringifyObject;
-stringify.string  = stringifyString;
-stringify.element = stringifyElement;
-
-// Additional internal helpers.
+// Expose useful internal helpers.
 stringify.stringifyChild  = stringifyChild;
 stringify.getInternalName = getInternalName;
