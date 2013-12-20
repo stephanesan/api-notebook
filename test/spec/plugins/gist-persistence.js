@@ -5,7 +5,7 @@ describe('Gist Persistence Plugin', function () {
 
   var id       = 'c5172f5b2ce786b86314';
   var userId   = 1088987;
-  var notebook = '---\ntitle: Test Notebook\n---\n\n```javascript\nvar test = true\n```';
+  var notebook = '---\ntitle: Test Notebook\n---\n\n```javascript\nvar test = true;;\n```';
 
   var clientId    = '0ca6a0a865144bbf595c';
   var accessToken = '5a043c2e7f6281bdb3ce6d142a6d96c052f0ce89';
@@ -108,7 +108,7 @@ describe('Gist Persistence Plugin', function () {
       expect(App.persistence.get('id')).to.equal('' + id);
       expect(App.persistence.get('userId')).to.equal('' + userId);
       expect(App.persistence.get('ownerId')).to.equal('' + userId);
-      expect(App.persistence.get('contents')).to.equal(notebook);
+      expect(App.persistence.get('contents')).to.contain('var test = true;');
 
       return done();
     });
