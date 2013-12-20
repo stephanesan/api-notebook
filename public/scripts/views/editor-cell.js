@@ -380,6 +380,8 @@ EditorCell.prototype.showControls = function (e) {
  * @return {CellButtons}
  */
 EditorCell.prototype.showButtonsAbove = function () {
+  if (this.data.has('cellButtonsAbove')) { return; }
+
   var buttons = new CellButtons();
   this.data.set('cellButtonsAbove', buttons);
 
@@ -401,6 +403,8 @@ EditorCell.prototype.showButtonsAbove = function () {
  * @return {CellButtons}
  */
 EditorCell.prototype.showButtonsBelow = function () {
+  if (this.data.has('cellButtonsBelow')) { return; }
+
   var buttons = new CellButtons();
   this.data.set('cellButtonsBelow', buttons);
 
