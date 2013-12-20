@@ -195,7 +195,7 @@ var loadPlugin = function (data, next, done) {
   App.middleware.trigger('ajax:oauth2', {
     // Add the application client id and secret to load requests to avoid rate
     // limiting in the case that the user is unauthenticated.
-    url:    'https://api.github.com/gists/' + data.id,
+    url:    'https://api.github.com/gists/' + data.id + '?_=' + Date.now(),
     proxy:  false,
     method: 'GET',
     oauth2: oauth2Store.toJSON()

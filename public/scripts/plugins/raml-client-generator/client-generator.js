@@ -14,162 +14,6 @@ var RESERVED_METHODS     = _.object(
 );
 
 /**
- * Required authentication keys used to check the options object.
- *
- * @type {Object}
- */
-var requiredAuthKeys = {
-  oauth1: {
-    consumerKey:    true,
-    consumerSecret: true
-  },
-  oauth2: {
-    clientId:     true,
-    clientSecret: true
-  },
-  basicAuth: {
-    username: true,
-    password: true
-  }
-};
-
-/**
- * Returns an object of keys with whether they are required or not.
- *
- * @param  {String} type
- * @param  {Object} options
- * @return {Object}
- */
-var requiredKeys = function (type, options) {
-  var requiredKeys = _.extend({}, requiredAuthKeys[type]);
-
-  // Special case is required for OAuth2 implicit auth flow.
-  if (type === 'oauth2' && _.contains(options.authorizationGrants, 'token')) {
-    requiredKeys.clientSecret = false;
-  }
-
-  return requiredKeys;
-};
-
-/**
- * Return an array of keys that are still required to be filled.
- *
- * @param  {String} type
- * @param  {Object} options
- * @return {Array}
- */
-var requiredOptions = function (type, options) {
-  var keys = requiredKeys(type, options);
-
-  return _.filter(_.keys(keys), function (key) {
-    return keys[key] && !options[key];
-  });
-};
-
-/**
- * Trigger the middleware prompt for tokens.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var middlewarePrompt = function (type, options, done) {
-  return App.middleware.trigger('ramlClient:' + type, options, done);
-};
-
-/**
- * Execute the full authentication prompt. This includes requesting the
- * middleware and/or prompting the user to fill the values.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var fullPrompt = function (type, options, done) {
-  return middlewarePrompt(type, options, function (err, options) {
-    if (err) { return done(err); }
-
-    if (!requiredOptions(type, options).length) {
-      return done(null, options);
-    }
-
-    var title = {
-      oauth1:    'Please Enter Your OAuth1 Keys',
-      oauth2:    'Please Enter Your OAuth2 Keys',
-      basicAuth: 'Please Enter Your Username and Password'
-    }[type];
-
-    return App.middleware.trigger('ui:modal', {
-      title: title,
-      content: [
-        '<p>',
-        'This API requires authentication. Please enter your application keys.',
-        '</p>',
-        '<p><em>',
-        'We will not store your keys.',
-        '</em></p>'
-      ].concat([
-        '<form>',
-        _.map(requiredOptions(type, options), function (required) {
-          var value = options[required] || '';
-
-          return [
-            '<div class="form-group">',
-            '<label for="' + required + '">' + required + '</label>',
-            '<input id="' + required + '" value="' + value + '">',
-            '</div>'
-          ].join('');
-        }).join('\n'),
-        '<div class="form-footer">',
-        '<button type="submit" class="btn btn-primary">Submit</button>',
-        '</div>',
-        '<form>'
-      ]).join('\n'),
-      show: function (modal) {
-        modal.el.querySelector('form')
-          .addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            _.each(this.querySelectorAll('input'), function (inputEl) {
-              options[inputEl.getAttribute('id')] = inputEl.value;
-            });
-
-            // Close the modal once all the options have been
-            modal.close();
-          });
-      }
-    }, function (err) {
-      return done(err, options);
-    });
-  });
-};
-
-/**
- * Trigger the authentication flow immediately or after we attempt to grab
- * the configuration options.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var authenticatePrompt = function (type, options, done) {
-  var cb = function (err, data) {
-    if (err) { return done(err); }
-
-    // Extend the options object with generated options.
-    var trigger = 'authenticate:' + type;
-    return App.middleware.trigger(trigger, _.extend(options, data), done);
-  };
-
-  // Check against the required options.
-  if (!requiredOptions(type, options).length) {
-    return cb(null, {});
-  }
-
-  return fullPrompt(type, options, cb);
-};
-
-/**
  * Accepts a params object and transforms it into a regex for matching the
  * tokens in the route.
  *
@@ -800,6 +644,154 @@ var attachResources = function attachResources (nodes, context, resources) {
 };
 
 /**
+ * Required authentication keys used to check the options object.
+ *
+ * @type {Object}
+ */
+var requiredAuthKeys = {
+  oauth1: {
+    consumerKey:    true,
+    consumerSecret: true
+  },
+  oauth2: {
+    clientId:     true,
+    clientSecret: true
+  },
+  basicAuth: {
+    username: true,
+    password: true
+  }
+};
+
+/**
+ * Returns an object of keys with whether they are required or not.
+ *
+ * @param  {String} type
+ * @param  {Object} options
+ * @return {Object}
+ */
+var requiredKeys = function (type, options) {
+  var requiredKeys = _.extend({}, requiredAuthKeys[type]);
+
+  // Special case is required for OAuth2 implicit auth flow.
+  if (type === 'oauth2' && _.contains(options.authorizationGrants, 'token')) {
+    requiredKeys.clientSecret = false;
+  }
+
+  return requiredKeys;
+};
+
+/**
+ * Return an array of keys that are still required to be filled.
+ *
+ * @param  {String} type
+ * @param  {Object} options
+ * @return {Array}
+ */
+var requiredOptions = function (type, options) {
+  var keys = requiredKeys(type, options);
+
+  return _.filter(_.keys(keys), function (key) {
+    return keys[key] && !options[key];
+  });
+};
+
+/**
+ * Trigger the middleware prompt for tokens.
+ *
+ * @param {String}   type
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var middlewarePrompt = function (type, options, done) {
+  return App.middleware.trigger('ramlClient:' + type, options, done);
+};
+
+/**
+ * Execute the full authentication prompt. This includes requesting the
+ * middleware and/or prompting the user to fill the values.
+ *
+ * @param {String}   type
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var fullPrompt = function (type, options, done) {
+  var title = {
+    oauth1:    'Please Enter Your OAuth1 Keys',
+    oauth2:    'Please Enter Your OAuth2 Keys',
+    basicAuth: 'Please Enter Your Username and Password'
+  }[type];
+
+  return App.middleware.trigger('ui:modal', {
+    title: title,
+    content: [
+      '<p>',
+      'This API requires authentication. Please enter your application keys.',
+      '</p>',
+      '<p><em>',
+      'We will not store your keys.',
+      '</em></p>'
+    ].concat([
+      '<form>',
+      _.map(requiredOptions(type, options), function (required) {
+        var value = options[required] || '';
+
+        return [
+          '<div class="form-group">',
+          '<label for="' + required + '">' + required + '</label>',
+          '<input id="' + required + '" value="' + value + '">',
+          '</div>'
+        ].join('');
+      }).join('\n'),
+      '<div class="form-footer">',
+      '<button type="submit" class="btn btn-primary">Submit</button>',
+      '</div>',
+      '<form>'
+    ]).join('\n'),
+    show: function (modal) {
+      modal.el.querySelector('form')
+        .addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          _.each(this.querySelectorAll('input'), function (inputEl) {
+            options[inputEl.getAttribute('id')] = inputEl.value;
+          });
+
+          // Close the modal once all the options have been
+          modal.close();
+        });
+    }
+  }, function (err) {
+    return done(err, options);
+  });
+};
+
+/**
+ * Trigger the authentication flow immediately or after we attempt to grab
+ * the configuration options.
+ *
+ * @param {String}   type
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var authenticatePrompt = function (type, options, done) {
+  var cb = function (err, data) {
+    if (err) { return done(err); }
+
+    // Extend the options object with generated options.
+    var trigger = 'authenticate:' + type;
+    return App.middleware.trigger(trigger, _.extend(options, data), done);
+  };
+
+  // Check against the required options.
+  if (!requiredOptions(type, options).length) {
+    return cb(null, {});
+  }
+
+  return fullPrompt(type, options, cb);
+};
+
+/**
  * Attach an authentication method that delegates to middleware.
  *
  * @param  {String}   trigger
@@ -820,17 +812,29 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
       done = App._executeContext.async();
     }
 
-    // Generate the options using user data.
-    var options = _.extend({}, scheme.settings, data);
+    var options = _.extend({}, scheme.settings);
 
     // Timeout after 10 minutes.
     App._executeContext.timeout(10 * 60 * 1000);
 
-    return authenticatePrompt(trigger, options, function (err, auth) {
+    var cb = function (err, auth) {
       // Set the client authentication details. This will be used with any
       // http requests that require the authentication type.
-      nodes.client.authentication[scheme.type] = _.extend({}, auth, options);
+      nodes.client.authentication[scheme.type] = auth;
       return done(err, auth);
+    };
+
+    // Check whether we need to proceed to collecting more data.
+    if (!requiredOptions(trigger, _.extend({}, options, data))) {
+      return authenticatePrompt(trigger, _.extend({}, options, data), cb);
+    }
+
+    // Trigger a prompt to the middleware layer.
+    return middlewarePrompt(trigger, options, function (err, updates) {
+      if (err) { return done(err); }
+
+      // Extend the options with the user data over the top.
+      return authenticatePrompt(trigger, _.extend(options, updates, data), cb);
     });
   };
 };

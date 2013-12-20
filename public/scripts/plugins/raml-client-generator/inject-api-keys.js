@@ -9,7 +9,7 @@ var apiKeys = process.env.plugins.ramlClient;
  * @param {Function} next
  */
 App.middleware.register('ramlClient:oauth1', function (data, next) {
-  _.defaults(data, apiKeys.oauth1[data.authorizationUri]);
+  _.extend(data, apiKeys.oauth1[data.authorizationUri]);
   return next();
 });
 
@@ -20,6 +20,6 @@ App.middleware.register('ramlClient:oauth1', function (data, next) {
  * @param {Function} next
  */
 App.middleware.register('ramlClient:oauth2', function (data, next) {
-  _.defaults(data, apiKeys.oauth2[data.authorizationUri]);
+  _.extend(data, apiKeys.oauth2[data.authorizationUri]);
   return next();
 });

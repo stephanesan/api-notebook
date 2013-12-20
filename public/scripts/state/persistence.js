@@ -96,17 +96,6 @@ Persistence.prototype.CHANGED   = Persistence.CHANGED   = 7;
 Persistence.prototype.CLONING   = Persistence.CLONING   = 8;
 
 /**
- * Private method for triggering state changes and relevant events.
- *
- * @return {App}
- */
-Persistence.prototype._changeState = function (state) {
-  this.set('state', state);
-
-  return this;
-};
-
-/**
  * Return whether the current user session is the owner of the current notebook.
  *
  * @return {Boolean}
@@ -198,14 +187,14 @@ Persistence.prototype.save = function (done) {
     return done(new Error('Notebook is not currently savable'));
   }
 
-  this._changeState(Persistence.SAVING);
+  this.set('state', Persistence.SAVING);
 
   middleware.trigger(
     'persistence:save',
     this.getMiddlewareData(),
     _.bind(function (err, data) {
       if (err) {
-        this._changeState(Persistence.SAVE_FAIL);
+        this.set('state', Persistence.SAVE_FAIL);
         return done && done(err);
       }
 
@@ -214,7 +203,7 @@ Persistence.prototype.save = function (done) {
       this.set('updatedAt', new Date());
 
       this._savedContents = data.contents;
-      this._changeState(Persistence.SAVE_DONE);
+      this.set('state', Persistence.SAVE_DONE);
 
       this.get('items').add(_.extend(this.toJSON(), {
         meta: this.get('meta').toJSON()
@@ -313,7 +302,7 @@ Persistence.prototype.getMiddlewareData = function () {
  * @param {Function} done
  */
 Persistence.prototype.load = function (done) {
-  this._changeState(Persistence.LOADING);
+  this.set('state', Persistence.LOADING);
 
   return middleware.trigger(
     'persistence:load',
@@ -337,7 +326,7 @@ Persistence.prototype.load = function (done) {
         this.trigger('changeNotebook', this);
 
         this._savedContents = this.get('contents');
-        this._changeState(err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
+        this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
 
         return done && done(err);
       }, this);
@@ -388,7 +377,7 @@ Persistence.prototype.clone = function (done) {
     this.set('originalId', this.get('id'));
   }
 
-  this._changeState(Persistence.CLONING);
+  this.set('state', Persistence.CLONING);
 
   // Removes the notebook id and sets the user id to the current user.
   this.unset('id');
@@ -403,7 +392,7 @@ Persistence.prototype.clone = function (done) {
       this.get('meta').clear().set(data.meta);
 
       this._savedContents = data.contents;
-      this._changeState(Persistence.CHANGED);
+      this.set('state', Persistence.CHANGED);
 
       return done && done(err);
     }, this)
@@ -493,10 +482,15 @@ persistence.listenTo(persistence, 'change:contents', _.throttle(function () {
   var isChanged = persistence.get('contents') !== persistence._savedContents;
 
   if (this._loading || !isChanged) {
-    return persistence._changeState(persistence.NULL);
+    // Reset an unchanged notebooks state to be null.
+    if (!isChanged && persistence.get('state') === persistence.CHANGED) {
+      persistence.set('state', persistence.NULL);
+    }
+
+    return;
   }
 
-  persistence._changeState(persistence.CHANGED);
+  persistence.set('state', persistence.CHANGED);
   middleware.trigger('persistence:change', this.getMiddlewareData());
 }, 100));
 

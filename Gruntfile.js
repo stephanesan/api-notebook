@@ -114,7 +114,7 @@ module.exports = function (grunt) {
           {
             expand: true,
             cwd: 'public',
-            src: ['*.html', 'authentication/**', 'images/**', 'favicon.ico'],
+            src: ['*.html', 'authenticate/**', 'images/**', 'favicon.ico'],
             dest: 'build/'
           },
           {
