@@ -326,9 +326,9 @@ Persistence.prototype.load = function (done) {
 
       this.set('id',        data.id);
       this.set('ownerId',   data.ownerId);
+      this.set('updatedAt', data.updatedAt);
       this.set('contents',  data.contents, { silent: true });
       this.set('notebook',  data.notebook, { silent: true });
-      this.set('updatedAt', data.updatedAt);
 
       var complete = _.bind(function () {
         delete this._loading;
@@ -545,7 +545,7 @@ persistence.listenTo(messages, 'load', _.bind(persistence.load, persistence));
  * Keep the persistence meta data in sync with the config option.
  */
 persistence.listenTo(config, 'change:url', bounce(function () {
-  persistence.get('meta').set('url', config.get('url'));
+  persistence.get('meta').set('site', config.get('url'));
 }));
 
 /**
@@ -582,14 +582,6 @@ middleware.register('application:ready', function (app, next) {
    */
   config.listenTo(persistence, 'change:id', function () {
     config.set('id', persistence.get('id'));
-  });
-
-  /**
-   * Trigger refreshes of the persistence layer when the contents change.
-   */
-  config.listenTo(config, 'change:contents', function () {
-    persistence.set('id', '');
-    persistence.load();
   });
 
   return next();

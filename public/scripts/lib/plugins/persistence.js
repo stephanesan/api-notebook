@@ -70,7 +70,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
   var preambleRegExp = new RegExp([
     '^',
     META_DATA_DELIMITER,
-    '\\n(.*\\n)+',
+    '\\n([\\S\\s]+)\\n',
     META_DATA_DELIMITER,
     '\\n'
   ].join(''));
@@ -167,8 +167,8 @@ middleware.register('persistence:clone', function (data, next) {
  */
 middleware.on('persistence:save', function () {
   // Update the site url.
-  persistence.get('meta').set('site', config.get('url'));
-
-  // Store the current notebook version.
-  persistence.get('meta').set('apiNotebookVersion', process.env.pkg.version);
+  persistence.get('meta').set({
+    site:               config.get('url'),
+    apiNotebookVersion: process.env.pkg.version
+  });
 });
