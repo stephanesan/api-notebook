@@ -30,10 +30,10 @@ DOMBars.registerHelper('equal', function (/* ...args, options */) {
   }
 
   if (isEqual(args)) {
-    return options.fn(this);
+    return options.fn(this).value;
   }
 
-  return options.inverse(this);
+  return options.inverse(this).value;
 });
 
 /**

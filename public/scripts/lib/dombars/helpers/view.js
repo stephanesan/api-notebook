@@ -13,5 +13,5 @@ DOMBars.registerHelper('view', function (view) {
     return view.remove();
   });
 
-  return view.render().el;
+  return new DOMBars.SafeString(view.render().el);
 });

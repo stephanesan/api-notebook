@@ -134,6 +134,15 @@ Persistence.prototype.isSaved = function () {
 };
 
 /**
+ * Returns whether the current persistence item has changed.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype.hasChanged = function () {
+  return this.get('contents') !== this._savedContents;
+};
+
+/**
  * Pass an array of cells that represent the notebook for serialization.
  *
  * @param {Array}    cells
@@ -184,7 +193,11 @@ Persistence.prototype.deserialize = function (done) {
  */
 Persistence.prototype.save = function (done) {
   if (!config.get('savable')) {
-    return done(new Error('Notebook is not currently savable'));
+    return done && done(new Error('Notebook is not currently savable'));
+  }
+
+  if (!this.hasChanged()) {
+    return done && done();
   }
 
   this.set('state', Persistence.SAVING);
@@ -479,11 +492,11 @@ persistence.listenTo(
  * handler.
  */
 persistence.listenTo(persistence, 'change:contents', _.throttle(function () {
-  var isChanged = persistence.get('contents') !== persistence._savedContents;
+  var hasChanged = persistence.hasChanged();
 
-  if (this._loading || !isChanged) {
+  if (this._loading || !hasChanged) {
     // Reset an unchanged notebooks state to be null.
-    if (!isChanged && persistence.get('state') === persistence.CHANGED) {
+    if (!hasChanged && persistence.get('state') === persistence.CHANGED) {
       persistence.set('state', persistence.NULL);
     }
 

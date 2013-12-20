@@ -9,8 +9,8 @@ var DOMBars = require('dombars/runtime');
  * @return {Node}
  */
 DOMBars.registerHelper('collection', function (collection, options) {
-  var element = document.createElement(options.hash.tagName || 'div');
-  var nodes   = {};
+  var element   = DOMBars.Utils.trackNode();
+  var templates = {};
 
   if (!collection || arguments.length < 2) {
     return element;
@@ -24,21 +24,10 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @return {Node}
    */
   var render = function (model) {
-    var child = options.fn(model);
+    var child = templates[model.cid] = options.fn(model);
 
-    // TODO: Keep track of unsubscribing/removing individual renders.
-    nodes[model.cid] = _.toArray(child.childNodes);
-
-    return child;
-  };
-
-  /**
-   * Remove an element from the DOM.
-   *
-   * @param {Node} el
-   */
-  var removeChild = function (el) {
-    return el.parentNode && el.parentNode.removeChild(el);
+    // Wrap the node value in a tracking node.
+    return child.value = DOMBars.Utils.trackNode(child.value);
   };
 
   /**
@@ -47,20 +36,31 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @param {Object} model
    */
   var add = function (model) {
-    element.appendChild(render(model));
+    element.appendChild(render(model).fragment);
   };
 
   /**
    * Sort DOM nodes by removing from the DOM and re-adding in sorted order.
    */
   var sort = function () {
-    _.each(nodes, function (children) {
-      _.each(children, removeChild);
+    _.each(templates, function (template) {
+      return template.value.remove();
     });
 
     collection.each(function (model) {
-      _.each(nodes[model.cid], element.appendChild, element);
+      element.appendChild(templates[model.cid].value.fragment);
     });
+  };
+
+  /**
+   * Destroy a template from existence.
+   *
+   * @param {String} cid
+   */
+  var destroy = function (cid) {
+    templates[cid].unsubscribe();
+    templates[cid].value.remove();
+    delete templates[cid];
   };
 
   /**
@@ -69,9 +69,7 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @param {Object} model
    */
   var remove = function (model) {
-    _.each(nodes[model.cid], removeChild);
-
-    delete nodes[model.cid];
+    return destroy(model.cid);
   };
 
   /**
@@ -80,9 +78,8 @@ DOMBars.registerHelper('collection', function (collection, options) {
    * @return {[type]} [description]
    */
   var reset = function () {
-    _.each(nodes, function (children, key) {
-      _.each(children, removeChild);
-      delete nodes[key];
+    _.each(templates, function (template, key) {
+      return destroy(key);
     });
   };
 
@@ -100,5 +97,5 @@ DOMBars.registerHelper('collection', function (collection, options) {
 
   collection.each(add);
 
-  return element;
+  return element.fragment;
 });

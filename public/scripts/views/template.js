@@ -47,7 +47,7 @@ TemplateView.prototype.templateHelpers = {};
 TemplateView.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this._el = this.template(this.model, {
+  this.rendered = this.template(this.model, {
     data: _.extend({
       view: this,
       data: this.data
@@ -55,8 +55,8 @@ TemplateView.prototype.render = function () {
     helpers: this.templateHelpers
   });
 
-  if (this._el) {
-    this.el.appendChild(this._el);
+  if (this.rendered.value) {
+    this.el.appendChild(this.rendered.value);
   }
 
   return this;
@@ -66,9 +66,9 @@ TemplateView.prototype.render = function () {
  * Unsubscribe the template listeners before removal.
  */
 TemplateView.prototype.remove = function () {
-  if (this._el) {
-    this._el.unsubscribe();
-    delete this._el;
+  if (this.rendered) {
+    this.rendered.unsubscribe();
+    delete this.rendered;
   }
 
   return View.prototype.remove.call(this);

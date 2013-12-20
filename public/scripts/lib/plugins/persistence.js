@@ -165,10 +165,11 @@ middleware.register('persistence:clone', function (data, next) {
 /**
  * Update the persistence meta data when we attempt to save.
  */
-middleware.on('persistence:save', function () {
-  // Update the site url.
+middleware.on('persistence:change', function () {
   persistence.get('meta').set({
     site:               config.get('url'),
     apiNotebookVersion: process.env.pkg.version
+  }, {
+    silent: true
   });
 });

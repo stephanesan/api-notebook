@@ -56,7 +56,10 @@ DOMBars.Utils.mergeTemplates = function (/* ...templates */) {
   var args = _.toArray(arguments);
 
   return function (context, options) {
-    var rendered = document.createDocumentFragment();
+    var result = {};
+
+    // Set the value to be a document fragment.
+    result.value = document.createDocumentFragment();
 
     // Iterate over each of the templates and track the returned child.
     var templates = _.map(args, function (template) {
@@ -64,16 +67,18 @@ DOMBars.Utils.mergeTemplates = function (/* ...templates */) {
     });
 
     // Add an unsubscribe method the will delegate to each of the templates.
-    rendered.unsubscribe = function () {
+    result.unsubscribe = function () {
       _.each(templates, function (template) {
         template.unsubscribe();
       });
     };
 
     // Append all the templates to the document fragment.
-    _.each(templates, rendered.appendChild, rendered);
+    _.each(templates, function (template) {
+      result.value.appendChild(template.value);
+    });
 
-    return rendered;
+    return result;
   };
 };
 
