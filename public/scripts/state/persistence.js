@@ -213,7 +213,9 @@ Persistence.prototype.save = function (done) {
       this.set('ownerId',   data.userId);
       this.set('updatedAt', new Date());
 
+      this._savedContents = data.contents;
       this._changeState(Persistence.SAVE_DONE);
+
       this.get('items').add(_.extend(this.toJSON(), {
         meta: this.get('meta').toJSON()
       }), { merge: true });
@@ -333,7 +335,10 @@ Persistence.prototype.load = function (done) {
       var complete = _.bind(function () {
         delete this._loading;
         this.trigger('changeNotebook', this);
+
+        this._savedContents = this.get('contents');
         this._changeState(err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
+
         return done && done(err);
       }, this);
 
@@ -397,6 +402,7 @@ Persistence.prototype.clone = function (done) {
       // Set the updated meta data after the contents.
       this.get('meta').clear().set(data.meta);
 
+      this._savedContents = data.contents;
       this._changeState(Persistence.CHANGED);
 
       return done && done(err);
@@ -483,35 +489,16 @@ persistence.listenTo(
  * Any time the notebook changes, trigger the `persistence:change` middleware
  * handler.
  */
-persistence.listenTo(persistence, 'change:contents', (function () {
-  var changing    = false;
-  var changeQueue = false;
+persistence.listenTo(persistence, 'change:contents', _.throttle(function () {
+  var isChanged = persistence.get('contents') !== persistence._savedContents;
 
-  return function change () {
-    // Block updates when loading a notebook.
-    if (this._loading) { return; }
+  if (this._loading || !isChanged) {
+    return persistence._changeState(persistence.NULL);
+  }
 
-    // If we are already changing the data, but it has not yet been resolved,
-    // set a change queue flag to `true` to let ourselves know we have changes
-    // queued to sync once we finish the current operation.
-    if (changing) { return changeQueue = true; }
-
-    changing = true;
-    this._changeState(Persistence.CHANGED);
-
-    middleware.trigger(
-      'persistence:change',
-      this.getMiddlewareData(),
-      _.bind(function () {
-        changing = false;
-        if (changeQueue) {
-          changeQueue = false;
-          return change.call(this);
-        }
-      }, this)
-    );
-  };
-})());
+  persistence._changeState(persistence.CHANGED);
+  middleware.trigger('persistence:change', this.getMiddlewareData());
+}, 100));
 
 /**
  * Check with an external service whether a users session is authenticated. This
