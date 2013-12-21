@@ -3,26 +3,6 @@ var trim   = require('trim');
 var typeOf = require('./type');
 
 /**
- * A list of human consumable node type names.
- *
- * @type {Object}
- */
-var nodeTypes = {
-  1:  'element',
-  2:  'attribute',
-  3:  'text',
-  4:  'cdata-section',
-  5:  'entity-reference',
-  6:  'entity',
-  7:  'processing-instruction',
-  8:  'comment',
-  9:  'document',
-  10: 'document-type',
-  11: 'document-fragment',
-  12: 'notation'
-};
-
-/**
  * Gets internal object name. Works like the Chrome console and grabs the
  * contructor name to render with the preview.
  *
@@ -228,8 +208,7 @@ var stringify = module.exports = function (object) {
 
     // Ensure that stringified elements always have an output. Useful for cases
     // where we might be attempting to stringify an empty fragment.
-    return trim(stringifiedElement) ? stringifiedElement :
-      ('#' + nodeTypes[object.nodeType]);
+    return trim(stringifiedElement) ? stringifiedElement : object.nodeName;
   }
 
   // Every other type can safely be typecasted to the expected output.
