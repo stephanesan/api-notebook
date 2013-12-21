@@ -75,6 +75,8 @@ DOMBars.Utils.mergeTemplates = function (/* ...templates */) {
 
     // Append all the templates to the document fragment.
     _.each(templates, function (template) {
+      if (!template.value) { return; }
+
       result.value.appendChild(template.value);
     });
 
