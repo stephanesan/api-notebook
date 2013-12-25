@@ -1,6 +1,6 @@
 {
   "name": "api-notebook",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "Executable JavaScript environment for running API examples.",
   "private": true,
   "browserify": {
