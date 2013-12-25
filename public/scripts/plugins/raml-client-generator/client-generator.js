@@ -820,13 +820,13 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
     var cb = function (err, auth) {
       // Set the client authentication details. This will be used with any
       // http requests that require the authentication type.
-      nodes.client.authentication[scheme.type] = auth;
+      nodes.client.authentication[scheme.type] = _.extend({}, options, auth);
       return done(err, auth);
     };
 
     // Check whether we need to proceed to collecting more data.
     if (!requiredOptions(trigger, _.extend({}, options, data))) {
-      return authenticatePrompt(trigger, _.extend({}, options, data), cb);
+      return authenticatePrompt(trigger, _.extend(options, data), cb);
     }
 
     // Trigger a prompt to the middleware layer.
