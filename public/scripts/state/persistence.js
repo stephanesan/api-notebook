@@ -196,10 +196,6 @@ Persistence.prototype.save = function (done) {
     return done && done(new Error('Notebook is not currently savable'));
   }
 
-  if (!this.hasChanged()) {
-    return done && done();
-  }
-
   this.set('state', Persistence.SAVING);
 
   middleware.trigger(
