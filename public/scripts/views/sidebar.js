@@ -35,6 +35,12 @@ SidebarView.prototype.initialize = function () {
  * @type {Object}
  */
 SidebarView.prototype.events = {
+  'click [data-delete]': function (e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    this.deleteId(e.target.getAttribute('data-delete'));
+  },
   'click [data-load]': function (e, target) {
     var id = target.getAttribute('data-load');
 
@@ -67,9 +73,6 @@ SidebarView.prototype.events = {
   },
   'click .persistence-authenticate':   'authenticate',
   'click .persistence-unauthenticate': 'unauthenticate',
-  'click [data-delete]': function (e) {
-    this.deleteId(e.target.getAttribute('data-delete'));
-  },
   'click .sidebar-authenticate': function (e) {
     e.preventDefault();
   }

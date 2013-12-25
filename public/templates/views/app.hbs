@@ -23,10 +23,10 @@
             <button class="btn-round notebook-new hint--bottom" data-hint="New notebook">
               <i class="icon-doc"></i>
             </button>
-            <button class="btn-round notebook-save hint--bottom" data-hint="Save notebook">
+            <button class="btn-round notebook-save hint--bottom {{#unless @data.savable}}btn-disabled{{/unless}}" data-hint="{{#if @data.savable}}Save notebook{{else}}Clone the notebook to save{{/if}}">
               <i class="icon-floppy"></i>
             </button>
-            <button class="btn-round notebook-clone hint--bottom {{#unless @data.cloneable}}btn-disabled{{/unless}}" data-hint="{{#if @data.cloneable}}Clone notebook{{else}}Save notebook to fork{{/if}}">
+            <button class="btn-round notebook-clone hint--bottom {{#unless @data.cloneable}}btn-disabled{{/unless}}" data-hint="{{#if @data.cloneable}}Fork notebook{{else}}Save notebook to fork{{/if}}">
               <i class="icon-fork"></i>
             </button>
             <button class="btn-round notebook-share hint--bottom {{#unless @data.shareable}}btn-disabled{{/unless}}" data-hint="{{#if @data.shareable}}Share notebook{{else}}Save notebook to share{{/if}}">

@@ -238,10 +238,6 @@ var savePlugin = function (data, next, done) {
     });
   }
 
-  if (!data.isOwner()) {
-    return done(), data.clone(), data.save();
-  }
-
   App.middleware.trigger('ajax:oauth2', {
     url:    'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
     proxy:  false,
@@ -289,7 +285,7 @@ var listPlugin = function (list, next, done) {
 
   (function recurse (link) {
     App.middleware.trigger('ajax:oauth2', {
-      url:    link,
+      url:    link + (link.indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now(),
       proxy:  false,
       method: 'GET',
       oauth2: oauth2Store.toJSON()

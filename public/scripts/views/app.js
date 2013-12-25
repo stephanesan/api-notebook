@@ -128,7 +128,8 @@ App.prototype.initialize = function () {
     var isOwner = persistence.isOwner();
 
     this.data.set('shareable', hasId);
-    this.data.set('cloneable', canSave && isOwner && hasId);
+    this.data.set('cloneable', canSave && hasId);
+    this.data.set('savable',   canSave && isOwner);
   }, this));
 
   /**
@@ -292,8 +293,7 @@ App.prototype.newNotebook = function () {
   var newNotebook = function (err, confirmed) {
     if (err || !confirmed) { return; }
 
-    persistence.set('id', '');
-    return persistence.load(notifyError('Could not create new notebook'));
+    return persistence.new(notifyError('Could not create new notebook'));
   };
 
   // If the current notebook is already saved, immediately reload.

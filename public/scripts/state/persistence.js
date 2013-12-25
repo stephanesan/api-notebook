@@ -3,7 +3,6 @@ var Backbone         = require('backbone');
 var config           = require('./config');
 var messages         = require('./messages');
 var middleware       = require('./middleware');
-var bounce           = require('../lib/bounce');
 var isMac            = require('../lib/browser/about').mac;
 var PersistenceItems = require('../collections/persistence-items');
 
@@ -187,6 +186,19 @@ Persistence.prototype.deserialize = function (done) {
 };
 
 /**
+ * Create a new notebook.
+ *
+ * @param {Function} done
+ */
+Persistence.prototype.new = function (done) {
+  this.unset('id');
+  this.unset('ownerId');
+  this.set('state', Persistence.NULL);
+
+  return this.load(done);
+};
+
+/**
  * Save the notebook.
  *
  * @param {Function} done
@@ -194,6 +206,10 @@ Persistence.prototype.deserialize = function (done) {
 Persistence.prototype.save = function (done) {
   if (!config.get('savable')) {
     return done && done(new Error('Notebook is not currently savable'));
+  }
+
+  if (!this.isOwner()) {
+    return done && done(new Error('You are not the notebook owner'));
   }
 
   this.set('state', Persistence.SAVING);
@@ -299,6 +315,7 @@ Persistence.prototype.getMiddlewareData = function () {
     clone:           _.bind(this.clone, this),
     isNew:           _.bind(this.isNew, this),
     isOwner:         _.bind(this.isOwner, this),
+    hasChanged:      _.bind(this.hasChanged, this),
     authenticate:    _.bind(this.authenticate, this),
     isAuthenticated: _.bind(this.isAuthenticated, this)
   });
@@ -324,9 +341,16 @@ Persistence.prototype.load = function (done) {
     _.bind(function (err, data) {
       this._loading = true;
 
-      this.set('id',        data.id);
-      this.set('ownerId',   data.ownerId);
-      this.set('updatedAt', data.updatedAt);
+      if (err) {
+        this.unset('id');
+        this.unset('ownerId');
+        this.unset('updatedAt');
+      } else {
+        this.set('id',        data.id);
+        this.set('ownerId',   data.ownerId);
+        this.set('updatedAt', data.updatedAt);
+      }
+
       this.set('contents',  data.contents, { silent: true });
       this.set('notebook',  data.notebook, { silent: true });
 
@@ -534,9 +558,9 @@ persistence.listenTo(messages, 'load', _.bind(persistence.load, persistence));
 /**
  * Keep the persistence meta data in sync with the config option.
  */
-persistence.listenTo(config, 'change:url', bounce(function () {
+persistence.listenTo(config, 'change:url', function () {
   persistence.get('meta').set('site', config.get('url'));
-}));
+});
 
 /**
  * When the application is ready, finally attempt to load the initial content.
