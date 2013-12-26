@@ -1,12 +1,12 @@
 /* global App */
 var _           = require('underscore');
 var async       = require('async');
-var loadScript  = require('../browser/load-script');
+var loadScript  = require('../../lib/browser/load-script');
 var state       = require('../../state/state');
 var config      = require('../../state/config');
 var messages    = require('../../state/messages');
 var middleware  = require('../../state/middleware');
-var PostMessage = require('../post-message');
+var PostMessage = require('../../lib/post-message');
 
 /**
  * Alias any optional global variables passed in.

@@ -170,14 +170,15 @@ Widget.prototype.refresh = function (done) {
       'End':      function () { that.setActive(-1); },
       'Enter':    function () { that.accept(); },
       'PageUp':   function () {
-        that.setActive(that.selectedHint - that.screenAmount());
+        that.setActive(that.selectedHint - that.screenAmount(), true);
       },
       'PageDown': function () {
-        that.setActive(that.selectedHint + that.screenAmount());
+        that.setActive(that.selectedHint + that.screenAmount(), true);
       }
     });
 
     hints.className = 'CodeMirror-hints';
+    hints.setAttribute('data-overflow-scroll', '');
     document.body.appendChild(hints);
 
     // Set the active element after render so we can calculate scroll positions
@@ -303,9 +304,12 @@ Widget.prototype._filter = function (result, done) {
  *
  * @param {Number} i
  */
-Widget.prototype.setActive = function (i) {
+Widget.prototype.setActive = function (i, avoidWrap) {
   var total = this.hints.childNodes.length;
   var node;
+
+  // Avoid wrapping when using certain controls.
+  if (avoidWrap && (i < 0 || i > total)) { return; }
 
   // Switch `i` to the closest number we can abuse.
   i = total ? i % total : 0;
@@ -354,5 +358,5 @@ Widget.prototype.setActive = function (i) {
  */
 Widget.prototype.screenAmount = function () {
   var amount = this.hints.clientHeight / this.hints.firstChild.offsetHeight;
-  return Math.floor(amount) || 1;
+  return Math.max(Math.floor(amount), 1);
 };
