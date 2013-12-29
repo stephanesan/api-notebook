@@ -98,15 +98,9 @@ App.prototype.initialize = function () {
    * Update the document title when the persistence meta data changes.
    */
   this.listenTo(persistence.get('meta'), 'change:title', bounce(function () {
-    var title   = persistence.get('meta').get('title');
-    var inputEl = this.el.querySelector('.notebook-title');
+    var title = persistence.get('meta').get('title');
 
     document.title = title ? title + ' • Notebook' : 'Notebook';
-
-    // Refresh the title manually to avoid stale value attributes.
-    if (inputEl) {
-      inputEl.value = title;
-    }
   }, this));
 
   /**

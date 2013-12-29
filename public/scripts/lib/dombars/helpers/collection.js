@@ -83,7 +83,7 @@ DOMBars.registerHelper('collection', function (collection, options) {
     });
   };
 
-  DOMBars.VM.unsubscribe(function () {
+  options.unsubscribe(function () {
     collection.off('add',    add);
     collection.off('sort',   sort);
     collection.off('reset',  reset);
