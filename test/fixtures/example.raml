@@ -35,6 +35,7 @@ resourceTypes:
       post: {}
       patch: {}
       delete: {}
+
 traits:
   - paged:
       displayName: paged
@@ -51,6 +52,7 @@ traits:
       responses:
         401:
           description: Unauthorized
+
 # Test nested routes
 /collection:
   type: collection
@@ -58,12 +60,22 @@ traits:
     type: member
     /{nestedId}:
       type: member
+
 # Test a dynamic vs static route clash
 /{collection}:
   type: collection
+
 # Test using variables with text
 /mixed{variable}{route}:
   type: member
+
+# Automatically using single enum values
+/enum{test}:
+  type: member
+  uriParameters:
+    test:
+      enum: ['value']
+
 # Test validation
 /validation:
   /string:
@@ -179,6 +191,7 @@ traits:
         required:
           type: boolean
           required: true
+
 /body:
   /json:
     put:
@@ -219,6 +232,7 @@ traits:
     delete:
       body:
         multipart/form-data: !!null
+
 /queryValidation:
   /string:
     /basic:
@@ -333,5 +347,6 @@ traits:
           required:
             type: boolean
             required: true
+
 /~{test}:
   type: member

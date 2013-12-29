@@ -576,28 +576,6 @@ var attachResources = function attachResources (nodes, context, resources) {
           return false;
         }
 
-        // The route is dynamic, so we set the route name to be a function
-        // which accepts the template arguments and updates the path fragment.
-        // We'll extend any route already at the same namespace so we can do
-        // things like use both `/{route}` and `/route`, if needed.
-        context[routeName] = _.extend(function () {
-          if (arguments.length < templateCount) {
-            throw new Error([
-              'Insufficient parameters, expected at least',
-              templateCount, 'arguments'
-            ].join(' '));
-          }
-
-          // Change the last path fragment to the proper template text.
-          routeNodes[routeNodes.length - 1] = template(
-            route, resource.uriParameters, _.toArray(arguments)
-          );
-
-          var newContext = {};
-          attachMethods(routeNodes, newContext, resource.methods);
-          return attachResources(routeNodes, newContext, resources);
-        }, context[routeName]);
-
         // Get the ordered tag names for completion.
         var tags = _.map(
           route.match(uriParamRegex(resource.uriParameters)),
@@ -605,6 +583,32 @@ var attachResources = function attachResources (nodes, context, resources) {
             return resource.uriParameters[param.slice(1, -1)];
           }
         );
+
+        // The route is dynamic, so we set the route name to be a function
+        // which accepts the template arguments and updates the path fragment.
+        // We'll extend any route already at the same namespace so we can do
+        // things like use both `/{route}` and `/route`, if needed.
+        context[routeName] = _.extend(function () {
+          var args = arguments;
+
+          // Map the tags to the arguments or default arguments.
+          var parts = _.map(tags, function (param, index) {
+            if (args[index] == null && param.enum && param.enum.length === 1) {
+              return param.enum[0];
+            }
+
+            return args[index];
+          });
+
+          // Change the last path fragment to the proper template text.
+          routeNodes[routeNodes.length - 1] = template(
+            route, resource.uriParameters, parts
+          );
+
+          var newContext = {};
+          attachMethods(routeNodes, newContext, resource.methods);
+          return attachResources(routeNodes, newContext, resources);
+        }, context[routeName]);
 
         // Generate the description object for helping tooltip display.
         context[routeName][DESCRIPTION_PROPERTY] = {

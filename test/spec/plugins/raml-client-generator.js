@@ -313,22 +313,6 @@ describe('RAML Client Generator Plugin', function () {
         });
       });
 
-      it('should return an error when not passing the variable', function (done) {
-        sandbox.execute('example.collection.collectionId();', function (err, exec) {
-          expect(exec.isError).to.be.true;
-          expect(exec.result.message).to.include('Insufficient parameters');
-          return done(err);
-        });
-      });
-
-      it('should return an error when passing insufficient parameters', function (done) {
-        sandbox.execute('example.mixed("test");', function (err, exec) {
-          expect(exec.isError).to.be.true;
-          expect(exec.result.message).to.include('Insufficient parameters');
-          return done(err);
-        });
-      });
-
       describe('Making Requests', function () {
         it(
           'should respond to `collection.get()`',
@@ -370,6 +354,11 @@ describe('RAML Client Generator Plugin', function () {
         it(
           'should respond to `~("123").get()`',
           testRequest('["~"]("123")', 'get', '/~123')
+        );
+
+        it(
+          'should automatically inject single-value enums',
+          testRequest('.enum()', 'get', '/enumvalue')
         );
 
         describe('Response Types', function () {
