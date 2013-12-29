@@ -2,7 +2,7 @@
 var Backbone = require('backbone');
 Backbone.$   = require('backbone.native');
 
-// ES6 Feature Shim
+// ES6 Feature Shim.
 require('es6-collections');
 
 // Require all CodeMirror functionality.
@@ -17,5 +17,6 @@ require('codemirror/mode/clike/clike');
 require('codemirror/mode/htmlmixed/htmlmixed');
 require('codemirror/mode/javascript/javascript');
 
-// Require the core plugins.
-require('./lib/plugins');
+// Bootstrap core functionality.
+require('./dom');
+require('./plugins');

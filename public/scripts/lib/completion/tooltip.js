@@ -33,17 +33,18 @@ Tooltip.prototype.render = function () {
     return this;
   }
 
-  this._tooltip = document.createElement('div');
-  this._tooltip.className = 'CodeMirror-tooltip';
+  var tooltip = this.tooltip = document.createElement('div');
+  tooltip.className = 'CodeMirror-tooltip';
+  tooltip.setAttribute('data-overflow-scroll', '');
 
   if (description['!type']) {
-    var typeEl = this._tooltip.appendChild(document.createElement('div'));
+    var typeEl = tooltip.appendChild(document.createElement('div'));
     typeEl.className = 'CodeMirror-tooltip-type';
     typeEl.appendChild(document.createTextNode(description['!type']));
   }
 
   if (description['!doc']) {
-    var docEl = this._tooltip.appendChild(document.createElement('div'));
+    var docEl = tooltip.appendChild(document.createElement('div'));
     docEl.className = 'CodeMirror-tooltip-doc';
     docEl.appendChild(document.createTextNode(description['!doc']));
 
@@ -59,7 +60,7 @@ Tooltip.prototype.render = function () {
   }
 
   // Append the tooltip to the DOM.
-  document.body.appendChild(this._tooltip);
+  document.body.appendChild(tooltip);
 
   this.reposition();
 
@@ -77,7 +78,7 @@ Tooltip.prototype.render = function () {
  * @return {[type]} [description]
  */
 Tooltip.prototype.reposition = function () {
-  var tooltip = this._tooltip;
+  var tooltip = this.tooltip;
   var padding = 5;
   var pos     = this.completion.cm.cursorCoords(this.data.to);
   var winPos  = this.completion.cm.cursorCoords(this.data.to, 'window');
@@ -144,9 +145,9 @@ Tooltip.prototype.reposition = function () {
  * @return {Tooltip}
  */
 Tooltip.prototype.removeTooltip = function () {
-  if (this._tooltip) {
-    this._tooltip.parentNode.removeChild(this._tooltip);
-    delete this._tooltip;
+  if (this.tooltip) {
+    this.tooltip.parentNode.removeChild(this.tooltip);
+    delete this.tooltip;
   }
 
   state.off('change:viewportWidth', this.onResize);
