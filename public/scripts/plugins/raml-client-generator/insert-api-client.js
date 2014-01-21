@@ -87,9 +87,10 @@ var selectAPIDefinition = function (done) {
               '</li>';
           }).join('') + '</ul>' +
           '<p class="hide item-list-unavailable">No matching APIs found. ' +
-          'Please search on <a href="http://apihub.com/" target="_blank">' +
-          'APIhub</a> and submit a request for more documentation for this ' +
-          'API.</p>'
+          'Please search on the <a ' +
+          'href="http://api-portal.anypoint.mulesoft.com/" target="_blank">' +
+          'Anypoint API Portal</a> and submit a request for more ' +
+          'documentation for this API.</p>'
         );
       });
     },
