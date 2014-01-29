@@ -59,34 +59,29 @@ describe('App', function () {
 
     describe('Switching Notebook Views', function () {
       var contents = '```javascript\n\n```';
+      var editor;
 
-      beforeEach(function () {
+      beforeEach(function (done) {
         App.persistence.reset();
         App.persistence.set('contents', contents);
         view.render().appendTo(fixture);
+
+        simulateEvent(view.el.querySelector('.toggle-notebook'), 'click');
+
+        App.Library.DOMBars.VM.exec(function () {
+          editor = view.el.querySelector('.CodeMirror').CodeMirror;
+          return done();
+        });
       });
 
-      describe('Raw Notebook Editor', function () {
-        var editor;
+      it('should switch to a raw notebook editor', function () {
+        expect(editor.getValue()).to.equal(contents);
+      });
 
-        beforeEach(function (done) {
-          simulateEvent(view.el.querySelector('.toggle-notebook'), 'click');
+      it('should update persistence when editing the raw notebook', function () {
+        editor.setValue('Simple test');
 
-          App.Library.DOMBars.VM.exec(function () {
-            editor = view.el.querySelector('.CodeMirror').CodeMirror;
-            return done();
-          });
-        });
-
-        it('should switch to a raw notebook editor', function () {
-          expect(editor.getValue()).to.equal(contents);
-        });
-
-        it('should update persistence when editing the raw notebook', function () {
-          editor.setValue('Simple test');
-
-          expect(App.persistence.get('contents')).to.equal('Simple test');
-        });
+        expect(App.persistence.get('contents')).to.equal('Simple test');
       });
     });
   });
