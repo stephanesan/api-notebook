@@ -151,6 +151,13 @@ var getTextPosition = function (text, markdown) {
       continue;
     }
 
+    // Fix trailing spaces at end of lines in markdown.
+    if (m = /( +)(?:\n|$)/.exec(source)) {
+      source = source.substr(m[1].length);
+      position += m[1].length;
+      continue;
+    }
+
     // Fix spacing between elements in parsed markdown output.
     if (text.charAt(index) === '\n') {
       index += 1;

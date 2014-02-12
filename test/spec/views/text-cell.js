@@ -273,6 +273,11 @@ describe('Text Cell', function () {
           'should focus after inline code',
           testFocus('`testing` text', 10, { line: 0, ch: 12 })
         );
+
+        it(
+          'should ignore trailing whitespace',
+          testFocus('testing \ntext', 8, { line: 1, ch: 1 })
+        );
       });
     });
   });
