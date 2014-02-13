@@ -178,24 +178,6 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Query Strings', function () {
-          describe('Strings', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest('("/test/route").query("test=true")', method, '/test/route?test=true')
-              );
-            });
-          });
-
-          describe('Objects', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest('("/test/route").query({ test: true })', method, '/test/route?test=true')
-              );
-            });
-          });
-
           describe('With Request Initiator', function () {
             App._.each(methodsWithoutBodies, function (method) {
               it(
@@ -229,38 +211,6 @@ describe('RAML Client Generator Plugin', function () {
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
                 '("/test/route")', method, '/test/route', 'Test data'
-              )
-            );
-          });
-        });
-
-        describe('Custom Headers', function () {
-          App._.each(methods, function (method) {
-            it(
-              'should be able to attach custom headers to ' + method + ' requests',
-              testRequestHeaders(
-                '("/test/route").headers({ "X-Test-Header": "Test" })',
-                method,
-                '/test/route',
-                {
-                  'X-Test-Header': 'Test'
-                }
-              )
-            );
-          });
-        });
-
-        describe('Custom Headers and Query String', function () {
-          App._.each(methods, function (method) {
-            it(
-              'should be able to attach custom headers and queries to ' + method + ' requests',
-              testRequestHeaders(
-                '("/test/route").headers({ "X-Test-Header": "Test" }).query("test=true")',
-                method,
-                '/test/route?test=true',
-                {
-                  'X-Test-Header': 'Test'
-                }
               )
             );
           });
@@ -383,32 +333,6 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Query Strings', function () {
-          describe('Strings', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest(
-                  '.collection.collectionId("123").query("test=true")',
-                  method,
-                  '/collection/123?test=true'
-                )
-              );
-            });
-          });
-
-          describe('Objects', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest(
-                  '.collection.collectionId("123").query({ test: true })',
-                  method,
-                  '/collection/123?test=true'
-                )
-              );
-            });
-          });
-
           describe('With Request Initiator', function () {
             App._.each(methodsWithoutBodies, function (method) {
               it(
@@ -442,38 +366,6 @@ describe('RAML Client Generator Plugin', function () {
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
                 '.collection.collectionId("123")', method, '/collection/123', 'Test data'
-              )
-            );
-          });
-        });
-
-        describe('Custom Headers', function () {
-          App._.each(methods, function (method) {
-            it(
-              'should be able to attach custom headers to ' + method + ' requests',
-              testRequestHeaders(
-                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" })',
-                method,
-                '/collection/123',
-                {
-                  'X-Test-Header': 'Test'
-                }
-              )
-            );
-          });
-        });
-
-        describe('Custom Headers and Query String', function () {
-          App._.each(methods, function (method) {
-            it(
-              'should be able to attach custom headers and query to ' + method + ' requests',
-              testRequestHeaders(
-                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" }).query("test=true")',
-                method,
-                '/collection/123?test=true',
-                {
-                  'X-Test-Header': 'Test'
-                }
               )
             );
           });
@@ -569,79 +461,42 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete the root function', function (done) {
         testAutocomplete('example("/test").', function (results) {
-          expect(results).to.include.members(methods.concat('query', 'headers'));
+          expect(results).to.include.members(methods);
           return done();
         });
       });
 
       it('should autocomplete function properties', function (done) {
         testAutocomplete('example.collection.', function (results) {
-          expect(results).to.include.members(['get', 'post', 'collectionId', 'query', 'headers']);
+          expect(results).to.include.members(['get', 'post', 'collectionId']);
           return done();
         });
       });
 
       it('should autocomplete variable route', function (done) {
         testAutocomplete('example.collection("123").', function (results) {
-          expect(results).to.include.members(['get', 'post', 'query', 'headers']);
+          expect(results).to.include.members(['get', 'post']);
           return done();
         });
       });
 
       it('should autocomplete nested variable routes', function (done) {
         testAutocomplete('example.collection.collectionId("123").nestedId("456").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
+          expect(results).to.include.members(['get']);
           return done();
         });
       });
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('example.mixed("123", "456").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
+          expect(results).to.include.members(['get']);
           return done();
         });
       });
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('example["~"]("123").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
-          return done();
-        });
-      });
-
-      it('should not show query and other method functions when we can\'t execute a request', function (done) {
-        testAutocomplete('example.validation.', function (results) {
-          expect(results)
-            .to.not.include('query')
-            .and.not.include('headers');
-          return done();
-        });
-      });
-
-      it('should not repeat query or other routes after using query', function (done) {
-        testAutocomplete('example.collection.query("test=true").', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('query');
-          return done();
-        });
-      });
-
-      it('should not repeat headers or other routes after using headers', function (done) {
-        testAutocomplete('example.collection.headers({ test: true }).', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('headers');
-          return done();
-        });
-      });
-
-      it('should not repeat either headers or query after using both', function (done) {
-        testAutocomplete('example.collection.headers({ test: true }).query("test=true").', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('headers')
-            .and.not.include('query');
+          expect(results).to.include.members(['get']);
           return done();
         });
       });

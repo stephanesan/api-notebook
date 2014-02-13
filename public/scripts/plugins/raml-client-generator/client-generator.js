@@ -439,64 +439,6 @@ var httpRequest = function (nodes, method) {
 };
 
 /**
- * Attach the query string helper.
- *
- * @param  {Array}  nodes
- * @param  {Object} context
- * @param  {Object} methods
- * @return {Object}
- */
-var attachQuery = function (nodes, context, methods) {
-  if ('query' in nodes) {
-    return context;
-  }
-
-  var routeNodes = _.extend([], nodes, {
-    query: null
-  });
-
-  context.query = function (query) {
-    routeNodes.query = query;
-    return attachMethods(routeNodes, {}, methods);
-  };
-
-  context.query[RETURN_PROPERTY] = attachMethods(routeNodes, {}, methods);
-
-  return context;
-};
-
-/**
- * Attach the headers helper.
- *
- * @param  {Array}  nodes
- * @param  {Object} context
- * @param  {Object} methods
- * @return {Object}
- */
-var attachHeaders = function (nodes, context, methods) {
-  if ('headers' in nodes) {
-    return context;
-  }
-
-  var routeNodes = _.extend([], nodes, {
-    headers: null
-  });
-
-  context.headers = function (headers) {
-    if (typeof headers !== 'object') {
-      throw new Error('Ajax headers must be provided as an object');
-    }
-
-    routeNodes.headers = headers;
-    return attachMethods(routeNodes, {}, methods);
-  };
-
-  context.headers[RETURN_PROPERTY] = attachMethods(routeNodes, {}, methods);
-
-  return context;
-};
-
-/**
  * Attaches executable XHR methods to the context object.
  *
  * @param  {Array}  nodes
@@ -504,20 +446,12 @@ var attachHeaders = function (nodes, context, methods) {
  * @param  {Object} methods
  * @return {Object}
  */
-
-// Disable JSHint throwing an error about `attachMethods` being used before it
-// was defined, since it is being used in `attachHeaders` and `attachQuery`.
-
-/* jshint -W003 */
 var attachMethods = function (nodes, context, methods) {
   // Skip attaching any method related methods if it there aren't any methods at
   // this endpoint.
   if (methods == null || !_.keys(methods).length) {
     return context;
   }
-
-  attachQuery(nodes, context, methods);
-  attachHeaders(nodes, context, methods);
 
   // Iterate over all the possible methods and attach.
   _.each(methods, function (method, verb) {
@@ -529,7 +463,6 @@ var attachMethods = function (nodes, context, methods) {
 
   return context;
 };
-/* jshint +W003 */
 
 /**
  * Recurses through a resource object in the RAML AST, generating a dynamic
