@@ -9,9 +9,7 @@ var parser = require('uri-template');
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
-var RESERVED_METHODS     = _.object(
-  HTTP_METHODS.concat('headers', 'query'), true
-);
+var RESERVED_METHODS     = _.object(HTTP_METHODS, true);
 
 /**
  * Accepts a params object and transforms it into a regex for matching the
@@ -184,11 +182,10 @@ var methodDescription = {
  * additional flag to filter any potential duplicate headers (E.g. different
  * cases).
  *
- * @param  {Object}  xhr
- * @param  {Boolean} [filterDuplicates]
+ * @param  {Object} xhr
  * @return {Object}
  */
-var getReponseHeaders = function (xhr, filterDuplicates) {
+var getAllReponseHeaders = function (xhr) {
   var responseHeaders = {};
 
   _.each(xhr.getAllResponseHeaders().split('\n'), function (header) {
@@ -199,26 +196,11 @@ var getReponseHeaders = function (xhr, filterDuplicates) {
       var name  = header.shift();
       var value = trim(header.join(':'));
 
-      // Lowercase the header name to filter duplicate headers.
-      if (filterDuplicates) {
-        name = name.toLowerCase();
-      }
-
-      responseHeaders[name] = value;
+      responseHeaders[name.toLowerCase()] = value;
     }
   });
 
   return responseHeaders;
-};
-
-/**
- * Check that the XHR request has a response body.
- *
- * @param  {Object}  xhr
- * @return {Boolean}
- */
-var hasBody = function (xhr) {
-  return !!xhr.responseText.length;
 };
 
 /**
@@ -232,35 +214,86 @@ var getMime = function (contentType) {
 };
 
 /**
- * Check if the mime type matches JSON.
+ * Check if an object is a host object and avoid serializing.
  *
- * @param  {String}  mime
+ * @param  {Object}  obj
  * @return {Boolean}
  */
-var isJSON = function (mime) {
-  // https://github.com/senchalabs/connect/blob/
-  // 296398a001d97fd0e8dafa622fc75c874a06c3d6/lib/middleware/json.js#L78
-  return (/^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i).test(mime);
+var isHost = function (obj) {
+  var str = Object.prototype.toString.call(obj);
+
+  switch (str) {
+    case '[object File]':
+    case '[object Blob]':
+    case '[object String]':
+    case '[object Number]':
+    case '[object Boolean]':
+    case '[object FormData]':
+      return true;
+    default:
+      return false;
+  }
 };
 
 /**
- * Check if the mime type matches url encoding.
+ * Map mime types to their parsers.
  *
- * @param  {String}  mime
- * @return {Boolean}
+ * @type {Object}
  */
-var isUrlEncoded = function (mime) {
-  return mime === 'application/x-www-form-urlencoded';
+var parse = {
+  'application/json': JSON.parse,
+  'application/x-www-form-urlencoded': qs.parse
 };
 
 /**
- * Check if the mime type matches form data.
+ * Map mime types to their serializers.
  *
- * @param  {String}  mime
- * @return {Boolean}
+ * @type {Object}
  */
-var isFormData = function (mime) {
-  return mime === 'multipart/form-data';
+var serialize = {
+  'application/json': JSON.stringify,
+  'application/x-www-form-urlencoded': qs.stringify,
+  'multipart/form-data': function (data) {
+    var form = new FormData();
+
+    // Iterate over every piece of data and append to the form data object.
+    _.each(data, function (value, key) {
+      form.append(key, value);
+    });
+
+    return form;
+  }
+};
+
+/**
+ * Map the supported auth types to the known triggers.
+ *
+ * @type {Object}
+ */
+var authTypes = {
+  'OAuth 1.0':            'oauth1',
+  'OAuth 2.0':            'oauth2',
+  'Basic Authentication': 'basicAuth'
+};
+
+/**
+ * Required authentication keys used to check the options object.
+ *
+ * @type {Object}
+ */
+var requiredAuthKeys = {
+  oauth1: {
+    consumerKey:    true,
+    consumerSecret: true
+  },
+  oauth2: {
+    clientId:     true,
+    clientSecret: true
+  },
+  basicAuth: {
+    username: true,
+    password: true
+  }
 };
 
 /**
@@ -270,7 +303,7 @@ var isFormData = function (mime) {
  * @param  {String}  header
  * @return {Boolean}
  */
-var getHeader = function (headers, header) {
+var findHeader = function (headers, header) {
   header = header.toLowerCase();
 
   return _.find(headers, function (value, name) {
@@ -289,14 +322,11 @@ var sanitizeXHR = function (xhr) {
 
   var mime    = getMime(xhr.getResponseHeader('Content-Type'));
   var body    = xhr.responseText;
-  var headers = getReponseHeaders(xhr);
+  var headers = getAllReponseHeaders(xhr);
 
-  if (hasBody(xhr)) {
-    if (isJSON(mime)) {
-      body = JSON.parse(body);
-    } else if (isUrlEncoded(mime)) {
-      body = qs.parse(body);
-    }
+  // Automatically parse certain response types.
+  if (parse[mime]) {
+    body = parse[mime](body);
   }
 
   return {
@@ -317,34 +347,25 @@ var httpRequest = function (nodes, method) {
     var async   = !!done;
     var query   = nodes.query   || {};
     var headers = nodes.headers || {};
-    var mime    = getMime(getHeader(headers, 'Content-Type'));
-    var request = 'ajax';
+    var mime    = getMime(findHeader(headers, 'Content-Type'));
     var fullUrl = nodes.client.baseUri + '/' + nodes.join('/');
     var response, error; // Weird async and sync code mixing.
 
-    // No need to pass data through with `GET` or `HEAD` requests.
+    // `GET` or `HEAD` requests accept the query params as the first argument.
     if (method.method === 'get' || method.method === 'head') {
-      // If we passed in an argument, it should be set as the query string.
-      if (data != null) {
-        query = data;
-      }
-
-      // Unset the data object.
-      data = null;
-    }
-
-    // Make sure the passed in `query` is an object for validation.
-    if (query != null && !_.isObject(query)) {
-      query = qs.parse(query);
+      query = data;
+      data  = null;
     }
 
     // Stringify the query string to append to the current url.
-    query = qs.stringify(query);
+    if (_.isObject(query)) {
+      query = qs.stringify(query);
+    }
 
     // Append the query string, if we have one.
     fullUrl += query ? '?' + query : '';
 
-    // Set the correct Content-Type header, if none exists. Kind of random if
+    // Set the correct `Content-Type` header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
     if (!mime && typeof method.body === 'object') {
       headers['Content-Type'] = mime = _.keys(method.body).pop();
@@ -352,31 +373,21 @@ var httpRequest = function (nodes, method) {
 
     // If we have no accept header set already, default to accepting
     // everything. This is required because Firefox sets the base accept
-    // header to essentially be html/xml.
-    if (!getHeader(headers, 'Accept')) {
+    // header to essentially be `html/xml`.
+    if (!findHeader(headers, 'Accept')) {
       headers.accept = '*/*';
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (_.isObject(data) && !(data instanceof FormData)) {
-      if (isJSON(mime)) {
-        data = JSON.stringify(data);
-      } else if (isUrlEncoded(mime)) {
-        data = qs.stringify(data);
-      } else if (isFormData(mime)) {
-        // Reduce the data object to a form data instance.
-        data = _.reduce(data, function (formData, value, key) {
-          formData.append(key, value);
-          return formData;
-        }, new FormData());
-      }
+    if (!isHost(data) && serialize[mime]) {
+      data = serialize[mime](data);
     }
 
     var options = {
       url:     fullUrl,
       data:    data,
       async:   async,
-      proxy:   nodes.config.proxy, // Change the proxy configuration.
+      proxy:   nodes.config.proxy,
       method:  method.method,
       headers: headers
     };
@@ -393,22 +404,8 @@ var httpRequest = function (nodes, method) {
       var scheme        = nodes.client.securitySchemes[secured];
       var authenticated = nodes.client.authentication[scheme.type];
 
-      if (authenticated) {
-        if (scheme.type === 'OAuth 2.0') {
-          request        = 'ajax:oauth2';
-          options.oauth2 = authenticated;
-        } else if (scheme.type === 'OAuth 1.0') {
-          request        = 'ajax:oauth1';
-          options.oauth1 = authenticated;
-        } else if (scheme.type === 'Basic Authentication') {
-          request           = 'ajax:basicAuth';
-          options.basicAuth = authenticated;
-        }
-
-        return true;
-      }
-
-      return false;
+      // Return the authenticated object. If truthy, iteration will stop.
+      return options[authTypes[scheme.type]] = authenticated;
     });
 
     // If the request is async, set the relevant function callbacks.
@@ -420,9 +417,9 @@ var httpRequest = function (nodes, method) {
       }
     }
 
-    // Trigger the ajax middleware so plugins can hook onto the requests. If the
-    // function is async we need to register a callback for the middleware.
-    App.middleware.trigger(request, options, function (err, xhr) {
+    // Trigger the ajax middleware so plugins can hook onto the requests. If
+    // the function is async we need to register a callback for the middleware.
+    App.middleware.trigger('ajax', options, function (err, xhr) {
       error    = err;
       response = sanitizeXHR(xhr);
 
@@ -648,26 +645,6 @@ var attachResources = function attachResources (nodes, context, resources) {
 };
 
 /**
- * Required authentication keys used to check the options object.
- *
- * @type {Object}
- */
-var requiredAuthKeys = {
-  oauth1: {
-    consumerKey:    true,
-    consumerSecret: true
-  },
-  oauth2: {
-    clientId:     true,
-    clientSecret: true
-  },
-  basicAuth: {
-    username: true,
-    password: true
-  }
-};
-
-/**
  * Returns an object of keys with whether they are required or not.
  *
  * @param  {String} type
@@ -841,17 +818,6 @@ var authenticateMiddleware = function (trigger, nodes, scheme) {
       return authenticatePrompt(trigger, _.extend(options, updates, data), cb);
     });
   };
-};
-
-/**
- * Map the supported auth types to the known triggers.
- *
- * @type {Object}
- */
-var authTypes = {
-  'OAuth 1.0':            'oauth1',
-  'OAuth 2.0':            'oauth2',
-  'Basic Authentication': 'basicAuth'
 };
 
 /**

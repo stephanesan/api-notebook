@@ -263,7 +263,7 @@ var buildAuthorizationHeaders = function (data, params) {
  * @param {Function} done
  */
 var getRequestToken = function (options, done) {
-  return App.middleware.trigger('ajax:oauth1', {
+  return App.middleware.trigger('ajax', {
     url:    options.requestTokenUri,
     method: 'POST',
     oauth1: _.extend({
@@ -297,7 +297,7 @@ var getRequestToken = function (options, done) {
  * @param {Function} done
  */
 var getAccessToken = function (options, verifier, done) {
-  return App.middleware.trigger('ajax:oauth1', {
+  return App.middleware.trigger('ajax', {
     url:    options.tokenCredentialsUri,
     method: 'POST',
     oauth1: options,
@@ -413,7 +413,7 @@ middleware.register('authenticate:oauth1', function (data, next, done) {
  * @param {Object}   data
  * @param {Function} next
  */
-middleware.register('ajax:oauth1', function (data, next) {
+middleware.register('ajax', function (data, next) {
   // Check we have an oauth1 object for attempting to mixin keys.
   if (_.isObject(data.oauth1)) {
     if (!data.oauth1.signatureMethod) {
@@ -451,5 +451,5 @@ middleware.register('ajax:oauth1', function (data, next) {
     data.url = url.format(data.url);
   }
 
-  return App.middleware.trigger('ajax', data, next);
+  return next(null, data);
 });

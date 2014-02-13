@@ -347,7 +347,7 @@ middleware.register('authenticate:oauth2:token', function (data, next, done) {
  * @param {Object}   data
  * @param {Function} next
  */
-middleware.register('ajax:oauth2', function (data, next) {
+middleware.register('ajax', function (data, next) {
   // Check that we have an access token to use for the request and mix it in.
   if (_.isObject(data.oauth2) && data.oauth2.accessToken) {
     if (data.oauth2.tokenType === 'bearer') {
@@ -369,6 +369,5 @@ middleware.register('ajax:oauth2', function (data, next) {
     }
   }
 
-  // Trigger the regular ajax method.
-  return middleware.trigger('ajax', data, next);
+  return next(null, data);
 });
