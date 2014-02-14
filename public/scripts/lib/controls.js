@@ -122,20 +122,6 @@ defineEditorShortcut({
 });
 
 defineEditorShortcut({
-  label: 'Navigate Up',
-  command: 'navigateUp',
-  keyMap: ['Alt', 'Up'],
-  description: 'Focus on previous cell'
-});
-
-defineEditorShortcut({
-  label: 'Navigate Down',
-  command: 'navigateDown',
-  keyMap: ['Alt', 'Down'],
-  description: 'Focus on next cell'
-});
-
-defineEditorShortcut({
   label: 'New Line Below',
   command: 'newLineBelow',
   keyMap: [isMac ? 'Cmd' : 'Ctrl', 'Enter'],
@@ -149,18 +135,18 @@ defineEditorShortcut({
   description: 'Toggle comments on the current line'
 });
 
-defineCodeShortcut({
+defineEditorShortcut({
   label: 'Browse Up',
   command: 'browseUp',
   keyMap: ['Up'],
-  description: 'Browse the content of the previous cell'
+  description: 'Natigate up to the previous line'
 });
 
-defineCodeShortcut({
+defineEditorShortcut({
   label: 'Browse Down',
   command: 'browseDown',
   keyMap: ['Down'],
-  description: 'Browse the content of the next cell'
+  description: 'Navigate down to the next line'
 });
 
 defineCodeShortcut({

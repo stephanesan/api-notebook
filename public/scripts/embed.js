@@ -61,10 +61,10 @@ var getDataAttributes = function (el) {
  * @type {Object}
  */
 var defaultOptions = {
-  id:       null, // Initial id to pull content from
-  contents: null, // Fallback content in case of no id
-  style:    {},   // Set styles on the iframe
-  alias:    {}    // Alias objects into the frame once available
+  id:      null, // Initial id to pull content from
+  content: null, // Fallback content in case of no id
+  style:   {},   // Set styles on the iframe
+  alias:   {}    // Alias objects into the frame once available
 };
 
 /**
@@ -181,7 +181,7 @@ Notebook.prototype._makeFrame = function (el, options) {
     id:       options.id,
     url:      window.location.href,
     embedded: true,
-    contents: options.contents
+    content:  options.content
   }, options.config);
 
   // When the app is ready to receive events, send configuration data and let

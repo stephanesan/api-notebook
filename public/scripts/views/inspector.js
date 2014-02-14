@@ -34,6 +34,8 @@ var InspectorView = module.exports = View.extend({
  * @param  {Object} options
  */
 InspectorView.prototype.initialize = function (options) {
+  View.prototype.initialize.apply(this, arguments);
+
   _.extend(this, _.pick(
     options, ['property', 'parent', 'inspect', 'internal', 'window']
   ));

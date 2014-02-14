@@ -62,11 +62,7 @@ App.prototype.events = {
   },
   // Update the notebook title when a new character is entered.
   'keyup .notebook-title': function (e) {
-    persistence.get('meta').set('title', e.target.value);
-  },
-  // Pre-select the notebook title before input.
-  'click .notebook-title': function (e) {
-    e.srcElement.select();
+    persistence.get('notebook').get('meta').set('title', e.target.value);
   }
 };
 
@@ -76,6 +72,8 @@ App.prototype.events = {
  */
 App.prototype.initialize = function () {
   View.prototype.initialize.apply(this, arguments);
+
+  var model = persistence.get('notebook');
 
   // Set a sidebar instance to render.
   this.data.set('sidebar', new Sidebar());
@@ -95,31 +93,16 @@ App.prototype.initialize = function () {
   this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
 
   /**
-   * Update the document title when the persistence meta data changes.
-   */
-  this.listenTo(persistence.get('meta'), 'change:title', bounce(function () {
-    var title = persistence.get('meta').get('title');
-
-    document.title = title ? title + ' • Notebook' : 'Notebook';
-  }, this));
-
-  /**
    * Update user state data when the user changes.
    */
-  this.listenTo(persistence, 'changeUser', bounce(function () {
-    var isOwner = persistence.isOwner();
+  this.listenTo(persistence, 'changeUser changeNotebook', bounce(function () {
+    var model   = persistence.get('notebook');
+    var hasId   = !model.isNew();
+    var canSave = config.get('savable');
+    var isOwner = persistence.isOwner(model);
 
     this.data.set('owner',         isOwner);
     this.data.set('authenticated', persistence.isAuthenticated());
-  }, this));
-
-  /**
-   * Update button display configs when different variables change.
-   */
-  this.listenTo(persistence, 'change:id changeUser', bounce(function () {
-    var hasId   = !persistence.isNew();
-    var canSave = config.get('savable');
-    var isOwner = persistence.isOwner();
 
     this.data.set('shareable', hasId);
     this.data.set('cloneable', canSave && hasId);
@@ -129,8 +112,22 @@ App.prototype.initialize = function () {
   /**
    * Update the saved view state when the id changes.
    */
-  this.listenTo(persistence, 'change:id', bounce(function () {
-    this.data.set('saved', persistence.has('id'));
+  this.listenTo(persistence, 'change:notebook', bounce(function self () {
+    this.stopListening(model.get('meta'), 'change:title');
+
+    // Update model reference.
+    model = persistence.get('notebook');
+
+    // Update the title when the current notebook updates.
+    this.listenTo(model.get('meta'), 'change:title', bounce(function () {
+      var title = model.get('meta').get('title');
+
+      if (this.data.get('rendered')) {
+        this.el.querySelector('.notebook-title').value = title;
+      }
+
+      document.title = title ? title + ' • Notebook' : 'Notebook';
+    }, this));
   }, this));
 
   /**
@@ -138,15 +135,16 @@ App.prototype.initialize = function () {
    */
   this.listenTo(persistence, 'change:state', bounce(function () {
     var timestamp    = new Date().toLocaleTimeString();
+    var model        = persistence.get('notebook');
     var currentState = persistence.get('state');
 
     var states = {
       1: 'Saving',
       2: 'Loading',
       3: 'Save failed',
-      4: persistence.isNew() ? '' : 'Saved ' + timestamp,
+      4: model.isNew() ? '' : 'Saved ' + timestamp,
       5: 'Load Failed',
-      6: persistence.isNew() ? '' : 'Loaded ' + timestamp,
+      6: model.isNew() ? '' : 'Loaded ' + timestamp,
       7: 'Unsaved changes',
       8: 'Cloning notebook'
     };
@@ -192,12 +190,12 @@ App.prototype.template = require('../../templates/views/app.hbs');
  * Switch between raw source edit mode and the normal notebook execution.
  */
 App.prototype.renderNotebook = function () {
-  this.data.set('notebook', new Notebook());
+  this.data.set('notebook', new Notebook({
+    model: persistence.get('notebook')
+  }));
   this.data.set('activeView', 'view');
 
-  DOMBars.VM.exec(function () {
-    messages.trigger('refresh');
-  });
+  DOMBars.VM.exec(_.bind(messages.trigger, messages, 'refresh'));
 };
 
 /**
@@ -208,12 +206,12 @@ App.prototype.toggleEdit = function () {
     return this.renderNotebook();
   }
 
-  this.data.set('notebook', new EditNotebook());
+  this.data.set('notebook', new EditNotebook({
+    model: persistence.get('notebook')
+  }));
   this.data.set('activeView', 'edit');
 
-  DOMBars.VM.exec(function () {
-    messages.trigger('refresh');
-  });
+  DOMBars.VM.exec(_.bind(messages.trigger, messages, 'refresh'));
 };
 
 /**
@@ -276,7 +274,9 @@ App.prototype.cloneNotebook = function () {
  * Manually attempt to save the notebook.
  */
 App.prototype.saveNotebook = function () {
-  return persistence.save(notifyError('Could not save notebook'));
+  return persistence.save(
+    persistence.get('notebook'), notifyError('Could not save notebook')
+  );
 };
 
 /**
@@ -314,7 +314,7 @@ App.prototype.newNotebook = function () {
  * Share the notebook inside a modal display.
  */
 App.prototype.shareNotebook = function () {
-  var id          = persistence.get('id');
+  var id          = persistence.get('notebook').get('id');
   var shareScript = '<script src="' + EMBED_SCRIPT + '"' +
     (id ? ' data-id="' + id + '"' : '') + '></script>';
 

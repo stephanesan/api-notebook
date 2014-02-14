@@ -59,18 +59,6 @@ App.View = {
   CellControls:   require('./views/cell-controls')
 };
 
-// Expose application models.
-App.Model = {
-  Entry:     require('./models/cell'),
-  CodeEntry: require('./models/code-cell'),
-  TextEntry: require('./models/text-cell')
-};
-
-// Expose application collections.
-App.Collection = {
-  Notebook: require('./collections/notebook')
-};
-
 /**
  * Define a custom start method so that the application can bind middleware and
  * prepare state before we actually append the notebook which relies on some of

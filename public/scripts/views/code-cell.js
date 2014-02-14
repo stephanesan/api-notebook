@@ -1,13 +1,12 @@
-var _            = require('underscore');
-var DOMBars      = require('../lib/dombars');
-var EditorCell   = require('./editor-cell');
-var ResultCell   = require('./result-cell');
-var Completion   = require('../lib/completion');
-var extraKeys    = require('./lib/extra-keys');
-var controls     = require('../lib/controls').code;
-var embedProtect = require('./lib/embed-protect');
-var config       = require('../state/config');
-var messages     = require('../state/messages');
+var _          = require('underscore');
+var DOMBars    = require('../lib/dombars');
+var EditorCell = require('./editor-cell');
+var ResultCell = require('./result-cell');
+var Completion = require('../lib/completion');
+var extraKeys  = require('./lib/extra-keys');
+var controls   = require('../lib/controls').code;
+var config     = require('../state/config');
+var messages   = require('../state/messages');
 
 /**
  * Initialize a new code cell view.
@@ -24,16 +23,23 @@ var CodeCell = module.exports = EditorCell.extend({
 CodeCell.prototype.initialize = function () {
   EditorCell.prototype.initialize.apply(this, arguments);
 
-  // Need a way of keeping the internal editor cell reference, since we can move
-  // up and down between other statements.
-  this._editorCid = this.model.cid;
-
-  this.resultCell = new ResultCell({ model: this.model }).render();
-
   this.listenTo(config, 'codeReadOnly', function () {
     this.data.set('readOnly', config.get('codeReadOnly'));
     this.renderEditor();
   });
+
+  this.listenTo(this.model, 'isError', function (isError) {
+    this.el.classList[isError ? 'add' : 'remove']('cell-code-error');
+  });
+};
+
+/**
+ * Default cell model attributes.
+ *
+ * @type {Object}
+ */
+CodeCell.prototype.cellAttributes = {
+  type: 'code'
 };
 
 /**
@@ -55,13 +61,6 @@ CodeCell.prototype.events = _.extend({
     return this.execute();
   }
 }, EditorCell.prototype.events);
-
-/**
- * Sets the editor model to fall back and initialize.
- *
- * @type {Function}
- */
-CodeCell.prototype.EditorModel = require('../models/code-cell');
 
 /**
  * Extend the editor cell controls with custom controls.
@@ -108,9 +107,7 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend(
  * @return {CodeCell}
  */
 CodeCell.prototype.save = function () {
-  if (this._editorCid === this.model.cid) {
-    this.model.set('value', this.editor.getValue());
-  }
+  this.model.set('value', this.editor.getValue());
 
   return this;
 };
@@ -126,7 +123,10 @@ CodeCell.prototype.refresh = function () {
   this.startLine = _.result(prevCodeView, 'lastLine') + 1 || 1;
   this.lastLine  = this.startLine + this.editor.lastLine();
 
-  this.resultCell.refresh();
+  if (this._resultCell) {
+    this._resultCell.refresh();
+  }
+
   return EditorCell.prototype.refresh.call(this);
 };
 
@@ -167,20 +167,24 @@ CodeCell.prototype.execute = function (done) {
     this.data.set('executing', true);
 
     this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
-      this.data.set('executing', false);
-      this.data.set('executed', true);
+      this.data.set({
+        executed:  true,
+        executing: false
+      });
 
-      if (data.isError) {
-        this.model.unset('result');
-        this.el.classList.add('cell-code-error');
-      } else {
-        this.model.set('result', data.result);
-        this.el.classList.remove('cell-code-error');
+      this.model.set({
+        isError: data.isError,
+        result:  data.result
+      });
+
+      if (this._resultCell) {
+        this._resultCell.remove();
       }
 
       // Trigger `execute` and set the result, each of which need an additional
       // flag to indicate whether the the
-      this.resultCell.setResult(data, this.notebook.sandbox.window);
+      this._resultCell = new ResultCell({ model: this.model }).render();
+      this._resultCell.appendTo(this.el);
       messages.trigger('resize');
       this.trigger('execute', this, data);
       return done && done(err, data);
@@ -189,49 +193,11 @@ CodeCell.prototype.execute = function (done) {
 };
 
 /**
- * Browse up to the previous code view contents.
- */
-CodeCell.prototype.browseUp = function () {
-  if (!config.get('embedded') && this.editor.doc.getCursor().line === 0) {
-    return this.trigger('browseUp', this, this._editorCid);
-  }
-
-  this.editor.execCommand('goLineUp');
-};
-
-/**
- * Browse down to the next code view contents.
- */
-CodeCell.prototype.browseDown = function () {
-  var currLine = this.editor.doc.getCursor().line;
-  var lastLine = this.editor.doc.lastLine();
-
-  if (!config.get('embedded') && currLine === lastLine) {
-    return this.trigger('browseDown', this, this._editorCid);
-  }
-
-  this.editor.execCommand('goLineDown');
-};
-
-/**
  * Create a new line in the editor.
  */
 CodeCell.prototype.newLine = function () {
   this.editor.execCommand('newlineAndIndent');
 };
-
-/**
- * Browse to the contents of any code cell.
- *
- * @param  {Object}   newModel
- * @return {CodeCell}
- */
-CodeCell.prototype.browseToCell = embedProtect(function (newModel) {
-  this._editorCid = newModel.cid;
-  this.setValue(newModel.get('value'));
-
-  return this;
-});
 
 /**
  * Set up the editor instance and bindings.

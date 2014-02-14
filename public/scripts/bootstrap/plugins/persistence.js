@@ -8,9 +8,9 @@ var CLOSE_CODE_BLOCK    = '```';
 var META_DATA_DELIMITER = '---';
 
 /**
- * Set the default contents into the config object.
+ * Set the default content into the config object.
  */
-config.set('contents', [
+config.set('content', [
   OPEN_CODE_BLOCK,
   '',
   CLOSE_CODE_BLOCK
@@ -27,7 +27,7 @@ middleware.register('persistence:serialize', function (data, next, done) {
   var hasContent = false;
 
   // Prepend the front matter.
-  data.contents = [
+  data.content = [
     META_DATA_DELIMITER,
     _.map(data.meta, function (value, key) {
       return key + ': ' + value;
@@ -36,10 +36,10 @@ middleware.register('persistence:serialize', function (data, next, done) {
   ].join('\n');
 
   // Split the markdown content from the front matter.
-  data.contents += '\n\n';
+  data.content += '\n\n';
 
-  // Appends the notebook contents as Markdown.
-  data.contents += _.chain(data.notebook)
+  // Appends the notebook content as Markdown.
+  data.content += _.chain(data.cells)
     .slice()
     .reverse()
     .filter(function (cell) {
@@ -76,7 +76,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
   ].join(''));
 
   // Replace potential meta data with nothing and parse it separately.
-  var content = data.contents.replace(preambleRegExp, function (content, body) {
+  var content = data.content.replace(preambleRegExp, function (content, body) {
     // Split each line of the metadata and set on the `data` export object.
     _.each(body.split('\n'), function (meta) {
       var parts = meta.split(': ');
@@ -90,7 +90,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
     return '';
   });
 
-  data.notebook = _.chain(content.split('\n')).reduce(function (cells, line) {
+  data.cells = _.chain(content.split('\n')).reduce(function (cells, line) {
     var cell = cells[cells.length - 1];
 
     // An open code block will return a new code cell.
@@ -114,7 +114,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
       return cells;
     }
 
-    // Otherwise we can just append to the cell contents and return the cell.
+    // Otherwise we can just append to the cell content and return the cell.
     cell.value += line + '\n';
     return cells;
   }, [{
@@ -144,8 +144,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
  * @param {Function} done
  */
 middleware.register('persistence:load', function (data, next, done) {
-  data.id       = null;
-  data.contents = config.get('contents');
+  data.content = config.get('content');
 
   return done();
 });
@@ -166,7 +165,7 @@ middleware.register('persistence:clone', function (data, next) {
  * Update the persistence meta data when we attempt to save.
  */
 middleware.on('persistence:change', function () {
-  persistence.get('meta').set({
+  persistence.get('notebook').get('meta').set({
     site:               config.get('url'),
     apiNotebookVersion: process.env.pkg.version
   }, {

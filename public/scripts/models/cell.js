@@ -6,5 +6,8 @@ var Backbone = require('backbone');
  * @type {Function}
  */
 module.exports = Backbone.Model.extend({
-  className: 'cell'
+  defaults: {
+    type: 'text',
+    value: ''
+  }
 });

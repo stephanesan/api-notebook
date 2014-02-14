@@ -20,46 +20,31 @@ var ResultCell = module.exports = View.extend({
 ResultCell.prototype.template = template;
 
 /**
- * Reset the result cell view to the original state.
- *
- * @param {Function} done
- */
-ResultCell.prototype._reset = function () {
-  // Any views must subscribe to this API style.
-  if (this._remove) {
-    this._remove();
-    delete this._remove;
-  }
-
-  this.el.querySelector('.result-content').innerHTML = '';
-  this.el.classList.remove('result-error');
-  this.el.classList.add('cell-result-pending');
-};
-
-/**
  * Render the result view.
  *
  * @param {Object}   data
  * @param {Object}   global
  * @param {Function} done
  */
-ResultCell.prototype.setResult = function (data, global, done) {
-  this._reset();
+ResultCell.prototype.render = function () {
+  View.prototype.render.call(this);
+  this.refresh();
 
-  if (data.isError) {
+  if (this.model.get('isError')) {
     this.el.classList.add('result-error');
   }
 
   middleware.trigger('result:render', {
     el:      this.el.querySelector('.result-content'),
-    window:  global,
-    inspect: data.result,
-    isError: data.isError
+    window:  this.model.view.notebook.sandbox.window,
+    inspect: this.model.get('result'),
+    isError: this.model.get('isError')
   }, _.bind(function (err, remove) {
     this._remove = remove;
     this.el.classList.remove('cell-result-pending');
-    return done && done(err);
   }, this));
+
+  return this;
 };
 
 /**
@@ -77,6 +62,11 @@ ResultCell.prototype.refresh = function () {
  * Reset the result cell before removing.
  */
 ResultCell.prototype.remove = function () {
-  this._reset();
+  // Any views must subscribe to this API style.
+  if (this._remove) {
+    this._remove();
+    delete this._remove;
+  }
+
   return View.prototype.remove.call(this);
 };

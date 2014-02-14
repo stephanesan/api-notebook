@@ -1,17 +1,16 @@
 var _    = require('underscore');
 var View = require('./view');
 
-var CodeView           = require('./code-cell');
-var TextView           = require('./text-cell');
-var EditorView         = require('./editor-cell');
-var NotebookCollection = require('../collections/notebook');
+var CodeView   = require('./code-cell');
+var TextView   = require('./text-cell');
+var EditorView = require('./editor-cell');
 
+var Cells       = require('../collections/cells');
 var Sandbox     = require('../lib/sandbox');
-var insertAfter = require('../lib/browser/insert-after');
 var config      = require('../state/config');
 var messages    = require('../state/messages');
 var middleware  = require('../state/middleware');
-var persistence = require('../state/persistence');
+var insertAfter = require('../lib/browser/insert-after');
 
 var completionMiddleware = require('../lib/sandbox-completion');
 
@@ -37,6 +36,12 @@ var appendNewView = function (View) {
   };
 };
 
+/**
+ * Generates a generic function for prepending new views.
+ *
+ * @param  {Backbone.View} View
+ * @return {Function}
+ */
 var prependNewView = function (View) {
   return function (el, value) {
     return appendNewView(View).call(this, function (viewEl) {
@@ -54,11 +59,11 @@ var Notebook = module.exports = View.extend({
   className: 'notebook-view'
 });
 
-/**
+ /**
  * Initialize the notebook view.
  */
 Notebook.prototype.initialize = function () {
-  this.collection = new NotebookCollection();
+  this.collection = new Cells();
   return View.prototype.initialize.apply(this, arguments);
 };
 
@@ -68,27 +73,17 @@ Notebook.prototype.initialize = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
+  // Remove lingering notebook views.
   if (this.sandbox) {
     this.sandbox.remove();
+    delete this.sandbox;
   }
 
+  // Remove notebook view specific middleware.
   middleware.deregister(this._middleware);
-
-  // Remove references
-  delete this.sandbox;
-  delete this.collection;
   delete this._middleware;
 
   return View.prototype.remove.call(this);
-};
-
-/**
- * Update the notebook contents and save to the persistence layer.
- *
- * @param {Function} done
- */
-Notebook.prototype.update = function () {
-  persistence.set('notebook', this.collection.toJSON());
 };
 
 /**
@@ -118,8 +113,8 @@ Notebook.prototype.refreshCompletion = function () {
 Notebook.prototype.render = function () {
   View.prototype.render.call(this);
 
-  this.sandbox    = new Sandbox();
-  this.collection = new NotebookCollection();
+  // Create a new sandbox instance for every notebook view.
+  this.sandbox = new Sandbox();
 
   // The completion options object is shared between all cells and used for
   // completion. Make sure we set this connection up before rendering any cells.
@@ -146,7 +141,8 @@ Notebook.prototype.render = function () {
   // Set a rendering flag while we are rendering the initial collection.
   this._rendering = true;
 
-  _.each(persistence.get('notebook'), function (cell) {
+  // Iterate over the notebook cells and add to the view.
+  _.each(this.model.get('cells'), function (cell) {
     var appendView = 'appendCodeView';
 
     if (cell.type === 'text') {
@@ -156,6 +152,7 @@ Notebook.prototype.render = function () {
     this[appendView](null, cell.value);
   }, this);
 
+  // If no cells were appended, manually append a starting code view.
   if (!this.collection.length) {
     this.appendCodeView();
   }
@@ -175,13 +172,11 @@ Notebook.prototype.render = function () {
 
   // Start listening for changes again.
   this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);
-  this.listenTo(this.collection, 'remove sort change', this.update);
+  this.listenTo(this.collection, 'change remove sort', function () {
+    this.model.set('cells', this.collection.toJSON());
+  });
 
   this.refreshCompletion();
-
-  if (config.get('autorun')) {
-    this.execute();
-  }
 
   return this;
 };
@@ -192,19 +187,19 @@ Notebook.prototype.render = function () {
  * @param {Function} done
  */
 Notebook.prototype.execute = function (done) {
-  if (this._execution) {
+  if (this._executing) {
     return done && done(new Error('Already executing notebook'));
   }
 
   var that = this;
-  this._execution = true;
+  this._executing = true;
 
   // This chaining is a little awkward, but it allows the execution to work with
   // asynchronous callbacks.
   (function execution (view) {
     // If no view is passed through, we must have hit the last view.
     if (!view) {
-      that._execution = false;
+      that._executing = false;
       return done && done();
     }
 
@@ -229,16 +224,16 @@ Notebook.prototype.executePrevious = function (current, done) {
   var that = this;
 
   // Don't need to executePrevious if we're already in a full execution.
-  if (this._execution) {
+  if (this._executing) {
     return done && done();
   }
 
-  this._execution = true;
+  this._executing = true;
 
   (function execution (view) {
     // If no view is passed through, we must have hit the last view.
     if (!view || current === view) {
-      that._execution = false;
+      that._executing = false;
       return done && done();
     }
 
@@ -307,16 +302,6 @@ Notebook.prototype.prependTextView = prependNewView(TextView);
  */
 Notebook.prototype.appendView = function (view, before) {
   if (view instanceof EditorView) {
-    this.listenTo(view, 'navigateUp', function (view) {
-      var prevView = this.getPrevView(view);
-      if (prevView) { prevView.focus().moveCursorToEnd(); }
-    });
-
-    this.listenTo(view, 'navigateDown', function (view) {
-      var nextView = this.getNextView(view);
-      if (nextView) { nextView.focus().moveCursorToEnd(0); }
-    });
-
     this.listenTo(view, 'moveUp', function (view) {
       if (!view.el.previousSibling) { return; }
 
@@ -396,6 +381,16 @@ Notebook.prototype.appendView = function (view, before) {
       newView.focus();
       if (cursor) { newView.editor.setCursor(cursor); }
     });
+
+    this.listenTo(view, 'browseUp', function (view) {
+      var prevView = this.getPrevView(view);
+      if (prevView) { prevView.focus().moveCursorToEnd(); }
+    });
+
+    this.listenTo(view, 'browseDown', function (view) {
+      var nextView = this.getNextView(view);
+      if (nextView) { nextView.focus().moveCursorToEnd(0); }
+    });
   }
 
   // Listening to different events for `text` cells
@@ -417,30 +412,12 @@ Notebook.prototype.appendView = function (view, before) {
 
       // Need a flag here so we don't cause an infinite loop when executing the
       // notebook contents. (E.g. Hitting the last cell and adding a new cell).
-      if (this._execution || config.get('embedded')) { return; }
+      if (this._executing || config.get('embedded')) { return; }
 
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
       } else {
         this.getNextView(view).moveCursorToEnd().focus();
-      }
-    });
-
-    this.listenTo(view, 'browseUp', function (view, currentCid) {
-      var model = this.collection.getPrevCode(this.collection.get(currentCid));
-
-      if (model) {
-        view.browseToCell(model);
-        view.moveCursorToEnd();
-      }
-    });
-
-    this.listenTo(view, 'browseDown', function (view, currentCid) {
-      var model = this.collection.getNextCode(this.collection.get(currentCid));
-
-      if (model) {
-        view.browseToCell(model);
-        view.moveCursorToEnd(0);
       }
     });
 

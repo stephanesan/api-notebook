@@ -6,7 +6,7 @@ var Backbone = require('backbone');
  */
 module.exports = Backbone.Model.extend({
   defaults: {
-    updatedAt: null,
-    id: null
+    id:        null,
+    updatedAt: null
   }
 });

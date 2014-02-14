@@ -201,6 +201,15 @@ TextCell.prototype.initialize = function () {
 };
 
 /**
+ * Default cell model attributes.
+ *
+ * @type {Object}
+ */
+TextCell.prototype.cellAttributes = {
+  type: 'text'
+};
+
+/**
  * Listen for events on text cell instances.
  *
  * @type {Object}
@@ -217,13 +226,6 @@ TextCell.prototype.events = _.extend({
     return this.focus(positions);
   }
 }, EditorCell.prototype.events);
-
-/**
- * The fallback model instance.
- *
- * @type {Function}
- */
-TextCell.prototype.EditorModel = require('../models/text-cell');
 
 /**
  * Options that will be passed to the CodeMirror instance.
