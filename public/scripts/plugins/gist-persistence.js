@@ -69,9 +69,9 @@ var oauth2Store = App.store.customStore('github');
  *
  * @type {Function}
  */
-var debounceSave = _.debounce(
-  _.bind(App.persistence.save, App.persistence), 600
-);
+var debounceSave = _.debounce(function (data) {
+  data.save();
+}, 600);
 
 /**
  * When a change occurs *and* we are already authenticated, we can automatically
@@ -86,7 +86,7 @@ var changePlugin = function (data, next, done) {
     return done();
   }
 
-  debounceSave();
+  debounceSave(data);
 
   return done();
 };
@@ -214,7 +214,7 @@ var loadPlugin = function (data, next, done) {
 
     data.id        = content.id;
     data.ownerId   = content.user && content.user.id;
-    data.contents  = content.files['notebook.md'].content;
+    data.content   = content.files['notebook.md'].content;
     data.updatedAt = new Date(content.updated_at);
     return done();
   });
@@ -246,7 +246,7 @@ var savePlugin = function (data, next, done) {
       description: data.meta.title,
       files: {
         'notebook.md': {
-          content: data.contents
+          content: data.content
         }
       }
     }),
@@ -330,7 +330,7 @@ var listPlugin = function (list, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-var deletePlugin = function (data, next, done) {
+var removePlugin = function (data, next, done) {
   return App.middleware.trigger('ajax:oauth2', {
     url:    'https://api.github.com/gists/' + data.id,
     proxy:  false,
@@ -357,5 +357,5 @@ module.exports = {
   'persistence:load':           loadPlugin,
   'persistence:save':           savePlugin,
   'persistence:list':           listPlugin,
-  'persistence:delete':         deletePlugin
+  'persistence:remove':         removePlugin
 };

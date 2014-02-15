@@ -1,5 +1,6 @@
 var _          = require('underscore');
 var View       = require('./template');
+var messages   = require('../state/messages');
 var template   = require('../../templates/views/result-cell.hbs');
 var middleware = require('../state/middleware');
 
@@ -13,6 +14,30 @@ var ResultCell = module.exports = View.extend({
 });
 
 /**
+ * Automatically update the result body on change.
+ */
+ResultCell.prototype.update = function () {
+  this.empty();
+
+  if (this.model.get('isError')) {
+    this.el.classList.add('result-error');
+  }
+
+  middleware.trigger('result:render', {
+    el:      this.el.querySelector('.result-content'),
+    window:  this.model.view ? this.model.view.notebook.sandbox.window : window,
+    inspect: this.model.get('result'),
+    isError: this.model.get('isError')
+  }, _.bind(function (err, remove) {
+    this._remove = remove;
+    this.el.classList.remove('cell-result-pending');
+    messages.trigger('resize');
+  }, this));
+
+  return this;
+};
+
+/**
  * The result cell template.
  *
  * @type {Function}
@@ -20,63 +45,33 @@ var ResultCell = module.exports = View.extend({
 ResultCell.prototype.template = template;
 
 /**
- * Reset the result cell view to the original state.
- *
- * @param {Function} done
+ * Refreshes the result cell based on the parent cell view.
  */
-ResultCell.prototype._reset = function () {
+ResultCell.prototype.refresh = function () {
+  if (this.model.collection) {
+    this.data.set('index', this.model.collection.codeIndexOf(this.model));
+  }
+
+  return this;
+};
+
+/**
+ * Empty the result cell.
+ */
+ResultCell.prototype.empty = function () {
   // Any views must subscribe to this API style.
   if (this._remove) {
     this._remove();
     delete this._remove;
   }
 
-  this.el.querySelector('.result-content').innerHTML = '';
-  this.el.classList.remove('result-error');
-  this.el.classList.add('cell-result-pending');
-};
-
-/**
- * Render the result view.
- *
- * @param {Object}   data
- * @param {Object}   global
- * @param {Function} done
- */
-ResultCell.prototype.setResult = function (data, global, done) {
-  this._reset();
-
-  if (data.isError) {
-    this.el.classList.add('result-error');
-  }
-
-  middleware.trigger('result:render', {
-    el:      this.el.querySelector('.result-content'),
-    window:  global,
-    inspect: data.result,
-    isError: data.isError
-  }, _.bind(function (err, remove) {
-    this._remove = remove;
-    this.el.classList.remove('cell-result-pending');
-    return done && done(err);
-  }, this));
-};
-
-/**
- * Refreshes the result cell based on the parent cell view.
- *
- * @return {ResultCell}
- */
-ResultCell.prototype.refresh = function () {
-  this.data.set('index', this.model.collection.codeIndexOf(this.model));
-
   return this;
 };
 
 /**
- * Reset the result cell before removing.
+ * Empty the cell before removing.
  */
 ResultCell.prototype.remove = function () {
-  this._reset();
+  this.empty();
   return View.prototype.remove.call(this);
 };

@@ -13,7 +13,9 @@ var View = module.exports = Backbone.View.extend();
  * hold view specific logic that doesn't belong with a model.
  */
 View.prototype.initialize = function () {
-  this.data = new Backbone.Model();
+  this.data = new Backbone.Model({
+    rendered: false
+  });
 };
 
 /**
@@ -24,6 +26,7 @@ View.prototype.initialize = function () {
 View.prototype.render = function () {
   this.el.innerHTML = '';
   this.delegateEvents();
+  this.data.set('rendered', true);
   return this;
 };
 

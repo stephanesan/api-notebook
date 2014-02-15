@@ -5,6 +5,7 @@ var extraKeys    = require('./lib/extra-keys');
 var controls     = require('../lib/controls').editor;
 var messages     = require('../state/messages');
 var domListen    = require('../lib/dom-listen');
+var Cell         = require('../models/cell');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
 var embedProtect = require('./lib/embed-protect');
@@ -26,27 +27,27 @@ var EditorCell = module.exports = View.extend({
 });
 
 /**
+ * Runs when we initialize the editor cell.
+ */
+EditorCell.prototype.initialize = function (options) {
+  View.prototype.initialize.apply(this, arguments);
+  this.model      = (options && options.model) || new Cell(this.cellAttributes);
+  this.model.view = this;
+};
+
+/**
+ * Default cell attributes for initialization.
+ *
+ * @type {Object}
+ */
+EditorCell.prototype.cellAttributes = {};
+
+/**
  * Embed the editor cell template.
  *
  * @type {Function}
  */
 EditorCell.prototype.template = template;
-
-/**
- * Runs when we initialize the editor cell.
- */
-EditorCell.prototype.initialize = function () {
-  View.prototype.initialize.apply(this, arguments);
-  this.model      = this.model || new this.EditorModel();
-  this.model.view = this;
-};
-
-/**
- * Sets a fallback model to initialize.
- *
- * @type {Function}
- */
-EditorCell.prototype.EditorModel = require('../models/cell');
 
 /**
  * Event listeners for all editor cells in the notebook.
@@ -489,6 +490,31 @@ EditorCell.prototype.appendTo = function (el) {
 };
 
 /**
+ * Browse up to the previous code view contents.
+ */
+EditorCell.prototype.browseUp = function () {
+  if (this.editor.doc.getCursor().line === 0) {
+    return this.trigger('browseUp', this);
+  }
+
+  this.editor.execCommand('goLineUp');
+};
+
+/**
+ * Browse down to the next code view contents.
+ */
+EditorCell.prototype.browseDown = function () {
+  var curLine  = this.editor.doc.getCursor().line;
+  var lastLine = this.editor.doc.lastLine();
+
+  if (curLine === lastLine) {
+    return this.trigger('browseDown', this);
+  }
+
+  this.editor.execCommand('goLineDown');
+};
+
+/**
  * Checks whether the current user is the current owner of the cell and able to
  * edit it.
  *
@@ -504,8 +530,6 @@ EditorCell.prototype.isReadOnly = function () {
 triggerSelf(EditorCell.prototype, 'switch');
 triggerSelf(EditorCell.prototype, 'moveUp');
 triggerSelf(EditorCell.prototype, 'moveDown');
-triggerSelf(EditorCell.prototype, 'navigateUp');
-triggerSelf(EditorCell.prototype, 'navigateDown');
 triggerSelf(EditorCell.prototype, 'newTextAbove');
 triggerSelf(EditorCell.prototype, 'newCodeAbove');
 triggerSelf(EditorCell.prototype, 'newTextBelow');

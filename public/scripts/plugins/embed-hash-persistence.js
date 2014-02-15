@@ -22,7 +22,7 @@ module.exports = function (Notebook) {
       notebook.config('url', url);
 
       if (id !== currentId) {
-        notebook.message('load');
+        notebook.message('load', id);
       }
 
       currentId = id;

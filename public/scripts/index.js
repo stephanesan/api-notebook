@@ -61,14 +61,14 @@ App.View = {
 
 // Expose application models.
 App.Model = {
-  Entry:     require('./models/cell'),
-  CodeEntry: require('./models/code-cell'),
-  TextEntry: require('./models/text-cell')
+  Cell:     require('./models/cell'),
+  Meta:     require('./models/meta'),
+  Notebook: require('./models/notebook')
 };
 
 // Expose application collections.
 App.Collection = {
-  Notebook: require('./collections/notebook')
+  Cells: require('./collections/cells')
 };
 
 /**

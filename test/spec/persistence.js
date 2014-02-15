@@ -3,8 +3,8 @@
 describe('Persistence', function () {
   var fixture = document.getElementById('fixture');
 
-  beforeEach(function () {
-    App.persistence.reset();
+  beforeEach(function (done) {
+    App.persistence.new(done);
   });
 
   it('should attempt to load from an id', function (done) {
@@ -54,7 +54,7 @@ describe('Persistence', function () {
     var contentMatch = false;
 
     App.middleware.register('persistence:load', function loadNotebook (data, next, done) {
-      data.contents = testContent;
+      data.content = testContent;
       App.middleware.deregister('persistence:load', loadNotebook);
       return done();
     });
@@ -62,7 +62,7 @@ describe('Persistence', function () {
     App.middleware.register('persistence:deserialize', function deserializeNotebook (data, next, done) {
       // Since the first notebook load would be deserializing an empty notebook,
       // we need to remove and pass the test on the correct callback.
-      if (data.contents === testContent) {
+      if (data.content === testContent) {
         contentMatch = true;
         App.middleware.deregister('persistence:deserialize', deserializeNotebook);
       }
@@ -98,7 +98,7 @@ describe('Persistence', function () {
 
   it('should be able to load content', function (done) {
     App.middleware.register('persistence:load', function load (data, next, done) {
-      data.contents = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
+      data.content = '---\ntitle: Test Notebook\n---\n\n# Simple Test';
       App.middleware.deregister('persistence:load', load);
       return done();
     });
@@ -112,7 +112,7 @@ describe('Persistence', function () {
         ).to.equal('# Simple Test');
 
         // Check the application titles match.
-        expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
+        expect(App.persistence.get('notebook').get('meta').get('title')).to.equal('Test Notebook');
         expect(app.el.querySelector('.notebook-title').value).to.equal('Test Notebook');
 
         app.remove();
@@ -123,7 +123,7 @@ describe('Persistence', function () {
 
   describe('Core', function () {
     it('should serialize to markdown', function () {
-      App.persistence.set('notebook', [{
+      App.persistence.get('notebook').set('cells', [{
         type: 'code',
         value: 'var test = "again";'
       }, {
@@ -131,32 +131,34 @@ describe('Persistence', function () {
         value: '# Heading'
       }]);
 
-      expect(App.persistence.get('contents')).to.equal(
-        '---\ntitle: ' + App.persistence.get('meta').get('title') + '\n---\n\n' +
+      expect(App.persistence.get('notebook').get('content')).to.equal(
+        '---\ntitle: ' + App.persistence.get('notebook').get('meta').get('title') + '\n---\n\n' +
         '```javascript\nvar test = "again";\n```\n\n# Heading'
       );
     });
 
     it('should deserialize from markdown', function () {
-      App.persistence.set(
-        'contents',
-        '```javascript\nvar test = true;\n```\n\n# Testing here'
+      App.persistence.get('notebook').set(
+        'content', '```javascript\nvar test = true;\n```\n\n# Testing here'
       );
 
-      var notebook = App.persistence.get('notebook');
+      var cells = App.persistence.get('notebook').get('cells');
 
-      expect(notebook.length).to.equal(2);
-      expect(notebook[0].type).to.equal('code');
-      expect(notebook[0].value).to.equal('var test = true;');
-      expect(notebook[1].type).to.equal('text');
-      expect(notebook[1].value).to.equal('# Testing here');
+      expect(cells.length).to.equal(2);
+      expect(cells[0].type).to.equal('code');
+      expect(cells[0].value).to.equal('var test = true;');
+      expect(cells[1].type).to.equal('text');
+      expect(cells[1].value).to.equal('# Testing here');
     });
 
     it('should render a new notebook with a single code cell', function (done) {
-      App.persistence.load(function (err) {
-        expect(App.persistence.get('notebook').length).to.equal(1);
-        expect(App.persistence.get('notebook')[0].type).to.equal('code');
-        expect(App.persistence.get('notebook')[0].value).to.equal('');
+      App.persistence.new(function (err) {
+        var cells = App.persistence.get('notebook').get('cells');
+
+        expect(cells.length).to.equal(1);
+        expect(cells[0].type).to.equal('code');
+        expect(cells[0].value).to.equal('');
+
         return done();
       });
     });

@@ -125,11 +125,7 @@ SidebarView.prototype.render = function () {
  */
 SidebarView.prototype.updateId = function (id) {
   config.set('id', id);
-
-  // Load the current item and focus to the top of the menu.
-  return persistence.load(_.bind(function () {
-    this.el.querySelector('.sidebar-list').scrollTop = 0;
-  }, this));
+  this.el.querySelector('.sidebar-list').scrollTop = 0;
 };
 
 /**
@@ -143,7 +139,7 @@ SidebarView.prototype.deleteId = function (id) {
     content: 'Are you sure you want to delete this notebook?' +
     ' Deleted notebooks cannot be restored.'
   }, _.bind(function (err, confirmed) {
-    return confirmed && persistence.delete(id, _.bind(function (err) {
+    return confirmed && persistence.remove(id, _.bind(function (err) {
       if (err) {
         return middleware.trigger('ui:notify', {
           title: 'Unable to delete the notebook',
@@ -151,7 +147,7 @@ SidebarView.prototype.deleteId = function (id) {
         });
       }
 
-      if (persistence.get('id') === id) {
+      if (persistence.get('notebook').get('id') === id) {
         this.updateId('');
       }
 

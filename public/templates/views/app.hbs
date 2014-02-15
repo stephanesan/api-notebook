@@ -1,6 +1,6 @@
 {{#if @config.header}}
   <header class="notebook-header clearfix">
-    <input class="notebook-title" autocomplete="off" value="{{@persistence.meta.title}}">
+    <input class="notebook-title" autocomplete="off" value="{{@persistence.notebook.meta.title}}">
   </header>
 
   <div class="notebook-toolbar clearfix notebook-{{@data.activeView}}-active">
@@ -78,7 +78,7 @@
     </div>
 
     <div class="footer-inner">
-      <a href="{{@config.fullUrl}}">{{@persistence.meta.title}}</a> hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+      <a href="{{@config.fullUrl}}">{{@persistence.notebook.meta.title}}</a> hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
     </div>
   </div>
 {{/if}}

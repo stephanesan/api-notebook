@@ -79,7 +79,7 @@ module.exports = function (cm, options, done) {
       // Tokens are the same.
       if (before.type === cToken.type && before.string === cToken.string) {
         // Update the `to` position (where the cursor currently is) and return.
-        return done(null, _.extend(cache.data, {
+        return done(null, _.extend(cache.data || {}, {
           to: cur
         }));
       }
