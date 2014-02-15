@@ -120,10 +120,11 @@ App.prototype.initialize = function () {
 
     // Update the title when the current notebook updates.
     this.listenTo(model.get('meta'), 'change:title', bounce(function () {
-      var title = model.get('meta').get('title');
+      var title   = model.get('meta').get('title');
+      var titleEl = this.el.querySelector('.notebook-title');
 
-      if (this.data.get('rendered')) {
-        this.el.querySelector('.notebook-title').value = title;
+      if (titleEl) {
+        titleEl.value = title;
       }
 
       document.title = title ? title + ' • Notebook' : 'Notebook';

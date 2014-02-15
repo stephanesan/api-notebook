@@ -8,11 +8,11 @@ var Meta     = require('./meta');
  */
 var Notebook = module.exports = Backbone.Model.extend({
   defaults: {
-    id:         null,
-    meta:       null,
-    cells:      [],
-    userId:     null,
-    content:    ''
+    id:      null,
+    meta:    null,
+    cells:   [],
+    ownerId: null,
+    content: ''
   }
 });
 

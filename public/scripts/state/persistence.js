@@ -19,7 +19,8 @@ var Persistence = Backbone.Model.extend({
     notebook:   new Notebook(),
     state:      0,
     userId:     null,
-    userTitle:  ''
+    userTitle:  '',
+    readyState: false
   }
 });
 
@@ -237,8 +238,8 @@ Persistence.prototype.unauthenticate = function (done) {
     'persistence:unauthenticate',
     this.getMiddlewareData(),
     _.bind(function (err) {
-      this.set('userId',    '');
-      this.set('userTitle', '');
+      this.unset('userId');
+      this.unset('userTitle');
 
       this.get('items').reset();
 
@@ -300,9 +301,9 @@ Persistence.prototype.load = function (model, done) {
 
       var complete = _.bind(function () {
         delete model._loading;
-        this.trigger('changeNotebook', this);
 
         this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
+        this.trigger('changeNotebook', this);
 
         return done && done(err);
       }, this);
@@ -462,8 +463,11 @@ persistence.listenTo(middleware, 'application:ready', function () {
       userId:    null,
       userTitle: null
     }), _.bind(function (err, data) {
-      this.set('userId',    data.userId);
-      this.set('userTitle', data.userTitle);
+      this.set('userId',     data.userId);
+      this.set('userTitle',  data.userTitle);
+
+      // Set the ready state flag for the API Notebook Site to hook onto.
+      this.set('readyState', true);
 
       if (!this.has('id') && !this.has('ownerId')) {
         this.set('ownerId', this.get('userId'));
