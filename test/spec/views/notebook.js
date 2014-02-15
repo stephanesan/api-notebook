@@ -12,8 +12,9 @@ describe('Notebook', function () {
     var view;
 
     beforeEach(function () {
-      view = new Notebook();
-      App.persistence.reset();
+      var model = new App.Model.Notebook();
+      view = new Notebook({ model: model });
+      App.persistence.set('notebook', model);
     });
 
     afterEach(function () {
@@ -22,20 +23,6 @@ describe('Notebook', function () {
 
     it('should have a class', function () {
       expect(view.el.className).to.equal('notebook-view');
-    });
-
-    describe('#render', function () {
-      it('should autorun the notebook on render if autorun is true', function () {
-        var spy = sinon.stub(view, 'execute');
-
-        App.config.set('autorun', true);
-        view.render().appendTo(fixture);
-
-        App.config.unset('autorun');
-        view.remove();
-
-        expect(spy).to.have.been.calledOnce;
-      });
     });
 
     describe('#appendView', function () {
@@ -142,7 +129,7 @@ describe('Notebook', function () {
 
       it('should be able to navigate up cells', function () {
         textCells[0].setValue('multi\nline\ncursor\ntest');
-        codeCells[1].trigger('navigateUp', codeCells[1]);
+        codeCells[1].trigger('browseUp', codeCells[1]);
 
         expect(textCells[0].hasFocus()).to.be.ok;
         expect(textCells[0].editor.getCursor().ch).to.equal(4);
@@ -151,7 +138,7 @@ describe('Notebook', function () {
 
       it('should be able to navigate down cells', function () {
         textCells[0].setValue('multi\nline\ncursor\ntest');
-        codeCells[0].trigger('navigateDown', codeCells[0]);
+        codeCells[0].trigger('browseDown', codeCells[0]);
 
         expect(textCells[0].hasFocus()).to.be.ok;
         expect(textCells[0].editor.getCursor().ch).to.equal(5);
@@ -179,10 +166,10 @@ describe('Notebook', function () {
         textCells[0].setValue('testing');
         textCells[0].focus();
         textCells[0].editor.setCursor(0, 3);
-        textCells[0].clone(); // Call the method since it will emit the event
+        textCells[0].clone();
 
         expect(textCells[0].el.nextSibling.className).to.contain('cell-text');
-        expect(view.collection.at(3)).to.be.an.instanceof(App.Model.TextEntry);
+        expect(view.collection.at(3).get('type')).to.equal('text');
         expect(view.collection.at(3).view.el.nextSibling).to.be.equal(codeCells[1].el);
         expect(view.collection.at(3).view.el.previousSibling).to.be.equal(textCells[0].el);
         expect(view.collection.at(3).view.hasFocus()).to.be.ok;
@@ -381,78 +368,6 @@ describe('Notebook', function () {
 
           expect(view.collection.length).to.equal(4);
           expect(textCells[0].hasFocus()).to.be.ok;
-        });
-
-        it('should be able to browse to the cell above', function () {
-          codeCells.push(view.appendCodeView());
-          codeCells[2].focus();
-          expect(codeCells[2].hasFocus()).to.be.ok;
-
-          codeCells[0].setValue('one');
-          codeCells[1].setValue('two');
-          codeCells[2].setValue('three');
-
-          codeCells[2].browseUp();
-          expect(codeCells[2].editor.getValue()).to.equal('two');
-          expect(codeCells[2].hasFocus()).to.be.ok;
-          expect(codeCells[2].editor.getCursor().ch).to.equal(3);
-
-          codeCells[2].browseUp();
-          expect(codeCells[2].editor.getValue()).to.equal('one');
-          expect(codeCells[2].hasFocus()).to.be.ok;
-          expect(codeCells[2].editor.getCursor().ch).to.equal(3);
-        });
-
-        it('should be able to browse to the cell below', function () {
-          codeCells.push(view.appendCodeView());
-          codeCells[0].focus();
-          expect(codeCells[0].hasFocus()).to.be.ok;
-
-          codeCells[0].setValue('one');
-          codeCells[1].setValue('two');
-          codeCells[2].setValue('three');
-
-          codeCells[0].browseDown();
-          expect(codeCells[0].editor.getValue()).to.equal('two');
-          expect(codeCells[0].hasFocus()).to.be.ok;
-          expect(codeCells[0].editor.getCursor().ch).to.equal(3);
-
-          codeCells[0].browseDown();
-          expect(codeCells[0].editor.getValue()).to.equal('three');
-          expect(codeCells[0].hasFocus()).to.be.ok;
-          expect(codeCells[0].editor.getCursor().ch).to.equal(5);
-        });
-
-        it('should keep its value when browsing cells', function () {
-          codeCells[1].focus();
-          expect(codeCells[1].hasFocus()).to.be.ok;
-
-          codeCells[0].setValue('one');
-          codeCells[1].setValue('two');
-
-          codeCells[0].browseDown();
-          expect(codeCells[0].editor.getValue()).to.equal('two');
-
-          codeCells[0].browseUp();
-          expect(codeCells[0].editor.getValue()).to.equal('one');
-        });
-
-        it('should provide appropriate keyboard navigation between new content', function () {
-          codeCells[0].setValue('multi\nline\ntest');
-          codeCells[1].setValue('even\nmore\nlines\nhere');
-          codeCells[1].focus();
-
-          expect(codeCells[1].hasFocus()).to.be.ok;
-          expect(codeCells[1].editor.getCursor().ch).to.equal(0);
-          expect(codeCells[1].editor.getCursor().line).to.equal(0);
-
-          codeCells[1].browseUp();
-          expect(codeCells[1].editor.getCursor().ch).to.equal(4);
-          expect(codeCells[1].editor.getCursor().line).to.equal(2);
-
-          codeCells[1].browseDown();
-          expect(codeCells[1].editor.getCursor().ch).to.equal(4);
-          expect(codeCells[1].editor.getCursor().line).to.equal(0);
         });
 
         it('should be able to do completion based on context', function (done) {

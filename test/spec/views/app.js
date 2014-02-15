@@ -53,17 +53,19 @@ describe('App', function () {
         var titleEl = view.el.querySelector('.notebook-title');
         titleEl.value = 'Test Notebook';
         simulateEvent(titleEl, 'keyup');
-        expect(App.persistence.get('meta').get('title')).to.equal('Test Notebook');
+        expect(
+          App.persistence.get('notebook').get('meta').get('title')
+        ).to.equal('Test Notebook');
       });
     });
 
     describe('Switching Notebook Views', function () {
-      var contents = '```javascript\n\n```';
+      var content = '```javascript\n\n```';
       var editor;
 
       beforeEach(function (done) {
-        App.persistence.reset();
-        App.persistence.set('contents', contents);
+        App.persistence.set('notebook', new App.Model.Notebook());
+        App.persistence.get('notebook').set('content', content);
         view.render().appendTo(fixture);
 
         simulateEvent(view.el.querySelector('.toggle-notebook'), 'click');
@@ -75,13 +77,15 @@ describe('App', function () {
       });
 
       it('should switch to a raw notebook editor', function () {
-        expect(editor.getValue()).to.equal(contents);
+        expect(editor.getValue()).to.equal(content);
       });
 
       it('should update persistence when editing the raw notebook', function () {
         editor.setValue('Simple test');
 
-        expect(App.persistence.get('contents')).to.equal('Simple test');
+        expect(
+          App.persistence.get('notebook').get('content')
+        ).to.equal('Simple test');
       });
     });
   });

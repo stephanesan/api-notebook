@@ -181,15 +181,22 @@ CodeCell.prototype.execute = function (done) {
         this._resultCell.remove();
       }
 
-      // Trigger `execute` and set the result, each of which need an additional
-      // flag to indicate whether the the
-      this._resultCell = new ResultCell({ model: this.model }).render();
-      this._resultCell.appendTo(this.el);
-      messages.trigger('resize');
+      this.renderResult();
       this.trigger('execute', this, data);
       return done && done(err, data);
     }, this));
   }, this));
+};
+
+/**
+ * Render the model result.
+ */
+CodeCell.prototype.renderResult = function () {
+  // Trigger `execute` and set the result, each of which need an additional
+  // flag to indicate whether the the
+  this._resultCell = new ResultCell({ model: this.model }).render();
+  this._resultCell.appendTo(this.el);
+  messages.trigger('resize');
 };
 
 /**

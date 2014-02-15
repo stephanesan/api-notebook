@@ -42,7 +42,7 @@ describe('Editor Cell', function () {
       });
 
       it('should render with a previous value', function () {
-        view.model = new App.Model.Entry({
+        view.model = new App.Model.Cell({
           value: 'testing'
         });
 
@@ -50,7 +50,7 @@ describe('Editor Cell', function () {
       });
 
       it('should always set the cursor at the end of the editor', function () {
-        view.model = new App.Model.Entry({
+        view.model = new App.Model.Cell({
           value: 'testing'
         });
 
@@ -76,20 +76,6 @@ describe('Editor Cell', function () {
         var DOWN   = 40;
         var ENTER  = 13;
         var DELETE = 8;
-
-        it('Navigate Up (`Alt-Up`)', function () {
-          var spy = sinon.spy();
-          view.on('navigateUp', spy);
-          fakeKey(editor, UP, { altKey: true });
-          expect(spy).to.have.been.calledOnce;
-        });
-
-        it('Navigate Down (`Alt-Down`)', function () {
-          var spy = sinon.spy();
-          view.on('navigateDown', spy);
-          fakeKey(editor, DOWN, { altKey: true });
-          expect(spy).to.have.been.calledOnce;
-        });
 
         it('Move Cell Up (`Cmd-Alt-Up`)', function () {
           var spy = sinon.spy();

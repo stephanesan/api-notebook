@@ -36,7 +36,7 @@ ResultCell.prototype.render = function () {
 
   middleware.trigger('result:render', {
     el:      this.el.querySelector('.result-content'),
-    window:  this.model.view.notebook.sandbox.window,
+    window:  this.model.view ? this.model.view.notebook.sandbox.window : window,
     inspect: this.model.get('result'),
     isError: this.model.get('isError')
   }, _.bind(function (err, remove) {
@@ -53,7 +53,9 @@ ResultCell.prototype.render = function () {
  * @return {ResultCell}
  */
 ResultCell.prototype.refresh = function () {
-  this.data.set('index', this.model.collection.codeIndexOf(this.model));
+  if (this.model.collection) {
+    this.data.set('index', this.model.collection.codeIndexOf(this.model));
+  }
 
   return this;
 };

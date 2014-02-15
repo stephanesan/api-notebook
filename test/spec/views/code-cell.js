@@ -37,16 +37,6 @@ describe('Code Cell', function () {
       expect(view.el.className).to.contain('cell-code');
     });
 
-    describe('#render', function () {
-      beforeEach(function () {
-        view = view.render();
-      });
-
-      it('should append a result view', function () {
-        expect(view.resultCell).to.be.an.instanceof(App.View.ResultCell);
-      });
-    });
-
     describe('Using the editor', function () {
       var editor;
 
@@ -116,13 +106,14 @@ describe('Code Cell', function () {
 
       describe('Execute Code', function () {
         it('should render the result', function (done) {
-          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = '10';
 
           view.on('execute', function (view, data) {
             expect(data.result).to.equal(10);
             expect(data.isError).to.be.false;
-            expect(spy).to.have.been.calledOnce;
+            expect(
+              view.el.querySelector('.result-content').textContent
+            ).to.equal('10');
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.equal(10);
             done();
@@ -133,15 +124,15 @@ describe('Code Cell', function () {
         });
 
         it('should render an error', function (done) {
-          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = 'throw new Error(\'Testing\');';
 
           view.on('execute', function (view, data) {
             expect(data.isError).to.be.true;
             expect(data.result.message).to.equal('Testing');
-            expect(spy).to.have.been.calledOnce;
+            expect(
+              view.el.querySelector('.result-content').textContent
+            ).to.match(/^Error: Testing/);
             expect(view.model.get('value')).to.equal(code);
-            expect(view.model.get('result')).to.not.exist;
             done();
           });
 
@@ -150,7 +141,6 @@ describe('Code Cell', function () {
         });
 
         it('should render asynchronous results', function (done) {
-          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = [
             'var done = async();',
             'setTimeout(function () {',
@@ -161,7 +151,9 @@ describe('Code Cell', function () {
           view.on('execute', function (view, data) {
             expect(data.isError).to.be.false;
             expect(data.result).to.equal('Testing');
-            expect(spy).to.have.been.calledOnce;
+            expect(
+              view.el.querySelector('.result-content').textContent
+            ).to.equal('"Testing"');
             expect(view.model.get('value')).to.equal(code);
             expect(view.model.get('result')).to.equal('Testing');
             done();
@@ -172,7 +164,6 @@ describe('Code Cell', function () {
         });
 
         it('should render asynchronous errors', function (done) {
-          var spy  = sinon.spy(view.resultCell, 'setResult');
           var code = [
             'var done = async();',
             'setTimeout(function () {',
@@ -183,9 +174,10 @@ describe('Code Cell', function () {
           view.on('execute', function (view, data) {
             expect(data.isError).to.be.true;
             expect(data.result.message).to.equal('Testing');
-            expect(spy).to.have.been.calledOnce;
+            expect(
+              view.el.querySelector('.result-content').textContent
+            ).to.match(/^Error: Testing/);
             expect(view.model.get('value')).to.equal(code);
-            expect(view.model.get('result')).to.not.exist;
             done();
           });
 
@@ -194,7 +186,7 @@ describe('Code Cell', function () {
         });
 
         it('should have a failover system in case async is never resolved', function (done) {
-          var spy   = sinon.spy(view.resultCell, 'setResult');
+          var spy   = sinon.spy(view, 'renderResult');
           var code  = 'var done = async();';
           var clock = sinon.useFakeTimers();
 
@@ -214,7 +206,7 @@ describe('Code Cell', function () {
         });
 
         it('should be able to change the timeout on the failover system', function (done) {
-          var spy   = sinon.spy(view.resultCell, 'setResult');
+          var spy   = sinon.spy(view, 'renderResult');
           var code  = 'timeout(5000);\nvar done = async();';
           var clock = sinon.useFakeTimers();
 

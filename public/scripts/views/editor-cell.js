@@ -29,9 +29,9 @@ var EditorCell = module.exports = View.extend({
 /**
  * Runs when we initialize the editor cell.
  */
-EditorCell.prototype.initialize = function () {
+EditorCell.prototype.initialize = function (options) {
   View.prototype.initialize.apply(this, arguments);
-  this.model      = new Cell(this.cellAttributes);
+  this.model      = (options && options.model) || new Cell(this.cellAttributes);
   this.model.view = this;
 };
 
