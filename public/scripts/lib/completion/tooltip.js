@@ -29,7 +29,7 @@ Tooltip.prototype.render = function () {
   this.removeTooltip();
 
   // Needs the type or a description at minimum to render.
-  if (!description['!type'] && !description['!doc']) {
+  if (!description || (!description['!type'] && !description['!doc'])) {
     return this;
   }
 

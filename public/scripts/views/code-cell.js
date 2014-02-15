@@ -6,7 +6,6 @@ var Completion = require('../lib/completion');
 var extraKeys  = require('./lib/extra-keys');
 var controls   = require('../lib/controls').code;
 var config     = require('../state/config');
-var messages   = require('../state/messages');
 
 /**
  * Initialize a new code cell view.
@@ -28,9 +27,12 @@ CodeCell.prototype.initialize = function () {
     this.renderEditor();
   });
 
-  this.listenTo(this.model, 'isError', function (isError) {
+  this.listenTo(this.model, 'change:isError', function (model, isError) {
     this.el.classList[isError ? 'add' : 'remove']('cell-code-error');
   });
+
+  // Set a static result cell instance.
+  this.resultCell = new ResultCell({ model: this.model });
 };
 
 /**
@@ -123,10 +125,7 @@ CodeCell.prototype.refresh = function () {
   this.startLine = _.result(prevCodeView, 'lastLine') + 1 || 1;
   this.lastLine  = this.startLine + this.editor.lastLine();
 
-  if (this._resultCell) {
-    this._resultCell.refresh();
-  }
-
+  this.resultCell.refresh();
   return EditorCell.prototype.refresh.call(this);
 };
 
@@ -173,15 +172,11 @@ CodeCell.prototype.execute = function (done) {
       });
 
       this.model.set({
-        isError: data.isError,
-        result:  data.result
+        result:  data.result,
+        isError: data.isError
       });
 
-      if (this._resultCell) {
-        this._resultCell.remove();
-      }
-
-      this.renderResult();
+      this.updateResult();
       this.trigger('execute', this, data);
       return done && done(err, data);
     }, this));
@@ -189,14 +184,12 @@ CodeCell.prototype.execute = function (done) {
 };
 
 /**
- * Render the model result.
+ * Update the result cell rendering.
  */
-CodeCell.prototype.renderResult = function () {
-  // Trigger `execute` and set the result, each of which need an additional
-  // flag to indicate whether the the
-  this._resultCell = new ResultCell({ model: this.model }).render();
-  this._resultCell.appendTo(this.el);
-  messages.trigger('resize');
+CodeCell.prototype.updateResult = function () {
+  this.resultCell.update();
+
+  return this;
 };
 
 /**
@@ -204,6 +197,8 @@ CodeCell.prototype.renderResult = function () {
  */
 CodeCell.prototype.newLine = function () {
   this.editor.execCommand('newlineAndIndent');
+
+  return this;
 };
 
 /**
@@ -229,8 +224,6 @@ CodeCell.prototype.bindEditor = function () {
 
 /**
  * Remove all editor instance data.
- *
- * @return {CodeCell}
  */
 CodeCell.prototype.unbindEditor = function () {
   this._completion.remove();

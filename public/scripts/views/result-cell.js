@@ -1,5 +1,6 @@
 var _          = require('underscore');
 var View       = require('./template');
+var messages   = require('../state/messages');
 var template   = require('../../templates/views/result-cell.hbs');
 var middleware = require('../state/middleware');
 
@@ -13,22 +14,10 @@ var ResultCell = module.exports = View.extend({
 });
 
 /**
- * The result cell template.
- *
- * @type {Function}
+ * Automatically update the result body on change.
  */
-ResultCell.prototype.template = template;
-
-/**
- * Render the result view.
- *
- * @param {Object}   data
- * @param {Object}   global
- * @param {Function} done
- */
-ResultCell.prototype.render = function () {
-  View.prototype.render.call(this);
-  this.refresh();
+ResultCell.prototype.update = function () {
+  this.empty();
 
   if (this.model.get('isError')) {
     this.el.classList.add('result-error');
@@ -42,15 +31,21 @@ ResultCell.prototype.render = function () {
   }, _.bind(function (err, remove) {
     this._remove = remove;
     this.el.classList.remove('cell-result-pending');
+    messages.trigger('resize');
   }, this));
 
   return this;
 };
 
 /**
- * Refreshes the result cell based on the parent cell view.
+ * The result cell template.
  *
- * @return {ResultCell}
+ * @type {Function}
+ */
+ResultCell.prototype.template = template;
+
+/**
+ * Refreshes the result cell based on the parent cell view.
  */
 ResultCell.prototype.refresh = function () {
   if (this.model.collection) {
@@ -61,14 +56,22 @@ ResultCell.prototype.refresh = function () {
 };
 
 /**
- * Reset the result cell before removing.
+ * Empty the result cell.
  */
-ResultCell.prototype.remove = function () {
+ResultCell.prototype.empty = function () {
   // Any views must subscribe to this API style.
   if (this._remove) {
     this._remove();
     delete this._remove;
   }
 
+  return this;
+};
+
+/**
+ * Empty the cell before removing.
+ */
+ResultCell.prototype.remove = function () {
+  this.empty();
   return View.prototype.remove.call(this);
 };
