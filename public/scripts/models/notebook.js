@@ -17,6 +17,15 @@ var Notebook = module.exports = Backbone.Model.extend({
 });
 
 /**
+ * Fix the notebook saying it's not new when it has an empty id.
+ *
+ * @return {Boolean}
+ */
+Notebook.prototype.isNew = function () {
+  return !this.get('id');
+};
+
+/**
  * Set fresh model data when initializing.
  */
 Notebook.prototype.initialize = function () {
