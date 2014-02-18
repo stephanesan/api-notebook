@@ -10,8 +10,6 @@
 module.exports = function (object, path, setter) {
   var isSetter = arguments.length > 2;
 
-  // Avoid using underscore so we can reuse this component in third-party
-  // middleware.
   for (var i = 0; i < path.length; i++) {
     var prop = path[i];
 

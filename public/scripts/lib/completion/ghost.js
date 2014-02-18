@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 /**
  * Generates a ghost text widget that is used to render Chrome-style completion.
  *
@@ -7,8 +9,6 @@
  * @return {Ghost}
  */
 var Ghost = module.exports = function (widget, data, result) {
-  var that = this;
-
   this.cm     = widget.completion.cm;
   this.data   = data;
   this.widget = widget;
@@ -24,8 +24,8 @@ var Ghost = module.exports = function (widget, data, result) {
   if (!this.text) { return; }
 
   this.cm.addKeyMap(this.keyMap = {
-    'Tab':   function () { that.accept(); },
-    'Right': function () { that.accept(); }
+    'Tab':   _.bind(this.accept, this),
+    'Right': _.bind(this.accept, this)
   });
 
   // Creates the ghost element to be styled.

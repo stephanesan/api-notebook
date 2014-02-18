@@ -246,11 +246,6 @@ describe('Completion', function () {
     );
 
     it(
-      'should complete in property literals',
-      testAutocomplete('({ wind', 'window')
-    );
-
-    it(
       'should not complete square brackets that can\'t be done statically',
       testAutocomplete('window[something].w', null, 'window')
     );

@@ -137,11 +137,15 @@ module.exports = function (global) {
       }
 
       // Instance type return.
-      if (/^\+/.test(returnType) && data.window[returnType.substr(1)]) {
-        return done(
-          null,
-          fromPath(data.window, returnType.substr(1).split('.')).prototype
-        );
+      if (returnType.charAt(0) === '+') {
+        try {
+          var path        = returnType.substr(1).split('.');
+          var constructor = fromPath(data.window, path);
+
+          if (_.isFunction(constructor)) {
+            return done(null, constructor.prototype);
+          }
+        } catch (e) {}
       }
 
       return next();
