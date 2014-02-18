@@ -288,7 +288,7 @@ Persistence.prototype.load = function (model, done) {
       // Update all relevant model attributes.
       model.set({
         id:        data.id,
-        userId:    data.ownerId,
+        ownerId:   data.ownerId,
         updatedAt: data.updatedAt
       });
 
@@ -340,16 +340,20 @@ Persistence.prototype.clone = function (done) {
   this.set('state', Persistence.CLONING);
 
   var model = this.get('notebook').clone();
+
+  // Set the notebook instance in the state.
+  model.unset('id');
   this.set('notebook', model);
 
   middleware.trigger(
     'persistence:clone',
     this.getMiddlewareData(model),
     _.bind(function (err, data) {
-      model.set('content', data.content);
+      model.set('cells', data.cells, { silent: true });
       model.get('meta').reset(data.meta);
 
       this.set('state', Persistence.CHANGED);
+      this.trigger('changeNotebook');
 
       return done && done(err);
     }, this)
@@ -515,7 +519,15 @@ middleware.register('application:ready', function (app, next) {
    * is unlikely to be maintained.
    */
   persistence.listenTo(config, 'change:id', function () {
-    persistence.load(new Notebook({ id: config.get('id') }));
+    var configId   = config.get('id');
+    var notebookId = persistence.get('notebook').get('id');
+
+    // Avoid loading over the same notebook instance.
+    if ((!configId && !notebookId) || (configId === notebookId)) {
+      return;
+    }
+
+    persistence.load(new Notebook({ id: configId }));
   });
 
   return next();

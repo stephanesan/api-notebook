@@ -28,23 +28,9 @@ Notebook.prototype.isNew = function () {
 /**
  * Set fresh model data when initializing.
  */
-Notebook.prototype.initialize = function () {
-  this.set('meta', new Meta({
+Notebook.prototype.initialize = function (attrs) {
+  this.set('meta', (attrs && attrs.meta) || new Meta({
     title: 'Untitled Notebook'
   }));
-  this.set('cells', []);
-};
-
-/**
- * Clone the notebook instance.
- *
- * @return {Notebook}
- */
-Notebook.prototype.clone = function () {
-  var notebook = new Notebook(this.toJSON());
-
-  notebook.unset('id');
-  notebook.set('meta', this.get('meta').clone());
-
-  return notebook;
+  this.set('cells', (attrs && attrs.cells) || []);
 };
