@@ -11,6 +11,9 @@ var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
 var RESERVED_METHODS     = _.object(HTTP_METHODS, true);
+var CONFIG_OPTIONS       = [
+  'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
+];
 
 /**
  * Accepts a params object and transforms it into a regex for matching the
@@ -272,43 +275,42 @@ var httpRequest = function (nodes, method) {
       config = null;
     }
 
-    // Merge configuration options for a complete object.
-    // TODO: Confirm this behaviour (wiping an entire key for another). E.g.
-    // All headers will be wiped out instead of merged.
-    config = _.extend({}, nodes.config, config);
+    // Map configuration options and merge with the passed in object.
+    config = _.object(CONFIG_OPTIONS, _.map(CONFIG_OPTIONS, function (option) {
+      if (option === 'proxy') {
+        return config && 'proxy' in config ? config.proxy : nodes.config.proxy;
+      }
+
+      return _.extend({}, nodes.config[option], config && config[option]);
+    }));
 
     var async   = !!done;
-    var query   = _.extend({}, config.query);
-    var headers = _.extend({}, config.headers);
-    var mime    = getMime(findHeader(headers, 'Content-Type'));
+    var mime    = getMime(findHeader(config.headers, 'Content-Type'));
     var baseUri = template(nodes.client.baseUri, {}, config.baseUriParameters);
     var fullUri = baseUri + '/' + nodes.join('/');
 
-    // Parse the query string if needed to merge parameters and run validation.
-    if (_.isString(query)) {
-      query = qs.parse(query);
-    }
-
     // GET and HEAD requests accept the query string as the first argument.
     if (method.method === 'get' || method.method === 'head') {
-      _.extend(query, _.isString(data) ? qs.parse(data) : data);
+      _.extend(config.query, _.isString(data) ? qs.parse(data) : data);
       data  = null;
     }
 
-    // Append the stringified query string if we have one.
-    fullUri += _.keys(query).length ? '?' + qs.stringify(query) : '';
+    // Append the query string if one is available.
+    if (_.keys(config.query).length) {
+      fullUri += '?' + qs.stringify(config.query);
+    }
 
     // Set the correct `Content-Type` header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
     if (!mime && typeof method.body === 'object') {
-      headers['Content-Type'] = mime = _.keys(method.body).pop();
+      config.headers['Content-Type'] = mime = _.keys(method.body).pop();
     }
 
     // If we have no accept header set already, default to accepting
     // everything. This is required because Firefox sets the base accept
     // header to essentially be `html/xml`.
-    if (!findHeader(headers, 'Accept')) {
-      headers.accept = '*/*';
+    if (!findHeader(config.headers, 'Accept')) {
+      config.headers.accept = '*/*';
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
@@ -322,7 +324,7 @@ var httpRequest = function (nodes, method) {
       async:   async,
       proxy:   nodes.config.proxy,
       method:  method.method,
-      headers: headers
+      headers: config.headers
     };
 
     // Iterate through `securedBy` methods and accept the first one we are

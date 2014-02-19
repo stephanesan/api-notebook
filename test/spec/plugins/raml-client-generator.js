@@ -335,6 +335,13 @@ describe('RAML Client Generator Plugin', function () {
         });
       });
 
+      it('should automatically populate `mediaTypeExtension` enum fields', function (done) {
+        sandbox.execute('example.user.json;', function (err, exec) {
+          expect(exec.result).to.be.a('function');
+          return done(err);
+        });
+      });
+
       describe('Making Requests', function () {
         it(
           'should respond to `collection.get()`',
