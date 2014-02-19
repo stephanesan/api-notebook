@@ -25,13 +25,85 @@ describe('RAML Client Generator Plugin', function () {
     });
   });
 
+  describe('Base URI Version', function () {
+    var server;
+
+    beforeEach(function (done) {
+      sandbox.execute('API.createClient("baseVersion", "' + FIXTURES_URL + '/base-version.raml");', function (err) {
+        server = sinon.fakeServer.create();
+        done(err);
+      });
+    });
+
+    afterEach(function () {
+      server.restore();
+    });
+
+    it('should inject the version into the base uri automatically', function (done) {
+      server.respondWith('GET', 'http://example.com/v2/', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseVersion("/").get();', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
+    });
+  });
+
+  describe('Base URI Parameters', function () {
+    var server;
+
+    beforeEach(function (done) {
+      sandbox.execute('API.createClient("baseUriParameters", "' + FIXTURES_URL + '/base-uri-parameters.raml");', function (err) {
+        server = sinon.fakeServer.create();
+        done(err);
+      });
+    });
+
+    afterEach(function () {
+      server.restore();
+    });
+
+    it('should pass baseUriParameters with root function', function (done) {
+      server.respondWith('GET', 'http://apac.example.com/test', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseUriParameters("/test").get(null, { baseUriParameters: { zone: "apac" } });', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
+    });
+
+    it('should pass baseUriParameters with pre-defined routes', function (done) {
+      server.respondWith('GET', 'http://apac.example.com/api', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseUriParameters.api.get(null, { baseUriParameters: { zone: "apac" } });', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
+    });
+  });
+
   describe('Example RAML document', function () {
     var server;
 
     beforeEach(function (done) {
       sandbox.execute('API.createClient("example", "' + FIXTURES_URL + '/example.raml");', function (err) {
         server = sinon.fakeServer.create();
-        return done(err);
+        done(err);
       });
     });
 

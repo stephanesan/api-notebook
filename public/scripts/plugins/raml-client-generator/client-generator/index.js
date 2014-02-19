@@ -1,10 +1,11 @@
 /* global App */
-var _      = App._;
-var qs     = App.Library.querystring;
-var trim   = require('trim');
-var cases  = App.Library.changeCase;
-var escape = require('escape-regexp');
-var parser = require('uri-template');
+var _           = App._;
+var qs          = App.Library.querystring;
+var trim        = require('trim');
+var cases       = App.Library.changeCase;
+var escape      = require('escape-regexp');
+var parser      = require('uri-template');
+var sanitizeAST = require('./sanitize-ast');
 
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
@@ -59,83 +60,6 @@ var toDescriptionObject = function (object) {
   description['!doc'] = object.description;
 
   return description;
-};
-
-/**
- * Sanitize the AST from the RAML parser into something easier to work with.
- *
- * @param  {Object} ast
- * @return {Object}
- */
-var sanitizeAST = function (ast) {
-  if (!_.isString(ast.baseUri)) {
-    throw new Error('A baseUri is required');
-  }
-
-  // Merge an array of objects into a single object using `_.extend` and
-  // `apply` (since `_.extend` accepts unlimited number of arguments).
-  ast.traits          = _.extend.apply(_, ast.traits);
-  ast.resourceTypes   = _.extend.apply(_, ast.resourceTypes);
-  ast.securitySchemes = _.extend.apply(_, ast.securitySchemes);
-
-  // Recurse through the resources and move URIs to be the key names.
-  ast.resources = (function flattenResources (resources) {
-    var map = {};
-
-    // Resources are provided as an array, we'll move them to be an object.
-    _.each(resources, function (resource) {
-      // Methods are implemented as arrays of objects too, but not recursively.
-      if (resource.methods) {
-        resource.methods = _.object(
-          _.pluck(resource.methods, 'method'), resource.methods
-        );
-      }
-
-      if (resource.resources) {
-        resource.resources = flattenResources(resource.resources);
-      }
-
-      (function attachResource (object, segments) {
-        var segment = segments.shift();
-
-        // Only the one segment part left, embed the entire resource.
-        if (!segments.length) {
-          return object[segment] = resource;
-        }
-
-        // Pull any potential tags out of the relative uri part.
-        var tags = _.map(segment.match(/\{([^\{\}]+)\}/g), function (tag) {
-          return tag.slice(1, -1);
-        });
-
-        // Nested segments need access to the relative uri parameters.
-        object[segment] = {
-          // Extends any resources already attached to the same property.
-          resources: _.extend({}, object[segment] && object[segment].resources),
-          // Dodgy `relativeUri` patch.
-          relativeUri: '/' + segment,
-          // Pick out the applicable template tags.
-          uriParameters: _.pick(resource.uriParameters, tags)
-        };
-
-        // Remove the segment from the original relative uri.
-        resource.relativeUri = resource.relativeUri.substr(segment.length + 1);
-
-        // Remove tags no longer applicable to other parts.
-        // Note: This *will* break if the same tag name is in multiple parts.
-        resource.uriParameters = _.omit(resource.uriParameters, tags);
-
-        return attachResource(object[segment].resources, segments);
-      })(map, resource.relativeUri.substr(1).split('/'));
-    });
-
-    return map;
-  })(ast.resources);
-
-  // Parse the root url and inject variables.
-  ast.baseUri = template(ast.baseUri, ast.baseUriParameters, ast);
-
-  return ast;
 };
 
 /**
@@ -341,27 +265,38 @@ var sanitizeXHR = function (xhr) {
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  return function (data, done) {
-    var async   = !!done;
-    var query   = nodes.query   || {};
-    var headers = nodes.headers || {};
-    var mime    = getMime(findHeader(headers, 'Content-Type'));
-    var fullUrl = nodes.client.baseUri + '/' + nodes.join('/');
-    var response, error; // Weird async and sync code mixing.
+  return function (data, config, done) {
+    // Allow config to be omitted from arguments.
+    if (_.isFunction(arguments[1])) {
+      done   = arguments[1];
+      config = null;
+    }
 
-    // `GET` or `HEAD` requests accept the query params as the first argument.
+    // Merge configuration options for a complete object.
+    // TODO: Confirm this behaviour (wiping an entire key for another). E.g.
+    // All headers will be wiped out instead of merged.
+    config = _.extend({}, nodes.config, config);
+
+    var async   = !!done;
+    var query   = _.extend({}, config.query);
+    var headers = _.extend({}, config.headers);
+    var mime    = getMime(findHeader(headers, 'Content-Type'));
+    var baseUri = template(nodes.client.baseUri, {}, config.baseUriParameters);
+    var fullUri = baseUri + '/' + nodes.join('/');
+
+    // Parse the query string if needed to merge parameters and run validation.
+    if (_.isString(query)) {
+      query = qs.parse(query);
+    }
+
+    // GET and HEAD requests accept the query string as the first argument.
     if (method.method === 'get' || method.method === 'head') {
-      query = data;
+      _.extend(query, _.isString(data) ? qs.parse(data) : data);
       data  = null;
     }
 
-    // Stringify the query string to append to the current url.
-    if (_.isObject(query)) {
-      query = qs.stringify(query);
-    }
-
-    // Append the query string, if we have one.
-    fullUrl += query ? '?' + query : '';
+    // Append the stringified query string if we have one.
+    fullUri += _.keys(query).length ? '?' + qs.stringify(query) : '';
 
     // Set the correct `Content-Type` header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
@@ -382,7 +317,7 @@ var httpRequest = function (nodes, method) {
     }
 
     var options = {
-      url:     fullUrl,
+      url:     fullUri,
       data:    data,
       async:   async,
       proxy:   nodes.config.proxy,
@@ -415,6 +350,9 @@ var httpRequest = function (nodes, method) {
       }
     }
 
+    // Awkward sync and async code mixing.
+    var response, error;
+
     // Trigger the ajax middleware so plugins can hook onto the requests. If
     // the function is async we need to register a callback for the middleware.
     App.middleware.trigger('ajax', options, function (err, xhr) {
@@ -445,13 +383,7 @@ var httpRequest = function (nodes, method) {
  * @return {Object}
  */
 var attachMethods = function (nodes, context, methods) {
-  // Skip attaching any method related methods if it there aren't any methods at
-  // this endpoint.
-  if (methods == null || !_.keys(methods).length) {
-    return context;
-  }
-
-  // Iterate over all the possible methods and attach.
+  // Attach the available methods to the current context.
   _.each(methods, function (method, verb) {
     context[verb] = httpRequest(nodes, method);
     context[verb][DESCRIPTION_PROPERTY] = _.extend(
@@ -475,8 +407,7 @@ var attachResources = function attachResources (nodes, context, resources) {
   _.each(resources, function (resource, route) {
     var routeName = route;
     var resources = resource.resources;
-    // Use `extend` to clone the nodes since we attach meta data directly to
-    // the nodes.
+    // Use `extend` to clone nodes since we have data available on the nodes.
     var routeNodes   = _.extend([], nodes);
     var templateTags = resource.uriParameters && _.keys(resource.uriParameters);
 
@@ -521,6 +452,9 @@ var attachResources = function attachResources (nodes, context, resources) {
 
           // Map the tags to the arguments or default arguments.
           var parts = _.map(tags, function (param, index) {
+            // Inject enum parameters if there is only one available enum.
+            // TODO: When/if we add validation back, have these routes
+            // be generated instead of typed out.
             if (args[index] == null && param.enum && param.enum.length === 1) {
               return param.enum[0];
             }
@@ -804,8 +738,9 @@ var attachSecuritySchemes = function (nodes, context, schemes) {
  */
 var generateClient = function (ast, config) {
   // Generate the root node array. Set properties directly on this array to be
-  // copied to the next execution part. In some cases we may need something to
-  // be automatically set on *all* instances, so we use `config` since objects
+  // copied to the next execution part. We have a global configuration object
+  // which can be altered externally at any point, as well as when we finally
+  // make a request. For this reason, it's important that we use objects which
   // are passed by reference.
   var nodes = _.extend([], {
     config: config || {},
@@ -816,6 +751,11 @@ var generateClient = function (ast, config) {
       securitySchemes: ast.securitySchemes
     }
   });
+
+  // Set up the initial baseUriParameters configuration.
+  config.baseUriParameters = _.extend(
+    {}, config.baseUriParameters, _.pick(ast, 'version')
+  );
 
   /**
    * The root client implementation is simply a function. This allows us to
