@@ -20,9 +20,7 @@ var RESERVED_METHODS     = _.object(HTTP_METHODS, true);
  */
 var uriParamRegex = function (params) {
   // Transform the params into a regular expression for matching.
-  return new RegExp('{(' + _.map(_.keys(params), function (param) {
-    return escape(param);
-  }).join('|') + ')}', 'g');
+  return new RegExp('{(' + _.map(_.keys(params), escape).join('|') + ')}', 'g');
 };
 
 /**
