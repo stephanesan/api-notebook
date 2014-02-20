@@ -166,13 +166,14 @@ describe('RAML Client Generator Plugin', function () {
     var testRequestHeaders = function (chain, method, route, headers) {
       return function (done) {
         return fakeRequest(
-          'example' + chain + '.' + method + '();', method, route, function (request, response) {
+          'example' + chain, method, route, function (request, response) {
             response[1] = request.requestHeaders;
           }
         )(function (err, exec) {
           App._.each(headers, function (value, header) {
             expect(exec.result.headers[header.toLowerCase()]).to.equal(value);
           });
+
           return done(err);
         });
       };
@@ -317,6 +318,22 @@ describe('RAML Client Generator Plugin', function () {
             );
           });
         });
+
+        describe('Custom Headers in Config', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to attach custom headers to ' + method + ' requests',
+              testRequestHeaders(
+                '("/test/route").' + method + '(null, { headers: { "X-Test-Header": "Test" } })',
+                method,
+                '/test/route',
+                {
+                  'X-Test-Header': 'Test'
+                }
+              )
+            );
+          });
+        });
       });
     });
 
@@ -370,28 +387,28 @@ describe('RAML Client Generator Plugin', function () {
           describe(method.toUpperCase(), function () {
             it(
               'should automatically populate `mediaTypeExtension` enum fields',
-              testRequestHeaders('.user.json', method, '/user.json', {
+              testRequestHeaders('.user.json.' + method + '()', method, '/user.json', {
                 'Accept': 'application/json'
               })
             );
 
             it(
               'should allow manual override of `mediaTypeExtension` fields',
-              testRequestHeaders('.user.extension("xml")', method, '/user.xml', {
+              testRequestHeaders('.user.extension("xml").' + method + '()', method, '/user.xml', {
                 'Accept': 'application/xml'
               })
             );
 
             it(
               'should automatically populate `mediaTypeExtension` enum fields after variables',
-              testRequestHeaders('.user.userId(123).json', method, '/user/123.json', {
+              testRequestHeaders('.user.userId(123).json.' + method + '()', method, '/user/123.json', {
                 'Accept': 'application/json'
               })
             );
 
             it(
               'should allow manual override of `mediaTypeExtension` fields after variables',
-              testRequestHeaders('.user.userId(123).extension("xml")', method, '/user/123.xml', {
+              testRequestHeaders('.user.userId(123).extension("xml").' + method + '()', method, '/user/123.xml', {
                 'Accept': 'application/xml'
               })
             );
@@ -530,7 +547,7 @@ describe('RAML Client Generator Plugin', function () {
             it(
               'should be able to pass queries with ' + method + ' requests',
               fakeRequest(
-                'example.collection.collectionId("123").' + method + '(null, { query: "test=data" })',
+                'example.collection.collectionId("123").' + method + '(null, { query: { test: "data" } })',
                 method,
                 '/collection/123?test=data'
               )
