@@ -20,7 +20,6 @@ describe('RAML Client Generator Plugin', function () {
   it('should augment execution context with an `API` method', function (done) {
     sandbox.execute('API', function (err, exec) {
       expect(exec.result).to.be.an('object');
-
       return done();
     });
   });
@@ -103,7 +102,7 @@ describe('RAML Client Generator Plugin', function () {
     beforeEach(function (done) {
       sandbox.execute('API.createClient("example", "' + FIXTURES_URL + '/example.raml");', function (err) {
         server = sinon.fakeServer.create();
-        done(err);
+        return done(err);
       });
     });
 
@@ -172,7 +171,7 @@ describe('RAML Client Generator Plugin', function () {
           }
         )(function (err, exec) {
           App._.each(headers, function (value, header) {
-            expect(exec.result.headers[header]).to.equal(value);
+            expect(exec.result.headers[header.toLowerCase()]).to.equal(value);
           });
           return done(err);
         });
@@ -335,10 +334,37 @@ describe('RAML Client Generator Plugin', function () {
         });
       });
 
-      it('should automatically populate `mediaTypeExtension` enum fields', function (done) {
-        sandbox.execute('example.user.json;', function (err, exec) {
-          expect(exec.result).to.be.a('function');
-          return done(err);
+      describe('Media Type Extension', function () {
+        App._.each(methods, function (method) {
+          describe(method.toUpperCase(), function () {
+            it(
+              'should automatically populate `mediaTypeExtension` enum fields',
+              testRequestHeaders('.user.json', method, '/user.json', {
+                'Accept': 'application/json'
+              })
+            );
+
+            it(
+              'should allow manual override of `mediaTypeExtension` fields',
+              testRequestHeaders('.user.mediaTypeExtension("xml")', method, '/user.xml', {
+                'Accept': 'application/xml'
+              })
+            );
+
+            it(
+              'should automatically populate `mediaTypeExtension` enum fields after variables',
+              testRequestHeaders('.user.userId(123).json', method, '/user/123.json', {
+                'Accept': 'application/json'
+              })
+            );
+
+            it(
+              'should allow manual override of `mediaTypeExtension` fields after variables',
+              testRequestHeaders('.user.userId(123).mediaTypeExtension("xml")', method, '/user/123.xml', {
+                'Accept': 'application/xml'
+              })
+            );
+          });
         });
       });
 

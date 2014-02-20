@@ -35,6 +35,13 @@ resourceTypes:
       post: {}
       patch: {}
       delete: {}
+  - mediaTypeExtension:
+      type: member
+      uriParameters:
+        mediaTypeExtension:
+          enum: [ .json, .xml ]
+          description: Use .json to specify application/json or .xml to specify text/xml
+
 
 traits:
   - paged:
@@ -355,8 +362,9 @@ traits:
   type: member
 
 # Test the special `mediaTypeExtension` tag.
-/users{mediaTypeExtension}:
-  uriParameters:
-    mediaTypeExtension:
-      enum: [ .json, .xml ]
-      description: Use .json to specify application/json or .xml to specify text/xml
+/user{mediaTypeExtension}:
+  type: mediaTypeExtension
+
+# Test the trickier `mediaTypeExtension` with a parameter.
+/user/{userId}{mediaTypeExtension}:
+  type: mediaTypeExtension

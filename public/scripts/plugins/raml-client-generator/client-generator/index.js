@@ -3,6 +3,7 @@ var _           = App._;
 var qs          = App.Library.querystring;
 var trim        = require('trim');
 var cases       = App.Library.changeCase;
+var mime        = require('mime-component');
 var escape      = require('escape-regexp');
 var parser      = require('uri-template');
 var sanitizeAST = require('./sanitize-ast');
@@ -10,7 +11,6 @@ var sanitizeAST = require('./sanitize-ast');
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
-var RESERVED_METHODS     = _.object(HTTP_METHODS, true);
 var CONFIG_OPTIONS       = [
   'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
 ];
@@ -70,7 +70,7 @@ var toDescriptionObject = function (object) {
  *
  * @type {Object}
  */
-var httpMethods = _.chain(HTTP_METHODS).map(function (method) {
+var allHttpMethods = _.chain(HTTP_METHODS).map(function (method) {
     return [method, {
       method: method
     }];
@@ -309,7 +309,7 @@ var httpRequest = function (nodes, method) {
     // If we have no accept header set already, default to accepting
     // everything. This is required because Firefox sets the base accept
     // header to essentially be `html/xml`.
-    if (!findHeader(config.headers, 'Accept')) {
+    if (!findHeader(config.headers, 'accept')) {
       config.headers.accept = '*/*';
     }
 
@@ -377,7 +377,7 @@ var httpRequest = function (nodes, method) {
 };
 
 /**
- * Attaches executable XHR methods to the context object.
+ * Attaches XHR request methods to the context object for each available method.
  *
  * @param  {Array}  nodes
  * @param  {Object} context
@@ -397,119 +397,216 @@ var attachMethods = function (nodes, context, methods) {
 };
 
 /**
- * Recurses through a resource object in the RAML AST, generating a dynamic
- * DSL that only allows methods that were defined in the RAML spec.
+ * Attach a special media extension handler.
  *
- * @param  {Array}  nodes     An array of path nodes that can be joined.
- * @param  {Object} context   Where to attach the resource routes.
- * @param  {Object} resources An object of resource routes.
- * @return {Object}           Returns the passed in context object.
+ * @param  {Array}  nodes
+ * @param  {Object} context
+ * @param  {Object} resource
+ * @return {Object}
  */
-var attachResources = function attachResources (nodes, context, resources) {
-  _.each(resources, function (resource, route) {
-    var routeName = route;
-    var resources = resource.resources;
-    // Use `extend` to clone nodes since we have data available on the nodes.
-    var routeNodes   = _.extend([], nodes);
-    var templateTags = resource.uriParameters && _.keys(resource.uriParameters);
-
-    // Push the current route into the route array.
-    routeNodes.push(route);
-
-    if (templateTags && templateTags.length) {
-      // The route must end with template tags and have no intermediate text
-      // between template tags.
-      if (/^.*(?:\{[^\{\}]+\})+$/.test(route)) {
-        var templateCount = templateTags.length;
-
-        // If the route is only a template tag with no static text, use the
-        // template tag text as the method name.
-        if (templateCount === 1 && route === '{' + templateTags[0] + '}') {
-          routeName = templateTags[0];
-        } else {
-          routeName = route.substr(0, route.indexOf('{'));
-        }
-
-        // Don't add reserved methods to the context. This is done to avoid
-        // potentially confusing use cases. *Was it `get` to make the request
-        // or to set the path?*
-        if (!routeName || _.has(RESERVED_METHODS, routeName)) {
-          return false;
-        }
-
-        // Get the ordered tag names for completion.
-        var tags = _.map(
-          route.match(uriParamRegex(resource.uriParameters)),
-          function (param) {
-            return resource.uriParameters[param.slice(1, -1)];
-          }
-        );
-
-        // The route is dynamic, so we set the route name to be a function
-        // which accepts the template arguments and updates the path fragment.
-        // We'll extend any route already at the same namespace so we can do
-        // things like use both `/{route}` and `/route`, if needed.
-        context[routeName] = _.extend(function () {
-          var args = arguments;
-
-          // Map the tags to the arguments or default arguments.
-          var parts = _.map(tags, function (param, index) {
-            // Inject enum parameters if there is only one available enum.
-            // TODO: When/if we add validation back, have these routes
-            // be generated instead of typed out.
-            if (args[index] == null && param.enum && param.enum.length === 1) {
-              return param.enum[0];
-            }
-
-            return args[index];
-          });
-
-          // Change the last path fragment to the proper template text.
-          routeNodes[routeNodes.length - 1] = template(
-            route, resource.uriParameters, parts
-          );
-
-          var newContext = {};
-          attachMethods(routeNodes, newContext, resource.methods);
-          return attachResources(routeNodes, newContext, resources);
-        }, context[routeName]);
-
-        // Generate the description object for helping tooltip display.
-        context[routeName][DESCRIPTION_PROPERTY] = {
-          // Create a function type hint based on the display name and whether
-          // the tag is required.
-          '!type': 'fn(' + _.map(tags, function (param) {
-            var displayName = param.displayName + (!param.required ? '?' : '');
-
-            return displayName + ': ' + (param.type || '?');
-          }).join(', ') + ')',
-          // Generate documentation by joining all the template descriptions
-          // together with new lines.
-          '!doc': _.chain(tags).uniq().filter(function (param) {
-            return !!param.description;
-          }).map(function (param) {
-            return '"' + param.displayName + '": ' + param.description;
-          }).value().join('\n')
-        };
-
-        // Generate the return property for helping autocompletion.
-        var returnPropContext = {};
-        attachMethods(routeNodes, returnPropContext, resource.methods);
-        attachResources(routeNodes, returnPropContext, resources);
-        return context[routeName][RETURN_PROPERTY] = returnPropContext;
-      } else {
-        return false;
-      }
+var attachMediaTypeExtension = function (nodes, context, resource) {
+  /**
+   * Push the extension onto the current route and set relevant headers.
+   *
+   * @param  {String} extension
+   * @return {Object}
+   */
+  context.mediaTypeExtension = function (extension) {
+    // Prepend a period to the extension before adding to the route.
+    if (extension.charAt(0) !== '.') {
+      extension = '.' + extension;
     }
 
-    // If the route is only static text we can easily add the next route.
-    var newContext = context[routeName] || (context[routeName] = {});
+    var newContext  = {};
+    var routeNodes  = _.extend([], nodes);
+    var contentType = mime.lookup(extension);
+
+    // Append the extension to the current route.
+    routeNodes[routeNodes.length - 1] += extension;
+
+    // Automagically set the correct accepts header. Needs to clone the config
+    // object and the headers to avoid breaking references.
+    if (contentType) {
+      routeNodes.config = _.extend({}, routeNodes.config);
+      routeNodes.config.headers = _.extend({}, routeNodes.config.headers);
+      routeNodes.config.headers.accept = contentType;
+    }
+
     attachMethods(routeNodes, newContext, resource.methods);
-    return attachResources(routeNodes, newContext, resources);
+    attachResources(routeNodes, newContext, resource.resources);
+
+    return newContext;
+  };
+
+  // Iterate over the enum options and automatically attach to the context.
+  _.each(resource.uriParameters.mediaTypeExtension.enum, function (extension) {
+    if (extension.charAt(0) === '.') {
+      extension = extension.substr(1);
+    }
+
+    context[extension] = context.mediaTypeExtension(extension);
   });
 
   return context;
 };
+
+/**
+ * Recurses through a resource object in the RAML AST, generating a dynamic
+ * DSL that only allows methods that were defined in the RAML spec.
+ *
+ * @param  {Array}  nodes
+ * @param  {Object} context
+ * @param  {Object} resources
+ * @return {Object}
+ */
+
+/* jshint -W003 */
+var attachResources = function (nodes, context, resources) {
+  _.each(resources, function (resource, route) {
+    var hasMediaExtension = route.substr(-20) === '{mediaTypeExtension}';
+
+    // Use `extend` to clone nodes since we have data available on the nodes.
+    var routeNodes    = _.extend([], nodes);
+    var templateCount = _.keys(resource.uriParameters || {}).length;
+
+    // Ignore media type extensions in route generation.
+    if (hasMediaExtension) {
+      route = route.slice(0, -20);
+      templateCount--;
+    }
+
+    // Push the current route into the route array.
+    routeNodes.push(route);
+
+    // If we have template tags available
+    if (templateCount > 0) {
+      return attachDynamicRoute(
+        routeNodes, context, route, resource, hasMediaExtension
+      );
+    }
+
+    var newContext = context[route] || (context[route] = {});
+
+    if (hasMediaExtension) {
+      attachMediaTypeExtension(routeNodes, newContext, resource);
+    } else {
+      attachMethods(routeNodes, newContext, resource.methods);
+      attachResources(routeNodes, newContext, resource.resources);
+    }
+  });
+
+  return context;
+};
+/* jshint +W003 */
+
+/**
+ * Attach a dynamic route name to the current context. This should already have
+ * some pre-processing applied and passed in.
+ *
+ * @param  {Array}   nodes
+ * @param  {Object}  context
+ * @param  {String}  route
+ * @param  {Object}  resource
+ * @param  {Boolean} hasMedia
+ * @return {Object}
+ */
+
+/* jshint -W003 */
+var attachDynamicRoute = function (nodes, context, route, resource, hasMedia) {
+  var routeName    = route;
+  var templateTags = route.match(uriParamRegex(resource.uriParameters));
+  var routeTags    = templateTags.join('');
+
+  // The route must end with the chained template tags and have no
+  // text between tags.
+  if (route.substr(-routeTags.length) !== routeTags) { return false; }
+
+  // If the route is only a template tag with no static text, use the
+  // template tag text as the method name.
+  if (templateTags.length === 1 && route === templateTags[0]) {
+    routeName = templateTags[0].slice(1, -1);
+  } else {
+    routeName = route.substr(0, route.indexOf('{'));
+  }
+
+  // Avoid adding empty route name cases. This can occur when we have
+  // multiple tag names and no front text. For example, `{this}{that}`.
+  // This could also occur if for some reason we are passing in a route that
+  // isn't dynamic.
+  if (!routeName) { return false; }
+
+  // Get the ordered tag names for completion.
+  var tags = _.map(templateTags, function (param) {
+    return resource.uriParameters[param.slice(1, -1)];
+  });
+
+  // The route is dynamic, so we set the route name to be a function
+  // which accepts the template arguments and updates the path fragment.
+  // We'll extend any route already at the same namespace so we can do
+  // things like use both `/{route}` and `/route`, if needed.
+  context[routeName] = _.extend(function () {
+    var args = arguments;
+
+    // Map the tags to the arguments or default arguments.
+    var parts = _.map(tags, function (param, index) {
+      // Inject enum parameters if there is only one available enum.
+      // TODO: When/if we add validation back, have these routes
+      // be generated instead of typed out.
+      if (args[index] == null && param.enum && param.enum.length === 1) {
+        return param.enum[0];
+      }
+
+      return args[index];
+    });
+
+    // Change the last path fragment to the proper template text.
+    nodes[nodes.length - 1] = template(
+      route, resource.uriParameters, parts
+    );
+
+    var newContext = {};
+
+    if (hasMedia) {
+      attachMediaTypeExtension(nodes, newContext, resource);
+    } else {
+      attachMethods(nodes, newContext, resource.methods);
+      attachResources(nodes, newContext, resource.resources);
+    }
+
+    return newContext;
+  }, context[routeName]);
+
+  // Generate the description object for helping tooltip display.
+  context[routeName][DESCRIPTION_PROPERTY] = {
+    // Create a function type hint based on the display name and whether
+    // the tag is required.
+    '!type': 'fn(' + _.map(tags, function (param) {
+      var displayName = param.displayName + (!param.required ? '?' : '');
+
+      return displayName + ': ' + (param.type || '?');
+    }).join(', ') + ')',
+    // Generate documentation by joining all the template descriptions
+    // together with new lines.
+    '!doc': _.chain(tags).uniq().filter(function (param) {
+      return !!param.description;
+    }).map(function (param) {
+      return '"' + param.displayName + '": ' + param.description;
+    }).value().join('\n')
+  };
+
+  // Generate the return property for helping autocompletion.
+  var returnContext =  context[routeName][RETURN_PROPERTY] = {};
+
+  if (hasMedia) {
+    attachMediaTypeExtension(nodes, returnContext, resource);
+  } else {
+    attachMethods(nodes, returnContext, resource.methods);
+    attachResources(nodes, returnContext, resource.resources);
+  }
+
+  return context[routeName];
+};
+/* jshint +W003 */
 
 /**
  * Returns an object of keys with whether they are required or not.
@@ -773,11 +870,11 @@ var generateClient = function (ast, config) {
       path, {}, context || {}
     ).replace(/^\/+/, '').split('/');
 
-    return attachMethods(_.extend([], nodes, route), {}, httpMethods);
+    return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
   };
 
   // Enable the `@return` property used by the completion plugin.
-  client[RETURN_PROPERTY] = attachMethods(nodes, {}, httpMethods);
+  client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
 
   // Enable the `@description` property used by the completion tooltip helper.
   client[DESCRIPTION_PROPERTY] = {
