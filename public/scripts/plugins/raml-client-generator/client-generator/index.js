@@ -12,8 +12,9 @@ var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '@return';
 var DESCRIPTION_PROPERTY = '@description';
 var CONFIG_OPTIONS       = [
-  'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
+  'body', 'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
 ];
+var OVERRIDE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
 
 /**
  * Accepts a params object and transforms it into a regex for matching the
@@ -268,7 +269,7 @@ var sanitizeXHR = function (xhr) {
  * @return {Function}
  */
 var httpRequest = function (nodes, method) {
-  return function (data, config, done) {
+  return function (body, config, done) {
     // Allow config to be omitted from arguments.
     if (_.isFunction(arguments[1])) {
       done   = arguments[1];
@@ -277,8 +278,9 @@ var httpRequest = function (nodes, method) {
 
     // Map configuration options and merge with the passed in object.
     config = _.object(CONFIG_OPTIONS, _.map(CONFIG_OPTIONS, function (option) {
-      if (option === 'proxy') {
-        return config && 'proxy' in config ? config.proxy : nodes.config.proxy;
+      if (_.has(OVERRIDE_CONFIG_OPTIONS, option)) {
+        return config && option in config ?
+          config[option] : nodes.config[option];
       }
 
       return _.extend({}, nodes.config[option], config && config[option]);
@@ -291,8 +293,13 @@ var httpRequest = function (nodes, method) {
 
     // GET and HEAD requests accept the query string as the first argument.
     if (method.method === 'get' || method.method === 'head') {
-      _.extend(config.query, _.isString(data) ? qs.parse(data) : data);
-      data  = null;
+      _.extend(config.query, _.isString(body) ? qs.parse(body) : body);
+      body  = null;
+    }
+
+    // Set the config object body to the passed in body.
+    if (body != null) {
+      config.body = body;
     }
 
     // Append the query string if one is available.
@@ -314,15 +321,15 @@ var httpRequest = function (nodes, method) {
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (!isHost(data) && serialize[mime]) {
-      data = serialize[mime](data);
+    if (!isHost(config.body) && serialize[mime]) {
+      config.body = serialize[mime](config.body);
     }
 
     var options = {
       url:     fullUri,
-      data:    data,
+      data:    config.body,
       async:   async,
-      proxy:   nodes.config.proxy,
+      proxy:   config.proxy,
       method:  method.method,
       headers: config.headers
     };
@@ -411,7 +418,7 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
    * @param  {String} extension
    * @return {Object}
    */
-  context.mediaTypeExtension = function (extension) {
+  context.extension = function (extension) {
     // Prepend a period to the extension before adding to the route.
     if (extension.charAt(0) !== '.') {
       extension = '.' + extension;
@@ -444,7 +451,7 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
       extension = extension.substr(1);
     }
 
-    context[extension] = context.mediaTypeExtension(extension);
+    context[extension] = context.extension(extension);
   });
 
   return context;

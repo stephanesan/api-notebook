@@ -286,6 +286,37 @@ describe('RAML Client Generator Plugin', function () {
             );
           });
         });
+
+        describe('Custom Request Bodies in Config', function () {
+          App._.each(methodsWithBodies, function (method) {
+            it(
+              'should be able to pass request bodies with ' + method + ' requests',
+              function (done) {
+                return fakeRequest(
+                  'example("/test/route").' + method + '(null, { body: "Test Data" });', method, '/test/route', function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal('Test Data');
+                  return done(err);
+                });
+              }
+            );
+          });
+        });
+
+        describe('Custom Query Strings in Config', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to pass queries with ' + method + ' requests',
+              fakeRequest(
+                'example("/test/route").' + method + '(null, { query: "test=data" })',
+                method,
+                '/test/route?test=data'
+              )
+            );
+          });
+        });
       });
     });
 
@@ -346,7 +377,7 @@ describe('RAML Client Generator Plugin', function () {
 
             it(
               'should allow manual override of `mediaTypeExtension` fields',
-              testRequestHeaders('.user.mediaTypeExtension("xml")', method, '/user.xml', {
+              testRequestHeaders('.user.extension("xml")', method, '/user.xml', {
                 'Accept': 'application/xml'
               })
             );
@@ -360,7 +391,7 @@ describe('RAML Client Generator Plugin', function () {
 
             it(
               'should allow manual override of `mediaTypeExtension` fields after variables',
-              testRequestHeaders('.user.userId(123).mediaTypeExtension("xml")', method, '/user/123.xml', {
+              testRequestHeaders('.user.userId(123).extension("xml")', method, '/user/123.xml', {
                 'Accept': 'application/xml'
               })
             );
@@ -471,6 +502,37 @@ describe('RAML Client Generator Plugin', function () {
               'should be able to pass custom request bodies with ' + method + ' requests',
               testRequestBody(
                 '.collection.collectionId("123")', method, '/collection/123', 'Test data'
+              )
+            );
+          });
+        });
+
+        describe('Custom Request Bodies in Config', function () {
+          App._.each(methodsWithBodies, function (method) {
+            it(
+              'should be able to pass request bodies with ' + method + ' requests',
+              function (done) {
+                return fakeRequest(
+                  'example.collection.collectionId("123").' + method + '(null, { body: "Test Data" });', method, '/collection/123', function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal('Test Data');
+                  return done(err);
+                });
+              }
+            );
+          });
+        });
+
+        describe('Custom Query Strings in Config', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to pass queries with ' + method + ' requests',
+              fakeRequest(
+                'example.collection.collectionId("123").' + method + '(null, { query: "test=data" })',
+                method,
+                '/collection/123?test=data'
               )
             );
           });
