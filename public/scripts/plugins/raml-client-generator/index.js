@@ -106,6 +106,9 @@ API.createClient = function (name, url, config, done) {
   }, done);
 };
 
+/**
+ * Description of the create client function.
+ */
 API.createClient[DESCRIPTION_PROPERTY] = {
   '!type': 'fn(' + [
     'alias: string',
@@ -116,6 +119,53 @@ API.createClient[DESCRIPTION_PROPERTY] = {
   '!doc': [
     'Generate an API client from a RAML document and alias it on the window.'
   ].join(' ')
+};
+
+/**
+ * Set a configuration value on a client.
+ *
+ * @param {Function} client
+ * @param {String}   key
+ * @param {*}        value
+ */
+API.set = function (client, key, value) {
+  // If we don't have enough arguments for a key and value, assume we have
+  // a fresh configuration object.
+  if (arguments.length < 3) {
+    return _.extend(client._config, key);
+  }
+
+  return client._config[key] = value;
+};
+
+/**
+ * Retrieve a value from the client config object.
+ *
+ * @param  {Function} client
+ * @param  {String}   key
+ * @return {*}
+ */
+API.get = function (client, key) {
+  if (arguments.length < 2) {
+    return client._config;
+  }
+
+  return client._config[key];
+};
+
+/**
+ * Unset a key from the client configuration.
+ *
+ * @param  {Function} client
+ * @param  {String}   key
+ * @return {Boolean}
+ */
+API.unset = function (client, key) {
+  if (arguments.length < 2) {
+    return false;
+  }
+
+  return delete client._config[key];
 };
 
 /**

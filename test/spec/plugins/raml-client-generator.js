@@ -134,6 +134,7 @@ describe('RAML Client Generator Plugin', function () {
         sandbox.execute(execute, function (err, exec) {
           expect(exec.isError).to.be.false;
           expect(exec.result).to.include.keys('body', 'headers', 'status');
+          expect(exec.result.status).to.equal(200);
           return done(err, exec);
         });
 
@@ -255,9 +256,9 @@ describe('RAML Client Generator Plugin', function () {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 fakeRequest(
-                  'example("/test/route").get({ test: true })',
+                  'example("/test/route").' + method + '({ test: true })',
                   method,
-                  '/collection/123?test=true'
+                  '/test/route?test=true'
                 )
               );
             });
@@ -314,6 +315,19 @@ describe('RAML Client Generator Plugin', function () {
                 'example("/test/route").' + method + '(null, { query: "test=data" })',
                 method,
                 '/test/route?test=data'
+              )
+            );
+          });
+        });
+
+        describe('Merge Query Strings in Config with Body', function () {
+          App._.each(methodsWithoutBodies, function (method) {
+            it(
+              'should be able to merge queries with ' + method + ' requests',
+              fakeRequest(
+                'example("/test/route").' + method + '({ this: "that" }, { query: "test=data" })',
+                method,
+                '/test/route?test=data&this=that'
               )
             );
           });
@@ -491,7 +505,7 @@ describe('RAML Client Generator Plugin', function () {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 fakeRequest(
-                  'example.collection.collectionId("123").get({ test: true })',
+                  'example.collection.collectionId("123").' + method + '({ test: true })',
                   method,
                   '/collection/123?test=true'
                 )
@@ -553,6 +567,127 @@ describe('RAML Client Generator Plugin', function () {
               )
             );
           });
+        });
+
+        describe('Merge Query Strings in Config with Body', function () {
+          App._.each(methodsWithoutBodies, function (method) {
+            it(
+              'should be able to merge queries with ' + method + ' requests',
+              fakeRequest(
+                'example.collection.collectionId("123").' + method + '({ this: "that" }, { query: "test=data" })',
+                method,
+                '/collection/123?test=data&this=that'
+              )
+            );
+          });
+        });
+
+        describe('Custom Headers in Config', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to attach custom headers to ' + method + ' requests',
+              testRequestHeaders(
+                '.collection.collectionId("123").' + method + '(null, { headers: { "X-Test-Header": "Test" } })',
+                method,
+                '/collection/123',
+                {
+                  'X-Test-Header': 'Test'
+                }
+              )
+            );
+          });
+        });
+
+        describe('Default configuration options', function () {
+          beforeEach(function (done) {
+            sandbox.execute('API.set(example, { query: "test=data", body: "test body", headers: { "X-Test-Header": "Test Header" }, uriParameters: { collectionId: 567 } });', done);
+          });
+
+          it('should be able retrieve a value', function (done) {
+            sandbox.execute('API.get(example, "query")', function (err, exec) {
+              expect(exec.result).to.equal('test=data');
+              return done(err);
+            });
+          });
+
+          it('should be able to set a value', function (done) {
+            sandbox.execute('API.set(example, "query", "something=that")', function (err, exec) {
+              expect(exec.result).to.equal('something=that');
+              return done(err);
+            });
+          });
+
+          it('should be able to unset a value', function (done) {
+            sandbox.execute('API.unset(example, "query")', function (err) {
+              expect(err).to.not.exist;
+
+              sandbox.execute('API.get(example, "query")', function (err, exec) {
+                expect(exec.result).to.be.undefined;
+                return done(err);
+              });
+            });
+          });
+
+          it(
+            'should use default query strings',
+            fakeRequest(
+              'example.collection.collectionId("123").get()',
+              'get',
+              '/collection/123?test=data'
+            )
+          );
+
+          it(
+            'should merge query string with default',
+            fakeRequest(
+              'example.collection.collectionId("123").get({ this: "that" })',
+              'get',
+              '/collection/123?test=data&this=that'
+            )
+          );
+
+          it(
+            'should fallback to default body',
+            function (done) {
+              fakeRequest(
+                'example.collection.collectionId("123").post()',
+                'post',
+                '/collection/123?test=data',
+                function (request, response) {
+                  response[2] = request.requestBody;
+                }
+              )(function (err, exec) {
+                expect(exec.result.body).to.equal('test body');
+                return done(err);
+              });
+            }
+          );
+
+          it(
+            'should override default body',
+            function (done) {
+              fakeRequest(
+                'example.collection.collectionId("123").post("something else")',
+                'post',
+                '/collection/123?test=data',
+                function (request, response) {
+                  response[2] = request.requestBody;
+                }
+              )(function (err, exec) {
+                expect(exec.result.body).to.equal('something else');
+                return done(err);
+              });
+            }
+          );
+
+          it(
+            'should fallback to default uriParameters',
+            fakeRequest(
+              'example.collection.collectionId().get()',
+              'get',
+              '/collection/567?test=data'
+            )
+          );
         });
 
         describe('Serializing request bodies', function () {

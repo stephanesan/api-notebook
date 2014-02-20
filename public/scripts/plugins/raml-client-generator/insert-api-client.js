@@ -1,6 +1,7 @@
 /* global App */
-var _        = App._;
-var Backbone = App.Library.Backbone;
+var _          = require('underscore');
+var Backbone   = require('backbone');
+var changeCase = require('change-case');
 
 /**
  * Create an api client cell that can load the selected api document.
@@ -14,7 +15,7 @@ var createApiClientCell = function (cell, invoke) {
     if (err) { return; }
 
     var url      = api.ramlUrl;
-    var variable = App.Library.changeCase.camelCase(api.title);
+    var variable = changeCase.camelCase(api.title);
     var code     = [
       '// Read about the ' + api.title + ' at ' + api.portalUrl,
       'API.createClient(\'' + variable + '\', \'' + url + '\');'

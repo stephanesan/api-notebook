@@ -1,8 +1,8 @@
 /* global App */
 var _           = App._;
-var qs          = App.Library.querystring;
+var qs          = require('qs');
 var trim        = require('trim');
-var cases       = App.Library.changeCase;
+var cases       = require('change-case');
 var mime        = require('mime-component');
 var escape      = require('escape-regexp');
 var parser      = require('uri-template');
@@ -192,6 +192,21 @@ var serialize = {
 };
 
 /**
+ * Sanitize a specific configuration option.
+ *
+ * @type {Object}
+ */
+var sanitizeOption = {
+  query: function (query) {
+    if (_.isString(query)) {
+      return qs.parse(query);
+    }
+
+    return query;
+  }
+};
+
+/**
  * Map the supported auth types to the known triggers.
  *
  * @type {Object}
@@ -251,9 +266,7 @@ var sanitizeXHR = function (xhr) {
   var headers = getAllReponseHeaders(xhr);
 
   // Automatically parse certain response types.
-  if (parse[mime]) {
-    body = parse[mime](body);
-  }
+  body = (parse[mime] || _.identity)(body);
 
   return {
     body:    body,
@@ -283,7 +296,11 @@ var httpRequest = function (nodes, method) {
           config[option] : nodes.config[option];
       }
 
-      return _.extend({}, nodes.config[option], config && config[option]);
+      var nodeOption   = nodes.config[option];
+      var configOption = config && config[option];
+      var sanitize     = sanitizeOption[option] || _.identity;
+
+      return _.extend({}, sanitize(nodeOption), sanitize(configOption));
     }));
 
     var async   = !!done;
@@ -293,8 +310,8 @@ var httpRequest = function (nodes, method) {
 
     // GET and HEAD requests accept the query string as the first argument.
     if (method.method === 'get' || method.method === 'head') {
-      _.extend(config.query, _.isString(body) ? qs.parse(body) : body);
-      body  = null;
+      _.extend(config.query, sanitizeOption.query(body));
+      body = null;
     }
 
     // Set the config object body to the passed in body.
@@ -555,15 +572,23 @@ var attachDynamicRoute = function (nodes, context, route, resource, hasMedia) {
     var args = arguments;
 
     // Map the tags to the arguments or default arguments.
-    var parts = _.map(tags, function (param, index) {
+    var parts = _.map(tags, function (tag, index) {
       // Inject enum parameters if there is only one available enum.
       // TODO: When/if we add validation back, have these routes
       // be generated instead of typed out.
-      if (args[index] == null && param.enum && param.enum.length === 1) {
-        return param.enum[0];
+      if (args[index] == null && tag.enum && tag.enum.length === 1) {
+        return tag.enum[0];
       }
 
-      return args[index];
+      // Use any passed in argument - even it's falsy.
+      if (index in args) {
+        return args[index];
+      }
+
+      var param = templateTags[index].slice(1, -1);
+
+      // Fallback to injecting the fallback configuration uri parameter.
+      return nodes.config && nodes.config.uriParameters[param];
     });
 
     // Change the last path fragment to the proper template text.
@@ -849,7 +874,7 @@ var generateClient = function (ast, config) {
   // make a request. For this reason, it's important that we use objects which
   // are passed by reference.
   var nodes = _.extend([], {
-    config: config || {},
+    config: config || (config = {}),
     client: {
       baseUri:         ast.baseUri.replace(/\/+$/, ''),
       securedBy:       ast.securedBy,
@@ -880,10 +905,10 @@ var generateClient = function (ast, config) {
     return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
   };
 
-  // Enable the `@return` property used by the completion plugin.
-  client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
+  // Expose the config functionality to external forces.
+  client._config = config;
 
-  // Enable the `@description` property used by the completion tooltip helper.
+  client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
   client[DESCRIPTION_PROPERTY] = {
     '!type': 'fn(url: string, data?: object)',
     '!doc': [
@@ -892,10 +917,7 @@ var generateClient = function (ast, config) {
     ].join(' ')
   };
 
-  // Attach all the resources to the returned client function.
   attachResources(nodes, client, ast.resources);
-
-  // Attach security scheme authentication to the root node.
   attachSecuritySchemes(nodes, client, ast.securitySchemes);
 
   return client;
