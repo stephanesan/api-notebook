@@ -9,6 +9,7 @@ var App = module.exports = window.App = {};
 
 App.Library = {
   url:      require('url'),
+  domify:   require('domify'),
   Backbone: require('backbone'),
   DOMBars:  require('./lib/dombars')
 };

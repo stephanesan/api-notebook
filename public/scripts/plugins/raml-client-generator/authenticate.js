@@ -163,7 +163,7 @@ var promptTokens = function (scheme, options, done) {
         });
     }
   }, function (err) {
-    return done(cancelled ? new Error('Modal closed') : err, options);
+    return done(err || (cancelled ? new Error('Modal closed') : null), options);
   });
 };
 
