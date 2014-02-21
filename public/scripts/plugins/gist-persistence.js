@@ -10,8 +10,9 @@ var CLIENT_SECRET = process.env.plugins.github.clientSecret;
  *
  * @type {Object}
  */
-var authOpts = {
+var AUTH_OPTIONS = {
   scopes:              ['gist'],
+  type:                'OAuth 2.0',
   clientId:            CLIENT_ID,
   clientSecret:        CLIENT_SECRET,
   accessTokenUri:      TOKEN_URL,
@@ -147,7 +148,7 @@ var authenticatedUserId = function (done) {
  * @param {Function} done
  */
 var authenticatePlugin = function (data, next, done) {
-  App.middleware.trigger('authenticate:oauth2', authOpts, function (err, auth) {
+  App.middleware.trigger('authenticate', AUTH_OPTIONS, function (err, auth) {
     if (err) { return next(err); }
 
     oauth2Store.set(auth);

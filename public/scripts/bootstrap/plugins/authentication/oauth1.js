@@ -9,7 +9,7 @@ var redirectUri = url.resolve(
   global.location.href, process.env.application.oauthCallback
 );
 
-var appUrlEncoded = 'application/x-www-form-urlencoded';
+var URL_ENCODED = 'application/x-www-form-urlencoded';
 
 /**
  * Default ports of different protocols.
@@ -204,12 +204,12 @@ var prepareParameters = function (data) {
   });
 
   if (!contentType) {
-    contentType = data.headers['Content-Type'] = appUrlEncoded;
+    contentType = data.headers['Content-Type'] = URL_ENCODED;
   } else {
     contentType = contentType[1];
   }
 
-  if (contentType === appUrlEncoded) {
+  if (contentType === URL_ENCODED) {
     if (_.isString(data.data)) {
       data.data = qs.parse(data.data);
     }
@@ -270,7 +270,7 @@ var getRequestToken = function (options, done) {
       oauthCallback: redirectUri
     }, options),
     headers: {
-      'Content-Type': appUrlEncoded
+      'Content-Type': URL_ENCODED
     }
   }, function (err, xhr) {
     if (err) { return done(err); }
@@ -302,7 +302,7 @@ var getAccessToken = function (options, verifier, done) {
     method: 'POST',
     oauth1: options,
     headers: {
-      'Content-Type': appUrlEncoded
+      'Content-Type': URL_ENCODED
     },
     data: qs.stringify({
       'oauth_verifier': verifier
@@ -322,6 +322,10 @@ var getAccessToken = function (options, verifier, done) {
     // duplication.
     delete response.oauth_token;
     delete response.oauth_token_secret;
+
+    if (!_.keys(data.response).length) {
+      delete data.response;
+    }
 
     return done(null, data);
   });
@@ -383,27 +387,18 @@ var oauth1Flow = function (options, done) {
 };
 
 /**
- * Proxy done requests to ensure two arguments are always passed.
+ * Trigger authentication via OAuth1.0(A) in the browser.
  *
- * @param  {Function} done
- * @return {Function}
- */
-var proxyDone = function (done) {
-  return function (err, data) {
-    return done(err, data);
-  };
-};
-
-/**
- * Trigger authentication via OAuth1.0(A) in the browser. Valid data
- * properties include:
- *
- * @param {Object}   data
+ * @param {Object}   options
  * @param {Function} next
  * @param {Function} done
  */
-middleware.register('authenticate:oauth1', function (data, next, done) {
-  return oauth1Flow(data, proxyDone(done));
+middleware.register('authenticate', function (options, next, done) {
+  if (options.type === 'OAuth 1.0') {
+    return oauth1Flow(options, done);
+  }
+
+  return next();
 });
 
 /**

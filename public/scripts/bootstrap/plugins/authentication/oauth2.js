@@ -121,6 +121,11 @@ var authResponse = function (options, response, done) {
     accessToken: response.access_token
   };
 
+  // Omit the response object altogether if no response is available.
+  if (!_.keys(data.response).length) {
+    delete data.response;
+  }
+
   if (response.token_type) {
     data.tokenType = response.token_type;
   }
@@ -138,6 +143,7 @@ var authResponse = function (options, response, done) {
 
 /**
  * Trigger the client-side implicit OAuth2 flow.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.2
  *
  * @param {Object}   options
  * @param {Function} done
@@ -184,6 +190,7 @@ var oauth2TokenFlow = function (options, done) {
 
 /**
  * Trigger the full server-side OAuth2 flow.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.1
  *
  * @param {Object}   options
  * @param {Function} done
@@ -264,17 +271,13 @@ var oAuth2CodeFlow = function (options, done) {
 };
 
 /**
- * Function for simply proxy two parameters to a done function. Required since
- * the function may not return parameters but when the middleware doesn't
- * recieve two parameters in passes the previous data object back through.
+ * Map authentication methods to a function.
  *
- * @param  {Function} done
- * @return {Function}
+ * @type {Object}
  */
-var proxyDone = function (done) {
-  return function (err, data) {
-    return done(err, data);
-  };
+var authenticate = {
+  code:  oAuth2CodeFlow,
+  token: oauth2TokenFlow
 };
 
 /**
@@ -287,20 +290,24 @@ var proxyDone = function (done) {
  *   `authorizationGrants` - ["code"]
  *   `scopes`              - ["user", "read", "write"]
  *
- * @param {Object}   data
+ * @param {Object}   options
  * @param {Function} next
  * @param {Function} done
  */
-middleware.register('authenticate:oauth2', function (data, next, done) {
+middleware.register('authenticate', function (options, next, done) {
+  if (options.type !== 'OAuth 2.0') {
+    return next();
+  }
+
   // Sanitize authorization grants to an array.
-  if (_.isString(data.authorizationGrants)) {
-    data.authorizationGrants = [data.authorizationGrants];
+  if (_.isString(options.authorizationGrants)) {
+    options.authorizationGrants = [options.authorizationGrants];
   }
 
   // Use insection to get the accepted grant types in the order of the
   // supported grant types (which are ordered by preference).
   var grantType = _.intersection(
-    supportedGrants, data.authorizationGrants
+    supportedGrants, options.authorizationGrants
   )[0];
 
   if (!grantType) {
@@ -310,34 +317,7 @@ middleware.register('authenticate:oauth2', function (data, next, done) {
     ));
   }
 
-  // Commit to the whole OAuth2 dance using the accepted grant type.
-  return middleware.trigger(
-    'authenticate:oauth2:' + grantType, data, done
-  );
-});
-
-/**
- * Middleware for authenticating using the OAuth2 code grant flow.
- * Reference: http://tools.ietf.org/html/rfc6749#section-4.1
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.register('authenticate:oauth2:code', function (data, next, done) {
-  return oAuth2CodeFlow(sanitizeOptions(data), proxyDone(done));
-});
-
-/**
- * Middleware for authenticating with the OAuth2 implicit auth flow.
- * Reference: http://tools.ietf.org/html/rfc6749#section-4.2
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.register('authenticate:oauth2:token', function (data, next, done) {
-  return oauth2TokenFlow(sanitizeOptions(data), proxyDone(done));
+  return authenticate[grantType](sanitizeOptions(options), done);
 });
 
 /**

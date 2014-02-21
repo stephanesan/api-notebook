@@ -4,16 +4,20 @@ var middleware = require('../../../state/middleware');
 /**
  * Authenticate using basic auth.
  *
- * @param {Object}   data
+ * @param {Object}   options
  * @param {Function} next
  * @param {Function} done
  */
-middleware.register('authentication:basicAuth', function (data, next, done) {
-  if (!_.isString(data.username) || !_.isString(data.password)) {
+middleware.register('authenticate', function (options, next, done) {
+  if (options.type !== 'Basic Authentication') {
+    return next();
+  }
+
+  if (!_.isString(options.username) || !_.isString(options.password)) {
     return next(new TypeError('Username and password must be defined'));
   }
 
-  return done(null, _.pick(data, 'username', 'password'));
+  return done(null, _.pick(options, 'username', 'password'));
 });
 
 /**

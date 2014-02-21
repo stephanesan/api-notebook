@@ -33,7 +33,8 @@ describe('Authentication', function () {
       var tokenUri         = 'https://www.example.com/oauth2/token';
       var authorizationUri = 'https://www.example.com/oauth2/authorize';
 
-      App.middleware.trigger('authenticate:oauth2', {
+      App.middleware.trigger('authenticate', {
+        type:                'OAuth 2.0',
         clientId:            '',
         clientSecret:        '',
         accessTokenUri:      tokenUri,

@@ -112,19 +112,19 @@ middleware.exists = function (name) {
 };
 
 /**
- * Listens to any events triggered on the middleware system and runs through the
- * middleware stack based on the event name.
+ * Listens to any events triggered on the middleware system and runs through
+ * the middleware stack based on the event name.
  *
- * @param  {String}   name Event name to listen to.
- * @param  {Object}   data Basic object with all the data to pass to a plugin.
- * @param  {Function} done A callback function to call when the stack has
- *                         finished executing.
+ * @param {String}   name
+ * @param {Object}   data
+ * @param {Function} done
+ * @param {Function} discard
  */
-middleware.listenTo(middleware, 'all', function (name, data, complete) {
+middleware.listenTo(middleware, 'all', function (name, data, done, discard) {
   var sent  = false;
   var stack = this._stack[name] || [];
   var index = stack.length;
-  var prevData;
+  var previousData;
 
   // Call the final function when we are done executing the middleware stack.
   // It should also be passed as a parameter of the data object to each
@@ -133,13 +133,13 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
     // Set the function to have been already "run" and call the final function.
     sent = true;
 
-    if (_.isFunction(complete)) {
+    if (_.isFunction(done)) {
       // If we don't have enough arguments, send the previous data object.
-      if (arguments.length < 2) {
-        data = prevData;
+      if (arguments.length < 2 && !discard) {
+        data = previousData;
       }
 
-      return complete(err, data);
+      return done(err, data);
     }
   };
 
@@ -152,16 +152,16 @@ middleware.listenTo(middleware, 'all', function (name, data, complete) {
     // an updated data object. If we weren't passed two arguments, use the
     // previous know data object.
     if (arguments.length < 2) {
-      data = prevData;
+      data = previousData;
     } else {
-      prevData = data;
+      previousData = data;
     }
 
     // If we have called the done function inside a plugin, or we have hit
     // the end of the stack loop, we need to break the recursive next loop.
     if (sent || !layer) {
       if (!sent) {
-        over(err, data);
+        over(err, discard ? null : data);
       }
 
       return;

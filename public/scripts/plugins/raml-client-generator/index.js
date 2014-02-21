@@ -1,6 +1,7 @@
 /* global App */
 var _               = App._;
 var ramlParser      = require('raml-parser');
+var authenticate    = require('./authenticate');
 var clientGenerator = require('./client-generator');
 var fromPath        = require('../../lib/from-path');
 
@@ -139,6 +140,14 @@ API.set = function (client, key, value) {
 };
 
 /**
+ * Set the description of the API client configuration setter.
+ */
+API.set[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string, value)',
+  '!doc': 'Set a configuration option of a RAML API client.'
+};
+
+/**
  * Retrieve a value from the client config object.
  *
  * @param  {Function} client
@@ -154,6 +163,14 @@ API.get = function (client, key) {
 };
 
 /**
+ * Set the description of the API client configuration getter.
+ */
+API.get[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string)',
+  '!doc': 'Get a configuration option from a RAML API client.'
+};
+
+/**
  * Unset a key from the client configuration.
  *
  * @param  {Function} client
@@ -162,10 +179,74 @@ API.get = function (client, key) {
  */
 API.unset = function (client, key) {
   if (arguments.length < 2) {
-    return false;
+    _.each(client._config, function (value, key, obj) {
+      delete obj[key];
+    });
+
+    return true;
   }
 
   return delete client._config[key];
+};
+
+/**
+ * Set the description of the API client configuration unsetter.
+ */
+API.unset[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string)',
+  '!doc': 'Unset a configuration option from a RAML API client.'
+};
+
+/**
+ * Authenticate a RAML API client passing an optional method and accompanying
+ * options object.
+ *
+ * @param {Function} client
+ * @param {String}   method
+ * @param {Object}   options
+ * @param {Function} done
+ */
+API.authenticate = function (client, method, options, done) {
+  App._executeContext.timeout(10 * 60 * 1000);
+  done = done || App._executeContext.async();
+
+  var securedBy       = client._client.securedBy;
+  var securitySchemes = client._client.securitySchemes;
+
+  /**
+   * The callback is used to handle the persistence of data to the client.
+   *
+   * @param  {Error}    err
+   * @param  {Object}   scheme
+   * @param  {Object}   tokens
+   * @return {Function}
+   */
+  var cb = function (err, scheme, tokens) {
+    if (err) {
+      return done(err);
+    }
+
+    client._client.authentication[scheme.type] = tokens;
+    return done(null, tokens);
+  };
+
+  return authenticate(securedBy, securitySchemes, method, options, cb);
+};
+
+/**
+ * Set the description of the API client authenticator.
+ */
+API.authenticate[DESCRIPTION_PROPERTY] = {
+  '!type': [
+    'fn(client: function, method?: string, options?: object, cb?: function)'
+  ].join(''),
+  '!doc': [
+    'Authentication parameters are optional. For popular APIs, we provide',
+    'keys. If we need your keys we will prompt you via a modal. Never enter',
+    'keys directly into a notebook unless you explicitly intend to share',
+    'them. If you would like to know more about authenticating',
+    'with this API, see \'securityScheme.settings\' in the RAML file.'
+  ].join(' ')
 };
 
 /**

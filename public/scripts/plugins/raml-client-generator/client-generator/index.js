@@ -2,7 +2,6 @@
 var _           = App._;
 var qs          = require('qs');
 var trim        = require('trim');
-var cases       = require('change-case');
 var mime        = require('mime-component');
 var escape      = require('escape-regexp');
 var parser      = require('uri-template');
@@ -15,6 +14,17 @@ var CONFIG_OPTIONS       = [
   'body', 'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
 ];
 var OVERRIDE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
+
+/**
+ * Map the supported auth types to the known triggers.
+ *
+ * @type {Object}
+ */
+var authMap = {
+  'OAuth 1.0':            'oauth1',
+  'OAuth 2.0':            'oauth2',
+  'Basic Authentication': 'basicAuth'
+};
 
 /**
  * Accepts a params object and transforms it into a regex for matching the
@@ -207,37 +217,6 @@ var sanitizeOption = {
 };
 
 /**
- * Map the supported auth types to the known triggers.
- *
- * @type {Object}
- */
-var authTypes = {
-  'OAuth 1.0':            'oauth1',
-  'OAuth 2.0':            'oauth2',
-  'Basic Authentication': 'basicAuth'
-};
-
-/**
- * Required authentication keys used to check the options object.
- *
- * @type {Object}
- */
-var requiredAuthKeys = {
-  oauth1: {
-    consumerKey:    true,
-    consumerSecret: true
-  },
-  oauth2: {
-    clientId:     true,
-    clientSecret: true
-  },
-  basicAuth: {
-    username: true,
-    password: true
-  }
-};
-
-/**
  * Gets a header from the header object.
  *
  * @param  {Object}  headers
@@ -364,7 +343,7 @@ var httpRequest = function (nodes, method) {
       var authenticated = nodes.client.authentication[scheme.type];
 
       // Return the authenticated object. If truthy, iteration will stop.
-      return options[authTypes[scheme.type]] = authenticated;
+      return options[authMap[scheme.type]] = authenticated;
     });
 
     // If the request is async, set the relevant function callbacks.
@@ -627,7 +606,7 @@ var attachDynamicRoute = function (nodes, context, route, resource, hasMedia) {
   };
 
   // Generate the return property for helping autocompletion.
-  var returnContext =  context[routeName][RETURN_PROPERTY] = {};
+  var returnContext = context[routeName][RETURN_PROPERTY] = {};
 
   if (hasMedia) {
     attachMediaTypeExtension(nodes, returnContext, resource);
@@ -639,227 +618,6 @@ var attachDynamicRoute = function (nodes, context, route, resource, hasMedia) {
   return context[routeName];
 };
 /* jshint +W003 */
-
-/**
- * Returns an object of keys with whether they are required or not.
- *
- * @param  {String} type
- * @param  {Object} options
- * @return {Object}
- */
-var requiredKeys = function (type, options) {
-  var requiredKeys = _.extend({}, requiredAuthKeys[type]);
-
-  // Special case is required for OAuth2 implicit auth flow.
-  if (type === 'oauth2' && _.contains(options.authorizationGrants, 'token')) {
-    requiredKeys.clientSecret = false;
-  }
-
-  return requiredKeys;
-};
-
-/**
- * Return an array of keys that are still required to be filled.
- *
- * @param  {String} type
- * @param  {Object} options
- * @return {Array}
- */
-var requiredOptions = function (type, options) {
-  var keys = requiredKeys(type, options);
-
-  return _.filter(_.keys(keys), function (key) {
-    return keys[key] && !options[key];
-  });
-};
-
-/**
- * Trigger the middleware prompt for tokens.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var middlewarePrompt = function (type, options, done) {
-  return App.middleware.trigger('ramlClient:' + type, options, done);
-};
-
-/**
- * Execute the full authentication prompt. This includes requesting the
- * middleware and/or prompting the user to fill the values.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var fullPrompt = function (type, options, done) {
-  var title = {
-    oauth1:    'Please Enter Your OAuth1 Keys',
-    oauth2:    'Please Enter Your OAuth2 Keys',
-    basicAuth: 'Please Enter Your Username and Password'
-  }[type];
-
-  return App.middleware.trigger('ui:modal', {
-    title: title,
-    content: [
-      '<p>',
-      'This API requires authentication. Please enter your application keys.',
-      '</p>',
-      '<p><em>',
-      'We will not store your keys.',
-      '</em></p>'
-    ].concat([
-      '<form>',
-      _.map(requiredOptions(type, options), function (required) {
-        var value = options[required] || '';
-
-        return [
-          '<div class="form-group">',
-          '<label for="' + required + '">' + required + '</label>',
-          '<input id="' + required + '" value="' + value + '">',
-          '</div>'
-        ].join('');
-      }).join('\n'),
-      '<div class="form-footer">',
-      '<button type="submit" class="btn btn-primary">Submit</button>',
-      '</div>',
-      '<form>'
-    ]).join('\n'),
-    show: function (modal) {
-      modal.el.querySelector('form')
-        .addEventListener('submit', function (e) {
-          e.preventDefault();
-
-          _.each(this.querySelectorAll('input'), function (inputEl) {
-            options[inputEl.getAttribute('id')] = inputEl.value;
-          });
-
-          // Close the modal once all the options have been
-          modal.close();
-        });
-    }
-  }, function (err) {
-    return done(err, options);
-  });
-};
-
-/**
- * Trigger the authentication flow immediately or after we attempt to grab
- * the configuration options.
- *
- * @param {String}   type
- * @param {Object}   options
- * @param {Function} done
- */
-var authenticatePrompt = function (type, options, done) {
-  var cb = function (err, data) {
-    if (err) { return done(err); }
-
-    // Extend the options object with generated options.
-    var trigger = 'authenticate:' + type;
-    return App.middleware.trigger(trigger, _.extend(options, data), done);
-  };
-
-  // Check against the required options.
-  if (!requiredOptions(type, options).length) {
-    return cb(null, {});
-  }
-
-  return fullPrompt(type, options, cb);
-};
-
-/**
- * Attach an authentication method that delegates to middleware.
- *
- * @param  {String}   trigger
- * @param  {Array}    nodes
- * @param  {Object}   scheme
- * @return {Function}
- */
-var authenticateMiddleware = function (trigger, nodes, scheme) {
-  return function (data, done) {
-    // Allow the `data` argument to be omitted.
-    if (typeof arguments[0] === 'function') {
-      data = {};
-      done = arguments[0];
-    }
-
-    // If no callback function is provided, use the `async` function.
-    if (!_.isFunction(done)) {
-      done = App._executeContext.async();
-    }
-
-    var options = _.extend({}, scheme.settings);
-
-    // Timeout after 10 minutes.
-    App._executeContext.timeout(10 * 60 * 1000);
-
-    var cb = function (err, auth) {
-      // Set the client authentication details. This will be used with any
-      // http requests that require the authentication type.
-      nodes.client.authentication[scheme.type] = _.extend({}, options, auth);
-      return done(err, auth);
-    };
-
-    // Check whether we need to proceed to collecting more data.
-    if (!requiredOptions(trigger, _.extend({}, options, data))) {
-      return authenticatePrompt(trigger, _.extend(options, data), cb);
-    }
-
-    // Trigger a prompt to the middleware layer.
-    return middlewarePrompt(trigger, options, function (err, updates) {
-      if (err) { return done(err); }
-
-      // Extend the options with the user data over the top.
-      return authenticatePrompt(trigger, _.extend(options, updates, data), cb);
-    });
-  };
-};
-
-/**
- * Attaches all available security schemes to the context.
- *
- * @param  {Array}  nodes
- * @param  {Object} context
- * @param  {Object} schemes
- * @return {Object}
- */
-var attachSecuritySchemes = function (nodes, context, schemes) {
-  var description = 'Authentication parameters are optional. ' +
-    'For popular APIs, we provide keys. ' +
-    'If we need your keys we will prompt you via a modal. ' +
-    'Never enter keys directly into a Notebook unless ' +
-    'you explicitly intend to share them. ' +
-    'If you would like to know more about authenticating ' +
-    'with this API, see \'securityScheme.settings\' in the RAML file.';
-
-  // Loop through the available schemes and manually attach each of the
-  // available schemes.
-  _.each(schemes, function (scheme, title) {
-    if (!authTypes[scheme.type]) { return; }
-
-    var type   = authTypes[scheme.type];
-    var method = 'authenticate' + cases.pascal(title);
-
-    context[method] = authenticateMiddleware(type, nodes, scheme);
-    context[method][DESCRIPTION_PROPERTY] = _.extend(
-      toDescriptionObject(scheme),
-      {
-        '!type': 'fn(options?: object, cb?: function(error, data))'
-      }
-    );
-
-    if (!context[method][DESCRIPTION_PROPERTY]['!doc']) {
-      context[method][DESCRIPTION_PROPERTY]['!doc'] = description;
-    } else {
-      context[method][DESCRIPTION_PROPERTY]['!doc'] = [
-        description, context[method][DESCRIPTION_PROPERTY]['!doc']
-      ].join('\n\n');
-    }
-  });
-
-  return context;
-};
 
 /**
  * Generate the client object from a sanitized AST object.
@@ -905,8 +663,9 @@ var generateClient = function (ast, config) {
     return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
   };
 
-  // Expose the config functionality to external forces.
-  client._config = config;
+  // Expose the client functionality to external forces.
+  client._config = nodes.config;
+  client._client = nodes.client;
 
   client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
   client[DESCRIPTION_PROPERTY] = {
@@ -918,7 +677,6 @@ var generateClient = function (ast, config) {
   };
 
   attachResources(nodes, client, ast.resources);
-  attachSecuritySchemes(nodes, client, ast.securitySchemes);
 
   return client;
 };
