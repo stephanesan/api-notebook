@@ -51,7 +51,7 @@ requiredTokens.defaults = {
 var hasRequiredTokens = function (scheme, tokens) {
   // Iterate over the required tokens and check that the token is defined.
   return _.every(requiredTokens(scheme), function (value, key) {
-    return value ? tokens[key] : !tokens[key];
+    return value ? tokens[key] : true;
   });
 };
 

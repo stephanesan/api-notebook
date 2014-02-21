@@ -8,13 +8,13 @@ var apiKeys = process.env.plugins.ramlClient;
  * @param {Function} next
  */
 App.middleware.register('ramlClient:token', function (scheme, next, done) {
-  var authUri = scheme.authorizationUri;
+  var authUri = scheme.settings.authorizationUri;
 
   if (scheme.type === 'OAuth 1.0' && apiKeys.oauth1[authUri]) {
     return done(null, apiKeys.oauth1[authUri]);
   }
 
-  if (scheme.type === 'Oauth 2.0' && apiKeys.oauth2[authUri]) {
+  if (scheme.type === 'OAuth 2.0' && apiKeys.oauth2[authUri]) {
     return done(null, apiKeys.oauth2[authUri]);
   }
 
