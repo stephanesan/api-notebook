@@ -133,10 +133,10 @@ API.set = function (client, key, value) {
   // If we don't have enough arguments for a key and value, assume we have
   // a fresh configuration object.
   if (arguments.length < 3) {
-    return _.extend(client._config, key);
+    return _.extend(client['!config'], key);
   }
 
-  return client._config[key] = value;
+  return client['!config'][key] = value;
 };
 
 /**
@@ -156,10 +156,10 @@ API.set[DESCRIPTION_PROPERTY] = {
  */
 API.get = function (client, key) {
   if (arguments.length < 2) {
-    return client._config;
+    return client['!config'];
   }
 
-  return client._config[key];
+  return client['!config'][key];
 };
 
 /**
@@ -179,14 +179,14 @@ API.get[DESCRIPTION_PROPERTY] = {
  */
 API.unset = function (client, key) {
   if (arguments.length < 2) {
-    _.each(client._config, function (value, key, obj) {
+    _.each(client['!config'], function (value, key, obj) {
       delete obj[key];
     });
 
     return true;
   }
 
-  return delete client._config[key];
+  return delete client['!config'][key];
 };
 
 /**
@@ -210,8 +210,8 @@ API.authenticate = function (client, method, options, done) {
   App._executeContext.timeout(10 * 60 * 1000);
   done = done || App._executeContext.async();
 
-  var securedBy       = client._client.securedBy;
-  var securitySchemes = client._client.securitySchemes;
+  var securedBy       = client['!client'].securedBy;
+  var securitySchemes = client['!client'].securitySchemes;
 
   /**
    * The callback is used to handle the persistence of data to the client.
@@ -226,7 +226,7 @@ API.authenticate = function (client, method, options, done) {
       return done(err);
     }
 
-    client._client.authentication[scheme.type] = tokens;
+    client['!client'].authentication[scheme.type] = tokens;
     return done(null, tokens);
   };
 

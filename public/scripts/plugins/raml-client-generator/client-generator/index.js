@@ -664,8 +664,8 @@ var generateClient = function (ast, config) {
   };
 
   // Expose the client functionality to external forces.
-  client._config = nodes.config;
-  client._client = nodes.client;
+  client['!config'] = nodes.config;
+  client['!client'] = nodes.client;
 
   client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
   client[DESCRIPTION_PROPERTY] = {
