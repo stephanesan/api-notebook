@@ -744,7 +744,7 @@ describe('RAML Client Generator Plugin', function () {
       });
     });
 
-    describe('Completion Support (using `@return`)', function () {
+    describe('Completion Support', function () {
       var view;
 
       var testAutocomplete = function (text, done) {

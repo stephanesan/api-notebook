@@ -7,13 +7,41 @@ var escape      = require('escape-regexp');
 var parser      = require('uri-template');
 var sanitizeAST = require('./sanitize-ast');
 
+var CONFIG_PROPERTY = '!config';
+var CLIENT_PROPERTY = '!client';
+
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
-var RETURN_PROPERTY      = '@return';
-var DESCRIPTION_PROPERTY = '@description';
+var RETURN_PROPERTY      = '!return';
+var DESCRIPTION_PROPERTY = '!description';
 var CONFIG_OPTIONS       = [
   'body', 'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
 ];
-var OVERRIDE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
+var OVERRIDABLE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
+
+/**
+ * Static description of the media type extension function.
+ *
+ * @type {Object}
+ */
+var EXTENSION_DESCRIPTION = {
+  '!type': 'fn(extension: string)',
+  '!doc': [
+    'Set the path extension and corresponding accept header.'
+  ].join(' ')
+};
+
+/**
+ * Static description of the client object.
+ *
+ * @type {Object}
+ */
+var CLIENT_DESCRIPTION = {
+  '!type': 'fn(url: string, data?: object)',
+  '!doc': [
+    'Make an API request to a URL. Pass in a `data` object to replace',
+    'template tags before making the request.'
+  ].join(' ')
+};
 
 /**
  * Map the supported auth types to the known triggers.
@@ -68,12 +96,9 @@ var template = function (string, params, context) {
  * @return {Object}
  */
 var toDescriptionObject = function (object) {
-  var description = {};
-
-  // Documentation/description is usually available.
-  description['!doc'] = object.description;
-
-  return description;
+  return {
+    '!doc': object.description
+  };
 };
 
 /**
@@ -94,22 +119,22 @@ var allHttpMethods = _.chain(HTTP_METHODS).map(function (method) {
  */
 var methodDescription = {
   'get': {
-    '!type': 'fn(query?: object, async?: ?)'
+    '!type': 'fn(query?: object, config?: object, async?: ?)'
   },
   'head': {
-    '!type': 'fn(query?: object, async?: ?)'
+    '!type': 'fn(query?: object, config?: object, async?: ?)'
   },
   'put': {
-    '!type': 'fn(body?: ?, async?: ?)'
+    '!type': 'fn(body?: ?, config?: object, async?: ?)'
   },
   'post': {
-    '!type': 'fn(body?: ?, async?: ?)'
+    '!type': 'fn(body?: ?, config?: object, async?: ?)'
   },
   'patch': {
-    '!type': 'fn(body?: ?, async?: ?)'
+    '!type': 'fn(body?: ?, config?: object, async?: ?)'
   },
   'delete': {
-    '!type': 'fn(body?: ?, async?: ?)'
+    '!type': 'fn(body?: ?, config?: object, async?: ?)'
   }
 };
 
@@ -270,7 +295,7 @@ var httpRequest = function (nodes, method) {
 
     // Map configuration options and merge with the passed in object.
     config = _.object(CONFIG_OPTIONS, _.map(CONFIG_OPTIONS, function (option) {
-      if (_.has(OVERRIDE_CONFIG_OPTIONS, option)) {
+      if (_.has(OVERRIDABLE_CONFIG_OPTIONS, option)) {
         return config && option in config ?
           config[option] : nodes.config[option];
       }
@@ -440,6 +465,8 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
 
     return newContext;
   };
+
+  context.extension[DESCRIPTION_PROPERTY] = EXTENSION_DESCRIPTION;
 
   // Iterate over the enum options and automatically attach to the context.
   _.each(resource.uriParameters.mediaTypeExtension.enum, function (extension) {
@@ -663,18 +690,10 @@ var generateClient = function (ast, config) {
     return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
   };
 
-  // Expose the client functionality to external forces.
-  client['!config'] = nodes.config;
-  client['!client'] = nodes.client;
-
-  client[RETURN_PROPERTY] = attachMethods(nodes, {}, allHttpMethods);
-  client[DESCRIPTION_PROPERTY] = {
-    '!type': 'fn(url: string, data?: object)',
-    '!doc': [
-      'Make an API request to a custom URL. Pass in a `data` object to replace',
-      'any template tags before making the request.'
-    ].join(' ')
-  };
+  client[CONFIG_PROPERTY]      = nodes.config;
+  client[CLIENT_PROPERTY]      = nodes.client;
+  client[RETURN_PROPERTY]      = attachMethods(nodes, {}, allHttpMethods);
+  client[DESCRIPTION_PROPERTY] = CLIENT_DESCRIPTION;
 
   attachResources(nodes, client, ast.resources);
 

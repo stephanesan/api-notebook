@@ -97,11 +97,11 @@ var selectAPIDefinition = function (done) {
     },
     show: function (modal) {
       Backbone.$(modal.el)
-        .on('click', '[data-details]', function (e) {
+        .on('click', '[data-details]', function (e, target) {
           e.preventDefault();
           e.stopImmediatePropagation();
 
-          var classList = e.target.parentNode.parentNode.classList;
+          var classList = target.parentNode.parentNode.classList;
 
           if (!classList.contains('item-details-visible')) {
             classList.add('item-details-visible');

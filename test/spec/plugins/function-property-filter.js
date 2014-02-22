@@ -1,6 +1,8 @@
 /* global describe, it */
 
 describe('Function Property Filter Plugin', function () {
+  var RETURN_PROPERTY = '!return';
+
   before(function () {
     App.middleware.register(functionPropertyFilterPlugin);
   });
@@ -10,9 +12,9 @@ describe('Function Property Filter Plugin', function () {
   });
 
   describe('Inspector', function () {
-    it('should hide the @return property from display', function () {
+    it('should hide the return property from display', function () {
       var fn = function () {};
-      fn['@return'] = 'test';
+      fn[RETURN_PROPERTY] = 'test';
 
       var inspector = new App.View.Inspector({ inspect: fn, window: window });
       inspector.render().trigger('open');
@@ -21,7 +23,7 @@ describe('Function Property Filter Plugin', function () {
         return child.property;
       });
 
-      expect(properties).to.not.contain('@return');
+      expect(properties).to.not.contain(RETURN_PROPERTY);
     });
   });
 
@@ -49,7 +51,7 @@ describe('Function Property Filter Plugin', function () {
 
     it('should autocomplete strings', function (done) {
       window.test = function () {};
-      window.test['@return'] = 'output';
+      window.test[RETURN_PROPERTY] = 'output';
 
       testAutocomplete('test().sub', function (results) {
         expect(results).to.contain('substr');
@@ -59,7 +61,7 @@ describe('Function Property Filter Plugin', function () {
 
     it('should autocomplete objects', function (done) {
       window.test = function () {};
-      window.test['@return'] = { test: 'test' };
+      window.test[RETURN_PROPERTY] = { test: 'test' };
 
       testAutocomplete('test().te', function (results) {
         expect(results).to.contain('test');
@@ -69,8 +71,8 @@ describe('Function Property Filter Plugin', function () {
 
     it('should autocomplete chained functions', function (done) {
       window.test = function () {};
-      window.test['@return'] = { test: function () {} };
-      window.test['@return'].test['@return'] = 'again';
+      window.test[RETURN_PROPERTY] = { test: function () {} };
+      window.test[RETURN_PROPERTY].test[RETURN_PROPERTY] = 'again';
 
       testAutocomplete('test().test().sub', function (results) {
         expect(results).to.contain('substr');
@@ -80,8 +82,8 @@ describe('Function Property Filter Plugin', function () {
 
     it('should autocomplete returned functions', function (done) {
       window.test = function () {};
-      window.test['@return'] = function () {};
-      window.test['@return']['@return'] = 'again';
+      window.test[RETURN_PROPERTY] = function () {};
+      window.test[RETURN_PROPERTY][RETURN_PROPERTY] = 'again';
 
       testAutocomplete('test()().sub', function (results) {
         expect(results).to.contain('substr');

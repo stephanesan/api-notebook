@@ -16,7 +16,7 @@ require('./insert-api-client');
  *
  * @type {String}
  */
-var DESCRIPTION_PROPERTY = '@description';
+var DESCRIPTION_PROPERTY = '!description';
 
 /**
  * Custom file reader for RAML specs.
