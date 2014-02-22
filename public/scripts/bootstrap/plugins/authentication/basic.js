@@ -26,7 +26,7 @@ middleware.register('authenticate', function (options, next, done) {
  * @param {Object}   data
  * @param {Function} next
  */
-middleware.register('ajax', function (data, next) {
+middleware.register('ajax:basicAuth', function (data, next) {
   // Check we have a basic auth object before mixing in our credentials.
   if (_.isObject(data.basicAuth)) {
     data.headers = _.extend({
@@ -36,5 +36,5 @@ middleware.register('ajax', function (data, next) {
     }, data.headers);
   }
 
-  return next(null, data);
+  return middleware.trigger('ajax', data, next);
 });

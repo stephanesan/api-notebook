@@ -50,7 +50,7 @@
     "grunt-newer": "~0.6.0",
     "grunt-contrib-jshint": "~0.8.0",
     "request": "~2.34.0",
-    "grunt-contrib-connect": "~0.7.0",
+    "grunt-contrib-connect": "~0.6.0",
     "sinon-chai": "~2.5.0",
     "sinon": "~1.7.3",
     "chai": "~1.9.0",

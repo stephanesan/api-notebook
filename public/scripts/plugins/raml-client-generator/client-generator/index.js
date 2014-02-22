@@ -307,6 +307,7 @@ var httpRequest = function (nodes, method) {
     }));
 
     var async   = !!done;
+    var request = 'ajax';
     var mime    = getMime(findHeader(config.headers, 'Content-Type'));
     var baseUri = template(nodes.client.baseUri, {}, config.baseUriParameters);
     var fullUri = baseUri + '/' + nodes.join('/');
@@ -365,9 +366,12 @@ var httpRequest = function (nodes, method) {
 
       var scheme        = nodes.client.securitySchemes[secured];
       var authenticated = nodes.client.authentication[scheme.type];
+      var authType      = authMap[scheme.type];
 
-      // Return the authenticated object. If truthy, iteration will stop.
-      return options[authMap[scheme.type]] = authenticated;
+      if (authenticated) {
+        options[authType] = authenticated;
+        return request = 'ajax:' + authType;
+      }
     });
 
     // If the request is async, set the relevant function callbacks.
@@ -384,7 +388,7 @@ var httpRequest = function (nodes, method) {
 
     // Trigger the ajax middleware so plugins can hook onto the requests. If
     // the function is async we need to register a callback for the middleware.
-    App.middleware.trigger('ajax', options, function (err, xhr) {
+    App.middleware.trigger(request, options, function (err, xhr) {
       error    = err;
       response = sanitizeXHR(xhr);
 

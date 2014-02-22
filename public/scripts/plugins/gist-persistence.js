@@ -105,7 +105,7 @@ var authenticatedUserId = function (done) {
 
   // Make a request to the check authorization url, which doesn't incur any
   // rate limiting penalties.
-  App.middleware.trigger('ajax', {
+  App.middleware.trigger('ajax:basicAuth', {
     url: 'https://api.github.com/applications/' + CLIENT_ID + '/tokens/' +
       oauth2Store.get('accessToken'),
     proxy: false,
@@ -193,7 +193,7 @@ var loadPlugin = function (data, next, done) {
     return next();
   }
 
-  App.middleware.trigger('ajax', {
+  App.middleware.trigger('ajax:oauth2', {
     // Add the application client id and secret to load requests to avoid rate
     // limiting in the case that the user is unauthenticated.
     url:    'https://api.github.com/gists/' + data.id + '?_=' + Date.now(),
@@ -239,7 +239,7 @@ var savePlugin = function (data, next, done) {
     });
   }
 
-  App.middleware.trigger('ajax', {
+  App.middleware.trigger('ajax:oauth2', {
     url:    'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
     proxy:  false,
     method: data.id ? 'PATCH' : 'POST',
@@ -285,7 +285,7 @@ var listPlugin = function (list, next, done) {
   }
 
   (function recurse (link) {
-    App.middleware.trigger('ajax', {
+    App.middleware.trigger('ajax:oauth2', {
       url:    link + (link.indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now(),
       proxy:  false,
       method: 'GET',
@@ -332,7 +332,7 @@ var listPlugin = function (list, next, done) {
  * @param {Function} done
  */
 var removePlugin = function (data, next, done) {
-  return App.middleware.trigger('ajax', {
+  return App.middleware.trigger('ajax:oauth2', {
     url:    'https://api.github.com/gists/' + data.id,
     proxy:  false,
     method: 'DELETE',

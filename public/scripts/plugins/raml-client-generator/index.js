@@ -210,23 +210,25 @@ API.authenticate = function (client, method, options, done) {
   App._executeContext.timeout(10 * 60 * 1000);
   done = done || App._executeContext.async();
 
-  var securedBy       = client['!client'].securedBy;
-  var securitySchemes = client['!client'].securitySchemes;
+  var clientOption    = client['!client'];
+  var securedBy       = clientOption.securedBy;
+  var securitySchemes = clientOption.securitySchemes;
 
   /**
    * The callback is used to handle the persistence of data to the client.
    *
    * @param  {Error}    err
    * @param  {Object}   scheme
+   * @param  {Object}   options
    * @param  {Object}   tokens
    * @return {Function}
    */
-  var cb = function (err, scheme, tokens) {
+  var cb = function (err, scheme, options, tokens) {
     if (err) {
       return done(err);
     }
 
-    client['!client'].authentication[scheme.type] = tokens;
+    clientOption.authentication[scheme.type] = _.extend(options, tokens);
     return done(null, tokens);
   };
 

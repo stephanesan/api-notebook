@@ -214,12 +214,12 @@ promptTokens.possibleTokens = {
 var authenticate = function (scheme, options, done) {
   App.middleware.trigger('authenticate', _.extend({
     type: scheme.type
-  }, scheme.settings, options), function (err, auth) {
-    if (!auth) {
+  }, scheme.settings, options), function (err, tokens) {
+    if (!tokens) {
       return done(new Error('Authentication failed'));
     }
 
-    return done(err, scheme, auth);
+    return done(err, scheme, options, tokens);
   }, true);
 };
 
