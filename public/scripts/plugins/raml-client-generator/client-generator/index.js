@@ -480,6 +480,28 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
 };
 
 /**
+ * Generate a context or attach methods and resources to an existing context.
+ *
+ * @param  {Array}   nodes
+ * @param  {Object}  resource
+ * @param  {Boolean} hasMediaExtension
+ * @param  {Object}  context
+ * @return {Object}
+ */
+var newContext = function (nodes, resource, hasMediaExtension, context) {
+  context = context || {};
+
+  if (hasMediaExtension) {
+    attachMediaTypeExtension(nodes, context, resource);
+  } else {
+    attachMethods(nodes, context, resource.methods);
+    attachResources(nodes, context, resource.resources);
+  }
+
+  return context;
+};
+
+/**
  * Recurses through a resource object in the RAML AST, generating a dynamic
  * DSL that only allows methods that were defined in the RAML spec.
  *
@@ -492,156 +514,119 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
 /* jshint -W003 */
 var attachResources = function (nodes, context, resources) {
   _.each(resources, function (resource, route) {
+    var routeNodes        = _.extend([], nodes);
+    var routeName         = route;
     var hasMediaExtension = route.substr(-20) === '{mediaTypeExtension}';
-
-    // Use `extend` to clone nodes since we have data available on the nodes.
-    var routeNodes    = _.extend([], nodes);
-    var templateCount = _.keys(resource.uriParameters || {}).length;
 
     // Ignore media type extensions in route generation.
     if (hasMediaExtension) {
-      route = route.slice(0, -20);
-      templateCount--;
+      route = routeName = route.slice(0, -20);
     }
+
+    // Check the route against our valid uri parameters.
+    var templateTags = route.match(uriParamRegex(resource.uriParameters));
 
     // Push the current route into the route array.
     routeNodes.push(route);
 
-    // If we have template tags available
-    if (templateCount > 0) {
-      return attachDynamicRoute(
-        routeNodes, context, route, resource, hasMediaExtension
+    // If we have template tags available, attach a dynamic route.
+    if (templateTags) {
+      var routeSuffix = templateTags.join('');
+
+      // The route must end with the chained template tags and have no
+      // text between tags.
+      if (route.substr(-routeSuffix.length) !== routeSuffix) {
+        return false;
+      }
+
+      // If the route is only a template tag with no static text, use the
+      // template tag text as the method name.
+      if (templateTags.length === 1 && route === templateTags[0]) {
+        routeName = templateTags[0].slice(1, -1);
+      } else {
+        routeName = route.substr(0, route.indexOf('{'));
+      }
+
+      // Avoid adding empty route name cases. This can occur when we have
+      // multiple tag names and no front text. For example, `{this}{that}`.
+      // This could also occur if for some reason we are passing in a route that
+      // isn't dynamic.
+      if (!routeName) {
+        return false;
+      }
+
+      // Get the ordered tag names for completion.
+      var tags = _.map(templateTags, function (param) {
+        return resource.uriParameters[param.slice(1, -1)];
+      });
+
+      // The route is dynamic, so we set the route name to be a function
+      // which accepts the template arguments and updates the path fragment.
+      // We'll extend any route already at the same namespace so we can do
+      // things like use both `/{route}` and `/route`, if needed.
+      context[routeName] = _.extend(function () {
+        var args = arguments;
+
+        // Map the tags to the arguments or default arguments.
+        var parts = _.map(tags, function (tag, index) {
+          // Inject enum parameters if there is only one available enum.
+          // TODO: When/if we add validation back, have these routes
+          // be generated instead of typed out.
+          if (args[index] == null && tag.enum && tag.enum.length === 1) {
+            return tag.enum[0];
+          }
+
+          // Use any passed in argument - even it's falsy.
+          if (index in args) {
+            return args[index];
+          }
+
+          var param = templateTags[index].slice(1, -1);
+
+          // Fallback to injecting the fallback configuration uri parameter.
+          return routeNodes.config && routeNodes.config.uriParameters[param];
+        });
+
+        // Change the last path fragment to the proper template text.
+        routeNodes[routeNodes.length - 1] = template(
+          route, resource.uriParameters, parts
+        );
+
+        return newContext(routeNodes, resource, hasMediaExtension);
+      }, context[routeName]);
+
+      // Generate the description object for helping tooltip display.
+      context[routeName][DESCRIPTION_PROPERTY] = {
+        // Create a function type hint based on the display name and whether
+        // the tag is required.
+        '!type': 'fn(' + _.map(tags, function (param) {
+          var displayName = param.displayName + (!param.required ? '?' : '');
+
+          return displayName + ': ' + (param.type || '?');
+        }).join(', ') + ')',
+        // Generate documentation by joining all the template descriptions
+        // together with new lines.
+        '!doc': _.chain(tags).uniq().filter(function (param) {
+          return !!param.description;
+        }).map(function (param) {
+          return '"' + param.displayName + '": ' + param.description;
+        }).value().join('\n')
+      };
+
+      // Generate the return property for helping autocompletion.
+      context[routeName][RETURN_PROPERTY] = newContext(
+        routeNodes, resource, hasMediaExtension
       );
+
+      return context[routeName];
     }
 
-    var newContext = context[route] || (context[route] = {});
-
-    if (hasMediaExtension) {
-      attachMediaTypeExtension(routeNodes, newContext, resource);
-    } else {
-      attachMethods(routeNodes, newContext, resource.methods);
-      attachResources(routeNodes, newContext, resource.resources);
-    }
+    context[routeName] = newContext(
+      routeNodes, resource, hasMediaExtension, context[routeName]
+    );
   });
 
   return context;
-};
-/* jshint +W003 */
-
-/**
- * Attach a dynamic route name to the current context. This should already have
- * some pre-processing applied and passed in.
- *
- * @param  {Array}   nodes
- * @param  {Object}  context
- * @param  {String}  route
- * @param  {Object}  resource
- * @param  {Boolean} hasMedia
- * @return {Object}
- */
-
-/* jshint -W003 */
-var attachDynamicRoute = function (nodes, context, route, resource, hasMedia) {
-  var routeName    = route;
-  var templateTags = route.match(uriParamRegex(resource.uriParameters));
-  var routeTags    = templateTags.join('');
-
-  // The route must end with the chained template tags and have no
-  // text between tags.
-  if (route.substr(-routeTags.length) !== routeTags) { return false; }
-
-  // If the route is only a template tag with no static text, use the
-  // template tag text as the method name.
-  if (templateTags.length === 1 && route === templateTags[0]) {
-    routeName = templateTags[0].slice(1, -1);
-  } else {
-    routeName = route.substr(0, route.indexOf('{'));
-  }
-
-  // Avoid adding empty route name cases. This can occur when we have
-  // multiple tag names and no front text. For example, `{this}{that}`.
-  // This could also occur if for some reason we are passing in a route that
-  // isn't dynamic.
-  if (!routeName) { return false; }
-
-  // Get the ordered tag names for completion.
-  var tags = _.map(templateTags, function (param) {
-    return resource.uriParameters[param.slice(1, -1)];
-  });
-
-  // The route is dynamic, so we set the route name to be a function
-  // which accepts the template arguments and updates the path fragment.
-  // We'll extend any route already at the same namespace so we can do
-  // things like use both `/{route}` and `/route`, if needed.
-  context[routeName] = _.extend(function () {
-    var args = arguments;
-
-    // Map the tags to the arguments or default arguments.
-    var parts = _.map(tags, function (tag, index) {
-      // Inject enum parameters if there is only one available enum.
-      // TODO: When/if we add validation back, have these routes
-      // be generated instead of typed out.
-      if (args[index] == null && tag.enum && tag.enum.length === 1) {
-        return tag.enum[0];
-      }
-
-      // Use any passed in argument - even it's falsy.
-      if (index in args) {
-        return args[index];
-      }
-
-      var param = templateTags[index].slice(1, -1);
-
-      // Fallback to injecting the fallback configuration uri parameter.
-      return nodes.config && nodes.config.uriParameters[param];
-    });
-
-    // Change the last path fragment to the proper template text.
-    nodes[nodes.length - 1] = template(
-      route, resource.uriParameters, parts
-    );
-
-    var newContext = {};
-
-    if (hasMedia) {
-      attachMediaTypeExtension(nodes, newContext, resource);
-    } else {
-      attachMethods(nodes, newContext, resource.methods);
-      attachResources(nodes, newContext, resource.resources);
-    }
-
-    return newContext;
-  }, context[routeName]);
-
-  // Generate the description object for helping tooltip display.
-  context[routeName][DESCRIPTION_PROPERTY] = {
-    // Create a function type hint based on the display name and whether
-    // the tag is required.
-    '!type': 'fn(' + _.map(tags, function (param) {
-      var displayName = param.displayName + (!param.required ? '?' : '');
-
-      return displayName + ': ' + (param.type || '?');
-    }).join(', ') + ')',
-    // Generate documentation by joining all the template descriptions
-    // together with new lines.
-    '!doc': _.chain(tags).uniq().filter(function (param) {
-      return !!param.description;
-    }).map(function (param) {
-      return '"' + param.displayName + '": ' + param.description;
-    }).value().join('\n')
-  };
-
-  // Generate the return property for helping autocompletion.
-  var returnContext = context[routeName][RETURN_PROPERTY] = {};
-
-  if (hasMedia) {
-    attachMediaTypeExtension(nodes, returnContext, resource);
-  } else {
-    attachMethods(nodes, returnContext, resource.methods);
-    attachResources(nodes, returnContext, resource.resources);
-  }
-
-  return context[routeName];
 };
 /* jshint +W003 */
 
