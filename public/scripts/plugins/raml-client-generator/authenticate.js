@@ -1,6 +1,6 @@
 /* global App */
-var _     = require('underscore');
-var async = require('async');
+var _     = App.Library._;
+var async = App.Library.async;
 
 /**
  * Returns an object of available keys and whether they are required.

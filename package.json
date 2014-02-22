@@ -13,7 +13,6 @@
     "underscore": "~1.6.0",
     "backbone": "1.1.0",
     "codemirror": "~3.19.0",
-    "trim": "~0.0.1",
     "marked": "~0.3.0",
     "domify": "~1.2.1",
     "css-component": "~0.0.2",
@@ -31,7 +30,8 @@
     "backbone.native": "~1.0.0",
     "config": "~0.4.33",
     "mime-component": "0.0.1",
-    "qs": "~0.6.6"
+    "qs": "~0.6.6",
+    "dombars": "~0.5.2"
   },
   "devDependencies": {
     "grunt-contrib-copy": "~0.5.0",

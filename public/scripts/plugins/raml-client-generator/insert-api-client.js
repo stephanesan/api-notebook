@@ -1,7 +1,7 @@
 /* global App */
-var _          = require('underscore');
-var Backbone   = require('backbone');
-var changeCase = require('change-case');
+var _          = App.Library._;
+var Backbone   = App.Library.Backbone;
+var changeCase = App.Library.changeCase;
 
 /**
  * Create an api client cell that can load the selected api document.

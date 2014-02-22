@@ -1,5 +1,5 @@
 /* global App */
-var _                = App._;
+var _                = App.Library._;
 var FILTER_PROPS     = ['!return', '!description'];
 var RETURN_PROP      = FILTER_PROPS[0];
 var DESCRIPTION_PROP = FILTER_PROPS[1];

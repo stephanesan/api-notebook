@@ -8,13 +8,16 @@ require('./bootstrap');
 var App = module.exports = window.App = {};
 
 App.Library = {
-  url:      require('url'),
-  domify:   require('domify'),
-  Backbone: require('backbone'),
-  DOMBars:  require('./lib/dombars')
+  qs:         require('qs'),
+  url:        require('url'),
+  async:      require('async'),
+  domify:     require('domify'),
+  Backbone:   require('backbone'),
+  DOMBars:    require('./lib/dombars'),
+  changeCase: require('change-case')
 };
 
-App._        = require('underscore');
+App._        = App.Library._ = require('underscore');
 App.nextTick = process.nextTick;
 
 // Exposes configuration details globally

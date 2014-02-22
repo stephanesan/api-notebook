@@ -1,7 +1,6 @@
 /* global App */
-var _           = App._;
-var qs          = require('qs');
-var trim        = require('trim');
+var _           = App.Library._;
+var qs          = App.Library.qs;
 var mime        = require('mime-component');
 var escape      = require('escape-regexp');
 var parser      = require('uri-template');
@@ -155,7 +154,7 @@ var getAllReponseHeaders = function (xhr) {
     // Make sure we have both parts of the header.
     if (header.length > 1) {
       var name  = header.shift();
-      var value = trim(header.join(':'));
+      var value = header.join(':').trim();
 
       responseHeaders[name.toLowerCase()] = value;
     }

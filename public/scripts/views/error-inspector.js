@@ -1,5 +1,5 @@
 var _         = require('underscore');
-var trim      = require('trim');
+var trim      = _.bind(Function.prototype.call, String.prototype.trim);
 var type      = require('../lib/type');
 var Inspector = require('./inspector');
 

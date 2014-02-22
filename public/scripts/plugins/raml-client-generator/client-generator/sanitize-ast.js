@@ -1,4 +1,5 @@
-var _ = require('underscore');
+/* global App */
+var _ = App.Library._;
 
 /**
  * Sanitize the AST from the RAML parser into something easier to work with.

@@ -1,5 +1,6 @@
-var _         = require('underscore');
-var url       = require('url');
+/* global App */
+var _         = App.Library._;
+var url       = App.Library.url;
 var PROXY_URL = process.env.plugins.proxy.url;
 
 /**

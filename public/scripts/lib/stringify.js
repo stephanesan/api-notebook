@@ -1,5 +1,4 @@
 var _      = require('underscore');
-var trim   = require('trim');
 var typeOf = require('./type');
 
 /**
@@ -208,7 +207,7 @@ var stringify = module.exports = function (object) {
 
     // Ensure that stringified elements always have an output. Useful for cases
     // where we might be attempting to stringify an empty fragment.
-    return trim(stringifiedElement) ? stringifiedElement : object.nodeName;
+    return stringifiedElement.trim() ? stringifiedElement : object.nodeName;
   }
 
   // Every other type can safely be typecasted to the expected output.
