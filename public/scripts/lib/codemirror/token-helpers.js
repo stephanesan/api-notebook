@@ -133,9 +133,7 @@ var doPropertyLookup = function (cm, tokens, options, done) {
 exports.propertyLookup = function (cm, tokens, options, done) {
   // No tokens exist, which means we are doing a lookup at the global level.
   if (!tokens.length) {
-    return done(null, _.extend({
-      editor: cm
-    }, options));
+    return done(new Error('Completion not available for object properties'));
   }
 
   var invalid = _.some(tokens, function (token) {

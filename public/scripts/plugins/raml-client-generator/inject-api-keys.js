@@ -1,25 +1,22 @@
 /* global App */
-var _       = App._;
 var apiKeys = process.env.plugins.ramlClient;
 
 /**
- * Every OAuth1 token request we should merge our keys with theirs.
+ * Check against our OAuth tokens and inject the tokens we have available.
  *
  * @param {Object}   data
  * @param {Function} next
  */
-App.middleware.register('ramlClient:oauth1', function (data, next) {
-  _.extend(data, apiKeys.oauth1[data.authorizationUri]);
-  return next();
-});
+App.middleware.register('ramlClient:token', function (scheme, next, done) {
+  var authUri = scheme.settings.authorizationUri;
 
-/**
- * With every OAuth2 token request, we will merge our API keys over theirs.
- *
- * @param {Object}   data
- * @param {Function} next
- */
-App.middleware.register('ramlClient:oauth2', function (data, next) {
-  _.extend(data, apiKeys.oauth2[data.authorizationUri]);
+  if (scheme.type === 'OAuth 1.0' && apiKeys.oauth1[authUri]) {
+    return done(null, apiKeys.oauth1[authUri]);
+  }
+
+  if (scheme.type === 'OAuth 2.0' && apiKeys.oauth2[authUri]) {
+    return done(null, apiKeys.oauth2[authUri]);
+  }
+
   return next();
 });

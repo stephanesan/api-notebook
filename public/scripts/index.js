@@ -7,19 +7,14 @@ require('./bootstrap');
  */
 var App = module.exports = window.App = {};
 
-// Exposes internally used libraries globally to avoid unneeded requests in
-// third-party middleware and plugins.
 App.Library = {
-  url:         require('url'),
-  path:        require('path'),
-  domify:      require('domify'),
-  crypto:      require('crypto'),
-  querystring: require('querystring'),
-  async:       require('async'),
-  changeCase:  require('change-case'),
-  marked:      require('marked'),
-  Backbone:    require('backbone'),
-  DOMBars:     require('./lib/dombars')
+  qs:         require('qs'),
+  url:        require('url'),
+  async:      require('async'),
+  domify:     require('domify'),
+  Backbone:   require('backbone'),
+  DOMBars:    require('./lib/dombars'),
+  changeCase: require('change-case')
 };
 
 App._        = App.Library._ = require('underscore');

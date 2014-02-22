@@ -51,7 +51,7 @@ App.prototype.events = {
   'click .notebook-clone':  'cloneNotebook',
   'click .notebook-save':   'saveNotebook',
   'click .notebook-share':  'shareNotebook',
-  'click .toggle-notebook': 'toggleEdit',
+  'click .toggle-notebook': 'toggleView',
   'click .notebook-new':    'newNotebook',
   // Listen for `Enter` presses and blur the input.
   'keydown .notebook-title': function (e) {
@@ -77,6 +77,7 @@ App.prototype.initialize = function () {
 
   // Set a sidebar instance to render.
   this.data.set('sidebar', new Sidebar());
+  this.data.set('activeView', 'view');
 
   /**
    * Block attempts to close the window when the persistence state is dirty.
@@ -90,7 +91,7 @@ App.prototype.initialize = function () {
   /**
    * Re-render the notebook when the notebook changes.
    */
-  this.listenTo(persistence, 'changeNotebook', this.renderNotebook);
+  this.listenTo(persistence, 'changeNotebook', this.renderView);
 
   /**
    * Update user state data when the user changes.
@@ -188,31 +189,48 @@ App.prototype.initialize = function () {
 App.prototype.template = require('../../templates/views/app.hbs');
 
 /**
- * Switch between raw source edit mode and the normal notebook execution.
+ * Render the current view.
  */
-App.prototype.renderNotebook = function () {
+App.prototype.renderView = function () {
+  var view   = this.data.get('activeView');
+  var method = (view === 'view' ? 'showNotebook' : 'showEditor');
+
+  return this[method]();
+};
+
+/**
+ * Render the standard notebook view.
+ */
+App.prototype.showNotebook = function () {
   this.data.set('notebook', new Notebook({
     model: persistence.get('notebook')
   }));
-  this.data.set('activeView', 'view');
 
+  this.data.set('activeView', 'view');
+  DOMBars.VM.exec(_.bind(messages.trigger, messages, 'refresh'));
+};
+
+/**
+ * Render the notebook raw source editor.
+ */
+App.prototype.showEditor = function () {
+  this.data.set('notebook', new EditNotebook({
+    model: persistence.get('notebook')
+  }));
+
+  this.data.set('activeView', 'edit');
   DOMBars.VM.exec(_.bind(messages.trigger, messages, 'refresh'));
 };
 
 /**
  * Toggle the view between edit and notebook view.
  */
-App.prototype.toggleEdit = function () {
-  if (this.data.get('activeView') === 'edit') {
-    return this.renderNotebook();
-  }
+App.prototype.toggleView = function () {
+  // Set the opposite view to active.
+  var view = this.data.get('activeView');
+  this.data.set('activeView', view === 'view' ? 'edit' : 'view');
 
-  this.data.set('notebook', new EditNotebook({
-    model: persistence.get('notebook')
-  }));
-  this.data.set('activeView', 'edit');
-
-  DOMBars.VM.exec(_.bind(messages.trigger, messages, 'refresh'));
+  return this.renderView();
 };
 
 /**
@@ -253,7 +271,7 @@ App.prototype.showShortcuts = function () {
  */
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
-  this.renderNotebook();
+  this.renderView();
   return this;
 };
 

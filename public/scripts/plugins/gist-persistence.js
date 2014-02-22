@@ -10,8 +10,9 @@ var CLIENT_SECRET = process.env.plugins.github.clientSecret;
  *
  * @type {Object}
  */
-var authOpts = {
+var AUTH_OPTIONS = {
   scopes:              ['gist'],
+  type:                'OAuth 2.0',
   clientId:            CLIENT_ID,
   clientSecret:        CLIENT_SECRET,
   accessTokenUri:      TOKEN_URL,
@@ -104,7 +105,7 @@ var authenticatedUserId = function (done) {
 
   // Make a request to the check authorization url, which doesn't incur any
   // rate limiting penalties.
-  App.middleware.trigger('ajax:basicAuth', {
+  App.middleware.trigger('ajax', {
     url: 'https://api.github.com/applications/' + CLIENT_ID + '/tokens/' +
       oauth2Store.get('accessToken'),
     proxy: false,
@@ -147,7 +148,7 @@ var authenticatedUserId = function (done) {
  * @param {Function} done
  */
 var authenticatePlugin = function (data, next, done) {
-  App.middleware.trigger('authenticate:oauth2', authOpts, function (err, auth) {
+  App.middleware.trigger('authenticate', AUTH_OPTIONS, function (err, auth) {
     if (err) { return next(err); }
 
     oauth2Store.set(auth);
@@ -192,7 +193,7 @@ var loadPlugin = function (data, next, done) {
     return next();
   }
 
-  App.middleware.trigger('ajax:oauth2', {
+  App.middleware.trigger('ajax', {
     // Add the application client id and secret to load requests to avoid rate
     // limiting in the case that the user is unauthenticated.
     url:    'https://api.github.com/gists/' + data.id + '?_=' + Date.now(),
@@ -238,7 +239,7 @@ var savePlugin = function (data, next, done) {
     });
   }
 
-  App.middleware.trigger('ajax:oauth2', {
+  App.middleware.trigger('ajax', {
     url:    'https://api.github.com/gists' + (data.id ? '/' + data.id : ''),
     proxy:  false,
     method: data.id ? 'PATCH' : 'POST',
@@ -284,7 +285,7 @@ var listPlugin = function (list, next, done) {
   }
 
   (function recurse (link) {
-    App.middleware.trigger('ajax:oauth2', {
+    App.middleware.trigger('ajax', {
       url:    link + (link.indexOf('?') > -1 ? '&' : '?') + '_=' + Date.now(),
       proxy:  false,
       method: 'GET',
@@ -331,7 +332,7 @@ var listPlugin = function (list, next, done) {
  * @param {Function} done
  */
 var removePlugin = function (data, next, done) {
-  return App.middleware.trigger('ajax:oauth2', {
+  return App.middleware.trigger('ajax', {
     url:    'https://api.github.com/gists/' + data.id,
     proxy:  false,
     method: 'DELETE',

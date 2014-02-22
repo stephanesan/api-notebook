@@ -1,6 +1,7 @@
 /* global App */
 var _               = App._;
 var ramlParser      = require('raml-parser');
+var authenticate    = require('./authenticate');
 var clientGenerator = require('./client-generator');
 var fromPath        = require('../../lib/from-path');
 
@@ -15,7 +16,7 @@ require('./insert-api-client');
  *
  * @type {String}
  */
-var DESCRIPTION_PROPERTY = '@description';
+var DESCRIPTION_PROPERTY = '!description';
 
 /**
  * Custom file reader for RAML specs.
@@ -106,6 +107,9 @@ API.createClient = function (name, url, config, done) {
   }, done);
 };
 
+/**
+ * Description of the create client function.
+ */
 API.createClient[DESCRIPTION_PROPERTY] = {
   '!type': 'fn(' + [
     'alias: string',
@@ -115,6 +119,133 @@ API.createClient[DESCRIPTION_PROPERTY] = {
   ].join(', ') + ')',
   '!doc': [
     'Generate an API client from a RAML document and alias it on the window.'
+  ].join(' ')
+};
+
+/**
+ * Set a configuration value on a client.
+ *
+ * @param {Function} client
+ * @param {String}   key
+ * @param {*}        value
+ */
+API.set = function (client, key, value) {
+  // If we don't have enough arguments for a key and value, assume we have
+  // a fresh configuration object.
+  if (arguments.length < 3) {
+    return _.extend(client['!config'], key);
+  }
+
+  return client['!config'][key] = value;
+};
+
+/**
+ * Set the description of the API client configuration setter.
+ */
+API.set[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string, value)',
+  '!doc': 'Set a configuration option of a RAML API client.'
+};
+
+/**
+ * Retrieve a value from the client config object.
+ *
+ * @param  {Function} client
+ * @param  {String}   key
+ * @return {*}
+ */
+API.get = function (client, key) {
+  if (arguments.length < 2) {
+    return client['!config'];
+  }
+
+  return client['!config'][key];
+};
+
+/**
+ * Set the description of the API client configuration getter.
+ */
+API.get[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string)',
+  '!doc': 'Get a configuration option from a RAML API client.'
+};
+
+/**
+ * Unset a key from the client configuration.
+ *
+ * @param  {Function} client
+ * @param  {String}   key
+ * @return {Boolean}
+ */
+API.unset = function (client, key) {
+  if (arguments.length < 2) {
+    _.each(client['!config'], function (value, key, obj) {
+      delete obj[key];
+    });
+
+    return true;
+  }
+
+  return delete client['!config'][key];
+};
+
+/**
+ * Set the description of the API client configuration unsetter.
+ */
+API.unset[DESCRIPTION_PROPERTY] = {
+  '!type': 'fn(client: function, key: string)',
+  '!doc': 'Unset a configuration option from a RAML API client.'
+};
+
+/**
+ * Authenticate a RAML API client passing an optional method and accompanying
+ * options object.
+ *
+ * @param {Function} client
+ * @param {String}   method
+ * @param {Object}   options
+ * @param {Function} done
+ */
+API.authenticate = function (client, method, options, done) {
+  App._executeContext.timeout(10 * 60 * 1000);
+  done = done || App._executeContext.async();
+
+  var securedBy       = client['!client'].securedBy;
+  var securitySchemes = client['!client'].securitySchemes;
+
+  /**
+   * The callback is used to handle the persistence of data to the client.
+   *
+   * @param  {Error}    err
+   * @param  {Object}   scheme
+   * @param  {Object}   tokens
+   * @return {Function}
+   */
+  var cb = function (err, scheme, tokens) {
+    if (err) {
+      return done(err);
+    }
+
+    client['!client'].authentication[scheme.type] = tokens;
+    return done(null, tokens);
+  };
+
+  return authenticate(securedBy, securitySchemes, method, options, cb);
+};
+
+/**
+ * Set the description of the API client authenticator.
+ */
+API.authenticate[DESCRIPTION_PROPERTY] = {
+  '!type': [
+    'fn(client: function, method?: string, options?: object, cb?: function)'
+  ].join(''),
+  '!doc': [
+    'Authentication parameters are optional. For popular APIs, we provide',
+    'keys. If we need your keys we will prompt you via a modal. Never enter',
+    'keys directly into a notebook unless you explicitly intend to share',
+    'them. If you would like to know more about authenticating',
+    'with this API, see \'securityScheme.settings\' in the RAML file.'
   ].join(' ')
 };
 

@@ -35,6 +35,13 @@ resourceTypes:
       post: {}
       patch: {}
       delete: {}
+  - mediaTypeExtension:
+      type: member
+      uriParameters:
+        mediaTypeExtension:
+          enum: [ .json, .xml ]
+          description: Use .json to specify application/json or .xml to specify text/xml
+
 
 traits:
   - paged:
@@ -53,7 +60,11 @@ traits:
         401:
           description: Unauthorized
 
-# Test nested routes
+# Random test endpoint.
+/api:
+  type: collection
+
+# Test nested routes.
 /collection:
   type: collection
   /{collectionId}:
@@ -61,22 +72,22 @@ traits:
     /{nestedId}:
       type: member
 
-# Test a dynamic vs static route clash
+# Dynamic variable and route name clash.
 /{collection}:
   type: collection
 
-# Test using variables with text
+# Multiple variables with text.
 /mixed{variable}{route}:
   type: member
 
-# Automatically using single enum values
+# Automatically populate single enum values.
 /enum{test}:
   type: member
   uriParameters:
     test:
       enum: ['value']
 
-# Test validation
+# Test every uri parameter validation.
 /validation:
   /string:
     /{basic}:
@@ -192,6 +203,7 @@ traits:
           type: boolean
           required: true
 
+# Test automatically serialising request bodies.
 /body:
   /json:
     put:
@@ -233,6 +245,7 @@ traits:
       body:
         multipart/form-data: !!null
 
+# Test every query string validation.
 /queryValidation:
   /string:
     /basic:
@@ -348,5 +361,14 @@ traits:
             type: boolean
             required: true
 
+# Test special characters.
 /~{test}:
   type: member
+
+# Test the special `mediaTypeExtension` tag.
+/user{mediaTypeExtension}:
+  type: mediaTypeExtension
+
+# Test the trickier `mediaTypeExtension` with a parameter.
+/user/{userId}{mediaTypeExtension}:
+  type: mediaTypeExtension

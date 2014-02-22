@@ -20,8 +20,79 @@ describe('RAML Client Generator Plugin', function () {
   it('should augment execution context with an `API` method', function (done) {
     sandbox.execute('API', function (err, exec) {
       expect(exec.result).to.be.an('object');
-
       return done();
+    });
+  });
+
+  describe('Base URI Version', function () {
+    var server;
+
+    beforeEach(function (done) {
+      sandbox.execute('API.createClient("baseVersion", "' + FIXTURES_URL + '/base-version.raml");', function (err) {
+        server = sinon.fakeServer.create();
+        done(err);
+      });
+    });
+
+    afterEach(function () {
+      server.restore();
+    });
+
+    it('should inject the version into the base uri automatically', function (done) {
+      server.respondWith('GET', 'http://example.com/v2/', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseVersion("/").get();', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
+    });
+  });
+
+  describe('Base URI Parameters', function () {
+    var server;
+
+    beforeEach(function (done) {
+      sandbox.execute('API.createClient("baseUriParameters", "' + FIXTURES_URL + '/base-uri-parameters.raml");', function (err) {
+        server = sinon.fakeServer.create();
+        done(err);
+      });
+    });
+
+    afterEach(function () {
+      server.restore();
+    });
+
+    it('should pass baseUriParameters with root function', function (done) {
+      server.respondWith('GET', 'http://apac.example.com/test', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseUriParameters("/test").get(null, { baseUriParameters: { zone: "apac" } });', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
+    });
+
+    it('should pass baseUriParameters with pre-defined routes', function (done) {
+      server.respondWith('GET', 'http://apac.example.com/api', [200, {
+        'Content-Type': 'text/html'
+      }, 'success']);
+
+      sandbox.execute('baseUriParameters.api.get(null, { baseUriParameters: { zone: "apac" } });', function (err, exec) {
+        expect(exec.result.body).to.equal('success');
+        expect(exec.result.status).to.equal(200);
+        return done();
+      });
+
+      server.respond();
     });
   });
 
@@ -63,6 +134,7 @@ describe('RAML Client Generator Plugin', function () {
         sandbox.execute(execute, function (err, exec) {
           expect(exec.isError).to.be.false;
           expect(exec.result).to.include.keys('body', 'headers', 'status');
+          expect(exec.result.status).to.equal(200);
           return done(err, exec);
         });
 
@@ -95,13 +167,14 @@ describe('RAML Client Generator Plugin', function () {
     var testRequestHeaders = function (chain, method, route, headers) {
       return function (done) {
         return fakeRequest(
-          'example' + chain + '.' + method + '();', method, route, function (request, response) {
+          'example' + chain, method, route, function (request, response) {
             response[1] = request.requestHeaders;
           }
         )(function (err, exec) {
           App._.each(headers, function (value, header) {
-            expect(exec.result.headers[header]).to.equal(value);
+            expect(exec.result.headers[header.toLowerCase()]).to.equal(value);
           });
+
           return done(err);
         });
       };
@@ -178,32 +251,14 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Query Strings', function () {
-          describe('Strings', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest('("/test/route").query("test=true")', method, '/test/route?test=true')
-              );
-            });
-          });
-
-          describe('Objects', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest('("/test/route").query({ test: true })', method, '/test/route?test=true')
-              );
-            });
-          });
-
           describe('With Request Initiator', function () {
             App._.each(methodsWithoutBodies, function (method) {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 fakeRequest(
-                  'example("/test/route").get({ test: true })',
+                  'example("/test/route").' + method + '({ test: true })',
                   method,
-                  '/collection/123?test=true'
+                  '/test/route?test=true'
                 )
               );
             });
@@ -234,30 +289,58 @@ describe('RAML Client Generator Plugin', function () {
           });
         });
 
-        describe('Custom Headers', function () {
+        describe('Custom Request Bodies in Config', function () {
+          App._.each(methodsWithBodies, function (method) {
+            it(
+              'should be able to pass request bodies with ' + method + ' requests',
+              function (done) {
+                return fakeRequest(
+                  'example("/test/route").' + method + '(null, { body: "Test Data" });', method, '/test/route', function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal('Test Data');
+                  return done(err);
+                });
+              }
+            );
+          });
+        });
+
+        describe('Custom Query Strings in Config', function () {
           App._.each(methods, function (method) {
             it(
-              'should be able to attach custom headers to ' + method + ' requests',
-              testRequestHeaders(
-                '("/test/route").headers({ "X-Test-Header": "Test" })',
+              'should be able to pass queries with ' + method + ' requests',
+              fakeRequest(
+                'example("/test/route").' + method + '(null, { query: "test=data" })',
                 method,
-                '/test/route',
-                {
-                  'X-Test-Header': 'Test'
-                }
+                '/test/route?test=data'
               )
             );
           });
         });
 
-        describe('Custom Headers and Query String', function () {
+        describe('Merge Query Strings in Config with Body', function () {
+          App._.each(methodsWithoutBodies, function (method) {
+            it(
+              'should be able to merge queries with ' + method + ' requests',
+              fakeRequest(
+                'example("/test/route").' + method + '({ this: "that" }, { query: "test=data" })',
+                method,
+                '/test/route?test=data&this=that'
+              )
+            );
+          });
+        });
+
+        describe('Custom Headers in Config', function () {
           App._.each(methods, function (method) {
             it(
-              'should be able to attach custom headers and queries to ' + method + ' requests',
+              'should be able to attach custom headers to ' + method + ' requests',
               testRequestHeaders(
-                '("/test/route").headers({ "X-Test-Header": "Test" }).query("test=true")',
+                '("/test/route").' + method + '(null, { headers: { "X-Test-Header": "Test" } })',
                 method,
-                '/test/route?test=true',
+                '/test/route',
                 {
                   'X-Test-Header': 'Test'
                 }
@@ -310,6 +393,40 @@ describe('RAML Client Generator Plugin', function () {
         sandbox.execute('example["~"];', function (err, exec) {
           expect(exec.result).to.be.a('function');
           return done(err);
+        });
+      });
+
+      describe('Media Type Extension', function () {
+        App._.each(methods, function (method) {
+          describe(method.toUpperCase(), function () {
+            it(
+              'should automatically populate `mediaTypeExtension` enum fields',
+              testRequestHeaders('.user.json.' + method + '()', method, '/user.json', {
+                'Accept': 'application/json'
+              })
+            );
+
+            it(
+              'should allow manual override of `mediaTypeExtension` fields',
+              testRequestHeaders('.user.extension("xml").' + method + '()', method, '/user.xml', {
+                'Accept': 'application/xml'
+              })
+            );
+
+            it(
+              'should automatically populate `mediaTypeExtension` enum fields after variables',
+              testRequestHeaders('.user.userId(123).json.' + method + '()', method, '/user/123.json', {
+                'Accept': 'application/json'
+              })
+            );
+
+            it(
+              'should allow manual override of `mediaTypeExtension` fields after variables',
+              testRequestHeaders('.user.userId(123).extension("xml").' + method + '()', method, '/user/123.xml', {
+                'Accept': 'application/xml'
+              })
+            );
+          });
         });
       });
 
@@ -383,38 +500,12 @@ describe('RAML Client Generator Plugin', function () {
         });
 
         describe('Custom Query Strings', function () {
-          describe('Strings', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest(
-                  '.collection.collectionId("123").query("test=true")',
-                  method,
-                  '/collection/123?test=true'
-                )
-              );
-            });
-          });
-
-          describe('Objects', function () {
-            App._.each(methods, function (method) {
-              it(
-                'should be able to attach query strings to ' + method + ' requests',
-                testRequest(
-                  '.collection.collectionId("123").query({ test: true })',
-                  method,
-                  '/collection/123?test=true'
-                )
-              );
-            });
-          });
-
           describe('With Request Initiator', function () {
             App._.each(methodsWithoutBodies, function (method) {
               it(
                 'should be able to attach query strings to ' + method + ' requests',
                 fakeRequest(
-                  'example.collection.collectionId("123").get({ test: true })',
+                  'example.collection.collectionId("123").' + method + '({ test: true })',
                   method,
                   '/collection/123?test=true'
                 )
@@ -447,12 +538,56 @@ describe('RAML Client Generator Plugin', function () {
           });
         });
 
-        describe('Custom Headers', function () {
+        describe('Custom Request Bodies in Config', function () {
+          App._.each(methodsWithBodies, function (method) {
+            it(
+              'should be able to pass request bodies with ' + method + ' requests',
+              function (done) {
+                return fakeRequest(
+                  'example.collection.collectionId("123").' + method + '(null, { body: "Test Data" });', method, '/collection/123', function (request, response) {
+                    response[2] = request.requestBody;
+                  }
+                )(function (err, exec) {
+                  expect(exec.result.body).to.equal('Test Data');
+                  return done(err);
+                });
+              }
+            );
+          });
+        });
+
+        describe('Custom Query Strings in Config', function () {
+          App._.each(methods, function (method) {
+            it(
+              'should be able to pass queries with ' + method + ' requests',
+              fakeRequest(
+                'example.collection.collectionId("123").' + method + '(null, { query: { test: "data" } })',
+                method,
+                '/collection/123?test=data'
+              )
+            );
+          });
+        });
+
+        describe('Merge Query Strings in Config with Body', function () {
+          App._.each(methodsWithoutBodies, function (method) {
+            it(
+              'should be able to merge queries with ' + method + ' requests',
+              fakeRequest(
+                'example.collection.collectionId("123").' + method + '({ this: "that" }, { query: "test=data" })',
+                method,
+                '/collection/123?test=data&this=that'
+              )
+            );
+          });
+        });
+
+        describe('Custom Headers in Config', function () {
           App._.each(methods, function (method) {
             it(
               'should be able to attach custom headers to ' + method + ' requests',
               testRequestHeaders(
-                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" })',
+                '.collection.collectionId("123").' + method + '(null, { headers: { "X-Test-Header": "Test" } })',
                 method,
                 '/collection/123',
                 {
@@ -463,20 +598,96 @@ describe('RAML Client Generator Plugin', function () {
           });
         });
 
-        describe('Custom Headers and Query String', function () {
-          App._.each(methods, function (method) {
-            it(
-              'should be able to attach custom headers and query to ' + method + ' requests',
-              testRequestHeaders(
-                '.collection.collectionId("123").headers({ "X-Test-Header": "Test" }).query("test=true")',
-                method,
-                '/collection/123?test=true',
-                {
-                  'X-Test-Header': 'Test'
-                }
-              )
-            );
+        describe('Default configuration options', function () {
+          beforeEach(function (done) {
+            sandbox.execute('API.set(example, { query: "test=data", body: "test body", headers: { "X-Test-Header": "Test Header" }, uriParameters: { collectionId: 567 } });', done);
           });
+
+          it('should be able retrieve a value', function (done) {
+            sandbox.execute('API.get(example, "query")', function (err, exec) {
+              expect(exec.result).to.equal('test=data');
+              return done(err);
+            });
+          });
+
+          it('should be able to set a value', function (done) {
+            sandbox.execute('API.set(example, "query", "something=that")', function (err, exec) {
+              expect(exec.result).to.equal('something=that');
+              return done(err);
+            });
+          });
+
+          it('should be able to unset a value', function (done) {
+            sandbox.execute('API.unset(example, "query")', function (err) {
+              expect(err).to.not.exist;
+
+              sandbox.execute('API.get(example, "query")', function (err, exec) {
+                expect(exec.result).to.be.undefined;
+                return done(err);
+              });
+            });
+          });
+
+          it(
+            'should use default query strings',
+            fakeRequest(
+              'example.collection.collectionId("123").get()',
+              'get',
+              '/collection/123?test=data'
+            )
+          );
+
+          it(
+            'should merge query string with default',
+            fakeRequest(
+              'example.collection.collectionId("123").get({ this: "that" })',
+              'get',
+              '/collection/123?test=data&this=that'
+            )
+          );
+
+          it(
+            'should fallback to default body',
+            function (done) {
+              fakeRequest(
+                'example.collection.collectionId("123").post()',
+                'post',
+                '/collection/123?test=data',
+                function (request, response) {
+                  response[2] = request.requestBody;
+                }
+              )(function (err, exec) {
+                expect(exec.result.body).to.equal('test body');
+                return done(err);
+              });
+            }
+          );
+
+          it(
+            'should override default body',
+            function (done) {
+              fakeRequest(
+                'example.collection.collectionId("123").post("something else")',
+                'post',
+                '/collection/123?test=data',
+                function (request, response) {
+                  response[2] = request.requestBody;
+                }
+              )(function (err, exec) {
+                expect(exec.result.body).to.equal('something else');
+                return done(err);
+              });
+            }
+          );
+
+          it(
+            'should fallback to default uriParameters',
+            fakeRequest(
+              'example.collection.collectionId().get()',
+              'get',
+              '/collection/567?test=data'
+            )
+          );
         });
 
         describe('Serializing request bodies', function () {
@@ -533,7 +744,7 @@ describe('RAML Client Generator Plugin', function () {
       });
     });
 
-    describe('Completion Support (using `@return`)', function () {
+    describe('Completion Support', function () {
       var view;
 
       var testAutocomplete = function (text, done) {
@@ -569,79 +780,42 @@ describe('RAML Client Generator Plugin', function () {
 
       it('should autocomplete the root function', function (done) {
         testAutocomplete('example("/test").', function (results) {
-          expect(results).to.include.members(methods.concat('query', 'headers'));
+          expect(results).to.include.members(methods);
           return done();
         });
       });
 
       it('should autocomplete function properties', function (done) {
         testAutocomplete('example.collection.', function (results) {
-          expect(results).to.include.members(['get', 'post', 'collectionId', 'query', 'headers']);
+          expect(results).to.include.members(['get', 'post', 'collectionId']);
           return done();
         });
       });
 
       it('should autocomplete variable route', function (done) {
         testAutocomplete('example.collection("123").', function (results) {
-          expect(results).to.include.members(['get', 'post', 'query', 'headers']);
+          expect(results).to.include.members(['get', 'post']);
           return done();
         });
       });
 
       it('should autocomplete nested variable routes', function (done) {
         testAutocomplete('example.collection.collectionId("123").nestedId("456").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
+          expect(results).to.include.members(['get']);
           return done();
         });
       });
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('example.mixed("123", "456").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
+          expect(results).to.include.members(['get']);
           return done();
         });
       });
 
       it('should autocomplete with combined text and variables', function (done) {
         testAutocomplete('example["~"]("123").', function (results) {
-          expect(results).to.include.members(['get', 'query', 'headers']);
-          return done();
-        });
-      });
-
-      it('should not show query and other method functions when we can\'t execute a request', function (done) {
-        testAutocomplete('example.validation.', function (results) {
-          expect(results)
-            .to.not.include('query')
-            .and.not.include('headers');
-          return done();
-        });
-      });
-
-      it('should not repeat query or other routes after using query', function (done) {
-        testAutocomplete('example.collection.query("test=true").', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('query');
-          return done();
-        });
-      });
-
-      it('should not repeat headers or other routes after using headers', function (done) {
-        testAutocomplete('example.collection.headers({ test: true }).', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('headers');
-          return done();
-        });
-      });
-
-      it('should not repeat either headers or query after using both', function (done) {
-        testAutocomplete('example.collection.headers({ test: true }).query("test=true").', function (results) {
-          expect(results)
-            .to.not.include('collectionId')
-            .and.not.include('headers')
-            .and.not.include('query');
+          expect(results).to.include.members(['get']);
           return done();
         });
       });

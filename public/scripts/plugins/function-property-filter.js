@@ -1,6 +1,6 @@
 /* global App */
-var _                = App._;
-var FILTER_PROPS     = ['@return', '@description'];
+var _                = App.Library._;
+var FILTER_PROPS     = ['!return', '!description'];
 var RETURN_PROP      = FILTER_PROPS[0];
 var DESCRIPTION_PROP = FILTER_PROPS[1];
 
@@ -19,7 +19,7 @@ var inspectorFilterPlugin = function (data, next, done) {
 };
 
 /**
- * Augments the completion context to take into account the `@return` property.
+ * Augments the completion context to take into account the return property.
  *
  * @param {Object}   data
  * @param {Function} next
@@ -35,7 +35,7 @@ var completionFunctionPlugin = function (data, next, done) {
 };
 
 /**
- * Provide a hook for completing descriptions from the `@description` property.
+ * Provide a hook for completing descriptions from the description property.
  *
  * @param {Object}   data
  * @param {Function} next

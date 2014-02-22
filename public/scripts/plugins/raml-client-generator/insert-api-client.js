@@ -1,6 +1,7 @@
 /* global App */
-var _        = App._;
-var Backbone = App.Library.Backbone;
+var _          = App.Library._;
+var Backbone   = App.Library.Backbone;
+var changeCase = App.Library.changeCase;
 
 /**
  * Create an api client cell that can load the selected api document.
@@ -14,7 +15,7 @@ var createApiClientCell = function (cell, invoke) {
     if (err) { return; }
 
     var url      = api.ramlUrl;
-    var variable = App.Library.changeCase.camelCase(api.title);
+    var variable = changeCase.camelCase(api.title);
     var code     = [
       '// Read about the ' + api.title + ' at ' + api.portalUrl,
       'API.createClient(\'' + variable + '\', \'' + url + '\');'
@@ -96,11 +97,11 @@ var selectAPIDefinition = function (done) {
     },
     show: function (modal) {
       Backbone.$(modal.el)
-        .on('click', '[data-details]', function (e) {
+        .on('click', '[data-details]', function (e, target) {
           e.preventDefault();
           e.stopImmediatePropagation();
 
-          var classList = e.target.parentNode.parentNode.classList;
+          var classList = target.parentNode.parentNode.classList;
 
           if (!classList.contains('item-details-visible')) {
             classList.add('item-details-visible');
