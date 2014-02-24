@@ -98,7 +98,7 @@ Persistence.prototype.serialize = function (model, done) {
   middleware.trigger(
     'persistence:serialize',
     _.extend(this.getMiddlewareData(model), {
-      content: ''
+      content: null
     }),
     function (err, data) {
       model.set('content', data.content);
@@ -281,8 +281,8 @@ Persistence.prototype.load = function (model, done) {
     'persistence:load',
     _.extend(this.getMiddlewareData(model), {
       meta:    {},
-      content: '',
-      cells:   []
+      content: null,
+      cells:   null
     }),
     _.bind(function (err, data) {
       // Update all relevant model attributes.
@@ -292,10 +292,7 @@ Persistence.prototype.load = function (model, done) {
         updatedAt: data.updatedAt
       });
 
-      model.set({
-        cells:   data.cells,
-        content: data.content
-      }, {
+      model.set('content', data.content, {
         silent: true
       });
 
@@ -308,7 +305,7 @@ Persistence.prototype.load = function (model, done) {
         return done && done(err);
       }, this);
 
-      return this[data.cells ? 'serialize' : 'deserialize'](model, complete);
+      return this.deserialize(model, complete);
     }, this)
   );
 };
