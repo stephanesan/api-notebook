@@ -98,7 +98,7 @@ Persistence.prototype.serialize = function (model, done) {
   middleware.trigger(
     'persistence:serialize',
     _.extend(this.getMiddlewareData(model), {
-      content: null
+      content: ''
     }),
     function (err, data) {
       model.set('content', data.content);
@@ -281,8 +281,8 @@ Persistence.prototype.load = function (model, done) {
     'persistence:load',
     _.extend(this.getMiddlewareData(model), {
       meta:    {},
-      content: null,
-      cells:   null
+      content: '',
+      cells:   []
     }),
     _.bind(function (err, data) {
       // Update all relevant model attributes.

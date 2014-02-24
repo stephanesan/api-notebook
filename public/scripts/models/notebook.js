@@ -32,5 +32,6 @@ Notebook.prototype.initialize = function (attrs) {
   this.set('meta', (attrs && attrs.meta) || new Meta({
     title: 'Untitled Notebook'
   }));
+
   this.set('cells', (attrs && attrs.cells) || []);
 };
