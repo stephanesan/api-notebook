@@ -50,13 +50,31 @@ Persistence.prototype.isOwner = function (model) {
 };
 
 /**
+ * Check if the user is the owner of the current notebook.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype.isCurrentOwner = function () {
+  return this.isOwner(this.get('notebook'));
+};
+
+/**
  * Check if a model is new.
  *
  * @param  {Object}  model
  * @return {Boolean}
  */
 Persistence.prototype.isNew = function (model) {
-  return model.isNew();
+  return !model.get('id');
+};
+
+/**
+ * Check if the current model is new.
+ *
+ * @return {Boolean}
+ */
+Persistence.prototype.isCurrentNew = function () {
+  return this.isNew(this.get('notebook'));
 };
 
 /**

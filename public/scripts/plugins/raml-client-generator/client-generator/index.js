@@ -169,13 +169,16 @@ var toMethodDescription = function (nodes, method) {
         method.body, function (body, contentType) {
           var bullet = isQuery ? '* * ' : '* ';
           var title  = '**' + contentType + ':** ';
+          var description;
 
-          // Map out the form parameters with their descriptions.
-          var description = _.map(
-            body.formParameters, function (param, name) {
-              return '* ' + bullet + toMarkdownDescription(param, name);
-            }
-          ).join('\n');
+          // Map form parameters to their descriptions.
+          if (body) {
+            description = _.map(
+              body.formParameters, function (param, name) {
+                return '* ' + bullet + toMarkdownDescription(param, name);
+              }
+            ).join('\n');
+          }
 
           return bullet + title + (description ? '\n' + description : '?');
         }

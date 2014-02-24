@@ -42,9 +42,9 @@ App.prototype.events = {
       node = node.parentNode;
     }
 
-    if (!node.classList.contains('btn-disabled')) { return; }
-
-    e.stopImmediatePropagation();
+    if (node.classList.contains('btn-disabled')) {
+      e.stopImmediatePropagation();
+    }
   },
   'click .notebook-help':   'showShortcuts',
   'click .notebook-exec':   'runNotebook',
@@ -97,27 +97,31 @@ App.prototype.initialize = function () {
    * Update user state data when the user changes.
    */
   this.listenTo(persistence, 'changeUser changeNotebook', bounce(function () {
-    var model   = persistence.get('notebook');
-    var hasId   = !model.isNew();
     var canSave = config.get('savable');
-    var isOwner = persistence.isOwner(model);
+    var isOwner = persistence.isCurrentOwner();
 
     this.data.set('owner',         isOwner);
+    this.data.set('savable',       canSave && isOwner);
     this.data.set('authenticated', persistence.isAuthenticated());
-
-    this.data.set('shareable', hasId);
-    this.data.set('cloneable', canSave && hasId);
-    this.data.set('savable',   canSave && isOwner);
   }, this));
 
   /**
    * Update the saved view state when the id changes.
    */
-  this.listenTo(persistence, 'change:notebook', bounce(function self () {
+  this.listenTo(persistence, 'change:notebook', bounce(function () {
+    this.stopListening(model, 'change:id');
     this.stopListening(model.get('meta'), 'change:title');
 
     // Update model reference.
     model = persistence.get('notebook');
+
+    this.listenTo(model, 'change:id', bounce(function () {
+      var canSave = config.get('savable');
+      var isNew   = persistence.isNew(model);
+
+      this.data.set('shareable', !isNew);
+      this.data.set('cloneable', canSave && !isNew);
+    }, this));
 
     // Update the title when the current notebook updates.
     this.listenTo(model.get('meta'), 'change:title', bounce(function () {
@@ -137,16 +141,16 @@ App.prototype.initialize = function () {
    */
   this.listenTo(persistence, 'change:state', bounce(function () {
     var timestamp    = new Date().toLocaleTimeString();
-    var model        = persistence.get('notebook');
+    var isNew        = persistence.isCurrentNew();
     var currentState = persistence.get('state');
 
     var states = {
       1: 'Saving',
       2: 'Loading',
       3: 'Save failed',
-      4: model.isNew() ? '' : 'Saved ' + timestamp,
+      4: isNew ? '' : 'Saved ' + timestamp,
       5: 'Load Failed',
-      6: model.isNew() ? '' : 'Loaded ' + timestamp,
+      6: isNew ? '' : 'Loaded ' + timestamp,
       7: 'Unsaved changes',
       8: 'Cloning notebook'
     };
