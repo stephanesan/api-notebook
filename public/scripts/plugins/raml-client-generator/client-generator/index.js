@@ -88,16 +88,124 @@ var template = function (string, params, context) {
 };
 
 /**
- * Transform a general RAML method describing object into a tooltip
- * documentation object.
+ * Check if a method is a query method (not a body as the argument).
+ *
+ * @param  {String}  method
+ * @return {Boolean}
+ */
+var isQueryMethod = function (method) {
+  return method === 'get' || method === 'head';
+};
+
+/**
+ * Map of methods to their tooltip description objects.
+ *
+ * @type {Object}
+ */
+var methodDescription = _.object(_.map(HTTP_METHODS, function (method) {
+  var argument = isQueryMethod(method) ? 'query?: object' : 'body?: ?';
+
+  return [method, {
+    '!type': 'fn(' + argument + ', config?: object, async?: fn(err, result))'
+  }];
+}));
+
+/**
+ * Convert the RAML documentation to a string.
  *
  * @param  {Object} object
+ * @return {String}
+ */
+var toMarkdownDescription = function (object, name) {
+  var title = '**' + name + (object.required ? '' : '?') + ':** ';
+
+  // If a type is available, italicise after the name.
+  if (object.type) {
+    title += '*' + object.type + '* ';
+  }
+
+  return title + (object.description || '?');
+};
+
+/**
+ * Transform a RAML method object into a tooltip documentation object.
+ *
+ * @param  {Array}  nodes
+ * @param  {Object} method
  * @return {Object}
  */
-var toDescriptionObject = function (object) {
-  return {
-    '!doc': object.description
-  };
+var toMethodDescription = function (nodes, method) {
+  var documentation = [];
+  var configuration = [];
+  var isQuery       = isQueryMethod(method.method);
+
+  if (method.description) {
+    documentation.push(method.description);
+  }
+
+  if (method.queryParameters) {
+    (isQuery ? documentation : configuration).push(
+      (isQuery ? '' : '* ') + '**query:**\n' + _.map(
+        method.queryParameters, function (query, name) {
+          var bullet = isQuery ? '* ' : '* * ';
+
+          return bullet + toMarkdownDescription(query, name);
+        }
+      ).join('\n')
+    );
+  }
+
+  if (method.headers) {
+    configuration.push('* **headers:**\n' + _.map(
+      method.headers, function (header, name) {
+        return '* * ' + toMarkdownDescription(header, name);
+      }
+    ).join('\n'));
+  }
+
+  if (method.body) {
+    (isQuery ? configuration : documentation).push(
+      (isQuery ? '* ' : '') + '**body:**\n' + _.map(
+        method.body, function (body, contentType) {
+          var bullet = isQuery ? '* * ' : '* ';
+          var title  = '**' + contentType + ':** ';
+
+          // Map out the form parameters with their descriptions.
+          var description = _.map(
+            body.formParameters, function (param, name) {
+              return '* ' + bullet + toMarkdownDescription(param, name);
+            }
+          ).join('\n');
+
+          return bullet + title + (description ? '\n' + description : '?');
+        }
+      ).join('\n')
+    );
+  }
+
+  if (nodes.client.baseUriParameters) {
+    configuration.push('* **baseUriParameters:**\n' + _.map(
+      nodes.client.baseUriParameters, function (param, name) {
+        return '* * ' + toMarkdownDescription(param, name);
+      }
+    ).join('\n'));
+  }
+
+  configuration.push(
+    '* **proxy:** *boolean* Disable the proxy for the current request.'
+  );
+
+  documentation.push('**config:**\n');
+  documentation.push(configuration.join('\n'));
+
+  documentation.push('**async**\n');
+  documentation.push(
+    'Pass a function as the argument to execute the request asynchonously.'
+  );
+
+  return _.extend({
+    '!doc': documentation.join('\n\n')
+  }, methodDescription[method.method]);
 };
 
 /**
@@ -110,32 +218,6 @@ var allHttpMethods = _.chain(HTTP_METHODS).map(function (method) {
       method: method
     }];
   }).object().value();
-
-/**
- * Map of methods to their tooltip description objects.
- *
- * @type {Object}
- */
-var methodDescription = {
-  'get': {
-    '!type': 'fn(query?: object, config?: object, async?: ?)'
-  },
-  'head': {
-    '!type': 'fn(query?: object, config?: object, async?: ?)'
-  },
-  'put': {
-    '!type': 'fn(body?: ?, config?: object, async?: ?)'
-  },
-  'post': {
-    '!type': 'fn(body?: ?, config?: object, async?: ?)'
-  },
-  'patch': {
-    '!type': 'fn(body?: ?, config?: object, async?: ?)'
-  },
-  'delete': {
-    '!type': 'fn(body?: ?, config?: object, async?: ?)'
-  }
-};
 
 /**
  * Parse an XHR request for response headers and return as an object. Pass an
@@ -313,7 +395,7 @@ var httpRequest = function (nodes, method) {
     var fullUri = baseUri + '/' + nodes.join('/');
 
     // GET and HEAD requests accept the query string as the first argument.
-    if (method.method === 'get' || method.method === 'head') {
+    if (isQueryMethod(method.method)) {
       _.extend(config.query, sanitizeOption.query(body));
       body = null;
     }
@@ -419,9 +501,7 @@ var attachMethods = function (nodes, context, methods) {
   // Attach the available methods to the current context.
   _.each(methods, function (method, verb) {
     context[verb] = httpRequest(nodes, method);
-    context[verb][DESCRIPTION_PROPERTY] = _.extend(
-      toDescriptionObject(method), methodDescription[verb]
-    );
+    context[verb][DESCRIPTION_PROPERTY] = toMethodDescription(nodes, method);
   });
 
   return context;
@@ -604,7 +684,7 @@ var attachResources = function (nodes, context, resources) {
         // Create a function type hint based on the display name and whether
         // the tag is required.
         '!type': 'fn(' + _.map(tags, function (param) {
-          var displayName = param.displayName + (!param.required ? '?' : '');
+          var displayName = param.displayName + (param.required ? '' : '?');
 
           return displayName + ': ' + (param.type || '?');
         }).join(', ') + ')',
@@ -649,10 +729,11 @@ var generateClient = function (ast, config) {
   var nodes = _.extend([], {
     config: config || (config = {}),
     client: {
-      baseUri:         ast.baseUri.replace(/\/+$/, ''),
-      securedBy:       ast.securedBy,
-      authentication:  {},
-      securitySchemes: ast.securitySchemes
+      baseUri:           ast.baseUri.replace(/\/+$/, ''),
+      baseUriParameters: ast.baseUriParameters,
+      securedBy:         ast.securedBy,
+      authentication:    {},
+      securitySchemes:   ast.securitySchemes
     }
   });
 

@@ -1,5 +1,6 @@
-var _     = require('underscore');
-var state = require('../../state/state');
+var _      = require('underscore');
+var state  = require('../../state/state');
+var marked = require('marked');
 
 /**
  * Renders a documentation tooltip.
@@ -46,7 +47,14 @@ Tooltip.prototype.render = function () {
   if (description['!doc']) {
     var docEl = tooltip.appendChild(document.createElement('div'));
     docEl.className = 'CodeMirror-tooltip-doc';
-    docEl.appendChild(document.createTextNode(description['!doc']));
+
+    // Compile documentation as markdown before rendering.
+    docEl.innerHTML = marked(description['!doc'], {
+      gfm: true,
+      tables: true,
+      sanitize: true,
+      smartLists: true
+    });
 
     if (description['!url']) {
       docEl.appendChild(document.createTextNode(' — '));
@@ -83,9 +91,8 @@ Tooltip.prototype.reposition = function () {
   var pos     = this.completion.cm.cursorCoords(this.data.to);
   var winPos  = this.completion.cm.cursorCoords(this.data.to, 'window');
 
-  // Reset possible styles.
-  tooltip.style.top    = pos.bottom + 'px';
-  tooltip.style.left   = pos.left   + 'px';
+  tooltip.style.top    = pos.bottom - padding + 'px';
+  tooltip.style.left   = pos.left   - padding + 'px';
   tooltip.style.right  = 'auto';
   tooltip.style.bottom = 'auto';
   tooltip.style.height = 'auto';
@@ -99,19 +106,19 @@ Tooltip.prototype.reposition = function () {
   var rightWidth   = winWidth  - winPos.right;
   var bottomHeight = winHeight - winPos.bottom;
 
-  if (tooltipPos.right > winWidth - padding && tooltipPos.left > rightWidth) {
+  if (tooltipPos.right >= winWidth - padding && tooltipPos.left > rightWidth) {
     var docWidth = document.documentElement.scrollWidth;
 
     tooltip.className += ' CodeMirror-tooltip-right';
     tooltip.style.left  = 'auto';
-    tooltip.style.right = docWidth - pos.right + 'px';
+    tooltip.style.right = docWidth - pos.right - padding + 'px';
 
     // Update the tooltip positions.
     tooltipPos.left  = winPos.right - tooltip.clientWidth;
     tooltipPos.right = winPos.right;
   }
 
-  if (tooltipPos.bottom > winHeight - padding && winPos.top > bottomHeight) {
+  if (tooltipPos.bottom >= winHeight - padding && winPos.top >= bottomHeight) {
     tooltip.style.display = 'none';
 
     // Get the document height after hiding the tooltip since it can affect the
@@ -120,7 +127,7 @@ Tooltip.prototype.reposition = function () {
 
     tooltip.className += ' CodeMirror-tooltip-top';
     tooltip.style.top     = 'auto';
-    tooltip.style.bottom  = docHeight - pos.top + 'px';
+    tooltip.style.bottom  = docHeight - pos.top + padding + 'px';
     tooltip.style.display = 'block';
 
     // Update the tooltip postitions.
@@ -128,11 +135,11 @@ Tooltip.prototype.reposition = function () {
     tooltipPos.bottom = winPos.top;
   }
 
-  if (tooltipPos.top < padding) {
+  if (tooltipPos.top <= padding) {
     tooltip.style.height = tooltipPos.bottom - padding + 'px';
   }
 
-  if (tooltipPos.bottom > winHeight - padding) {
+  if (tooltipPos.bottom >= winHeight - padding) {
     tooltip.style.height = winHeight - tooltipPos.top - padding + 'px';
   }
 

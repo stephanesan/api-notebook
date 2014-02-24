@@ -12,6 +12,7 @@ App.Library = {
   url:        require('url'),
   async:      require('async'),
   domify:     require('domify'),
+  marked:     require('marked'),
   Backbone:   require('backbone'),
   DOMBars:    require('./lib/dombars'),
   changeCase: require('change-case')

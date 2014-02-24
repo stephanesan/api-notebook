@@ -113,7 +113,8 @@
 
 .CodeMirror-tooltip
   @extends .CodeMirror-hints
-  z-index: 10 // Lower z-index than the hints overlay.
+  z-index: 15 // Lower z-index than the hints overlay.
+  margin: 5px
   max-width: 42em
   max-height: 14em
 
@@ -136,4 +137,12 @@
   font-weight: bold
 
 .CodeMirror-tooltip-doc
-  white-space: pre-wrap
+  > p,
+  > h1,
+  > h2,
+  > h3,
+  > h4,
+  > h5,
+  > h6,
+  > pre
+    margin-bottom: 8px
