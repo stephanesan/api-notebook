@@ -194,7 +194,7 @@ middleware.register('completion:context', function (data, next, done) {
 
   if (type === 'variable') {
     // Check if the current variable is a global or an argument.
-    data.context = isInScope(token, string) ? null : data.window[string];
+    data.context = isInScope(token, string) ? null : data.context[string];
     return done();
   }
 

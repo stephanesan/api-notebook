@@ -14,10 +14,16 @@ var correctToken = require('../codemirror/correct-token');
  * @return {Widget}
  */
 var Widget = module.exports = function (completion, data) {
+  var that = this;
+
   this.data       = data;
   this.completion = completion;
 
   CodeMirror.signal(completion.cm, 'startCompletion', completion.cm);
+
+  completion.cm.addKeyMap(this.keyMap = {
+    'Esc': function () { that.remove(); }
+  });
 
   this.update();
 };
@@ -130,6 +136,9 @@ Widget.prototype.remove = function () {
   this.removeHints();
   this.removeGhost();
 
+  this.completion.cm.removeKeyMap(this.keyMap);
+
+  delete this.keyMap;
   delete this.completion.widget;
   CodeMirror.signal(this.completion.cm, 'endCompletion', this.completion.cm);
 };

@@ -6,7 +6,7 @@
  * @return {Boolean}
  */
 module.exports = function (scope, value) {
-  while (scope && scope.name) {
+  while (scope) {
     if (scope.name === value) {
       return true;
     }

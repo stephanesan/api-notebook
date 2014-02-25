@@ -61,24 +61,11 @@ var Hints = module.exports = function (widget, results) {
   document.body.appendChild(hints);
 
   cm.addKeyMap(this.keyMap = {
-    'Up': function () {
-      that.select(that.currentHint - 1);
-    },
-    'Down': function () {
-      that.select(that.currentHint + 1);
-    },
-    'Home': function () {
-      that.select(0);
-    },
-    'End': function () {
-      that.select(-1);
-    },
-    'Esc': function () {
-      that.remove();
-    },
-    'Enter': function () {
-      that.accept(that.currentHint);
-    },
+    'Up':     function () { that.select(that.currentHint - 1); },
+    'Down':   function () { that.select(that.currentHint + 1); },
+    'Home':   function () { that.select(0); },
+    'End':    function () { that.select(-1); },
+    'Enter':  function () { that.accept(that.currentHint); },
     'PageUp': function () {
       that.select(that.currentHint - that.screenAmount(), true);
     },
