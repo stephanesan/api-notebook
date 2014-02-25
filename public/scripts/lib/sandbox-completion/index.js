@@ -4,6 +4,65 @@ var isInScope  = require('../codemirror/is-in-scope');
 var fromPath   = require('../from-path');
 
 /**
+ * Split arguments into an array of key to definition.
+ *
+ * @param  {String} string
+ * @return {Array}
+ */
+var sanitizeFunctionType = function (string) {
+  var fnParts = string.split(' -> ');
+  var result  = fnParts.length > 1 ? fnParts.pop() : null;
+  var fnType  = fnParts.join(' -> ');
+  var args    = [];
+
+  // Map the arguments to a sanitized string.
+  var type = fnType.replace(/^fn\((.*)\)/, function (match, params) {
+    var level    = 0;
+    var argMap   = [];
+    var curParam = '';
+
+    // Iterate over every character categorizing into arguments.
+    for (var i = 0; i < params.length; i++) {
+      var char = params[i];
+
+      if (char === '{' || char === '(') {
+        level++;
+      } else if (char === '}' || char === ')') {
+        level--;
+      } else if (char === ',' && level === 0) {
+        argMap.push(curParam);
+        curParam = '';
+      } else {
+        curParam += char;
+      }
+    }
+
+    argMap.push(curParam);
+
+    // Return only the argument names and push the definitions into an array.
+    return 'fn(' + _.map(argMap, function (arg) {
+      var split = arg.split(':');
+      var name  = split.shift().trim();
+
+      if (split.length) {
+        args.push(split.join(':').trim());
+      } else {
+        args.push(null);
+      }
+
+      return name;
+    }).join(', ') + ')';
+  });
+
+  // Return an object to be mixed in with the original description.
+  return {
+    '!type':   type,
+    '!args':   args,
+    '!return': result
+  };
+};
+
+/**
  * Sanitize a definition object into our regular format.
  *
  * @param  {Object} definition
@@ -14,14 +73,9 @@ var sanitizeDefinition = function (description) {
     // Skip over definition keys.
     if (!_.isObject(describe) || key.charAt(0) === '!') { return; }
 
-    // Sanitize functions into their parts.
+    // Sanitize a function into its individual parts.
     if (/^fn\(/.test(describe['!type'])) {
-      var fnParts    = describe['!type'].split(' -> ');
-      var returnType = fnParts.length > 1 ? fnParts.pop() : null;
-      var fnType     = fnParts.join(' -> ');
-
-      describe['!type']   = fnType;
-      describe['!return'] = returnType;
+      _.extend(describe, sanitizeFunctionType(describe['!type']));
     }
 
     return sanitizeDefinition(describe);
