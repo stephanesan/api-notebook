@@ -109,7 +109,7 @@ var doPropertyLookup = function (cm, tokens, options, done) {
         }
 
         return again(err, data);
-      });
+      }, true);
     }
 
     if (tokens.length && data.context != null) {

@@ -258,28 +258,3 @@ middleware.register('completion:filter', function (data, next, done) {
 
   return done(null, length && value.substr(0, string.length) === string);
 });
-
-/**
- * Provides completion middleware for resolving the returned context of a
- * function.
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.register('completion:function', function (data, next, done) {
-  // Intentionally return `null` as the data object.
-  return done(null, null);
-});
-
-/**
- * Provides a description object of an object, function, variable, etc.
- *
- * @param {Object}   data
- * @param {Function} next
- * @param {Function} done
- */
-middleware.register('completion:describe', function (data, next, done) {
-  // Intentionally returning an empty description object.
-  return done(null, {});
-});

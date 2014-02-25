@@ -164,15 +164,22 @@ Hints.prototype.select = function (index, noWrap) {
     }
   }
 
-  middleware.trigger('completion:describe', {
-    parent:  data.context,
-    context: data.context[result.value],
-    token:   _.extend({}, data.token, { string: result.value })
-  }, function (err, describe) {
-    if (err || !describe) { return; }
+  middleware.trigger(
+    'completion:describe',
+    _.extend({}, this.widget.completion.options, {
+      parent: data.context,
+      context: data.context[result.value],
+      token: _.extend({}, data.token, {
+        string: result.value
+      })
+    }),
+    function (err, describe) {
+      if (err || !describe) { return; }
 
-    that.docs = new HintDocs(that, describe);
-  }, true);
+      that.docs = new HintDocs(that, describe);
+    },
+    true
+  );
 };
 
 /**

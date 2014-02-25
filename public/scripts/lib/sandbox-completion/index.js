@@ -1,9 +1,38 @@
 var _          = require('underscore');
-var ecma5      = require('./ecma5.json');
-var browser    = require('./browser.json');
-var fromPath   = require('../from-path');
 var middleware = require('../../state/middleware');
 var isInScope  = require('../codemirror/is-in-scope');
+var fromPath   = require('../from-path');
+
+/**
+ * JavaScript description documents from Tern.js.
+ *
+ * @type {Array}
+ */
+var DESCRIPTIONS = [
+  require('./browser.json'),
+  require('./ecma5.json')
+];
+
+/**
+ * Sanitize a definition object into our regular format.
+ *
+ * @param  {Object} definition
+ * @return {Object}
+ */
+var sanitizeDefinition = function (definition) {
+  if (/^fn\(/.test(definition['!type'])) {
+    // Split the documentation type and get the return type.
+    var fnParts    = definition['!type'].split(' -> ');
+    var returnType = fnParts.length > 1 ? fnParts.pop() : null;
+    var fnType     = fnParts.join(' -> ');
+
+    // Set function description properties.
+    definition['!type']   = fnType;
+    definition['!return'] = returnType;
+  }
+
+  return definition;
+};
 
 /**
  * Recurse through the description structure and attach descriptions to nodes
@@ -15,26 +44,24 @@ var isInScope  = require('../codemirror/is-in-scope');
  * @return {Map}
  */
 var attachDescriptions = function (map, describe, global) {
-  (function recurse (description, context) {
-    // Break recursion on a non-Object.
-    if (!_.isObject(context)) { return; }
+  (function recurse (definition, context) {
+    // Break recursion on a non-object.
+    if (!_.isObject(context) || !_.isObject(definition)) { return; }
 
     // Set the map object reference to point to the description.
-    map.set(context, description);
+    map.set(context, sanitizeDefinition(definition));
 
-    if (_.isObject(description)) {
-      // Iterate over the description object and attach more definitions.
-      _.each(description, function (describe, key) {
-        // Tern.js definitions prepend an exclamation mark to definition types.
-        if (key.charAt(0) === '!') { return; }
+    // Iterate over the definition object and attach more definitions.
+    _.each(definition, function (describe, key) {
+      // Tern.js definitions prepend an exclamation mark to definition types.
+      if (key.charAt(0) === '!') { return; }
 
-        var descriptor = Object.getOwnPropertyDescriptor(context, key);
+      // We need to use property descriptors here since Firefox throws errors
+      // with getters on some prototype properties.
+      var descriptor = Object.getOwnPropertyDescriptor(context, key);
 
-        // We need to use property descriptors here since Firefox throws errors
-        // with getters on some prototype properties.
-        return descriptor && recurse(describe, descriptor.value);
-      });
-    }
+      return descriptor && recurse(describe, descriptor.value);
+    });
   })(describe, global);
 
   return map;
@@ -50,9 +77,10 @@ module.exports = function (global) {
   var map     = new Map();
   var plugins = {};
 
-  // Attach pre-defined global description objects.
-  attachDescriptions(map, ecma5,   global);
-  attachDescriptions(map, browser, global);
+  // Iterate over the description documents and attach.
+  _.each(DESCRIPTIONS, function (description) {
+    attachDescriptions(map, description, global);
+  });
 
   /**
    * Middleware plugin for describing native types.
@@ -72,9 +100,30 @@ module.exports = function (global) {
 
     if (_.isObject(data.context)) {
       description = map.get(data.context);
-    } else {
-      // TODO: Improve resolution of instances to their prototypes, etc.
-      description = map.get(data.parent)[token.string];
+    }
+
+    if (!description) {
+      var obj     = data.parent;
+      var objDesc = map.get(obj);
+      var type;
+
+      while (obj) {
+        objDesc = map.get(obj);
+
+        if (objDesc) {
+          if ((type = objDesc['!type']) && type.charAt(0) === '+') {
+            obj = fromPath(data.window, type.substr(1).split('.')).prototype;
+            objDesc = map.get(obj);
+          }
+
+          if (objDesc[token.string]) {
+            description = objDesc[token.string];
+            break;
+          }
+        }
+
+        obj = data.window.Object.getPrototypeOf(obj);
+      }
     }
 
     // If we didn't retrieve a description, allow the next function to run.
@@ -113,15 +162,12 @@ module.exports = function (global) {
 
     // Use the documentation to detect the return types.
     middleware.trigger('completion:describe', data, function (err, describe) {
-      if (err || !_.isObject(describe) || !/^fn\(/.test(describe['!type'])) {
+      var returnType = describe && describe['!return'];
+
+      // Check for an error and ensure we have a return description.
+      if (err || !/^fn\(/.test(describe['!type']) || !returnType) {
         return next(err);
       }
-
-      // Split the documentation type and get the return type.
-      var returnType = describe['!type'].split(' -> ');
-
-      // Update the return type string.
-      returnType = returnType.length > 1 ? returnType.pop() : null;
 
       if (returnType === 'string') {
         return done(null, data.window.String());
@@ -159,7 +205,7 @@ module.exports = function (global) {
       }
 
       return next();
-    });
+    }, true);
   };
 
   return plugins;

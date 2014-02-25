@@ -552,6 +552,8 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
     return newContext;
   };
 
+  // Attach a description and return property.
+  context.extension[RETURN_PROPERTY]      = context.extension('');
   context.extension[DESCRIPTION_PROPERTY] = EXTENSION_DESCRIPTION;
 
   // Iterate over the enum options and automatically attach to the context.
@@ -764,8 +766,8 @@ var generateClient = function (ast, config) {
 
   client[CONFIG_PROPERTY]      = nodes.config;
   client[CLIENT_PROPERTY]      = nodes.client;
-  client[RETURN_PROPERTY]      = attachMethods(nodes, {}, allHttpMethods);
   client[DESCRIPTION_PROPERTY] = CLIENT_DESCRIPTION;
+  client[RETURN_PROPERTY]      = attachMethods(nodes, {}, allHttpMethods);
 
   attachResources(nodes, client, ast.resources);
 

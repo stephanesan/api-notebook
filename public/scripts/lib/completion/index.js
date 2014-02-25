@@ -1,7 +1,7 @@
-var Widget            = require('./widget');
-var Documentation     = require('./documentation');
-var loadCompletion    = require('../codemirror/sandbox-completion');
-var loadDocumentation = require('../codemirror/sandbox-documentation');
+var Widget         = require('./widget');
+var ArgumentDocs   = require('./argument-documentation');
+var loadArguments  = require('../codemirror/sandbox-arguments');
+var loadCompletion = require('../codemirror/sandbox-completion');
 
 var CLOSE_REGEXP = /[^$_a-zA-Z0-9]/;
 
@@ -29,7 +29,7 @@ var Completion = module.exports = function (cm, options) {
   this.onBlur = function () {
     closeOnBlur = window.setTimeout(function () {
       that.removeWidget();
-      that.removeDocumentation();
+      that.removeArgumentDocumentation();
     }, 20);
   };
 
@@ -90,7 +90,7 @@ var Completion = module.exports = function (cm, options) {
     // Cursor activity is getting triggered when we don't have focus.
     if (!cm.hasFocus() || cm.getOption('readOnly')) { return; }
 
-    // that.showDocumentation();
+    // that.showArgumentDocumentation();
 
     if (closeOnCursor) {
       return that.removeWidget();
@@ -103,19 +103,6 @@ var Completion = module.exports = function (cm, options) {
   this.cm.on('focus',          this.onFocus);
   this.cm.on('change',         this.onChange);
   this.cm.on('cursorActivity', this.onCursorActivity);
-};
-
-/**
- * Remove the completion widget.
- */
-Completion.prototype.remove = function () {
-  this.removeWidget();
-  this.removeDocumentation();
-  delete this.cm.state.completionActive;
-  this.cm.off('blur',           this.onBlur);
-  this.cm.off('focus',          this.onFocus);
-  this.cm.off('change',         this.onChange);
-  this.cm.off('cursorActivity', this.onCursorActivity);
 };
 
 /**
@@ -141,19 +128,32 @@ Completion.prototype.removeWidget = function () {
 /**
  * Show an overlay tooltip with relevant documentation.
  */
-Completion.prototype.showDocumentation = function () {
+Completion.prototype.showArgumentDocumentation = function () {
   var that = this;
 
-  loadDocumentation(this.cm, this.options, function (err, data) {
-    that.removeDocumentation();
+  loadArguments(this.cm, this.options, function (err, data) {
+    that.removeArgumentDocumentation();
 
-    return data && (that.documentation = new Documentation(that, data));
+    return data && (that.documentation = new ArgumentDocs(that, data));
   });
 };
 
 /**
  * Remove the overlay toolip.
  */
-Completion.prototype.removeDocumentation = function () {
+Completion.prototype.removeArgumentDocumentation = function () {
   return this.documentation && this.documentation.remove();
+};
+
+/**
+ * Remove the completion widget.
+ */
+Completion.prototype.remove = function () {
+  this.removeWidget();
+  this.removeArgumentDocumentation();
+  delete this.cm.state.completionActive;
+  this.cm.off('blur',           this.onBlur);
+  this.cm.off('focus',          this.onFocus);
+  this.cm.off('change',         this.onChange);
+  this.cm.off('cursorActivity', this.onCursorActivity);
 };

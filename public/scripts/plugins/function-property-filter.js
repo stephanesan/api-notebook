@@ -1,8 +1,5 @@
-/* global App */
-var _                = App.Library._;
-var FILTER_PROPS     = ['!return', '!description'];
-var RETURN_PROP      = FILTER_PROPS[0];
-var DESCRIPTION_PROP = FILTER_PROPS[1];
+var RETURN_PROP      = '!return';
+var DESCRIPTION_PROP = '!description';
 
 /**
  * Filters `@return` from showing up in the inspector view.
@@ -10,8 +7,12 @@ var DESCRIPTION_PROP = FILTER_PROPS[1];
  * @param {Object}   data
  * @param {Function} next
  */
-var inspectorFilterPlugin = function (data, next, done) {
-  if (_.isFunction(data.parent) && _.contains(FILTER_PROPS, data.property)) {
+exports['inspector:filter'] = function (data, next, done) {
+  if (data.property === DESCRIPTION_PROP) {
+    return done(null, false);
+  }
+
+  if (typeof data.context === 'function' && data.property === RETURN_PROP) {
     return done(null, false);
   }
 
@@ -25,8 +26,8 @@ var inspectorFilterPlugin = function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-var completionFunctionPlugin = function (data, next, done) {
-  // Completes the return property in functions, when available.
+exports['completion:function'] = function (data, next, done) {
+  // Completes the using return property on functions, when available.
   if (RETURN_PROP in data.context) {
     return done(null, data.context[RETURN_PROP]);
   }
@@ -41,21 +42,10 @@ var completionFunctionPlugin = function (data, next, done) {
  * @param {Function} next
  * @param {Function} done
  */
-var completionDescribePlugin = function (data, next, done) {
+exports['completion:describe'] = function (data, next, done) {
   if (DESCRIPTION_PROP in data.context) {
     return done(null, data.context[DESCRIPTION_PROP]);
   }
 
   return next();
-};
-
-/**
- * A { key: function } map of all middleware used in the plugin.
- *
- * @type {Object}
- */
-module.exports = {
-  'inspector:filter':    inspectorFilterPlugin,
-  'completion:function': completionFunctionPlugin,
-  'completion:describe': completionDescribePlugin
 };
