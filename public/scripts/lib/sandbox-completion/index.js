@@ -4,35 +4,41 @@ var isInScope  = require('../codemirror/is-in-scope');
 var fromPath   = require('../from-path');
 
 /**
- * JavaScript description documents from Tern.js.
- *
- * @type {Array}
- */
-var DESCRIPTIONS = [
-  require('./browser.json'),
-  require('./ecma5.json')
-];
-
-/**
  * Sanitize a definition object into our regular format.
  *
  * @param  {Object} definition
  * @return {Object}
  */
-var sanitizeDefinition = function (definition) {
-  if (/^fn\(/.test(definition['!type'])) {
-    // Split the documentation type and get the return type.
-    var fnParts    = definition['!type'].split(' -> ');
-    var returnType = fnParts.length > 1 ? fnParts.pop() : null;
-    var fnType     = fnParts.join(' -> ');
+var sanitizeDefinition = function (description) {
+  _.each(description, function (describe, key) {
+    // Skip over definition keys.
+    if (!_.isObject(describe) || key.charAt(0) === '!') { return; }
 
-    // Set function description properties.
-    definition['!type']   = fnType;
-    definition['!return'] = returnType;
-  }
+    // Sanitize functions into their parts.
+    if (/^fn\(/.test(describe['!type'])) {
+      var fnParts    = describe['!type'].split(' -> ');
+      var returnType = fnParts.length > 1 ? fnParts.pop() : null;
+      var fnType     = fnParts.join(' -> ');
 
-  return definition;
+      describe['!type']   = fnType;
+      describe['!return'] = returnType;
+    }
+
+    return sanitizeDefinition(describe);
+  });
+
+  return description;
 };
+
+/**
+ * JavaScript description documents from Tern.js.
+ *
+ * @type {Array}
+ */
+var DESCRIPTIONS = _.map([
+  require('./browser.json'),
+  require('./ecma5.json')
+], sanitizeDefinition);
 
 /**
  * Recurse through the description structure and attach descriptions to nodes
@@ -49,11 +55,11 @@ var attachDescriptions = function (map, describe, global) {
     if (!_.isObject(context) || !_.isObject(definition)) { return; }
 
     // Set the map object reference to point to the description.
-    map.set(context, sanitizeDefinition(definition));
+    map.set(context, definition);
 
     // Iterate over the definition object and attach more definitions.
     _.each(definition, function (describe, key) {
-      // Tern.js definitions prepend an exclamation mark to definition types.
+      // Definitions are prepended with an exclamation mark.
       if (key.charAt(0) === '!') { return; }
 
       // We need to use property descriptors here since Firefox throws errors
