@@ -1,23 +1,23 @@
 var _          = require('underscore');
 var middleware = require('../../state/middleware');
+var isInScope  = require('../../lib/codemirror/is-in-scope');
 
 /**
  * Reserved keyword list (http://mdn.io/reserved)
  *
  * @type {Object}
  */
-var keywords = _.object(('break case catch continue debugger default ' +
-               'delete do else false finally for function if in instanceof ' +
-               'new null return switch throw true try typeof var void while ' +
-               'with').split(' '), true);
-
-// Augment the keywords with type information.
-_.each(keywords, function (_, keyword) {
-  keywords[keyword] = {
-    value: keyword,
-    type: 'keyword'
-  };
-});
+var KEYWORDS = _.object(_.map(
+  ('break case catch continue debugger default delete do else ' +
+  'false finally for function if in instanceof new null return switch this ' +
+  'throw true try typeof var void while with').split(' '),
+  function (keyword) {
+    return [keyword, {
+      value: keyword,
+      type: 'keyword'
+    }];
+  }
+));
 
 /**
  * CodeMirror provides access to inline variables defined within the notebook
@@ -27,15 +27,11 @@ _.each(keywords, function (_, keyword) {
  * @param  {Object} scope
  * @return {Object}
  */
-var varsToObject = function (scope) {
+var varsToObject = function (scope, info) {
   var obj = {};
 
-  while (scope) {
-    // The scope variable could be the same token we are currently typing
-    if (typeof scope.name === 'string') {
-      obj[scope.name] = true;
-    }
-
+  while (scope && scope.name) {
+    obj[scope.name] = info || true;
     scope = scope.next;
   }
 
@@ -135,18 +131,33 @@ var getPropertyNames = function (obj, global) {
 middleware.register('completion:variable', function (data, next) {
   var token = data.token;
 
-  _.extend(data.results, varsToObject(token.state.localVars));
+  // Collect properties from the global environment first.
+  _.extend(data.results, getPropertyNames(data.context, data.window));
+
+  // Extend the results with global variables.
+  _.extend(data.results, varsToObject(token.state.globalVars));
+
+  // Extend the results with arguments from the local function context.
+  _.extend(data.results, varsToObject(token.state.localVars, {
+    type: 'argument'
+  }));
 
   // Extend the variables object with each context level
-  var prev = token.state.context;
-  while (prev) {
-    _.extend(data.results, varsToObject(prev.vars));
-    prev = prev.prev;
+  var context = token.state.context;
+  while (context) {
+    _.extend(data.results, varsToObject(context.vars));
+    context = context.prev;
   }
 
-  _.extend(data.results, varsToObject(token.state.globalVars));
-  _.extend(data.results, keywords);
-  _.extend(data.results, getPropertyNames(data.context, data.window));
+  // Finally, extend over the top with keywords.
+  _.extend(data.results, KEYWORDS);
+
+  // Override the `arguments` definition (but only if we have one).
+  if (data.results.arguments) {
+    data.results.arguments = {
+      type: 'object'
+    };
+  }
 
   return next();
 });
@@ -182,7 +193,8 @@ middleware.register('completion:context', function (data, next, done) {
   var string = token.string;
 
   if (type === 'variable') {
-    data.context = data.context[string];
+    // Check if the current variable is a global or an argument.
+    data.context = isInScope(token, string) ? null : data.window[string];
     return done();
   }
 

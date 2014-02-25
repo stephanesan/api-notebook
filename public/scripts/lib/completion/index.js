@@ -1,13 +1,14 @@
-var _              = require('underscore');
-var Widget         = require('./widget');
-var Tooltip        = require('./tooltip');
-var tooltipData    = require('../codemirror/sandbox-tooltip');
-var completionData = require('../codemirror/sandbox-completion');
+var Widget            = require('./widget');
+var Documentation     = require('./documentation');
+var loadCompletion    = require('../codemirror/sandbox-completion');
+var loadDocumentation = require('../codemirror/sandbox-documentation');
+
+var CLOSE_REGEXP = /[^$_a-zA-Z0-9]/;
 
 /**
- * The completion widget is a constructor function that is used with CodeMirror
- * instances.
+ * Create a completion instance for a CodeMirror editor.
  *
+ * @constructor
  * @param  {CodeMirror} cm
  * @param  {Object}     options
  * @return {Completion}
@@ -23,13 +24,12 @@ var Completion = module.exports = function (cm, options) {
   this.cm.state.completionActive = this;
 
   /**
-   * Close the currently open widget when we blur the editor. However, we want
-   * to allow a small grace period in case we are clicking a widget suggestion.
+   * Close the currently open widget when we exit the editor.
    */
   this.onBlur = function () {
     closeOnBlur = window.setTimeout(function () {
       that.removeWidget();
-      that.removeTooltip();
+      that.removeDocumentation();
     }, 20);
   };
 
@@ -53,7 +53,6 @@ var Completion = module.exports = function (cm, options) {
       return that.removeWidget();
     }
 
-    var closeOn = /[^$_a-zA-Z0-9]/;
     var remove  = event.origin === '+delete';
     var text    = event[remove ? 'removed' : 'text'].join('\n');
     var line    = cm.getLine(event.from.line);
@@ -63,9 +62,9 @@ var Completion = module.exports = function (cm, options) {
     // Checks whether any of the characters are a close character. If they are,
     // close the widget and remove from the DOM. However, we should also close
     // the widget when there is no previous character.
-    if (!curChar || closeOn.test(curChar) || closeOn.test(text)) {
+    if (!curChar || CLOSE_REGEXP.test(curChar) || CLOSE_REGEXP.test(text)) {
       that.removeWidget();
-    } else if (curPos > 0 && closeOn.test(line.charAt(curPos - 1))) {
+    } else if (curPos > 0 && CLOSE_REGEXP.test(line.charAt(curPos - 1))) {
       that.removeWidget();
     }
 
@@ -74,9 +73,9 @@ var Completion = module.exports = function (cm, options) {
     // If completion is currently active, trigger a refresh event (filter the
     // current suggestions using updated character position information).
     // Otherwise, we need to show a fresh widget.
-    if (that._completionActive) {
-      that.refresh();
-    } else if (!nextChar || closeOn.test(nextChar)) {
+    if (that.widget) {
+      that.widget.update();
+    } else if (!nextChar || CLOSE_REGEXP.test(nextChar)) {
       that.showWidget();
     }
   };
@@ -88,10 +87,10 @@ var Completion = module.exports = function (cm, options) {
    * @param  {CodeMirror} cm
    */
   this.onCursorActivity = function (cm) {
-    // Cursor activity is triggered even when we don't have focus.
+    // Cursor activity is getting triggered when we don't have focus.
     if (!cm.hasFocus() || cm.getOption('readOnly')) { return; }
 
-    that.showTooltip();
+    // that.showDocumentation();
 
     if (closeOnCursor) {
       return that.removeWidget();
@@ -100,7 +99,6 @@ var Completion = module.exports = function (cm, options) {
     closeOnCursor = true;
   };
 
-  // Attaches all relevant event listeners.
   this.cm.on('blur',           this.onBlur);
   this.cm.on('focus',          this.onFocus);
   this.cm.on('change',         this.onChange);
@@ -108,77 +106,54 @@ var Completion = module.exports = function (cm, options) {
 };
 
 /**
- * Remove all completion helpers.
- *
- * @return {Completion}
+ * Remove the completion widget.
  */
 Completion.prototype.remove = function () {
   this.removeWidget();
-  this.removeTooltip();
+  this.removeDocumentation();
   delete this.cm.state.completionActive;
   this.cm.off('blur',           this.onBlur);
   this.cm.off('focus',          this.onFocus);
   this.cm.off('change',         this.onChange);
   this.cm.off('cursorActivity', this.onCursorActivity);
-
-  return this;
-};
-
-/**
- * Refresh the current completion.
- *
- * @param  {Function} done
- */
-Completion.prototype.refresh = function (done) {
-  if (this.widget) {
-    return this.widget.refresh(done);
-  }
-
-  return done && done();
 };
 
 /**
  * Show a scrollable completion widget.
  */
 Completion.prototype.showWidget = function () {
-  this.removeWidget();
-  this._completionActive = true;
-  completionData(this.cm, this.options, _.bind(function (err, data) {
-    if (this._completionActive && data) {
-      this.widget = new Widget(this, data);
-    } else {
-      this._completionActive = false;
-    }
-  }, this));
+  var that = this;
+
+  loadCompletion(this.cm, this.options, function (err, data) {
+    that.removeWidget();
+
+    return data && (that.widget = new Widget(that, data));
+  });
 };
 
 /**
  * Removes the currently display widget.
  */
 Completion.prototype.removeWidget = function () {
-  if (this.widget) {
-    this.widget.remove();
-  }
+  return this.widget && this.widget.remove();
 };
 
 /**
  * Show an overlay tooltip with relevant documentation.
  */
-Completion.prototype.showTooltip = function () {
-  this.removeTooltip();
+Completion.prototype.showDocumentation = function () {
+  var that = this;
 
-  tooltipData(this.cm, this.options, _.bind(function (err, data) {
-    if (data) {
-      this.tooltip = new Tooltip(this, data);
-    }
-  }, this));
+  loadDocumentation(this.cm, this.options, function (err, data) {
+    that.removeDocumentation();
+
+    return data && (that.documentation = new Documentation(that, data));
+  });
 };
 
 /**
  * Remove the overlay toolip.
  */
-Completion.prototype.removeTooltip = function () {
-  if (this.tooltip) {
-    this.tooltip.remove();
-  }
+Completion.prototype.removeDocumentation = function () {
+  return this.documentation && this.documentation.remove();
 };

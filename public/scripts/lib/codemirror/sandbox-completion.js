@@ -25,7 +25,7 @@ var completeResults = function (done) {
       return {
         title: key,
         type:  data.results[key].type,
-        value: data.results[key].value
+        value: data.results[key].value || key
       };
     }).sort(function (a, b) {
       return a.title > b.title ? 1 : -1;

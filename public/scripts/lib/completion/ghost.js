@@ -1,4 +1,5 @@
-var _ = require('underscore');
+var _        = require('underscore');
+var Backbone = require('backbone');
 
 /**
  * Generates a ghost text widget that is used to render Chrome-style completion.
@@ -8,72 +9,67 @@ var _ = require('underscore');
  * @param  {String} text
  * @return {Ghost}
  */
-var Ghost = module.exports = function (widget, data, result) {
+var Ghost = module.exports = function (widget, result) {
   this.cm     = widget.completion.cm;
-  this.data   = data;
+  this.result = result;
   this.widget = widget;
 
-  var substring = result.value.substr(0, this.data.to.ch - this.data.from.ch);
+  var that      = this;
+  var text      = '';
+  var data      = widget.data;
+  var substring = this.result.value.substr(0, data.to.ch - data.from.ch);
 
   if (substring === data.token.string) {
-    this.text = result.value.substr(this.data.to.ch - this.data.from.ch);
+    text = this.result.value.substr(data.to.ch - data.from.ch);
   }
 
   // Don't create the ghost element if there is no text to display. It makes
   // for a janky UI where keys are blocked thanks to the ghost shortcuts.
-  if (!this.text) { return; }
+  if (!text) { return; }
 
   this.cm.addKeyMap(this.keyMap = {
-    'Tab':   _.bind(this.accept, this),
-    'Right': _.bind(this.accept, this)
+    'Tab':   function () { that.accept(); },
+    'Right': function () { that.accept(); }
   });
 
   // Creates the ghost element to be styled.
   var ghostHint = document.createElement('span');
   ghostHint.className = 'CodeMirror-hint-ghost';
-  ghostHint.appendChild(document.createTextNode(this.text));
+  ghostHint.appendChild(document.createTextNode(text));
 
   // Abuse the bookmark feature of CodeMirror to achieve the desired completion
   // effect without modifying source code.
-  this.ghost = this.cm.setBookmark(this.data.to, {
+  this.ghost = this.cm.setBookmark(data.to, {
     widget:     ghostHint,
     insertLeft: true
   });
 };
 
 /**
+ * Extend the ghost with events.
+ */
+_.extend(Ghost.prototype, Backbone.Events);
+
+/**
  * Accept the display ghost text.
- *
- * @return {Ghost}
  */
 Ghost.prototype.accept = function () {
-  if (this.text && this.data) {
-    this.cm.replaceRange(this.text, this.data.to, this.data.to);
-  }
-
-  return this.remove();
+  this.trigger('accept', this.result);
 };
 
 /**
  * Remove the ghost suggestion.
- *
- * @return {Ghost}
  */
 Ghost.prototype.remove = function () {
-  // Clear any set ghost.
   if (this.ghost) {
     this.ghost.clear();
   }
 
-  // No keymap will be defined when we have no text shown in the ghost.
   if (this.keyMap) {
     this.cm.removeKeyMap(this.keyMap);
   }
 
-  // Remove dead references.
   delete this.text;
   delete this.ghost;
   delete this.widget.ghost;
-
-  return this;
 };

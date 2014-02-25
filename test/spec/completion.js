@@ -246,6 +246,36 @@ describe('Completion', function () {
     );
 
     it(
+      'should not complete global variables with the same name as globals',
+      testAutocomplete(
+        'var window = "test";\n(function () { window.doc', null, 'document'
+      )
+    );
+
+    it(
+      'should not complete arguments with the same name as globals',
+      testAutocomplete(
+        '(function (window) { window.doc', null, 'document'
+      )
+    );
+
+    it(
+      'should not complete local variables with the same name as globals',
+      testAutocomplete(
+        '(function () {\nvar window = "test";\nwindow.doc', null, 'document'
+      )
+    );
+
+    it(
+      'should not complete previous variables with the same name as globals',
+      testAutocomplete(
+        '(function () {\nvar window = "test";\n(function () {\nwindow.doc',
+        null,
+        'document'
+      )
+    );
+
+    it(
       'should not complete square brackets that can\'t be done statically',
       testAutocomplete('window[something].w', null, 'window')
     );

@@ -3,6 +3,7 @@ var ecma5      = require('./ecma5.json');
 var browser    = require('./browser.json');
 var fromPath   = require('../from-path');
 var middleware = require('../../state/middleware');
+var isInScope  = require('../codemirror/is-in-scope');
 
 /**
  * Recurse through the description structure and attach descriptions to nodes
@@ -61,11 +62,22 @@ module.exports = function (global) {
    * @param {Function} done
    */
   plugins['completion:describe'] = function (data, next, done) {
-    // TODO: Improve detection of primitives and use the parent context object.
-    var description = map.get(data.context);
+    var token = data.token;
+    var description;
 
-    // If we didn't find a description, pass the lookup off to the next
-    // middleware.
+    // Avoiding describing function arguments and variables.
+    if (token.type === 'variable' && isInScope(token, token.string)) {
+      return next();
+    }
+
+    if (_.isObject(data.context)) {
+      description = map.get(data.context);
+    } else {
+      // TODO: Improve resolution of instances to their prototypes, etc.
+      description = map.get(data.parent)[token.string];
+    }
+
+    // If we didn't retrieve a description, allow the next function to run.
     if (description == null) {
       return next();
     }
