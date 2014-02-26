@@ -149,7 +149,13 @@ ArgumentDocs.prototype.select = function (index) {
  * Update the argument documentation position.
  */
 ArgumentDocs.prototype.update = function () {
-  var cm         = this.completion.cm;
+  var cm = this.completion.cm;
+
+  // Remove the documentation when multiple characters are selected.
+  if (cm.doc.somethingSelected()) {
+    return this.remove();
+  }
+
   var cur        = this.data.to = cm.getCursor();
   var from       = this.data.from;
   var token      = getToken(cm, cur);
