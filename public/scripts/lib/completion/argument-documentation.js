@@ -235,6 +235,7 @@ ArgumentDocs.prototype.update = function () {
 ArgumentDocs.prototype.removeWidget = function () {
   if (this.widget) {
     this.widget.clear();
+    messages.trigger('resize');
     delete this.widget;
   }
 };

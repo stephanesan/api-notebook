@@ -74,22 +74,22 @@ var Hints = module.exports = function (widget, results) {
     }
   });
 
-  Backbone.$(hints).on('click', 'li', function (e, target) {
-    if (isNaN(target.hintId)) {
-      return;
-    }
+  Backbone.$(hints)
+    .on('click', 'li', function (e, target) {
+      if (isNaN(target.hintId)) {
+        return;
+      }
 
-    that.accept(target.hintId);
-  });
+      that.accept(target.hintId);
+    })
+    .on('mousedown', function () {
+      window.setTimeout(function () { cm.focus(); }, 20);
+    });
 
-  CodeMirror.on(hints, 'mousedown', function () {
-    window.setTimeout(function () { cm.focus(); }, 20);
-  });
-
-  state.on(
-    'change:viewportHeight change:viewportWidth',
-    this.onResize = function () { that.reposition(); }
-  );
+  this.listenTo(state, 'change:viewportWidth',  this.reposition);
+  this.listenTo(state, 'change:viewportHeight', this.reposition);
+  this.listenTo(state, 'change:documentWidth',  this.reposition);
+  this.listenTo(state, 'change:documentHeight', this.reposition);
 
   this.select(0);
 };
@@ -140,7 +140,7 @@ Hints.prototype.select = function (index, noWrap) {
 
   // Remove the old active hint if we have a selected hint id.
   if (!isNaN(this.currentHint)) {
-    this.removeDocs();
+    this.removeDocumentation();
 
     var old = this.hints.childNodes[this.currentHint];
     old.className = old.className.replace(' CodeMirror-hint-active', '');
@@ -174,9 +174,12 @@ Hints.prototype.select = function (index, noWrap) {
       })
     }),
     function (err, describe) {
-      if (err || !describe) { return; }
+      // Avoid attaching obscure documentation.
+      if (err || !describe || (!describe['!type'] && !describe['!doc'])) {
+        return;
+      }
 
-      that.docs = new HintDocs(that, describe);
+      that.documentation = new HintDocs(that, describe);
     },
     true
   );
@@ -239,9 +242,9 @@ Hints.prototype.screenAmount = function () {
 /**
  * Remove the documentation widget from the DOM.
  */
-Hints.prototype.removeDocs = function () {
-  if (this.docs) {
-    this.docs.remove();
+Hints.prototype.removeDocumentation = function () {
+  if (this.documentation) {
+    this.documentation.remove();
   }
 };
 
@@ -249,9 +252,11 @@ Hints.prototype.removeDocs = function () {
  * Remove the hints menu.
  */
 Hints.prototype.remove = function () {
-  this.removeDocs();
+  this.removeDocumentation();
+  this.stopListening();
   this.cm.removeKeyMap(this.keyMap);
   document.body.removeChild(this.hints);
+  delete this.hints;
   delete this.keyMap;
   delete this.widget.hints;
 };

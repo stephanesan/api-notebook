@@ -14,10 +14,6 @@ var format   = require('./format-documentation');
 var HintDocs = module.exports = function (hints, description) {
   this.hints = hints;
 
-  if (!description || (!description['!type'] && !description['!doc'])) {
-    return this;
-  }
-
   var prefix  = 'CodeMirror-hint-documentation-';
   var fnName  = hints.results[hints.currentHint].value;
   var tooltip = this.tooltip = document.createElement('div');
@@ -77,16 +73,16 @@ HintDocs.prototype.reposition = function () {
     tooltip.style.top    = 'auto';
     tooltip.style.bottom = bottom + 'px';
   }
+
+  this.trigger('reposition');
 };
 
 /**
  * Remove the hint documentation from the DOM.
  */
 HintDocs.prototype.remove = function () {
-  this.stopListening(this.hints);
-
-  if (this.tooltip) {
-    document.body.removeChild(this.tooltip);
-    delete this.tooltip;
-  }
+  this.stopListening();
+  document.body.removeChild(this.tooltip);
+  delete this.tooltip;
+  delete this.hints.documentation;
 };
