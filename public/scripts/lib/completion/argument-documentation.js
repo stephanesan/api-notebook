@@ -15,6 +15,25 @@ var FUNCTION_TYPES = {
 };
 
 /**
+ * Check if a token is before another token.
+ *
+ * @param  {Object}  pos
+ * @param  {Object}  before
+ * @return {Boolean}
+ */
+var isTokenBefore = function (pos, before) {
+  if (pos.line < before.line) {
+    return true;
+  }
+
+  if (pos.line === before.line && pos.ch < before.ch) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Render a new argument documentation.
  *
  * @param  {Completion}   completion
@@ -135,22 +154,18 @@ ArgumentDocs.prototype.update = function () {
   var from       = this.data.from;
   var token      = getToken(cm, cur);
   var index      = 0;
-  var line       = from.line;
   var curCount   = 0;
   var roundLevel = 0;
   var curlyLevel = 0;
 
+  // Remove the documentation if we are stating before the opening bracket.
+  if (isTokenBefore(token.pos, from)) {
+    return this.remove();
+  }
+
   // Iterate over every new block and track our argument index. If we hit
   // a new function inside the current arguments, remove the current widget.
-  while (token) {
-    var tokenCh   = token.pos.ch;
-    var tokenLine = token.pos.line;
-
-    // Break if the current position is before the start token.
-    if (tokenLine < line || (tokenLine === line && tokenCh <= from.ch)) {
-      break;
-    }
-
+  while (!isTokenBefore(token.pos, from)) {
     if (token.type === null) {
       if (token.string === '(') {
         roundLevel++;
@@ -158,8 +173,11 @@ ArgumentDocs.prototype.update = function () {
         // If we have a resolved round level, it would have just completed
         // bracket notation which can contain commas.
         if (roundLevel > -1) {
-          index -= curCount;
-          curCount = 0;
+          // Make sure we don't reset on the real opening bracket.
+          if (!(token.pos.ch === from.ch && token.pos.line === from.line)) {
+            index -= curCount;
+            curCount = 0;
+          }
         }
 
         // Check if the previous token is a function type.
@@ -171,19 +189,29 @@ ArgumentDocs.prototype.update = function () {
         }
       } else if (token.string === ')') {
         roundLevel--;
-        curCount = 0;
+
+        if (roundLevel < -1) {
+          index -= curCount;
+          curCount = 0;
+        } else if (roundLevel === -1) {
+          curCount = 0;
+        }
       } else if (token.string === '{') {
         curlyLevel++;
 
-        // If we have resolved the curly brackets, it would have just completed
-        // property syntax which is allowed to contain commas.
         if (curlyLevel > -1) {
           index -= curCount;
           curCount = 0;
         }
       } else if (token.string === '}') {
         curlyLevel--;
-        curCount = 0;
+
+        if (curlyLevel < -1) {
+          index -= curCount;
+          curCount = 0;
+        } else if (curlyLevel === -1) {
+          curCount = 0;
+        }
       } else if (token.string === ',') {
         index++;
         curCount++;
@@ -194,7 +222,7 @@ ArgumentDocs.prototype.update = function () {
   }
 
   // If there is no block level, we are no longer inside the arguments.
-  if (roundLevel < 0) {
+  if (roundLevel < 1) {
     return this.remove();
   }
 

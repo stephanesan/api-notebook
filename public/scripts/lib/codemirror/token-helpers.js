@@ -29,7 +29,6 @@ exports.getPrevBracket = function (cm, token) {
 
   do {
     if (token.string === '(') {
-      // Break the loop if we have found the matching bracket token.
       if (level === 0) {
         return token;
       }
@@ -40,7 +39,6 @@ exports.getPrevBracket = function (cm, token) {
     }
   } while (token = exports.getPrevToken(cm, token));
 
-  // By the time we hit here, we'll be returning `null`.
   return token;
 };
 

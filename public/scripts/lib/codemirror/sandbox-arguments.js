@@ -4,6 +4,16 @@ var middleware   = require('../../state/middleware');
 var tokenHelpers = require('./token-helpers');
 
 /**
+ * An map of possible function types.
+ *
+ * @type {Object}
+ */
+var FUNCTION_TYPES = {
+  variable: true,
+  property: true
+};
+
+/**
  * Collect data for displaying a tooltip. Passes an falsy value to the callback
  * to represent no data available to display.
  *
@@ -17,15 +27,24 @@ module.exports = function (cm, options, done) {
     return done();
   }
 
-  var cur      = cm.getCursor();
-  var bracket  = tokenHelpers.getPrevBracket(cm, getToken(cm, cur));
-  var previous = bracket && tokenHelpers.eatEmptyAndMove(cm, bracket);
+  var cur   = cm.getCursor();
+  var token = getToken(cm, cur);
+  var bracket;
 
-  if (!previous) {
+  while (token) {
+    bracket = tokenHelpers.getPrevBracket(cm, token);
+    token   = bracket && tokenHelpers.eatEmptyAndMove(cm, bracket);
+
+    if (!token || FUNCTION_TYPES[token.type]) {
+      break;
+    }
+  }
+
+  if (!token) {
     return done();
   }
 
-  return tokenHelpers.getProperty(cm, previous, options, function (err, data) {
+  return tokenHelpers.getProperty(cm, token, options, function (err, data) {
     if (err || !_.isFunction(data.context)) {
       return done(err);
     }
