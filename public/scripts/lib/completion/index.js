@@ -37,6 +37,13 @@ var Completion = module.exports = function (cm, options) {
    * On editor focus, we clear the current blur timeout.
    */
   this.onFocus = function () {
+    // Timeout documentation display to avoid incorrect cursor positioning.
+    setTimeout(function () {
+      if (!that.documentation) {
+        that.showArgumentDocumentation();
+      }
+    }, 10);
+
     window.clearTimeout(closeOnBlur);
   };
 
@@ -90,8 +97,20 @@ var Completion = module.exports = function (cm, options) {
     // Cursor activity is getting triggered when we don't have focus.
     if (!cm.hasFocus() || cm.getOption('readOnly')) { return; }
 
-    // that.showArgumentDocumentation();
+    // If we already have active documentation visible, trigger an update. The
+    // documentation may decide it's no longer relevant and remove itself.
+    if (that.documentation) {
+      that.documentation.update();
+    }
 
+    // If there is currently no documentation rendered, attempt to display it.
+    if (!that.documentation) {
+      that.showArgumentDocumentation();
+    }
+
+    // Destroy the completion widget when we move the cursor away from the
+    // current typing position. It's not relevant where it moved to since it'll
+    // be invalid either way.
     if (closeOnCursor) {
       return that.removeWidget();
     }

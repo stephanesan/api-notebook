@@ -1,8 +1,7 @@
 var _        = require('underscore');
-var marked   = require('marked');
 var Backbone = require('backbone');
 var state    = require('../../state/state');
-
+var format   = require('./format-documentation');
 
 /**
  * Create a floating documentation widget next to the current hint widget.
@@ -13,50 +12,37 @@ var state    = require('../../state/state');
  * @return {HintDocs}
  */
 var HintDocs = module.exports = function (hints, description) {
+  this.hints = hints;
+
   if (!description || (!description['!type'] && !description['!doc'])) {
     return this;
   }
 
+  var prefix  = 'CodeMirror-hint-documentation-';
+  var fnName  = hints.results[hints.currentHint].value;
   var tooltip = this.tooltip = document.createElement('div');
+
+  // Map the documentation to the tooltip rendering.
+  var docs = _.object(_.map(format(description, fnName), function (docs, type) {
+    if (type === 'url') {
+      docs = '<a href="' + docs + '" target="_blank">Read more</a>';
+    }
+
+    return [type, '<div class="' + prefix + type + '">' + docs + '</div>'];
+  }));
+
   tooltip.className = 'CodeMirror-hint-documentation';
   tooltip.setAttribute('data-overflow-scroll', 'true');
 
-  this.hints       = hints;
-  this.description = description;
-
-  if (description['!type']) {
-    var typeEl = tooltip.appendChild(document.createElement('div'));
-    typeEl.className = 'CodeMirror-hint-documentation-type';
-    typeEl.appendChild(document.createTextNode(description['!type']));
-  }
-
-  if (description['!doc']) {
-    var docEl = tooltip.appendChild(document.createElement('div'));
-    docEl.className = 'CodeMirror-hint-documentation-doc';
-
-    // Compile documentation as markdown before rendering.
-    docEl.innerHTML = marked(description['!doc'], {
-      gfm: true,
-      tables: true,
-      sanitize: true,
-      smartLists: true
-    });
-
-    if (description['!url']) {
-      docEl.appendChild(document.createTextNode(' — '));
-
-      var infoEl = docEl.appendChild(document.createElement('a'));
-      infoEl.href      = description['!url'];
-      infoEl.target    = '_blank';
-      infoEl.className = 'CodeMirror-hint-documentation-doc-url';
-      infoEl.appendChild(document.createTextNode('Read more'));
-    }
-  }
+  // Append each part of the documentation.
+  tooltip.innerHTML += docs.type || '';
+  tooltip.innerHTML += docs.doc  || '';
+  tooltip.innerHTML += docs.url  || '';
 
   document.body.appendChild(tooltip);
 
   this.reposition();
-  this.listenTo(this.hints, 'reposition', this.reposition, this);
+  this.listenTo(hints, 'reposition', this.reposition, this);
 };
 
 /**

@@ -18,6 +18,33 @@ var canAccess = function (token) {
 };
 
 /**
+ * Returns the closest previous opening bracket token to the passed in token.
+ *
+ * @param  {CodeMirror} cm
+ * @param  {Object}     token
+ * @return {Object}
+ */
+exports.getPrevBracket = function (cm, token) {
+  var level = 0;
+
+  do {
+    if (token.string === '(') {
+      // Break the loop if we have found the matching bracket token.
+      if (level === 0) {
+        return token;
+      }
+
+      level--;
+    } else if (token.string === ')') {
+      level++;
+    }
+  } while (token = exports.getPrevToken(cm, token));
+
+  // By the time we hit here, we'll be returning `null`.
+  return token;
+};
+
+/**
  * Resolves tokens properly before use.
  *
  * @param {CodeMirror} cm
@@ -164,8 +191,7 @@ exports.isWhitespaceToken = function (token) {
 };
 
 /**
- * Returns the previous token in the editor, taking care to take into account
- * new lines.
+ * Retrieve the previous token in the editor, taking into account new lines.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     token

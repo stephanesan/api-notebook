@@ -55,10 +55,6 @@
 .cm-s-text-cell .CodeMirror-linenumber
   font-family: monospace
 
-// Add padding to right for menu.
-.CodeMirror-lines
-  padding-right: 24px
-
 // Read-only hide cursor since its too weird.
 .CodeMirror-readOnly .CodeMirror-cursor
   display: none
@@ -116,8 +112,9 @@
   border-radius: 4px
 
 .CodeMirror-hint-documentation-doc,
+.CodeMirror-hint-documentation-url,
 .CodeMirror-hint-documentation-type
-  padding: 0.3em 0.5em
+  margin: 0.3em 0.5em
 
 .CodeMirror-hint-documentation-type
   font-weight: bold
@@ -132,3 +129,25 @@
   > h6,
   > pre
     margin-bottom: 8px
+
+.CodeMirror-documentation
+  margin: 3px 0
+  padding: 4px
+  font-size: 90%
+  border-top: 1px solid #eee
+  border-bottom: 1px solid #eee
+  background-color: #f7f7f7
+
+.CodeMirror-documentation-title,
+.CodeMirror-documentation-description-doc,
+.CodeMirror-documentation-description-url,
+.CodeMirror-documentation-description-type
+  margin-bottom: 4px
+  &:last-child
+    margin-bottom: 0
+
+.CodeMirror-documentation-argument-active
+  font-weight: bold
+
+.CodeMirror-documentation-description-type
+  font-style: italic

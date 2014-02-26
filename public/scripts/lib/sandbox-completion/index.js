@@ -45,7 +45,9 @@ var sanitizeFunctionType = function (string) {
       var name  = split.shift().trim();
 
       if (split.length) {
-        args.push(split.join(':').trim());
+        args.push(sanitizeDefinition({
+          '!type': split.join(':').trim()
+        }));
       } else {
         args.push(null);
       }
@@ -68,6 +70,8 @@ var sanitizeFunctionType = function (string) {
  * @param  {Object} definition
  * @return {Object}
  */
+
+/* jshint -W003 */
 var sanitizeDefinition = function (description) {
   _.each(description, function (describe, key) {
     // Skip over definition keys.
@@ -83,6 +87,7 @@ var sanitizeDefinition = function (description) {
 
   return description;
 };
+/* jshint +W003 */
 
 /**
  * JavaScript description documents from Tern.js.
@@ -90,8 +95,8 @@ var sanitizeDefinition = function (description) {
  * @type {Array}
  */
 var DESCRIPTIONS = _.map([
-  require('./browser.json'),
-  require('./ecma5.json')
+  require('./ecma5.json'),
+  require('./browser.json')
 ], sanitizeDefinition);
 
 /**
