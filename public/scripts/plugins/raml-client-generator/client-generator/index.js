@@ -23,7 +23,11 @@ var OVERRIDABLE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
  * @type {Object}
  */
 var EXTENSION_DESCRIPTION = {
-  '!type': 'fn(extension: string)',
+  '!type': 'fn(extension)',
+  '!args': [{
+    '!type': 'string',
+    '!doc': 'Set the file extension with relevant `Accept` header.'
+  }],
   '!doc': [
     'Set the path extension and corresponding accept header.'
   ].join(' ')
@@ -35,10 +39,16 @@ var EXTENSION_DESCRIPTION = {
  * @type {Object}
  */
 var CLIENT_DESCRIPTION = {
-  '!type': 'fn(url: string, data?: object)',
+  '!type': 'fn(url, data?)',
+  '!args': [{
+    '!type': 'string',
+    '!doc': 'Provide a url relative to the base uri.'
+  }, {
+    '!type': 'object',
+    '!doc': 'Provide a data object to replace template tags in the `url`.'
+  }],
   '!doc': [
-    'Make an API request to a URL. Pass in a `data` object to replace',
-    'template tags before making the request.'
+    'Make an API request to a custom URL.'
   ].join(' ')
 };
 
@@ -102,11 +112,11 @@ var isQueryMethod = function (method) {
  *
  * @type {Object}
  */
-var methodDescription = _.object(_.map(HTTP_METHODS, function (method) {
-  var argument = isQueryMethod(method) ? 'query?: object' : 'body?: ?';
+var METHOD_DESCRIPTION = _.object(_.map(HTTP_METHODS, function (method) {
+  var argument = isQueryMethod(method) ? 'query?' : 'body?';
 
   return [method, {
-    '!type': 'fn(' + argument + ', config?: object, async?: fn(err, result))'
+    '!type': 'fn(' + argument + ', config?, async?)'
   }];
 }));
 
@@ -124,7 +134,7 @@ var toMarkdownDescription = function (object, name) {
     title += '*' + object.type + '* ';
   }
 
-  return title + (object.description || '?');
+  return title + (object.description || '');
 };
 
 /**
@@ -135,80 +145,85 @@ var toMarkdownDescription = function (object, name) {
  * @return {Object}
  */
 var toMethodDescription = function (nodes, method) {
-  var documentation = [];
-  var configuration = [];
-  var isQuery       = isQueryMethod(method.method);
-
-  if (method.description) {
-    documentation.push(method.description);
-  }
+  var args    = [];
+  var config  = [];
+  var body    = '';
+  var isQuery = isQueryMethod(method.method);
+  var documentation;
 
   if (method.queryParameters) {
-    (isQuery ? documentation : configuration).push(
-      (isQuery ? '' : '* ') + '**query:**\n' + _.map(
-        method.queryParameters, function (query, name) {
-          var bullet = isQuery ? '* ' : '* * ';
+    documentation = _.map(method.queryParameters, function (query, name) {
+      return '* ' + toMarkdownDescription(query, name);
+    }).join('\n');
 
-          return bullet + toMarkdownDescription(query, name);
-        }
-      ).join('\n')
-    );
+    if (isQuery) {
+      body = documentation;
+    } else {
+      config.push('**query**', documentation);
+    }
   }
 
   if (method.headers) {
-    configuration.push('* **headers:**\n' + _.map(
-      method.headers, function (header, name) {
-        return '* * ' + toMarkdownDescription(header, name);
-      }
-    ).join('\n'));
-  }
-
-  if (method.body) {
-    (isQuery ? configuration : documentation).push(
-      (isQuery ? '* ' : '') + '**body:**\n' + _.map(
-        method.body, function (body, contentType) {
-          var bullet = isQuery ? '* * ' : '* ';
-          var title  = '**' + contentType + ':** ';
-          var description;
-
-          // Map form parameters to their descriptions.
-          if (body) {
-            description = _.map(
-              body.formParameters, function (param, name) {
-                return '* ' + bullet + toMarkdownDescription(param, name);
-              }
-            ).join('\n');
-          }
-
-          return bullet + title + (description ? '\n' + description : '?');
-        }
-      ).join('\n')
+    config.push(
+      '**headers:**',
+      _.map(method.headers, function (header, name) {
+        return '* ' + toMarkdownDescription(header, name);
+      }).join('\n')
     );
   }
 
-  if (nodes.client.baseUriParameters) {
-    configuration.push('* **baseUriParameters:**\n' + _.map(
-      nodes.client.baseUriParameters, function (param, name) {
-        return '* * ' + toMarkdownDescription(param, name);
+  if (method.body) {
+    documentation = _.map(method.body, function (body, contentType) {
+      var title  = '**' + contentType + ':** ';
+      var description;
+
+      // Map form parameters to their descriptions.
+      if (body) {
+        description = _.map(
+          body.formParameters, function (param, name) {
+            return '* * ' + toMarkdownDescription(param, name);
+          }
+        ).join('\n');
       }
-    ).join('\n'));
+
+      return '* ' + title + (description ? '\n' + description : '?');
+    }).join('\n');
+
+    if (isQuery) {
+      config.push('**body**', documentation);
+    } else {
+      body = documentation;
+    }
   }
 
-  configuration.push(
-    '* **proxy:** *boolean* Disable the proxy for the current request.'
+  if (nodes.client.baseUriParameters) {
+    config.push(
+      '**baseUriParameters**',
+      _.map(nodes.client.baseUriParameters, function (param, name) {
+        return '* ' + toMarkdownDescription(param, name);
+      }).join('\n')
+    );
+  }
+
+  config.push(
+    '**proxy**', '*boolean* Disable the proxy for the current request.'
   );
 
-  documentation.push('**config:**\n');
-  documentation.push(configuration.join('\n'));
-
-  documentation.push('**async**\n');
-  documentation.push(
-    'Pass a function as the argument to execute the request asynchonously.'
-  );
+  args.push({
+    '!doc': body,
+    '!type': 'object'
+  }, {
+    '!doc': config.join('\n\n'),
+    '!type': 'object'
+  }, {
+    '!doc': 'Pass a function to make the request execute asynchonously.',
+    '!type': 'fn(error, response)'
+  });
 
   return _.extend({
-    '!doc': documentation.join('\n\n')
-  }, methodDescription[method.method]);
+    '!doc': method.description,
+    '!args': args
+  }, METHOD_DESCRIPTION[method.method]);
 };
 
 /**
@@ -686,20 +701,16 @@ var attachResources = function (nodes, context, resources) {
 
       // Generate the description object for helping tooltip display.
       context[routeName][DESCRIPTION_PROPERTY] = {
-        // Create a function type hint based on the display name and whether
-        // the tag is required.
         '!type': 'fn(' + _.map(tags, function (param) {
-          var displayName = param.displayName + (param.required ? '' : '?');
-
-          return displayName + ': ' + (param.type || '?');
+          return param.displayName + (param.required ? '' : '?');
         }).join(', ') + ')',
-        // Generate documentation by joining all the template descriptions
-        // together with new lines.
-        '!doc': _.chain(tags).uniq().filter(function (param) {
-          return !!param.description;
-        }).map(function (param) {
-          return '"' + param.displayName + '": ' + param.description;
-        }).value().join('\n')
+        '!args': _.map(tags, function (param) {
+          return {
+            '!type': param.type,
+            '!doc': param.description
+          };
+        }),
+        '!doc': 'Dynamically inject variables into the request path.'
       };
 
       // Generate the return property for helping autocompletion.

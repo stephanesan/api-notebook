@@ -1,6 +1,7 @@
 var _            = require('underscore');
 var getToken     = require('../codemirror/get-token');
 var tokenHelpers = require('../codemirror/token-helpers');
+var messages     = require('../../state/messages');
 var formatDocs   = require('./format-documentation');
 
 /**
@@ -9,8 +10,8 @@ var formatDocs   = require('./format-documentation');
  * @type {Object}
  */
 var FUNCTION_TYPES = {
-  'variable': true,
-  'property': true
+  variable: true,
+  property: true
 };
 
 /**
@@ -34,7 +35,6 @@ var ArgumentDocs = module.exports = function (completion, data) {
 
   title.className         = 'CodeMirror-documentation-title';
   documentation.className = 'CodeMirror-documentation';
-  documentation.setAttribute('data-overflow-scroll', 'true');
 
   // Get the function name as the variable preceding the opening bracket.
   var fnName = this.fnName = tokenHelpers.eatEmpty(
@@ -105,39 +105,40 @@ ArgumentDocs.prototype.select = function (index) {
   this.currentArgument       = index;
 
   if (!argument) {
-    return this.widget.changed();
+    this.widget.changed();
+    return messages.trigger('resize');
   }
 
   // Map the documentation to the description rendering.
-  var docs = _.object(_.map(
-    formatDocs(argument, this.fnName),
-    function (docs, type) {
-      if (type === 'url') {
-        docs = '<a href="' + docs + '" target="_blank">Read more</a>';
-      }
-
-      return [type, '<div class="' + prefix + type + '">' + docs + '</div>'];
+  var docs = _.object(_.map(formatDocs(argument), function (docs, type) {
+    if (type === 'url') {
+      docs = '<a href="' + docs + '" target="_blank">Read more</a>';
     }
-  ));
+
+    return [type, '<div class="' + prefix + type + '">' + docs + '</div>'];
+  }));
 
   this.description.innerHTML += docs.type || '';
   this.description.innerHTML += docs.doc  || '';
   this.description.innerHTML += docs.url  || '';
 
-  return this.widget.changed();
+  this.widget.changed();
+  return messages.trigger('resize');
 };
 
 /**
  * Update the argument documentation position.
  */
 ArgumentDocs.prototype.update = function () {
-  var cm    = this.completion.cm;
-  var cur   = this.data.to = cm.getCursor();
-  var from  = this.data.from;
-  var token = getToken(cm, cur);
-  var index = 0;
-  var level = 0;
-  var line  = from.line;
+  var cm         = this.completion.cm;
+  var cur        = this.data.to = cm.getCursor();
+  var from       = this.data.from;
+  var token      = getToken(cm, cur);
+  var index      = 0;
+  var line       = from.line;
+  var curCount   = 0;
+  var roundLevel = 0;
+  var curlyLevel = 0;
 
   // Iterate over every new block and track our argument index. If we hit
   // a new function inside the current arguments, remove the current widget.
@@ -146,25 +147,46 @@ ArgumentDocs.prototype.update = function () {
     var tokenLine = token.pos.line;
 
     // Break if the current position is before the start token.
-    if (tokenLine < line || (tokenLine === line && tokenCh < from.ch)) {
+    if (tokenLine < line || (tokenLine === line && tokenCh <= from.ch)) {
       break;
     }
 
     if (token.type === null) {
-      if (token.string === '(' || token.string === '{') {
-        level++;
+      if (token.string === '(') {
+        roundLevel++;
+
+        // If we have a resolved round level, it would have just completed
+        // bracket notation which can contain commas.
+        if (roundLevel > -1) {
+          index -= curCount;
+          curCount = 0;
+        }
 
         // Check if the previous token is a function type.
         var prev  = tokenHelpers.eatEmptyAndMove(cm, token);
         var match = token.start === from.ch && token.pos.line === from.line;
 
-        if (level > 0 && FUNCTION_TYPES[prev.type] && !match) {
+        if (roundLevel > 0 && FUNCTION_TYPES[prev.type] && !match) {
           return this.remove();
         }
-      } else if (token.string === ')' || token.string === '}') {
-        level--;
-      } else if (token.string === ',' && level === 0) {
+      } else if (token.string === ')') {
+        roundLevel--;
+        curCount = 0;
+      } else if (token.string === '{') {
+        curlyLevel++;
+
+        // If we have resolved the curly brackets, it would have just completed
+        // property syntax which is allowed to contain commas.
+        if (curlyLevel > -1) {
+          index -= curCount;
+          curCount = 0;
+        }
+      } else if (token.string === '}') {
+        curlyLevel--;
+        curCount = 0;
+      } else if (token.string === ',') {
         index++;
+        curCount++;
       }
     }
 
@@ -172,7 +194,7 @@ ArgumentDocs.prototype.update = function () {
   }
 
   // If there is no block level, we are no longer inside the arguments.
-  if (level < 1) {
+  if (roundLevel < 0) {
     return this.remove();
   }
 

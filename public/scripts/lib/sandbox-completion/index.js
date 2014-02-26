@@ -25,15 +25,17 @@ var sanitizeFunctionType = function (string) {
     for (var i = 0; i < params.length; i++) {
       var char = params[i];
 
-      if (char === '{' || char === '(') {
-        level++;
-      } else if (char === '}' || char === ')') {
-        level--;
-      } else if (char === ',' && level === 0) {
-        argMap.push(curParam);
+      if (char === ',' && level === 0) {
+        argMap.push(curParam.trim());
         curParam = '';
       } else {
         curParam += char;
+
+        if (char === '{' || char === '(') {
+          level++;
+        } else if (char === '}' || char === ')') {
+          level--;
+        }
       }
     }
 
