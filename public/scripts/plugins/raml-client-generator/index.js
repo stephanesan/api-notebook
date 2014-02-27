@@ -111,7 +111,7 @@ API.createClient = function (name, url, config, done) {
  * Description of the create client function.
  */
 API.createClient[DESCRIPTION_PROPERTY] = {
-  '!type': 'fn(alias, url, config?, cb?)',
+  '!type': 'fn(alias, url, options?, cb?)',
   '!args': [{
     '!type': 'string'
   }, {

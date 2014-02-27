@@ -116,7 +116,7 @@ var METHOD_DESCRIPTION = _.object(_.map(HTTP_METHODS, function (method) {
   var argument = isQueryMethod(method) ? 'query?' : 'body?';
 
   return [method, {
-    '!type': 'fn(' + argument + ', config?, async?)'
+    '!type': 'fn(' + argument + ', options?, async?)'
   }];
 }));
 
