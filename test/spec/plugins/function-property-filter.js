@@ -1,8 +1,9 @@
-/* global describe, it */
+/* global App, expect, describe, it, before, after */
 
 describe('Function Property Filter Plugin', function () {
   var RETURN_PROPERTY = '!return';
 
+  /* global functionPropertyFilterPlugin */
   before(function () {
     App.middleware.register(functionPropertyFilterPlugin);
   });

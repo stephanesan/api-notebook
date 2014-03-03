@@ -12,7 +12,7 @@ exports['inspector:filter'] = function (data, next, done) {
     return done(null, false);
   }
 
-  if (typeof data.context === 'function' && data.property === RETURN_PROP) {
+  if (typeof data.parent === 'function' && data.property === RETURN_PROP) {
     return done(null, false);
   }
 
