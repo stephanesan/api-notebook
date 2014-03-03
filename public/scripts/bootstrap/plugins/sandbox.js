@@ -2,6 +2,7 @@ var loadScript = require('../../lib/browser/load-script');
 var middleware = require('../../state/middleware');
 
 var ASYNC_TIMEOUT = 2000;
+var PROXY_URL     = process.env.plugins.proxy.url;
 
 /**
  * Set the some additional context variables.
@@ -112,6 +113,9 @@ middleware.register('sandbox:execute', function (data, next, done) {
   data.window.eval([
     'console._notebookApi.load = function (src, done) {',
     '  console._notebookApi.timeout(Infinity);', // Increase AJAX timeout.
+    '  if (!/^https?:\\/\\//.test(src)) {',
+    '    src = ' + (PROXY_URL ? '"' + PROXY_URL + '/" + ' : '') + 'src',
+    '  }',
     '  return (' + loadScript + ')(src, done || console._notebookApi.async());',
     '};'
   ].join('\n'));
