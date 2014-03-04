@@ -31,7 +31,7 @@
     <div class="list-item item item-active {{#unless @data.saved}}item-unsaved{{/unless}}">
     {{#with @persistence.notebook}}
       {{#if id}}
-        {{#equal @persistence.userId userId}}
+        {{#equal @persistence.userId ownerId}}
           <i class="icon-cancel-circled" data-delete="{{id}}"></i>
         {{/equal}}
       {{/if}}
