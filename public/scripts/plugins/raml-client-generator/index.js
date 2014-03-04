@@ -262,7 +262,7 @@ API.authenticate = function (client, method, options, done) {
       return done(err);
     }
 
-    clientOption.authentication[scheme.type] = _.extend(options, tokens);
+    clientOption.authentication[scheme.type] = _.extend({}, options, tokens);
     return done(null, tokens);
   };
 
