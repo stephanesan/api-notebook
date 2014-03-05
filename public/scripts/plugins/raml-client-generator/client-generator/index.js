@@ -3,7 +3,7 @@ var _           = App.Library._;
 var qs          = App.Library.qs;
 var mime        = require('mime-component');
 var escape      = require('escape-regexp');
-var parser      = require('uri-template');
+var parser      = require('uritemplate');
 var sanitizeAST = require('./sanitize-ast');
 
 var CONFIG_PROPERTY = '!config';
