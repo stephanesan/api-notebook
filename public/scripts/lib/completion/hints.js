@@ -189,14 +189,16 @@ Hints.prototype.select = function (index, noWrap) {
  * Update the hint positioning.
  */
 Hints.prototype.reposition = function () {
-  var cm     = this.cm;
-  var pos    = cm.cursorCoords(this.data.from, 'window');
-  var hints  = this.hints;
-  var margin = parseInt(window.getComputedStyle(hints).marginTop, 10);
+  var cm      = this.cm;
+  var pos     = cm.cursorCoords(this.data.from, 'window');
+  var hints   = this.hints;
+  var margin  = parseInt(window.getComputedStyle(hints).marginTop, 10);
+  var scrollY = window.scrollY;
+  var scrollX = window.scrollX;
 
   hints.className    = hints.className.replace(' CodeMirror-hints-top', '');
-  hints.style.top    = pos.bottom - margin + 'px';
-  hints.style.left   = pos.left - margin + 'px';
+  hints.style.top    = scrollY + pos.bottom - margin + 'px';
+  hints.style.left   = scrollX + pos.left - margin + 'px';
   hints.style.right  = 'auto';
   hints.style.bottom = 'auto';
   hints.style.width  = 'auto';
@@ -207,23 +209,24 @@ Hints.prototype.reposition = function () {
   var winHeight = state.get('viewportHeight');
   var docWidth  = state.get('documentWidth');
   var docHeight = state.get('documentHeight');
+  var height    = box.bottom - box.top;
 
-  if (pos.top > winHeight - pos.bottom) {
+  if (pos.top > winHeight - pos.bottom - margin) {
     hints.className += ' CodeMirror-hints-top';
 
-    var height = box.bottom - box.top;
-
-    if (pos.top < height - margin) {
+    if (height + margin > pos.top) {
       hints.style.height = pos.top - margin + 'px';
     }
 
     hints.style.top    = 'auto';
-    hints.style.bottom = docHeight - pos.top - window.scrollY - margin + 'px';
+    hints.style.bottom = docHeight - pos.top - scrollY - margin + 'px';
+  } else if (height + margin > winHeight - pos.bottom) {
+    hints.style.height = winHeight - pos.bottom - margin + 'px';
   }
 
-  if (box.right + margin >= winWidth) {
+  if (box.right + margin > winWidth) {
     hints.style.left  = 'auto';
-    hints.style.right = docWidth - window.scrollX - winWidth + 'px';
+    hints.style.right = docWidth - scrollX - winWidth + 'px';
   }
 
   this.trigger('reposition');
