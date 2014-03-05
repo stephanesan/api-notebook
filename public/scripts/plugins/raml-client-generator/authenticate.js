@@ -76,20 +76,25 @@ var promptTokens = function (scheme, options, done) {
     }
   );
 
+  // Multiple ways of setting the scope option.
+  options.scopes = options.scope || options.scopes || [];
+  delete options.scope;
+
+  // Sanitize the scopes to an array.
+  if (_.isString(options.scopes)) {
+    options.scopes = options.scopes.split(' ');
+  }
+
   // Generate the form to prompt the user with.
   var promptForm = _.map(possibleTokens, function (key) {
     if (key === 'scopes') {
-      // Avoid displaying checkboxes if it isn't useful
+      // Avoid displaying checkboxes if it isn't useful.
       if (!scheme.settings.scopes || scheme.settings.scopes.length < 2) {
         return '';
       }
 
-      var scopes = _.map(scheme.settings.scopes, function (scope) {
-        // Set the current default scopes.
-        var scopes   = options.scope || options.scopes;
-        var hasScope = _.contains(
-          _.isString(scopes) ? scopes.split(' ') : scopes, scope
-        );
+      var scopeOptions = _.map(scheme.settings.scopes, function (scope) {
+        var hasScope = _.contains(options.scopes, scope);
 
         return [
           '<div class="checkbox">',
@@ -105,7 +110,7 @@ var promptTokens = function (scheme, options, done) {
       return [
         '<div class="form-group">',
         '<label class="form-label">' + promptTokens.titles[key] + '</label>',
-        '<div class="form-content">' + scopes + '</div>',
+        '<div class="form-content">' + scopeOptions + '</div>',
         '</div>'
       ].join('\n');
     }
@@ -142,19 +147,23 @@ var promptTokens = function (scheme, options, done) {
         .addEventListener('submit', function (e) {
           e.preventDefault();
 
-          // Reset the scope options.
-          delete options.scope;
-          options.scopes = [];
-
           _.each(this.querySelectorAll('input'), function (el) {
             var name = el.getAttribute('id');
 
             if (name === 'scopes') {
+              var indexOf = _.indexOf(options.scopes, el.value);
+
               if (el.checked) {
-                options.scopes.push(el.value);
+                if (indexOf < 0) {
+                  options.scopes.push(el.value);
+                }
+              } else {
+                if (indexOf > -1) {
+                  options.scopes.splice(indexOf, 1);
+                }
               }
             } else {
-              options[name] = el.value;
+              options[name] = el.value.trim();
             }
           });
 
