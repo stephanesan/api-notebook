@@ -33,7 +33,11 @@ module.exports = function (Notebook) {
 
     // Update the window hash when the id changes.
     notebook.on('config:id', function (id) {
-      window.location.hash = currentId = (id == null ? '' : id);
+      id = (id == null ? '' : String(id));
+
+      if (id === currentId) { return; }
+
+      window.location.hash = currentId = id;
       notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
     });
 

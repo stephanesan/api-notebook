@@ -54,8 +54,13 @@ middleware.register('application:start', function (options, next) {
  */
 middleware.register('application:start', function (options, next) {
   middleware.trigger(
-    'application:config', options.config || {}, function (err, configuration) {
-      config.set(configuration);
+    'application:config',
+    _.extend({}, options.config),
+    function (err, options) {
+      if (!err) {
+        config.set(options);
+      }
+
       return next();
     }
   );

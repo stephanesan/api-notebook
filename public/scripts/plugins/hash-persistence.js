@@ -24,7 +24,11 @@ var configurePlugin = function (config, next) {
  * @param {Function} done
  */
 App.config.on('change:id', function (_, id) {
-  window.location.hash = currentId = (id == null ? '' : id);
+  id = (id == null ? '' : String(id));
+
+  if (id === currentId) { return; }
+
+  window.location.hash = currentId = id;
 });
 
 /**
