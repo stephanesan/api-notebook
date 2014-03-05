@@ -83,10 +83,11 @@ var mapObject = function (object, global) {
  * @param  {Object} global
  * @return {Object}
  */
-var getPropertyNames = function (obj, global) {
+var getPropertyNames = function (context, global) {
   // Create with a null prototype, otherwise we have issues trying to set the
   // `__proto__` key.
   var props = Object.create(null);
+  var obj   = context;
 
   /**
    * Adds the property to the property names object. Skips any property names
@@ -103,7 +104,8 @@ var getPropertyNames = function (obj, global) {
     // Checking typeof on the `window` prototype in Firefox 26 causes an error
     // to be thrown: "Illegal operation on WrappedNative prototype object".
     try {
-      prop.type = typeof obj[property];
+      // Lookup from the current context object to avoid failures in Firefox.
+      prop.type = typeof context[property];
     } catch (e) {}
 
     prop.value = property;

@@ -53,7 +53,7 @@ HintDocs.prototype.reposition = function () {
   var hints     = this.hints.hints;
   var box       = hints.getBoundingClientRect();
   var tooltip   = this.tooltip;
-  var margin    = parseInt(window.getComputedStyle(tooltip).margin, 10);
+  var margin    = parseInt(window.getComputedStyle(tooltip).marginTop, 10);
   var winWidth  = state.get('viewportWidth');
   var docHeight = state.get('documentHeight');
 

@@ -192,7 +192,7 @@ Hints.prototype.reposition = function () {
   var cm     = this.cm;
   var pos    = cm.cursorCoords(this.data.from, 'window');
   var hints  = this.hints;
-  var margin = parseInt(window.getComputedStyle(hints).margin, 10);
+  var margin = parseInt(window.getComputedStyle(hints).marginTop, 10);
 
   hints.className    = hints.className.replace(' CodeMirror-hints-top', '');
   hints.style.top    = pos.bottom - margin + 'px';
