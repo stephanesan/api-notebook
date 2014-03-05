@@ -92,6 +92,7 @@ var Hints = module.exports = function (widget, results) {
   this.listenTo(state, 'change:documentHeight', this.reposition);
 
   this.select(0);
+  this.reposition();
 };
 
 /**
@@ -153,7 +154,6 @@ Hints.prototype.select = function (index, noWrap) {
   var result = this.results[this.currentHint];
 
   this.trigger('select', result);
-  this.reposition();
 
   if (node.offsetTop < this.hints.scrollTop) {
     this.hints.scrollTop = node.offsetTop - 3;
@@ -168,7 +168,7 @@ Hints.prototype.select = function (index, noWrap) {
     'completion:describe',
     _.extend({}, this.widget.completion.options, {
       parent: data.context,
-      context: data.context[result.value],
+      context: null,
       token: _.extend({}, data.token, {
         string: result.value
       })

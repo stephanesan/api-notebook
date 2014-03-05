@@ -157,7 +157,8 @@ module.exports = function (global) {
    * @param {Function} done
    */
   plugins['completion:describe'] = function (data, next, done) {
-    var token = data.token;
+    var token   = data.token;
+    var context = data.context;
     var description;
 
     // Avoiding describing function arguments and variables.
@@ -165,17 +166,26 @@ module.exports = function (global) {
       return next();
     }
 
-    if (_.isObject(data.context)) {
-      description = map.get(data.context);
+    if (context == null && data.parent) {
+      try {
+        context = data.parent[token.string];
+      } catch (e) {}
+    }
+
+    if (_.isObject(context)) {
+      description = map.get(context);
     }
 
     if (!description) {
-      var obj     = data.parent;
-      var objDesc = map.get(obj);
+      if (!data.parent) {
+        return next();
+      }
+
+      var obj = data.parent;
       var type;
 
       while (obj) {
-        objDesc = map.get(obj);
+        var objDesc = map.get(obj);
 
         if (objDesc) {
           if ((type = objDesc['!type']) && type.charAt(0) === '+') {
