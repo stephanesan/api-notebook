@@ -358,6 +358,7 @@ Persistence.prototype.clone = function (done) {
 
   // Set the notebook instance in the state.
   model.unset('id');
+  model.unset('ownerId');
   this.set('notebook', model);
 
   middleware.trigger(
