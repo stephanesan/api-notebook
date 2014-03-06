@@ -185,8 +185,11 @@ Persistence.prototype.save = function (model, done) {
 
       // Update the model attributes.
       model.set('id',        data.id);
+      model.set('content',   data.content);
       model.set('ownerId',   data.ownerId);
       model.set('updatedAt', new Date());
+      model.get('meta').reset(data.meta);
+      model._savedContent = model.get('content');
 
       this.set('state', Persistence.SAVE_DONE);
 
@@ -319,6 +322,7 @@ Persistence.prototype.load = function (model, done) {
 
         this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
         this.trigger('changeNotebook', this);
+        model._savedContent = model.get('content');
 
         return done && done(err);
       }, this);
@@ -368,7 +372,7 @@ Persistence.prototype.clone = function (done) {
       model.set('cells', data.cells, { silent: true });
       model.get('meta').reset(data.meta);
 
-      this.set('state', Persistence.CHANGED);
+      this.set('state', Persistence.NULL);
       this.trigger('changeNotebook');
 
       return done && done(err);
@@ -451,7 +455,9 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
       // Avoid triggering content changes when the notebook is loading.
       if (model._loading) { return; }
 
-      persistence.set('state', persistence.CHANGED);
+      var hasChanged = model._savedContent !== model.get('content');
+      persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
+
       middleware.trigger(
         'persistence:change',
         persistence.getMiddlewareData(persistence.get('notebook'))
@@ -507,6 +513,8 @@ persistence.listenTo(messages, 'load', function (id) {
  * Keep the persistence meta data in sync with the config option.
  */
 persistence.listenTo(config, 'change:url', function () {
+  if (!config.get('id')) { return; }
+
   persistence.get('notebook').get('meta').set('site', config.get('url'));
 });
 

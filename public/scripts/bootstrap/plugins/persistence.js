@@ -1,7 +1,6 @@
-var _           = require('underscore');
-var config      = require('../../state/config');
-var middleware  = require('../../state/middleware');
-var persistence = require('../../state/persistence');
+var _          = require('underscore');
+var config     = require('../../state/config');
+var middleware = require('../../state/middleware');
 
 var OPEN_CODE_BLOCK     = '```javascript';
 var CLOSE_CODE_BLOCK    = '```';
@@ -164,11 +163,11 @@ middleware.register('persistence:clone', function (data, next) {
 /**
  * Update the persistence meta data when we attempt to save.
  */
-middleware.on('persistence:change', function () {
-  persistence.get('notebook').get('meta').set({
+middleware.register('persistence:save', function (data, next) {
+  _.extend(data.meta, {
     site:               config.get('url'),
     apiNotebookVersion: process.env.pkg.version
-  }, {
-    silent: true
   });
+
+  return next();
 });
