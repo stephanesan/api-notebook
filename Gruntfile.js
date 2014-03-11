@@ -69,6 +69,9 @@ module.exports = function (grunt) {
       proxy.on('response', function (res) {
         if (!res.headers['cache-control']) { return; }
 
+        // Remove cookies from being set in the client.
+        delete res.headers['set-cookie'];
+
         // Remove the max-age and other cache duration directives.
         res.headers['cache-control'] = res.headers['cache-control']
           .replace(/(max-age|s-maxage)=\d+/g, '$1=0');

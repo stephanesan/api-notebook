@@ -4,7 +4,13 @@ var qs          = require('qs');
 var url         = require('url');
 var authWindow  = require('./lib/auth-window');
 var middleware  = require('../../../state/middleware');
-var redirectUri = url.resolve(
+
+/**
+ * Set the default redirection url.
+ *
+ * @type {String}
+ */
+var REDIRECT_URI = url.resolve(
   global.location.href, process.env.application.oauthCallback
 );
 
@@ -13,7 +19,7 @@ var redirectUri = url.resolve(
  *
  * @type {Array}
  */
-var supportedGrants = ['token', 'code'];
+var SUPPORTED_GRANTS = ['token', 'code'];
 
 /**
  * Format error response types to regular strings for displaying the clients.
@@ -21,7 +27,7 @@ var supportedGrants = ['token', 'code'];
  *
  * @type {Object}
  */
-var errorResponses = {
+var ERROR_RESPONSES = {
   'invalid_request': [
     'The request is missing a required parameter, includes an',
     'invalid parameter value, includes a parameter more than',
@@ -78,7 +84,7 @@ var errorResponses = {
  * @return {String}
  */
 var erroredResponse = function (data) {
-  return errorResponses[data.error] || data.error || data.error_message;
+  return ERROR_RESPONSES[data.error] || data.error || data.error_message;
 };
 
 /**
@@ -88,17 +94,22 @@ var erroredResponse = function (data) {
  * @return {Object}
  */
 var sanitizeOptions = function (options) {
-  // Fix up reference to the `scopes` array.
-  options.scope = options.scope || options.scopes;
+  // Extend an default options object.
+  var opts = _.extend({
+    redirectUri: REDIRECT_URI
+  }, options);
 
-  if (_.isArray(options.scope)) {
-    options.scope = options.scope.join(' ');
+  // Fix up reference to the `scopes` array.
+  opts.scope = opts.scope || opts.scopes;
+
+  if (_.isArray(opts.scope)) {
+    opts.scope = opts.scope.join(' ');
   }
 
   // Remove unused `scopes` property.
-  delete options.scopes;
+  delete opts.scopes;
 
-  return options;
+  return opts;
 };
 
 /**
@@ -162,7 +173,7 @@ var oauth2TokenFlow = function (options, done) {
     'state':         state,
     'scope':         options.scope,
     'client_id':     options.clientId,
-    'redirect_uri':  redirectUri,
+    'redirect_uri':  options.redirectUri,
     'response_type': 'token'
   }), options, done);
 
@@ -173,7 +184,7 @@ var oauth2TokenFlow = function (options, done) {
     var uri      = url.parse(href, true);
     var response = _.extend(qs.parse((uri.hash || '').substr(1)), uri.query);
 
-    if (href.substr(0, redirectUri.length) !== redirectUri) {
+    if (href.substr(0, options.redirectUri.length) !== options.redirectUri) {
       return done(new Error('Invalid redirect uri'));
     }
 
@@ -217,7 +228,7 @@ var oAuth2CodeFlow = function (options, done) {
     'state':         state,
     'scope':         options.scope,
     'client_id':     options.clientId,
-    'redirect_uri':  redirectUri,
+    'redirect_uri':  options.redirectUri,
     'response_type': 'code'
   }), options, done);
 
@@ -232,7 +243,7 @@ var oAuth2CodeFlow = function (options, done) {
     // Parse the url and prepare to do an POST request to get the access token.
     var query = url.parse(href, true).query;
 
-    if (href.substr(0, redirectUri.length) !== redirectUri) {
+    if (href.substr(0, options.redirectUri.length) !== options.redirectUri) {
       return done(new Error('Invalid redirect uri'));
     }
 
@@ -258,7 +269,7 @@ var oAuth2CodeFlow = function (options, done) {
       data: qs.stringify({
         'code':          query.code,
         'grant_type':    'authorization_code',
-        'redirect_uri':  redirectUri,
+        'redirect_uri':  options.redirectUri,
         'client_id':     options.clientId,
         'client_secret': options.clientSecret
       })
@@ -307,13 +318,13 @@ middleware.register('authenticate', function (options, next, done) {
   // Use insection to get the accepted grant types in the order of the
   // supported grant types (which are ordered by preference).
   var grantType = _.intersection(
-    supportedGrants, options.authorizationGrants
+    SUPPORTED_GRANTS, options.authorizationGrants
   )[0];
 
   if (!grantType) {
     return done(new Error(
       'Unsupported OAuth2 Grant Flow. Supported flows include ' +
-      supportedGrants.join(', ')
+      SUPPORTED_GRANTS.join(', ')
     ));
   }
 

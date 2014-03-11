@@ -5,10 +5,21 @@ var url         = require('url');
 var crypto      = require('crypto');
 var authWindow  = require('./lib/auth-window');
 var middleware  = require('../../../state/middleware');
-var redirectUri = url.resolve(
+
+/**
+ * Set the default redirection url.
+ *
+ * @type {String}
+ */
+var REDIRECT_URI = url.resolve(
   global.location.href, process.env.application.oauthCallback
 );
 
+/**
+ * Simple constant for the url encoded content type.
+ *
+ * @type {String}
+ */
 var URL_ENCODED = 'application/x-www-form-urlencoded';
 
 /**
@@ -267,7 +278,7 @@ var getRequestToken = function (options, done) {
     url:    options.requestTokenUri,
     method: 'POST',
     oauth1: _.extend({
-      oauthCallback: redirectUri
+      oauthCallback: options.redirectUri
     }, options),
     headers: {
       'Content-Type': URL_ENCODED
@@ -369,7 +380,7 @@ var oauth1Flow = function (options, done) {
       popup.close();
       delete global.authenticateOAuth;
 
-      if (href.substr(0, redirectUri.length) !== redirectUri) {
+      if (href.substr(0, options.redirectUri.length) !== options.redirectUri) {
         return done(new Error('Invalid redirect uri'));
       }
 
@@ -395,7 +406,9 @@ var oauth1Flow = function (options, done) {
  */
 middleware.register('authenticate', function (options, next, done) {
   if (options.type === 'OAuth 1.0') {
-    return oauth1Flow(options, done);
+    return oauth1Flow(_.extend({
+      redirectUri: REDIRECT_URI
+    }, options), done);
   }
 
   return next();
