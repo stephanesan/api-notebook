@@ -9,6 +9,8 @@ var sanitizeAST = require('./sanitize-ast');
 var CONFIG_PROPERTY = '!config';
 var CLIENT_PROPERTY = '!client';
 
+var JSON_REGEXP = /^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i;
+
 var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '!return';
 var DESCRIPTION_PROPERTY = '!description';
@@ -296,33 +298,63 @@ var isHost = function (obj) {
 };
 
 /**
+ * Transform a data object into a form data instance.
+ *
+ * @param  {Object}   data
+ * @return {FormData}
+ */
+var toFormData = function (data) {
+  var form = new FormData();
+
+  // Iterate over every piece of data and append to the form data object.
+  _.each(data, function (value, key) {
+    form.append(key, value);
+  });
+
+  return form;
+};
+
+/**
  * Map mime types to their parsers.
  *
  * @type {Object}
  */
-var parse = {
-  'application/json': JSON.parse,
-  'application/x-www-form-urlencoded': qs.parse
-};
+var parse = [
+  [JSON_REGEXP, JSON.parse],
+  ['application/x-www-form-urlencoded', qs.parse]
+];
 
 /**
  * Map mime types to their serializers.
  *
  * @type {Object}
  */
-var serialize = {
-  'application/json': JSON.stringify,
-  'application/x-www-form-urlencoded': qs.stringify,
-  'multipart/form-data': function (data) {
-    var form = new FormData();
+var serialize = [
+  [JSON_REGEXP, JSON.stringify],
+  ['application/x-www-form-urlencoded', qs.stringify],
+  ['multipart/form-data', toFormData]
+];
 
-    // Iterate over every piece of data and append to the form data object.
-    _.each(data, function (value, key) {
-      form.append(key, value);
-    });
+/**
+ * Iterate over an array of match and result values, and return the
+ * first matching value.
+ *
+ * @param  {Array}    array
+ * @param  {String}   test
+ * @return {Function}
+ */
+var getMatch = function (array, test) {
+  var match = _.find(array, function (value) {
+    var check = value[0];
 
-    return form;
-  }
+    if (_.isRegExp(check)) {
+      return check.test(test);
+    }
+
+    return check === test;
+  });
+
+  return match && match[1];
 };
 
 /**
@@ -369,7 +401,7 @@ var sanitizeXHR = function (xhr) {
   var headers = getAllReponseHeaders(xhr);
 
   // Automatically parse certain response types.
-  body = (parse[mime] || _.identity)(body);
+  body = (getMatch(parse, mime) || _.identity)(body);
 
   return {
     body:    body,
@@ -442,8 +474,12 @@ var httpRequest = function (nodes, method) {
     }
 
     // If we were passed in data, attempt to sanitize it to the correct type.
-    if (!isHost(config.body) && serialize[mime]) {
-      config.body = serialize[mime](config.body);
+    if (!isHost(config.body)) {
+      var serializer = getMatch(serialize, mime);
+
+      if (serializer) {
+        config.body = serializer(config.body);
+      }
     }
 
     var options = {
