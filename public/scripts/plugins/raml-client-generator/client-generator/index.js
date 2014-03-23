@@ -463,7 +463,7 @@ var httpRequest = function (nodes, method) {
     // Set the correct `Content-Type` header, if none exists. Kind of random if
     // more than one exists - in that case I would suggest setting it yourself.
     if (!mime && typeof method.body === 'object') {
-      config.headers['Content-Type'] = mime = _.keys(method.body).pop();
+      config.headers['content-type'] = mime = _.keys(method.body).pop();
     }
 
     // If we have no accept header set already, default to accepting
@@ -475,10 +475,18 @@ var httpRequest = function (nodes, method) {
 
     // If we were passed in data, attempt to sanitize it to the correct type.
     if (!isHost(config.body)) {
-      var serializer = getMatch(serialize, mime);
+      var serializer = getMatch(serialize, mime || 'application/json');
 
-      if (serializer) {
+      if (!serializer) {
+        return done(
+          new TypeError('Can not serialize content type of "' + mime + '"')
+        );
+      }
+
+      try {
         config.body = serializer(config.body);
+      } catch (e) {
+        return done(new TypeError('Could not serialize body: ' + e.message));
       }
     }
 
@@ -525,10 +533,17 @@ var httpRequest = function (nodes, method) {
     // Trigger the ajax middleware so plugins can hook onto the requests. If
     // the function is async we need to register a callback for the middleware.
     App.middleware.trigger(request, options, function (err, xhr) {
-      error    = err;
-      response = sanitizeXHR(xhr);
+      error = err;
 
-      return async && done(err, response);
+      if (!error) {
+        try {
+          response = sanitizeXHR(xhr);
+        } catch (e) {
+          error = new TypeError('Could not parse response: ' + e.message);
+        }
+      }
+
+      return async && done(error, response);
     });
 
     // If the request was synchronous, return the sanitized XHR response data.
