@@ -57,7 +57,9 @@ module.exports = function (grunt) {
         return next();
       }
 
-      var proxy = request(req.url.substr(7));
+      var proxy = request(req.url.substr(7), {
+        rejectUnauthorized: false
+      });
 
       // Proxy the error message back to the client.
       proxy.on('error', function (err) {
