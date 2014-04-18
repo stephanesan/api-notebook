@@ -214,7 +214,7 @@ var loadPlugin = function (data, next, done) {
     }
 
     data.id        = content.id;
-    data.ownerId   = content.user && content.user.id;
+    data.ownerId   = content.owner && content.owner.id;
     data.content   = content.files['notebook.md'].content;
     data.updatedAt = new Date(content.updated_at);
     return done();
@@ -263,7 +263,7 @@ var savePlugin = function (data, next, done) {
     try {
       var content = JSON.parse(xhr.responseText);
       data.id      = content.id;
-      data.ownerId = content.user && content.user.id;
+      data.ownerId = content.owner && content.owner.id;
     } catch (e) {
       return next(e);
     }
