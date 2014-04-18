@@ -1,5 +1,4 @@
 /* global App */
-var currentId = '';
 
 /**
  * The notebook triggers a load id middleware event to get the starting id.
@@ -26,9 +25,7 @@ var configurePlugin = function (config, next) {
 App.config.on('change:id', function (_, id) {
   id = (id == null ? '' : String(id));
 
-  if (id === currentId) { return; }
-
-  window.location.hash = currentId = id;
+  window.location.hash = id;
 });
 
 /**
@@ -41,12 +38,6 @@ window.addEventListener('hashchange', function () {
   App.config.set('id',      id);
   App.config.set('url',     url);
   App.config.set('fullUrl', url);
-
-  if (id !== currentId) {
-    App.persistence.load();
-  }
-
-  currentId = id;
 });
 
 /**

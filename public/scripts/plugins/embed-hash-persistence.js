@@ -1,5 +1,4 @@
 var NOTEBOOK_URL = process.env.application.url;
-var currentId    = '';
 
 /**
  * Export the attaching functionality.
@@ -20,12 +19,6 @@ module.exports = function (Notebook) {
 
       notebook.config('id',  id);
       notebook.config('url', url);
-
-      if (id !== currentId) {
-        notebook.message('load', id);
-      }
-
-      currentId = id;
     };
 
     updateId();
@@ -35,9 +28,7 @@ module.exports = function (Notebook) {
     notebook.on('config:id', function (id) {
       id = (id == null ? '' : String(id));
 
-      if (id === currentId) { return; }
-
-      window.location.hash = currentId = id;
+      window.location.hash = id;
       notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
     });
 

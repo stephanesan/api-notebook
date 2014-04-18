@@ -41,9 +41,7 @@ middleware.register('application:start', function (options, next) {
  * @param {Function} next
  */
 middleware.register('application:start', function (options, next) {
-  return async.each(options.inject || [], loadScript, function () {
-    next();
-  });
+  return async.each(options.inject || [], loadScript, next);
 });
 
 /**
