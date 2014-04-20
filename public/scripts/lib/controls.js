@@ -109,7 +109,7 @@ defineEditorShortcut({
 
 defineEditorShortcut({
   label: 'Delete',
-  command: 'remove',
+  command: 'delete',
   keyMap: [isMac ? 'Cmd' : 'Ctrl', 'Backspace'],
   description: 'Delete cell'
 });

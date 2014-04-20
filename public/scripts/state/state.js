@@ -1,3 +1,4 @@
+var DOMBars  = require('dombars/runtime');
 var Backbone = require('backbone');
 var messages = require('./messages');
 
@@ -10,11 +11,27 @@ var messages = require('./messages');
 var state = module.exports = new Backbone.Model();
 
 /**
+ * Keep track of the previous execution.
+ */
+var execTimeout = null;
+
+/**
  * Listen to resize events through the messages and update the current state.
  */
 state.listenTo(messages, 'resize refresh', function () {
-  state.set('viewportWidth',  window.innerWidth);
-  state.set('viewportHeight', window.innerHeight);
-  state.set('documentWidth',  document.documentElement.scrollWidth);
-  state.set('documentHeight', document.documentElement.scrollHeight);
+  if (execTimeout) {
+    return;
+  }
+
+  /**
+   * Should be most performant to utilize the render loop.
+   */
+  execTimeout = DOMBars.VM.exec(function () {
+    execTimeout = null;
+
+    state.set('viewportWidth',  window.innerWidth);
+    state.set('viewportHeight', window.innerHeight);
+    state.set('documentWidth',  document.documentElement.scrollWidth);
+    state.set('documentHeight', document.documentElement.scrollHeight);
+  });
 });

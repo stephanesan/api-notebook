@@ -13,9 +13,6 @@
   "maxerr"        : 100,      // Maximum errors before stopping.
   "maxlen"        : 80,
   "quotmark"      : "single", // Consistent quote marks
-  "predef"        : [         // Extra globals.
-    "CodeMirror"
-  ],
 
   // == Enforcing Options ===============================================
 

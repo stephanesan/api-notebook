@@ -85,10 +85,7 @@ CodeCell.prototype.cellControls.push(_.find(controls, function (control) {
  */
 CodeCell.prototype.editorOptions = _.extend(
   {}, EditorCell.prototype.editorOptions, {
-    mode: 'javascript',
-    lineNumberFormatter: function (line) {
-      return String((this.view.startLine || 1) + line - 1);
-    }
+    mode: 'javascript'
   }
 );
 
@@ -102,53 +99,13 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend(
 );
 
 /**
- * Attempt to save the current cell contents. However, we need to have a safe
- * guard in place in case we have browsed to another cells contents and aren't
- * editing our own model.
+ * Update the result cell index calculation.
  *
  * @return {CodeCell}
  */
-CodeCell.prototype.save = function () {
-  this.model.set('value', this.editor.getValue());
-
-  return this;
-};
-
-/**
- * Refreshes the code cell calculations. This includes things such as the length
- * of the code cell, position in the nodebook collection, etc.
- *
- * @return {CodeCell}
- */
-CodeCell.prototype.refresh = function () {
-  var prevCodeView = this.getPrevCodeView();
-  this.startLine = _.result(prevCodeView, 'lastLine') + 1 || 1;
-  this.lastLine  = this.startLine + this.editor.lastLine();
-
-  this.resultCell.refresh();
-  return EditorCell.prototype.refresh.call(this);
-};
-
-/**
- * Returns the next code view in the notebook collection.
- *
- * @return {CodeCell}
- */
-CodeCell.prototype.getNextCodeView = function () {
-  if (this.model.collection) {
-    return _.result(this.model.collection.getNextCode(this.model), 'view');
-  }
-};
-
-/**
- * Returns the previous code view in the notebook collection.
- *
- * @return {CodeCell}
- */
-CodeCell.prototype.getPrevCodeView = function () {
-  if (this.model.collection) {
-    return _.result(this.model.collection.getPrevCode(this.model), 'view');
-  }
+CodeCell.prototype.update = function () {
+  this.resultCell.update();
+  return EditorCell.prototype.update.call(this);
 };
 
 /**
@@ -176,7 +133,7 @@ CodeCell.prototype.execute = function (done) {
         isError: data.isError
       });
 
-      this.updateResult();
+      this.change();
       this.trigger('execute', this, data);
       return done && done(err, data);
     }, this));
@@ -186,8 +143,8 @@ CodeCell.prototype.execute = function (done) {
 /**
  * Update the result cell rendering.
  */
-CodeCell.prototype.updateResult = function () {
-  this.resultCell.update();
+CodeCell.prototype.change = function () {
+  this.resultCell.change();
 
   return this;
 };
@@ -213,11 +170,6 @@ CodeCell.prototype.bindEditor = function () {
   this._completion = new Completion(
     this.editor, this.notebook.completionOptions
   );
-
-  // Listen for code cells changes and update line numbers.
-  this.listenTo(this, 'change', function () {
-    this.lastLine = this.startLine + this.editor.lastLine();
-  }, this);
 
   return this;
 };

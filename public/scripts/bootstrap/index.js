@@ -6,7 +6,6 @@ Backbone.$   = require('backbone.native');
 require('es6-collections');
 
 // Require all CodeMirror functionality.
-require('codemirror');
 require('codemirror/addon/mode/overlay');
 require('codemirror/addon/comment/comment');
 require('codemirror/mode/gfm/gfm');

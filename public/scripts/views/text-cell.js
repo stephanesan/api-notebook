@@ -259,19 +259,6 @@ TextCell.prototype.bindEditor = function () {
 };
 
 /**
- * Refresh the text cell instance.
- *
- * @return {TextCell}
- */
-TextCell.prototype.refresh = function () {
-  if (this.editor) {
-    EditorCell.prototype.refresh.call(this);
-  }
-
-  return this;
-};
-
-/**
  * Focus the text cell instance. If the CodeMirror editor is not currently
  * rendered, it will be rendered.
  *
@@ -328,12 +315,8 @@ TextCell.prototype.getPositions = function (selection) {
  * @return {TextCell}
  */
 TextCell.prototype.setValue = function (value) {
-  if (this.editor) {
-    return EditorCell.prototype.setValue.apply(this, arguments);
-  }
+  EditorCell.prototype.setValue.call(this, value);
 
-  // Rerender markdown cell
-  this.model.set('value', value);
   return this.renderMarkdown();
 };
 
@@ -362,6 +345,8 @@ TextCell.prototype.renderMarkdown = function () {
   }, _.bind(function (err, html) {
     this.markdownElement.innerHTML = html;
   }, this));
+
+  messages.trigger('resize');
 
   return this;
 };
@@ -394,10 +379,6 @@ TextCell.prototype.renderEditor = function () {
     this.removeEditor();
     this.renderMarkdown();
   }
-
-  process.nextTick(function () {
-    messages.trigger('resize');
-  });
 
   return this;
 };

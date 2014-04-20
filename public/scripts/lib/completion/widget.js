@@ -4,6 +4,7 @@ var Backbone     = require('backbone');
 var Hints        = require('./hints');
 var Ghost        = require('./ghost');
 var middleware   = require('../../state/middleware');
+var CodeMirror   = require('codemirror');
 var correctToken = require('../codemirror/correct-token');
 
 /**

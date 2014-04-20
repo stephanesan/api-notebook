@@ -27,8 +27,7 @@ middleware.register('ajax', function (options, next) {
     return function () {
       window.clearTimeout(ajaxTimeout);
 
-      // Remove all xhr callbacks. No need to keep references to unused
-      // functions.
+      // Remove references to unused functions.
       xhr.onload = xhr.onerror = xhr.onabort = null;
 
       return fn.apply(this, arguments);

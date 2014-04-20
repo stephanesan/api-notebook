@@ -1,6 +1,6 @@
-var _    = require('underscore');
-var View = require('./view');
+var _ = require('underscore');
 
+var View       = require('./view');
 var CodeView   = require('./code-cell');
 var TextView   = require('./text-cell');
 var EditorView = require('./editor-cell');
@@ -24,8 +24,10 @@ var appendNewView = function (View) {
   return function (el, value) {
     var view = new View();
     this.appendView(view, el);
-    view.setValue(value || '').moveCursorToEnd();
-    this.refreshFromView(view);
+
+    if (value) {
+      view.setValue(value);
+    }
 
     // Trigger a message to listen to, when we aren't rendering a notebook.
     if (!this._rendering) {
@@ -64,6 +66,7 @@ var Notebook = module.exports = View.extend({
  */
 Notebook.prototype.initialize = function () {
   this.collection = new Cells();
+
   return View.prototype.initialize.apply(this, arguments);
 };
 
@@ -73,6 +76,11 @@ Notebook.prototype.initialize = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
+  // Remove every child view from the DOM.
+  _.each(this.collection.toArray().reverse(), function (model) {
+    return model.view.remove();
+  });
+
   // Remove lingering notebook views.
   if (this.sandbox) {
     this.sandbox.remove();
@@ -170,8 +178,8 @@ Notebook.prototype.render = function () {
     }
   }
 
-  // Start listening for changes again.
-  this.listenTo(this.collection, 'remove sort',        this.refreshCompletion);
+  this.listenTo(this.collection, 'remove sort', this.refreshCompletion);
+
   this.listenTo(this.collection, 'change remove sort', function () {
     this.model.set('cells', this.collection.toJSON());
   });
@@ -271,14 +279,14 @@ Notebook.prototype.getPrevView = function (view) {
 };
 
 /**
- * Refresh all notebook cells from the current view instance.
+ * Update notebook views.
  *
  * @param  {Object}   view
  * @return {Notebook}
  */
-Notebook.prototype.refreshFromView = function (view) {
+Notebook.prototype.updateFromView = function (view) {
   do {
-    view.refresh();
+    view.update();
   } while (view = this.getNextView(view));
 
   return this;
@@ -308,7 +316,7 @@ Notebook.prototype.appendView = function (view, before) {
       view.el.parentNode.insertBefore(view.el, view.el.previousSibling);
       view.focus();
       this.collection.sort();
-      this.refreshFromView(view);
+      this.updateFromView(view);
     });
 
     this.listenTo(view, 'moveDown', function (view) {
@@ -317,7 +325,7 @@ Notebook.prototype.appendView = function (view, before) {
       insertAfter(view.el, view.el.nextSibling);
       view.focus();
       this.collection.sort();
-      this.refreshFromView(this.getPrevView(view));
+      this.updateFromView(this.getPrevView(view));
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
@@ -342,26 +350,26 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
-      this.refreshFromView(clone);
+      this.updateFromView(clone);
     });
 
-    this.listenTo(view, 'remove', function (view) {
+    this.listenTo(view, 'delete', function (view) {
       // Trigger a remove event to trigger to the messages.
       messages.trigger('cell:remove', view);
 
-      // If it's the last node in the document, append a new code cell
-      if (this.el.childNodes.length < 2) {
+      // If it's the last node in the document, append a new code cell.
+      if (this.collection.length < 2) {
         var codeView = this.appendCodeView(view.el);
         codeView.showButtonsAbove();
       }
 
-      // Focus in on the next/previous cell
+      // Focus in on the next/previous cell.
       var newView = this.getNextView(view) || this.getPrevView(view);
       newView.focus().moveCursorToEnd();
 
-      // Need to remove the model from the collection
+      // Need to remove the model from the collection.
       this.collection.remove(view.model);
-      this.refreshFromView(newView);
+      this.updateFromView(newView);
     });
 
     // Listen for switch events, which isn't a real switch but recreates the
@@ -370,6 +378,7 @@ Notebook.prototype.appendView = function (view, before) {
     // everything on the fly.
     this.listenTo(view, 'switch', function (view) {
       var newView;
+
       if (view instanceof TextView) {
         newView = this.appendCodeView(view.el, view.getValue());
       } else {
@@ -377,23 +386,41 @@ Notebook.prototype.appendView = function (view, before) {
       }
 
       var cursor = view.editor && view.editor.getCursor();
+
       view.remove();
       newView.focus();
+
       if (cursor) { newView.editor.setCursor(cursor); }
     });
 
     this.listenTo(view, 'browseUp', function (view) {
       var prevView = this.getPrevView(view);
-      if (prevView) { prevView.focus().moveCursorToEnd(); }
+
+      if (prevView) {
+        prevView.focus();
+
+        prevView.editor.setCursor({
+          line: Infinity,
+          ch:   view.editor.getCursor().ch
+        });
+      }
     });
 
     this.listenTo(view, 'browseDown', function (view) {
       var nextView = this.getNextView(view);
-      if (nextView) { nextView.focus().moveCursorToEnd(0); }
+
+      if (nextView) {
+        nextView.focus();
+
+        nextView.editor.setCursor({
+          line: 0,
+          ch:   view.editor.getCursor().ch
+        });
+      }
     });
   }
 
-  // Listening to different events for `text` cells
+  // Listening to different events for `text` cells.
   if (view instanceof TextView) {
     this.listenTo(view, 'blur', function (view) {
       if (this.el.lastChild === view.el) {
@@ -402,7 +429,7 @@ Notebook.prototype.appendView = function (view, before) {
     });
   }
 
-  // Listening to another set of events for `code` cells
+  // Listening to another set of events for `code` cells.
   if (view instanceof CodeView) {
     // Listen to execution events from the child views, which may or may not
     // require new working cells to be appended to the notebook.
@@ -417,17 +444,15 @@ Notebook.prototype.appendView = function (view, before) {
       if (this.el.lastChild === view.el) {
         this.appendCodeView().focus();
       } else {
-        this.getNextView(view).moveCursorToEnd().focus();
+        this.getNextView(view).focus().moveCursorToEnd();
       }
     });
-
-    this.listenTo(view, 'linesChanged', this.refreshFromView);
   }
 
   view.notebook = this;
   this.collection.push(view.model);
 
-  // Append the view to the end of the console
+  // Append the view to the end of the notebook.
   view.render().appendTo(_.bind(function (el) {
     if (_.isFunction(before)) {
       return before(el);
@@ -437,7 +462,7 @@ Notebook.prototype.appendView = function (view, before) {
   }, this));
 
   // Sort the collection every time a node is added in a different position to
-  // just being appended at the end
+  // just being appended at the end.
   if (before) { this.collection.sort(); }
 
   return this;

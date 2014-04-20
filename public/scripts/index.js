@@ -34,7 +34,7 @@ App.PostMessage = require('./lib/post-message');
 
 // Exposes CodeMirror to the world with our custom mods.
 App.CodeMirror = {
-  Editor:            CodeMirror,
+  Editor:            require('codemirror'),
   Completion:        require('./lib/completion'),
   sandboxCompletion: require('./lib/sandbox-completion')
 };

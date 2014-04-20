@@ -1,6 +1,7 @@
-var _        = require('underscore');
-var View     = require('./view');
-var messages = require('../state/messages');
+var _          = require('underscore');
+var View       = require('./view');
+var messages   = require('../state/messages');
+var CodeMirror = require('codemirror');
 
 /**
  * Create a new raw notebook editor instance.

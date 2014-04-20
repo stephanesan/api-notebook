@@ -1,5 +1,6 @@
-var _        = require('underscore');
-var getToken = require('./get-token');
+var _          = require('underscore');
+var getToken   = require('./get-token');
+var CodeMirror = require('codemirror');
 
 /**
  * Grabs and corrects the grabbed token. Useful really only for sanitising a

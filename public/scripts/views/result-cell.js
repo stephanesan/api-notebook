@@ -16,8 +16,9 @@ var ResultCell = module.exports = View.extend({
 /**
  * Automatically update the result body on change.
  */
-ResultCell.prototype.update = function () {
+ResultCell.prototype.change = function () {
   this.empty();
+  this.update();
 
   if (this.model.get('isError')) {
     this.el.classList.add('result-error');
@@ -47,7 +48,7 @@ ResultCell.prototype.template = template;
 /**
  * Refreshes the result cell based on the parent cell view.
  */
-ResultCell.prototype.refresh = function () {
+ResultCell.prototype.update = function () {
   if (this.model.collection) {
     this.data.set('index', this.model.collection.codeIndexOf(this.model));
   }

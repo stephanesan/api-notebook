@@ -14,7 +14,7 @@
     "backbone": "1.1.0",
     "backbone.native": "~1.0.0",
     "change-case": "~1.0.6",
-    "codemirror": "~3.19.0",
+    "codemirror": "git://github.com/marijnh/CodeMirror#ef2293517ab2d09b3e56b1967e1c683d583937a0",
     "config": "~0.4.33",
     "css-component": "~0.0.2",
     "domify": "~1.2.1",

@@ -1,6 +1,7 @@
 var _          = require('underscore');
 var Backbone   = require('backbone');
 var middleware = require('../../state/middleware');
+var CodeMirror = require('codemirror');
 
 require('./ui');
 require('./ajax');

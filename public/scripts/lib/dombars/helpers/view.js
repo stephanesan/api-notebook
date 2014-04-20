@@ -1,4 +1,3 @@
-var _       = require('underscore');
 var DOMBars = require('dombars/runtime');
 
 /**
@@ -10,7 +9,9 @@ var DOMBars = require('dombars/runtime');
 DOMBars.registerHelper('view', function (view, options) {
   if (!view) { return document.createDocumentFragment(); }
 
-  options.unsubscribe(_.bind(view.remove, view));
+  options.unsubscribe(function () {
+    return view.remove();
+  });
 
   return new DOMBars.SafeString(view.render().el);
 });

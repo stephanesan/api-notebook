@@ -1,5 +1,5 @@
 var _            = require('underscore');
-var Pos          = CodeMirror.Pos;
+var Pos          = require('codemirror').Pos;
 var middleware   = require('../../state/middleware');
 var tokenHelpers = require('./token-helpers');
 var correctToken = require('./correct-token');
@@ -73,7 +73,7 @@ var completeProperty = function (cm, token, options, done) {
 };
 
 /**
- * Trigger the completion module by passing in the current codemirror instance.
+ * Trigger the completion module by passing in the current CodeMirror instance.
  *
  * @param  {CodeMirror} cm
  * @param  {Object}     options
