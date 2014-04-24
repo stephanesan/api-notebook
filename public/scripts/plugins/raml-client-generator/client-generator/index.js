@@ -501,14 +501,14 @@ var httpRequest = function (nodes, method) {
 
     // Iterate through `securedBy` methods and accept the first one we are
     // already authenticated for.
-    _.some(method.securedBy || nodes.client.securedBy, function (secured) {
-      // Skip unauthorized requests since we'll be doing that anyway if the
-      // rest of the secure methods fail to exist.
-      if (secured == null) {
-        return false;
+    _.some(method.securedBy || nodes.client.securedBy, function (secured, key) {
+      var scheme = nodes.client.securitySchemes[key];
+
+      // Scheme is not documented in the RAML security schemes.
+      if (!scheme) {
+        return;
       }
 
-      var scheme        = nodes.client.securitySchemes[secured];
       var authenticated = nodes.client.authentication[scheme.type];
       var authType      = authMap[scheme.type];
 

@@ -2,6 +2,36 @@
 var _ = App.Library._;
 
 /**
+ * Sanitize the secured by into an object.
+ *
+ * @param  {Array}  secured
+ * @return {Object}
+ */
+var sanitizeSecuredBy = function (secured) {
+  if (!Array.isArray(secured)) {
+    return null;
+  }
+
+  var securedBy = {};
+
+  // Since `securedBy` can either be an array of strings or array of objects
+  // with only a single key, we merge it down to an object.
+  _.each(secured, function (value) {
+    if (value == null) {
+      return; // Ignore `null` array values, shouldn't be useful to me.
+    }
+
+    if (_.isString(value)) {
+      return securedBy[value] = true;
+    }
+
+    return _.extend(securedBy, value);
+  });
+
+  return securedBy;
+};
+
+/**
  * Sanitize the AST from the RAML parser into something easier to work with.
  *
  * @param  {Object} ast
@@ -17,6 +47,9 @@ module.exports = function (ast) {
   ast.traits          = _.extend.apply(_, ast.traits);
   ast.resourceTypes   = _.extend.apply(_, ast.resourceTypes);
   ast.securitySchemes = _.extend.apply(_, ast.securitySchemes);
+
+  // Sanitize secured by which is a bit more complicated than extending.
+  ast.securedBy = sanitizeSecuredBy(ast.securedBy);
 
   // Recurse through the resources and move URIs to be the key names.
   ast.resources = (function flattenResources (resources) {
@@ -35,6 +68,11 @@ module.exports = function (ast) {
 
       if (resource.resources) {
         resource.resources = flattenResources(resource.resources);
+      }
+
+      // Merge secured by arrays into an object.
+      if (resource.securedBy) {
+        resource.securedBy = sanitizeSecuredBy(resource.securedBy);
       }
 
       (function attachResource (object, segments) {
