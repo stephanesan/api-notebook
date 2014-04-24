@@ -60,8 +60,8 @@ App.prototype.events = {
     e.preventDefault();
     e.srcElement.blur();
   },
-  // Update the notebook title when a new character is entered.
-  'keyup .notebook-title': function (e) {
+  // Update the notebook title on blur to avoid multiple persistence attempts.
+  'focusout .notebook-title': function (e) {
     persistence.get('notebook').get('meta').set('title', e.target.value);
   }
 };
