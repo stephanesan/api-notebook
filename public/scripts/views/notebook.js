@@ -329,19 +329,19 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
-      this.prependTextView(view.el).focus();
+      this.prependTextView(view.el).refresh().focus();
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
-      this.prependCodeView(view.el).focus();
+      this.prependCodeView(view.el).refresh().focus();
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
-      this.appendTextView(view.el).focus();
+      this.appendTextView(view.el).refresh().focus();
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
-      this.appendCodeView(view.el).focus();
+      this.appendCodeView(view.el).refresh().focus();
     });
 
     // Listen to clone events and append the new views after the current view
