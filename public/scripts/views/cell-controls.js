@@ -27,9 +27,13 @@ ControlsView.prototype.template = template;
 /**
  * Render the controls overlay.
  *
+ * @param  {Array}        controls
  * @return {ControlsView}
  */
-ControlsView.prototype.render = function () {
+ControlsView.prototype.render = function (controls) {
+  // Set the controls to be rendered in the template.
+  this.data.set('controls', controls || []);
+
   View.prototype.render.call(this);
 
   // Any events on the document view should cause focus to be lost.

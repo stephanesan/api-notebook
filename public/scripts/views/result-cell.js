@@ -18,7 +18,6 @@ var ResultCell = module.exports = View.extend({
  */
 ResultCell.prototype.change = function () {
   this.empty();
-  this.update();
 
   if (this.model.get('isError')) {
     this.el.classList.add('result-error');

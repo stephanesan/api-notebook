@@ -41,6 +41,10 @@ var EditorCell = module.exports = View.extend({
 EditorCell.prototype.initialize = function (options) {
   View.prototype.initialize.apply(this, arguments);
 
+  // Alias the notebook instance.
+  this.notebook = options && options.notebook;
+
+  // Alias model properties or create a new cell model.
   this.model      = (options && options.model) || new Cell(this.cellAttributes);
   this.model.view = this;
 };
@@ -88,7 +92,7 @@ EditorCell.prototype.editorOptions = {
  * @return {EditorCell}
  */
 EditorCell.prototype.delete = embedProtect(function () {
-  this.trigger('delete');
+  this.trigger('delete', this);
   return this.remove();
 });
 
@@ -111,9 +115,10 @@ EditorCell.prototype.remove = function () {
  * @return {EditorCell} Cloned view.
  */
 EditorCell.prototype.clone = embedProtect(function () {
-  var clone = new this.constructor(_.extend({}, {
-    model: this.model.clone()
-  }));
+  var clone = new this.constructor({
+    model:    this.model.clone(),
+    notebook: this.notebook
+  });
 
   this.trigger('clone', this, clone);
   return clone;
@@ -314,8 +319,12 @@ EditorCell.prototype.renderEditor = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.render = function () {
+  // Trigger positional updates on render.
+  this.update();
+
   View.prototype.render.call(this);
 
+  // Render the editor instance into the current view.
   this.renderEditor();
 
   // Refresh the editor cells when refresh is triggered through messages.
@@ -329,11 +338,15 @@ EditorCell.prototype.render = function () {
   var showBelowTimeout;
 
   this.listenTo(aboveListener, 'mouseenter', function () {
-    showAboveTimeout = setTimeout(_.bind(this.showButtonsAbove, this), timeout);
+    showAboveTimeout = window.setTimeout(
+      _.bind(this.showButtonsAbove, this), timeout
+    );
   });
 
   this.listenTo(belowListener, 'mouseenter', function () {
-    showBelowTimeout = setTimeout(_.bind(this.showButtonsBelow, this), timeout);
+    showBelowTimeout = window.setTimeout(
+      _.bind(this.showButtonsBelow, this), timeout
+    );
   });
 
   this.listenTo(aboveListener, 'mouseleave', function () {
@@ -356,10 +369,7 @@ EditorCell.prototype.render = function () {
 EditorCell.prototype.showControls = function (e) {
   e.stopPropagation();
 
-  // Alias the displayed controls.
-  cellControls.controls = this.cellControls;
-
-  var controls = cellControls.render().appendTo(this.el);
+  var controls = cellControls.render(this.cellControls).appendTo(this.el);
 
   this.listenTo(controls, 'remove', this.stopListening);
   this.listenTo(controls, 'action', function (_, action) {

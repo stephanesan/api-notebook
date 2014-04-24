@@ -22,7 +22,7 @@ var completionMiddleware = require('../lib/sandbox-completion');
  */
 var appendNewView = function (View) {
   return function (el, value) {
-    var view = new View();
+    var view = new View({ notebook: this });
     this.appendView(view, el);
 
     if (value) {
@@ -100,7 +100,7 @@ Notebook.prototype.remove = function () {
  *
  * @return {Notebook}
  */
-Notebook.prototype.refreshCompletion = function () {
+Notebook.prototype.updateCompletion = function () {
   // Extends the context with additional inline completion results. Requires
   // using `Object.create` since you can't extend an object with every property
   // of the global object.
@@ -178,13 +178,13 @@ Notebook.prototype.render = function () {
     }
   }
 
-  this.listenTo(this.collection, 'remove sort', this.refreshCompletion);
+  this.listenTo(this.collection, 'remove sort', this.updateCompletion);
 
   this.listenTo(this.collection, 'change remove sort', function () {
     this.model.set('cells', this.collection.toJSON());
   });
 
-  this.refreshCompletion();
+  this.updateCompletion();
 
   return this;
 };
@@ -435,7 +435,7 @@ Notebook.prototype.appendView = function (view, before) {
     // require new working cells to be appended to the notebook.
     this.listenTo(view, 'execute', function (view) {
       // Refresh all completion data when a cell is executed.
-      this.refreshCompletion();
+      this.updateCompletion();
 
       // Need a flag here so we don't cause an infinite loop when executing the
       // notebook contents. (E.g. Hitting the last cell and adding a new cell).
@@ -449,7 +449,6 @@ Notebook.prototype.appendView = function (view, before) {
     });
   }
 
-  view.notebook = this;
   this.collection.push(view.model);
 
   // Append the view to the end of the notebook.
