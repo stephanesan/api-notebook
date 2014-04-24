@@ -245,7 +245,6 @@ API.authenticate = function (client, method, options, done) {
   done = done || App._executeContext.async();
 
   var clientOption    = client['!client'];
-  var securedBy       = clientOption.securedBy;
   var securitySchemes = clientOption.securitySchemes;
 
   /**
@@ -262,11 +261,13 @@ API.authenticate = function (client, method, options, done) {
       return done(err);
     }
 
+    // Alias onto the client object for future use.
     clientOption.authentication[scheme.type] = _.extend({}, options, tokens);
+
     return done(null, tokens);
   };
 
-  return authenticate(securedBy, securitySchemes, method, options, cb);
+  return authenticate(securitySchemes, method, options, cb);
 };
 
 /**

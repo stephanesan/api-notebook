@@ -42,75 +42,93 @@ module.exports = function (ast) {
     throw new Error('A baseUri is required');
   }
 
+  // Create the base sanitized ast with only the properties we want.
+  var sanitizedAst = _.pick(ast, [
+    'title',
+    'version',
+    'baseUri',
+    'baseUriParameters'
+  ]);
+
   // Merge an array of objects into a single object using `_.extend` and
   // `apply` (since `_.extend` accepts unlimited number of arguments).
-  ast.traits          = _.extend.apply(_, ast.traits);
-  ast.resourceTypes   = _.extend.apply(_, ast.resourceTypes);
-  ast.securitySchemes = _.extend.apply(_, ast.securitySchemes);
+  if (ast.securitySchemes) {
+    sanitizedAst.securitySchemes = _.extend.apply(_, ast.securitySchemes);
+  }
 
   // Sanitize secured by which is a bit more complicated than extending.
-  ast.securedBy = sanitizeSecuredBy(ast.securedBy);
+  if (ast.securedBy) {
+    sanitizedAst.securedBy = sanitizeSecuredBy(ast.securedBy);
+  }
 
   // Recurse through the resources and move URIs to be the key names.
-  ast.resources = (function flattenResources (resources) {
+  sanitizedAst.resources = (function flattenResources (resources) {
     var map = {};
 
     // Resources are provided as an array, we'll move them to be an object.
     _.each(resources, function (resource) {
+      var sanitizedResource = {};
+
       // Methods are implemented as arrays of objects too, but not recursively.
       // TODO: If the endpoint is the final route and has no methods, implement
       // backtracking and remove access to it from the AST.
       if (resource.methods) {
-        resource.methods = _.object(
-          _.pluck(resource.methods, 'method'), resource.methods
+        sanitizedResource.methods = _.object(
+          _.pluck(resource.methods, 'method'),
+          _.map(resource.methods, function (method) {
+            // Create the sanitized method by including the properties we want.
+            var sanitizedMethod = _.pick(method, [
+              'method',
+              'body',
+              'headers',
+              'description',
+              'queryParameters'
+            ]);
+
+            // Sanitize the `securedBy` method.
+            if (method.securedBy) {
+              sanitizedMethod.securedBy = sanitizeSecuredBy(method.securedBy);
+            }
+
+            return sanitizedMethod;
+          })
         );
       }
 
       if (resource.resources) {
-        resource.resources = flattenResources(resource.resources);
+        sanitizedResource.resources = flattenResources(resource.resources);
       }
 
-      // Merge secured by arrays into an object.
-      if (resource.securedBy) {
-        resource.securedBy = sanitizeSecuredBy(resource.securedBy);
-      }
-
-      (function attachResource (object, segments) {
+      (function attachResource (map, segments) {
         var segment = segments.shift();
+        var part    = map[segment] = {};
 
-        // Only the one segment part left, embed the entire resource.
+        // Currently on the last url segment, embed the full resource.
         if (!segments.length) {
-          return object[segment] = resource;
+          part = map[segment] = sanitizedResource;
         }
 
-        // Pull any potential tags out of the relative uri part.
-        var tags = _.map(segment.match(/\{([^\{\}]+)\}/g), function (tag) {
+        // Pull any possible tags out of the relative uri part.
+        var tags = _.map(segment.match(/\{([^\}]+)\}/g), function (tag) {
           return tag.slice(1, -1);
         });
 
-        // Nested segments need access to the relative uri parameters.
-        object[segment] = {
-          // Extends any resources already attached to the same property.
-          resources: _.extend({}, object[segment] && object[segment].resources),
-          // Dodgy `relativeUri` patch.
-          relativeUri: '/' + segment,
-          // Pick out the applicable template tags.
-          uriParameters: _.pick(resource.uriParameters, tags)
-        };
+        // Add only the used tags to the current resource segment.
+        if (tags.length) {
+          part.uriParameters = _.pick(resource.uriParameters, tags);
+        }
 
-        // Remove the segment from the original relative uri.
-        resource.relativeUri = resource.relativeUri.substr(segment.length + 1);
+        // If we have more segment parts left, recursively embed resources.
+        if (segments.length) {
+          part.resources = part.resources || {};
 
-        // Remove tags no longer applicable to other parts.
-        // Note: This *will* break if the same tag name is in multiple parts.
-        resource.uriParameters = _.omit(resource.uriParameters, tags);
-
-        return attachResource(object[segment].resources, segments);
+          return attachResource(part.resources, segments);
+        }
       })(map, resource.relativeUri.substr(1).split('/'));
     });
 
     return map;
   })(ast.resources);
 
-  return ast;
+  return sanitizedAst;
 };

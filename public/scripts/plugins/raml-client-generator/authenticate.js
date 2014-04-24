@@ -3,6 +3,13 @@ var _     = App.Library._;
 var async = App.Library.async;
 
 /**
+ * Map authentication types to automatic preference.
+ *
+ * @type {Array}
+ */
+var ORDER_PREFERENCE = ['OAuth 2.0', 'OAuth 1.0', 'Basic Authentication'];
+
+/**
  * Returns an object of available keys and whether they are required.
  *
  * @param  {Object} scheme
@@ -103,6 +110,12 @@ var promptTokens = function (scheme, options, done) {
     if (key === 'scopes') {
       var scopes = sanitizeScope(scheme.settings.scopes);
 
+      // Ignore the scopes selection when nothing is available for selection.
+      if (!scopes.length) {
+        return '';
+      }
+
+      // Map scopes to checkbox selections.
       var scopeOptions = _.map(scopes, function (scope) {
         // Check if the scope is already in the selected scopes. If there is
         // only one possible scope, just select it by default anyway.
@@ -255,19 +268,38 @@ var requestTokens = function (scheme, done) {
 };
 
 /**
+ * Return the preferred scheme option from an object of every scheme.
+ *
+ * @param  {Object} schemes
+ * @return {Object}
+ */
+var preferredScheme = function (schemes) {
+  var method = _.intersection(ORDER_PREFERENCE, _.pluck(schemes, 'type'))[0];
+
+  // Return an essentially random but consistent scheme.
+  if (!method) {
+    return schemes[_.keys(schemes)[0]];
+  }
+
+  // Find the scheme that matched our preferred method.
+  return _.find(schemes, function (scheme) {
+    return scheme.type === method;
+  });
+};
+
+/**
  * Retrieve authentication tokens and method any way possible. It will attempt
  * to resolve automatically. If that is not possible, it will defer to
  * prompting the user.
  *
- * @param {Array}    secured
  * @param {Object}   schemes
  * @param {Function} done
  */
-var retrieveTokens = function (secured, schemes, done) {
+var retrieveTokens = function (schemes, done) {
   var tokens;
 
   // Attempt to get the first resolving set of access tokens.
-  async.detectSeries(_.map(secured, function (method) {
+  async.detectSeries(_.map(schemes, function (secured, method) {
     return schemes[method];
   }), function (scheme, cb) {
     return requestTokens(scheme, function (err, data) {
@@ -279,7 +311,7 @@ var retrieveTokens = function (secured, schemes, done) {
     });
   }, function (scheme) {
     if (!scheme) {
-      scheme = schemes[secured[0]];
+      scheme = preferredScheme(schemes);
 
       return promptTokens(scheme, {}, function (err, tokens) {
         return done(err, scheme, tokens);
@@ -295,12 +327,11 @@ var retrieveTokens = function (secured, schemes, done) {
  * we fail, we need to fall back to manual authentication options with the
  * optimal authentication scheme available.
  *
- * @param {Array}    secured
  * @param {Object}   schemes
  * @param {Function} done
  */
-var resolveScheme = function (secured, schemes, done) {
-  return retrieveTokens(secured, schemes, function (err, scheme, tokens) {
+var resolveScheme = function (schemes, done) {
+  return retrieveTokens(schemes, function (err, scheme, tokens) {
     if (err) { return done(err); }
 
     return authenticate(scheme, tokens, done);
@@ -312,22 +343,22 @@ var resolveScheme = function (secured, schemes, done) {
  * selecting an appropriate authentication method and prompting the user
  * for the following steps.
  *
- * @param {Array}    secured
  * @param {Object}   schemes
  * @param {String}   method
  * @param {Object}   options
  * @param {Function} done
  */
-module.exports = function (secured, schemes, method, options, done) {
+module.exports = function (schemes, method, options, done) {
   // If no authentication method has been passed in, attempt to pick our own.
   if (!method) {
-    return resolveScheme(secured, schemes, done);
+    return resolveScheme(schemes, done);
   }
 
   // Ensure we are attempting to authenticate with a valid method.
-  if (!_.contains(secured, method)) {
+  if (!Object.prototype.hasOwnProperty.call(schemes, method)) {
     return done(new Error(
-      'The only available authentication methods are: ' + secured.join(', ')
+      'The only available authentication methods are: ' +
+      _.keys(schemes).map(JSON.stringify).join(', ')
     ));
   }
 
