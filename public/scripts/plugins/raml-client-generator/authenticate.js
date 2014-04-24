@@ -22,6 +22,24 @@ var requiredTokens = function (scheme) {
 };
 
 /**
+ * Sanitize scopes to be an array.
+ *
+ * @param  {*}     scopes
+ * @return {Array}
+ */
+var sanitizeScope = function (scopes) {
+  if (_.isString(scopes)) {
+    return scopes.split(' ');
+  }
+
+  if (!Array.isArray(scopes)) {
+    return [];
+  }
+
+  return scopes;
+};
+
+/**
  * Required authentication keys used to check the options object.
  *
  * @type {Object}
@@ -77,24 +95,18 @@ var promptTokens = function (scheme, options, done) {
   );
 
   // Multiple ways of setting the scope option.
-  options.scopes = options.scope || options.scopes || [];
+  options.scopes = sanitizeScope(options.scope || options.scopes);
   delete options.scope;
-
-  // Sanitize the scopes to an array.
-  if (_.isString(options.scopes)) {
-    options.scopes = options.scopes.split(' ');
-  }
 
   // Generate the form to prompt the user with.
   var promptForm = _.map(possibleTokens, function (key) {
     if (key === 'scopes') {
-      // Avoid displaying checkboxes if it isn't useful.
-      if (!scheme.settings.scopes || scheme.settings.scopes.length < 2) {
-        return '';
-      }
+      var scopes = sanitizeScope(scheme.settings.scopes);
 
-      var scopeOptions = _.map(scheme.settings.scopes, function (scope) {
-        var hasScope = _.contains(options.scopes, scope);
+      var scopeOptions = _.map(scopes, function (scope) {
+        // Check if the scope is already in the selected scopes. If there is
+        // only one possible scope, just select it by default anyway.
+        var hasScope = _.contains(options.scopes, scope) || scopes.length === 1;
 
         return [
           '<div class="checkbox">',
