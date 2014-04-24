@@ -186,7 +186,7 @@ describe('Code Cell', function () {
         });
 
         it('should have a failover system in case async is never resolved', function (done) {
-          var spy   = sinon.spy(view, 'updateResult');
+          var spy   = sinon.spy(view, 'change');
           var code  = 'var done = async();';
           var clock = sinon.useFakeTimers();
 
@@ -206,7 +206,7 @@ describe('Code Cell', function () {
         });
 
         it('should be able to change the timeout on the failover system', function (done) {
-          var spy   = sinon.spy(view, 'updateResult');
+          var spy   = sinon.spy(view, 'change');
           var code  = 'timeout(5000);\nvar done = async();';
           var clock = sinon.useFakeTimers();
 

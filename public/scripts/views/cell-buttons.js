@@ -1,5 +1,7 @@
-var View     = require('./template');
-var template = require('../../templates/views/cell-buttons.hbs');
+var _         = require('underscore');
+var View      = require('./template');
+var template  = require('../../templates/views/cell-buttons.hbs');
+var domListen = require('../lib/dom-listen');
 
 /**
  * Displays the cell controls overlay menu.
@@ -9,7 +11,6 @@ var template = require('../../templates/views/cell-buttons.hbs');
 var ButtonsView = module.exports = View.extend({
   className: 'cell-buttons',
   events: {
-    'mouseleave':    'remove',
     'click .action': 'onClick'
   }
 });
@@ -20,6 +21,22 @@ var ButtonsView = module.exports = View.extend({
  * @type {Array}
  */
 ButtonsView.controls = [];
+
+/**
+ * Initialize the buttons view.
+ */
+ButtonsView.prototype.initialize = function () {
+  this.listenTo(domListen(document), 'mousemove', _.throttle(function (e) {
+    // Avoid removing the buttons when moving the mouse inside itself.
+    if (this.el.contains(e.target)) {
+      return;
+    }
+
+    return this.remove();
+  }, 10));
+
+  return View.prototype.initialize.call(this);
+};
 
 /**
  * Require the buttons template.

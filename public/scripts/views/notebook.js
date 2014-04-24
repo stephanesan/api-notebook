@@ -363,13 +363,15 @@ Notebook.prototype.appendView = function (view, before) {
         codeView.showButtonsAbove();
       }
 
-      // Focus in on the next/previous cell.
+      // Focus on the next or previous cell.
       var newView = this.getNextView(view) || this.getPrevView(view);
       newView.focus().moveCursorToEnd();
 
-      // Need to remove the model from the collection.
-      this.collection.remove(view.model);
       this.updateFromView(newView);
+    });
+
+    this.listenTo(view, 'remove', function (view) {
+      this.collection.remove(view.model);
     });
 
     // Listen for switch events, which isn't a real switch but recreates the
@@ -397,10 +399,8 @@ Notebook.prototype.appendView = function (view, before) {
       var prevView = this.getPrevView(view);
 
       if (prevView) {
-        prevView.focus();
-
-        prevView.editor.setCursor({
-          line: Infinity,
+        prevView.focus().editor.setCursor({
+          line: prevView.editor.lastLine(),
           ch:   view.editor.getCursor().ch
         });
       }
@@ -410,9 +410,7 @@ Notebook.prototype.appendView = function (view, before) {
       var nextView = this.getNextView(view);
 
       if (nextView) {
-        nextView.focus();
-
-        nextView.editor.setCursor({
+        nextView.focus().editor.setCursor({
           line: 0,
           ch:   view.editor.getCursor().ch
         });

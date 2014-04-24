@@ -62,12 +62,10 @@ window.testCompletion = function (editor, text, done) {
   var cursor = editor.getCursor();
 
   // Trigger a fake change event to cause autocompletion to occur
-  CodeMirror.signal(editor, 'change', editor, {
+  App.CodeMirror.Editor.signal(editor, 'change', editor, {
     origin: '+input',
     to:     extend({}, cursor),
-    from:   extend({}, cursor, {
-      ch: cursor.ch - 1
-    }),
+    from:   extend({}, cursor, { ch: cursor.ch - 1 }),
     text:   [text.slice(-1)]
   });
 };

@@ -236,20 +236,23 @@ EditorCell.prototype.unbindEditor = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.removeEditor = function () {
-  if (!this.editor) { return this; }
+  if (!this.editor) {
+    return this;
+  }
 
   this.docHistory = this.editor.doc.getHistory();
   this.unbindEditor();
 
-  // Remove the old CodeMirror instance from the DOM.
-  var editorEl = this.editor.getWrapperElement();
+  // Get the editor element DOM instance to be removed.
+  var editorElement = this.editor.getWrapperElement();
 
-  if (editorEl && editorEl.parentNode) {
-    editorEl.parentNode.removeChild(editorEl);
-  }
-
-  // Delete references to the CodeMirror instance.
+  // Delete references to the CodeMirror instance. This needs to be done before
+  // it's removed from the DOM, since it's relied on in other "blur" events.
   delete this.editor;
+
+  if (editorElement && editorElement.parentNode) {
+    editorElement.parentNode.removeChild(editorElement);
+  }
 
   return this;
 };
@@ -261,12 +264,12 @@ EditorCell.prototype.removeEditor = function () {
  */
 EditorCell.prototype.cellControls = _.filter(controls, function (control) {
   return {
-    moveUp:    true,
-    moveDown:  true,
-    switch:    true,
-    clone:     true,
-    remove:    true,
-    appendNew: true
+    'moveUp':    true,
+    'moveDown':  true,
+    'switch':    true,
+    'clone':     true,
+    'delete':    true,
+    'appendNew': true
   }[control.command];
 });
 
@@ -287,6 +290,9 @@ EditorCell.prototype.renderEditor = function () {
     value:    this.getValue(),
     readOnly: this.isReadOnly()
   }, this.editorOptions));
+
+  // Initialize every editor with the cursor at the end.
+  this.moveCursorToEnd();
 
   // Add an extra css class for helping with styling read-only editors.
   if (this.editor.getOption('readOnly')) {
@@ -330,7 +336,7 @@ EditorCell.prototype.render = function () {
   // Refresh the editor cells when refresh is triggered through messages.
   this.listenTo(messages, 'refresh', this.refresh);
 
-  var timeout       = 150;
+  var timeout       = 100;
   var aboveListener = domListen(this.el.querySelector('.cell-border-above'));
   var belowListener = domListen(this.el.querySelector('.cell-border-below'));
 

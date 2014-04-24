@@ -4,8 +4,11 @@ describe('Completion', function () {
   var editor, completion;
 
   beforeEach(function () {
-    editor = new CodeMirror(document.body, {
-      mode: 'javascript'
+    editor = new App.CodeMirror.Editor(document.body, {
+      mode: {
+        name: 'javascript',
+        globalVars: true
+      }
     });
 
     new App.CodeMirror.Completion(editor, {

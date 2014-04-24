@@ -36,7 +36,7 @@ describe('Function Property Filter Plugin', function () {
     };
 
     beforeEach(function () {
-      editor = new CodeMirror(document.body, {
+      editor = new App.CodeMirror.Editor(document.body, {
         mode: 'javascript'
       });
 

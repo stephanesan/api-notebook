@@ -85,7 +85,10 @@ CodeCell.prototype.cellControls.push(_.find(controls, function (control) {
  */
 CodeCell.prototype.editorOptions = _.extend(
   {}, EditorCell.prototype.editorOptions, {
-    mode: 'javascript'
+    mode: {
+      name: 'javascript',
+      globalVars: true
+    }
   }
 );
 

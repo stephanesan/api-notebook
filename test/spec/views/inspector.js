@@ -136,7 +136,7 @@ describe('Inspector', function () {
           collection: document.forms
         }, {
           'array': 'Array[0]',
-          'nodes': /^NodeList\[\d+\]$/,
+          'nodes': /^HTMLCollection\[\d+\]$/,
           // Can't detect a `HTMLCollection` under PhantomJS.
           'collection': /^(HTMLCollection\[\d+\]|Object)$/
         });

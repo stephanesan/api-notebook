@@ -250,24 +250,19 @@ TextCell.prototype.bindEditor = function () {
   EditorCell.prototype.bindEditor.call(this);
 
   // Listen to itself since editor cells have a built in protection here.
-  this.listenTo(this, 'blur', function () {
-    delete this._hasFocus;
-    this.renderEditor();
-  });
+  this.listenTo(this, 'blur', this.renderEditor);
 
   return this;
 };
 
 /**
- * Focus the text cell instance. If the CodeMirror editor is not currently
- * rendered, it will be rendered.
+ * Focus the text cell instance. Render the CodeMirror instance.
  *
  * @return {TextCell}
  */
 TextCell.prototype.focus = embedProtect(function (cursor) {
-  this._hasFocus = true;
-  this.renderEditor();
-  EditorCell.prototype.focus.call(this);
+  EditorCell.prototype.renderEditor.call(this);
+  this.editor.focus();
 
   // Set the closest cursor positions.
   if (cursor) {
@@ -317,16 +312,30 @@ TextCell.prototype.getPositions = function (selection) {
 TextCell.prototype.setValue = function (value) {
   EditorCell.prototype.setValue.call(this, value);
 
-  return this.renderMarkdown();
+  return this.renderEditor();
 };
 
 /**
- * Render the value as markdown.
+ * Remove the rendered Markdown cell and potential editor instance.
  *
  * @return {TextCell}
  */
-TextCell.prototype.renderMarkdown = function () {
-  this.removeMarkdown();
+TextCell.prototype.removeEditor = function () {
+  if (this.markdownElement) {
+    this.markdownElement.parentNode.removeChild(this.markdownElement);
+    delete this.markdownElement;
+  }
+
+  return EditorCell.prototype.removeEditor.call(this);
+};
+
+/**
+ * Override the editor with a markdown viewer.
+ *
+ * @return {TextCell}
+ */
+TextCell.prototype.renderEditor = function () {
+  this.removeEditor();
 
   this.markdownElement = this.el.insertBefore(
     domify('<div class="markdown"></div>'), this.el.firstChild
@@ -347,38 +356,6 @@ TextCell.prototype.renderMarkdown = function () {
   }, this));
 
   messages.trigger('resize');
-
-  return this;
-};
-
-/**
- * Remove the rendered Markdown cell.
- *
- * @return {TextCell}
- */
-TextCell.prototype.removeMarkdown = function () {
-  if (this.markdownElement) {
-    this.markdownElement.parentNode.removeChild(this.markdownElement);
-    delete this.markdownElement;
-  }
-
-  return this;
-};
-
-/**
- * Switches between rendering the regular CodeMirror editor and a Markdown
- * preview based on whether we are trying to focus the cell.
- *
- * @return {TextCell}
- */
-TextCell.prototype.renderEditor = function () {
-  if (this._hasFocus) {
-    this.removeMarkdown();
-    EditorCell.prototype.renderEditor.call(this);
-  } else {
-    this.removeEditor();
-    this.renderMarkdown();
-  }
 
   return this;
 };

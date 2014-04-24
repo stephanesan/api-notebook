@@ -27,14 +27,18 @@ describe('Notebook', function () {
 
     describe('#appendView', function () {
       it('should append the view element to the notebook', function () {
-        view.appendView(new App.View.CodeCell());
+        view.appendView(new App.View.CodeCell({
+          notebook: view
+        }));
 
         expect(view.el.childNodes.length).to.equal(1);
         expect(view.el.childNodes[0].className).to.contain('cell-code');
       });
 
       it('should add the models view to the collection', function () {
-        var cell = new App.View.CodeCell();
+        var cell = new App.View.CodeCell({
+          notebook: view
+        });
 
         view.appendView(cell);
 
@@ -43,7 +47,9 @@ describe('Notebook', function () {
       });
 
       it('should add a reference back to the view from the model', function () {
-        var cell = new App.View.CodeCell();
+        var cell = new App.View.CodeCell({
+          notebook: view
+        });
 
         view.appendView(cell);
 
@@ -51,9 +57,9 @@ describe('Notebook', function () {
       });
 
       it('should accept a custom before element', function () {
-        var cell1 = new App.View.CodeCell();
-        var cell2 = new App.View.CodeCell();
-        var cell3 = new App.View.CodeCell();
+        var cell1 = new App.View.CodeCell({ notebook: view });
+        var cell2 = new App.View.CodeCell({ notebook: view });
+        var cell3 = new App.View.CodeCell({ notebook: view });
 
         view.appendView(cell1);
         view.appendView(cell2);
@@ -118,9 +124,10 @@ describe('Notebook', function () {
       var codeCells;
 
       beforeEach(function () {
-        view = view.render().appendTo(fixture);
+        view      = view.render().appendTo(fixture);
         textCells = [];
         codeCells = [];
+
         // Append some initial testing cells
         codeCells.push(view.appendCodeView());
         textCells.push(view.appendTextView());
@@ -132,7 +139,6 @@ describe('Notebook', function () {
         codeCells[1].trigger('browseUp', codeCells[1]);
 
         expect(textCells[0].hasFocus()).to.be.ok;
-        expect(textCells[0].editor.getCursor().ch).to.equal(4);
         expect(textCells[0].editor.getCursor().line).to.equal(3);
       });
 
@@ -141,7 +147,6 @@ describe('Notebook', function () {
         codeCells[0].trigger('browseDown', codeCells[0]);
 
         expect(textCells[0].hasFocus()).to.be.ok;
-        expect(textCells[0].editor.getCursor().ch).to.equal(5);
         expect(textCells[0].editor.getCursor().line).to.equal(0);
       });
 
@@ -180,7 +185,7 @@ describe('Notebook', function () {
         expect(view.collection.length).to.equal(4);
 
         codeCells[1].setValue('multi\nline');
-        textCells[0].remove();
+        textCells[0].delete();
 
         expect(view.collection.length).to.equal(3);
         expect(codeCells[0].el.nextSibling).to.equal(codeCells[1].el);
@@ -450,7 +455,7 @@ describe('Notebook', function () {
               expect(view.collection.length).to.equal(4);
               expect(view.collection.at(1)).to.equal(codeCells[0].model);
 
-              var btn = menu.querySelector('[data-action="remove"]');
+              var btn = menu.querySelector('[data-action="delete"]');
               simulateEvent(btn, 'mousedown');
 
               expect(view.collection.length).to.equal(3);
@@ -467,53 +472,6 @@ describe('Notebook', function () {
               expect(view.collection.length).to.equal(5);
               expect(view.collection.at(2)).to.not.equal(textCells[0].model);
             });
-          });
-        });
-
-        describe('Line numbers', function () {
-          var getLineNumbers = function (view) {
-            var nums = [];
-            var els = view.el.getElementsByClassName('CodeMirror-linenumber');
-
-            for (var i = 0; i < els.length; i++) {
-              nums.push(els[i].firstChild.textContent);
-            }
-
-            return nums;
-          };
-
-          it('should continue line numbers from previous code cells', function () {
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
-          });
-
-          it('should continue line numbers when rearranged', function () {
-            codeCells[0].moveDown();
-            codeCells[0].moveDown();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('3');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
-
-            codeCells[0].moveUp();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('3');
-          });
-
-          it('should continue line numbers with different size cells', function () {
-            codeCells[0].setValue('multi\nline\ntext');
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[0]).length).to.equal(3);
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('5');
-          });
-
-          it('should continue line numbers when rearranging multi line cells', function () {
-            codeCells[0].setValue('look\nanother\nmulti\nline\ntest');
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('2');
-            expect(getLineNumbers(codeCells[0]).length).to.equal(5);
-
-            codeCells[0].moveDown();
-            codeCells[0].moveDown();
-            expect(getLineNumbers(codeCells[0])[0]).to.equal('3');
-            expect(getLineNumbers(codeCells[1])[0]).to.equal('2');
           });
         });
       });

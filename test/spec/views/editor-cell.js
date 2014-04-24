@@ -32,7 +32,7 @@ describe('Editor Cell', function () {
       });
 
       it('should initialize a CodeMirror instance', function () {
-        expect(editor).to.be.an.instanceof(CodeMirror);
+        expect(editor).to.be.an.instanceof(App.CodeMirror.Editor);
       });
 
       it('should have smart defaults set', function () {

@@ -27,7 +27,7 @@ describe('Result Cell', function () {
             result:  'Testing',
             isError: false
           })
-        }).render().update();
+        }).render().change();
 
         expect(view.el.className).to.not.contain('result-error');
         expect(view.el.className).to.not.contain('result-pending');
@@ -39,7 +39,7 @@ describe('Result Cell', function () {
             result:  new Error('Testing'),
             isError: true
           })
-        }).render().update();
+        }).render().change();
 
         expect(view.el.className).to.contain('result-error');
         expect(view.el.className).to.not.contain('result-pending');
@@ -62,7 +62,7 @@ describe('Result Cell', function () {
             result:  null,
             isError: false
           })
-        }).render().update();
+        }).render().change();
 
         expect(renderSpy).to.have.been.calledOnce;
         expect(
