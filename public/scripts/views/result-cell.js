@@ -23,13 +23,24 @@ ResultCell.prototype.change = function () {
     this.el.classList.add('result-error');
   }
 
+  var attachElement  = this.el.querySelector('.result-content');
+  var notebookWindow = this.model.view.notebook.sandbox.window;
+
   middleware.trigger('result:render', {
-    el:      this.el.querySelector('.result-content'),
-    window:  this.model.view ? this.model.view.notebook.sandbox.window : window,
+    el:      attachElement,
+    window:  notebookWindow,
     inspect: this.model.get('result'),
     isError: this.model.get('isError')
   }, _.bind(function (err, remove) {
-    this._remove = remove;
+    if (typeof this._remove === 'function') {
+      this._remove = remove;
+    }
+
+    // Avoid an empty element when rendering fails.
+    if (!attachElement.childNodes.length) {
+      attachElement.innerHTML = '&nbsp;';
+    }
+
     this.el.classList.remove('cell-result-pending');
     messages.trigger('resize');
   }, this));
@@ -64,6 +75,9 @@ ResultCell.prototype.empty = function () {
     this._remove();
     delete this._remove;
   }
+
+  // Force the element to be cleared.
+  this.el.querySelector('.result-content').innerHTML = '';
 
   return this;
 };

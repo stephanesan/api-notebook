@@ -1,5 +1,25 @@
-var _      = require('underscore');
-var typeOf = require('./type');
+var _       = require('underscore');
+var typeOf  = require('./type');
+var __slice = Object.prototype.toString;
+
+/**
+ * Get a functions name.
+ *
+ * @param  {Function} fn
+ * @return {String}
+ */
+var getFunctionName = function (fn) {
+  return fn.name;
+};
+
+if (!('name' in Function.prototype)) {
+  getFunctionName = function (fn) {
+    var fnString = Function.prototype.toString.call(fn);
+
+    // Run a simple regular expression to get the function name and return.
+    return (/function\s+(.{1,})\s*\(/).exec(fnString)[1];
+  };
+}
 
 /**
  * Gets internal object name. Works like the Chrome console and grabs the
@@ -8,45 +28,35 @@ var typeOf = require('./type');
  * @param  {Object} object
  * @return {String}
  */
-var getInternalName = (function () {
-  var getName;
+var getInternalName = function (object) {
+  var name = 'Object';
 
-  // No need to use a regex if the `name` property is supported.
-  if ('name' in Function.prototype) {
-    getName = function (fn) {
-      return fn.name;
-    };
-  } else {
-    getName = function (fn) {
-      // Run a quick regular expression to get the function name and return.
-      return (/function\s+(.{1,})\s*\(/).exec(
-        Function.prototype.toString.call(fn)
-      )[1];
-    };
+  if (object == null) {
+    return '' + object;
   }
 
-  return function (object) {
-    var name = 'Object';
+  do {
+    // By default, get the object type using `Object.prototype.toString`. This
+    // is the most consistent method for built-in types returning things like
+    // `JSON`, `global`, `HTMLDocument`, etc.
+    name = __slice.call(object).slice(8, -1);
 
-    if (object === null) {
-      return 'null';
+    // If the native object type is simply `Object`, try a more advanced
+    // way of getting the type from the constructor function. This is really
+    // only useful in client defined code and constructors. Wrap the whole
+    // check in a `try..catch` statement since we don't know who's constructor
+    // we are accessing and if it'll throw an error (E.g. `window.parent`).
+    if (name === 'Object') {
+      try {
+        if (__slice.call(object.constructor) === '[object Function]') {
+          name = getFunctionName(object.constructor);
+        }
+      } catch (e) {}
     }
+  } while (name === 'Object' && (object = Object.getPrototypeOf(object)));
 
-    if (object === undefined) {
-      return 'undefined';
-    }
-
-    do {
-      if (typeof object.constructor === 'object') {
-        name = Object.prototype.toString.call(object).slice(8, -1);
-      } else {
-        name = getName(object.constructor);
-      }
-    } while (!name && (object = Object.getPrototypeOf(object)));
-
-    return name;
-  };
-})();
+  return name;
+};
 
 /**
  * Stringify a string.
@@ -70,13 +80,10 @@ var stringifyChild = function (object) {
   // lists so we can add the length to the preview.
   if (_.isObject(object)) {
     var internalName = getInternalName(object);
-    var isList       = _.contains(
-      [
-        'Array',
-        'NodeList',
-        'HTMLCollection'
-      ],
-      internalName
+
+    // Check if the element is usually a list-like object.
+    var isList = _.contains(
+      ['Array', 'NodeList', 'HTMLCollection'], internalName
     );
 
     return internalName + (isList ? '[' + object.length + ']' : '');

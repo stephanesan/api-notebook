@@ -180,13 +180,19 @@ InspectorView.prototype._renderChildren = function () {
   var getPrototypeOf           = this.window.Object.getPrototypeOf;
   var getOwnPropertyNames      = this.window.Object.getOwnPropertyNames;
   var getOwnPropertyDescriptor = this.window.Object.getOwnPropertyDescriptor;
+  var allPropertyNames;
 
-  // Convert to an object to remove duplicate property names. Chrome has a
-  // pretty major bug where all `document` keys are returned twice. We also
-  // want to sort the keys numerically, and then alphabetically.
-  var propertyNames = _.keys(_.object(
-    getOwnPropertyNames(this.inspect), true
-  )).sort(function (a, b) {
+  // Wrap getting property names in a `try..catch` since the inspected object
+  // is unknown. We also need to get only unique property names since Chrome
+  // has a pretty major bug where all `document` keys are returned twice.
+  try {
+    allPropertyNames = _.uniq(getOwnPropertyNames(this.inspect));
+  } catch (e) {
+    return this;
+  }
+
+  // We want to sort the keys numerically, and then alphabetically.
+  var propertyNames = allPropertyNames.sort(function (a, b) {
     var aNum = parseInt(a, 10);
     var bNum = parseInt(b, 10);
 
@@ -209,7 +215,14 @@ InspectorView.prototype._renderChildren = function () {
   });
 
   _.each(propertyNames, function (prop) {
-    var descriptor = getOwnPropertyDescriptor(this.inspect, prop);
+    var descriptor;
+
+    // Wrap the collection and checking of property names in a `try..catch`
+    // statement since the origin of the object is unknown. For example,
+    // attempting to check `window.parent` cross-domain will throw an error.
+    try {
+      descriptor = getOwnPropertyDescriptor(this.inspect, prop);
+    } catch (e) {}
 
     // Even though we are iterating over our own property names, PhantomJS is
     // finding a way to return an `undefined` property descriptor.

@@ -18,6 +18,7 @@ middleware.register('result:render', function (data, next, done) {
   };
 
   var inspector;
+
   if (!data.isError) {
     inspector = new Inspector(options);
   } else {
@@ -28,6 +29,7 @@ middleware.register('result:render', function (data, next, done) {
 
   // Opens the inspector automatically when the type is an object.
   var type = typeOf(data.inspect);
+
   if (type === 'object' || type === 'array') {
     inspector.open();
   }

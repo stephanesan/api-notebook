@@ -227,8 +227,9 @@ module.exports = function (grunt) {
       server: {
         options: {
           middleware: serverMiddleware,
-          port: PORT,
-          base: BUILD_DIR
+          port:       PORT,
+          hostname:   '*',
+          base:       BUILD_DIR
         }
       }
     },
