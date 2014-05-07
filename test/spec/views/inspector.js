@@ -122,7 +122,7 @@ describe('Inspector', function () {
 
       it('should render the `window`', function () {
         inputOutputChildren(window, {
-          'window': /^(?:Window|DOMWindow)$/,
+          'window': /^(?:global|Window|DOMWindow)$/,
           'document': 'HTMLDocument',
           'Infinity': 'Infinity',
           'innerHeight': /^\d+$/

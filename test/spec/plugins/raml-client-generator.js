@@ -765,8 +765,8 @@ describe('RAML Client Generator Plugin', function () {
 
         view.model.collection = {
           codeIndexOf: sinon.stub().returns(0),
-          getNextCode: sinon.stub().returns(undefined),
-          getPrevCode: sinon.stub().returns(undefined)
+          getNext:     sinon.stub().returns(undefined),
+          getPrev:     sinon.stub().returns(undefined)
         };
 
         view.render().appendTo(fixture);

@@ -361,21 +361,25 @@ Notebook.prototype.appendView = function (view, before) {
       this.updateFromView(clone);
     });
 
-    this.listenTo(view, 'delete', function (view) {
-      var newView = this.getNextView(view) || this.getPrevView(view);
+    this.listenTo(view, 'remove', function (view) {
+      var nextView = this.getNextView(view) || this.getPrevView(view);
 
       this.collection.remove(view.model);
       messages.trigger('cell:remove', view);
 
-      // If it's the last node in the document, append an empty code cell.
-      if (!this.collection.length) {
-        newView = this.appendCodeView();
-        newView.showButtonsAbove();
+      if (nextView) {
+        // Focus on the new cell instance.
+        nextView.focus().moveCursorToEnd();
+        this.updateFromView(nextView);
       }
+    });
 
-      // Focus on the new cell instance.
-      newView.focus().moveCursorToEnd();
-      this.updateFromView(newView);
+    this.listenTo(view, 'delete', function () {
+      // If it's the last cell in the document, append an empty code cell.
+      if (!this.collection.length) {
+        var newView = this.appendCodeView();
+        newView.refresh().focus().showButtonsAbove();
+      }
     });
 
     // Listen for switch events, which isn't a real switch but recreates the
@@ -394,9 +398,11 @@ Notebook.prototype.appendView = function (view, before) {
       var cursor = view.editor && view.editor.getCursor();
 
       view.remove();
-      newView.focus();
+      newView.refresh().focus();
 
-      if (cursor) { newView.editor.setCursor(cursor); }
+      if (cursor) {
+        newView.editor.setCursor(cursor);
+      }
     });
 
     this.listenTo(view, 'browseUp', function (view) {
@@ -426,7 +432,7 @@ Notebook.prototype.appendView = function (view, before) {
   if (view instanceof TextView) {
     this.listenTo(view, 'blur', function (view) {
       if (this.el.lastChild === view.el) {
-        this.appendCodeView().focus();
+        this.appendCodeView().refresh().focus();
       }
     });
   }

@@ -27,8 +27,8 @@ describe('Code Cell', function () {
 
       view.model.collection = {
         codeIndexOf: sinon.stub().returns(0),
-        getNextCode: sinon.stub().returns(undefined),
-        getPrevCode: sinon.stub().returns(undefined)
+        getNext:     sinon.stub().returns(undefined),
+        getPrev:     sinon.stub().returns(undefined)
       };
     });
 
@@ -50,7 +50,7 @@ describe('Code Cell', function () {
       });
 
       it('should be a javascript editor', function () {
-        expect(editor.getOption('mode')).to.equal('javascript');
+        expect(editor.getOption('mode').name).to.equal('javascript');
       });
 
       describe('Keyboard Shortcuts', function () {

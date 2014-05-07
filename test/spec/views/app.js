@@ -36,7 +36,11 @@ describe('App', function () {
       it('should be able to set the notebook title', function () {
         var titleEl = view.el.querySelector('.notebook-title');
         titleEl.value = 'Test Notebook';
+
         simulateEvent(titleEl, 'keyup');
+        simulateEvent(titleEl, 'blur');
+        simulateEvent(titleEl, 'focusout');
+
         expect(
           App.persistence.get('notebook').get('meta').get('title')
         ).to.equal('Test Notebook');

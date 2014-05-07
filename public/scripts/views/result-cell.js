@@ -24,7 +24,8 @@ ResultCell.prototype.change = function () {
   }
 
   var attachElement  = this.el.querySelector('.result-content');
-  var notebookWindow = this.model.view.notebook.sandbox.window;
+  var notebookWindow = this.model.view ?
+    this.model.view.notebook.sandbox.window : window;
 
   middleware.trigger('result:render', {
     el:      attachElement,
@@ -32,7 +33,7 @@ ResultCell.prototype.change = function () {
     inspect: this.model.get('result'),
     isError: this.model.get('isError')
   }, _.bind(function (err, remove) {
-    if (typeof this._remove === 'function') {
+    if (typeof remove === 'function') {
       this._remove = remove;
     }
 
