@@ -92,8 +92,10 @@ EditorCell.prototype.editorOptions = {
  * @return {EditorCell}
  */
 EditorCell.prototype.delete = embedProtect(function () {
+  this.remove();
   this.trigger('delete', this);
-  return this.remove();
+
+  return this;
 });
 
 /**

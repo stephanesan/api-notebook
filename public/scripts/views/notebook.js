@@ -359,7 +359,7 @@ Notebook.prototype.appendView = function (view, before) {
 
       // If it's the last node in the document, append a new code cell.
       if (this.collection.length < 2) {
-        var codeView = this.appendCodeView(view.el);
+        var codeView = this.appendCodeView();
         codeView.showButtonsAbove();
       }
 
@@ -368,9 +368,6 @@ Notebook.prototype.appendView = function (view, before) {
       newView.focus().moveCursorToEnd();
 
       this.updateFromView(newView);
-    });
-
-    this.listenTo(view, 'remove', function (view) {
       this.collection.remove(view.model);
     });
 
@@ -440,7 +437,7 @@ Notebook.prototype.appendView = function (view, before) {
       if (this._executing || config.get('embedded')) { return; }
 
       if (this.el.lastChild === view.el) {
-        this.appendCodeView().focus();
+        this.appendCodeView().refresh().focus();
       } else {
         this.getNextView(view).focus().moveCursorToEnd();
       }
