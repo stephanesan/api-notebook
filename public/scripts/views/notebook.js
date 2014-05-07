@@ -329,19 +329,27 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
-      this.prependTextView(view.el).refresh().focus();
+      var newView = this.prependTextView(view.el).refresh().focus();
+
+      this.updateFromView(newView);
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
-      this.prependCodeView(view.el).refresh().focus();
+      var newView = this.prependCodeView(view.el).refresh().focus();
+
+      this.updateFromView(newView);
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
-      this.appendTextView(view.el).refresh().focus();
+      var newView = this.appendTextView(view.el).refresh().focus();
+
+      this.updateFromView(newView);
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
-      this.appendCodeView(view.el).refresh().focus();
+      var newView = this.appendCodeView(view.el).refresh().focus();
+
+      this.updateFromView(newView);
     });
 
     // Listen to clone events and append the new views after the current view
@@ -354,21 +362,20 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'delete', function (view) {
-      // Trigger a remove event to trigger to the messages.
+      var newView = this.getNextView(view) || this.getPrevView(view);
+
+      this.collection.remove(view.model);
       messages.trigger('cell:remove', view);
 
-      // If it's the last node in the document, append a new code cell.
-      if (this.collection.length < 2) {
-        var codeView = this.appendCodeView();
-        codeView.showButtonsAbove();
+      // If it's the last node in the document, append an empty code cell.
+      if (!this.collection.length) {
+        newView = this.appendCodeView();
+        newView.showButtonsAbove();
       }
 
-      // Focus on the next or previous cell.
-      var newView = this.getNextView(view) || this.getPrevView(view);
+      // Focus on the new cell instance.
       newView.focus().moveCursorToEnd();
-
       this.updateFromView(newView);
-      this.collection.remove(view.model);
     });
 
     // Listen for switch events, which isn't a real switch but recreates the

@@ -172,11 +172,63 @@ EditorCell.prototype.hasFocus = function () {
 };
 
 /**
+ * Return the first line of the editor.
+ *
+ * @return {Number}
+ */
+EditorCell.prototype.firstLine = function () {
+  var prevView = this.getPrevView();
+
+  return prevView ? prevView.lastLine() + 1 : 1;
+};
+
+/**
+ * Return the last line of the editor.
+ *
+ * @return {Number}
+ */
+EditorCell.prototype.lastLine = function () {
+  // Avoid using `this.editor` to calculate the last line.
+  return this.firstLine() + this.lineCount();
+};
+
+/**
+ * Return the number of lines in the editor.
+ *
+ * @return {Number}
+ */
+EditorCell.prototype.lineCount = function () {
+  return this.getValue().split('\n').length - 1;
+};
+
+/**
+ * Update the editor line numbers.
+ *
+ * @param  {Number}     [line]
+ * @return {EditorCell}
+ */
+EditorCell.prototype.updateLineNumbers = function (line) {
+  var nextView = this.getNextView();
+
+  // Update the first line number. Pass a number to set it manually.
+  line = line || this.firstLine();
+
+  // Allow the editor to update the line number.
+  if (this.editor) {
+    this.editor.setOption('firstLineNumber', line);
+  }
+
+  return nextView && nextView.updateLineNumbers(line + this.lineCount() + 1);
+};
+
+/**
  * Update the editor instance.
  *
  * @return {EditorCell}
  */
 EditorCell.prototype.update = function () {
+  this.updateLineNumbers();
+
   return this;
 };
 
@@ -216,6 +268,10 @@ EditorCell.prototype.bindEditor = function () {
     this.model.set('value', cm.getValue());
     this.trigger('change', this, data);
     messages.trigger('resize');
+
+    if (data.text.length > 1 || data.from.line !== data.to.line) {
+      this.updateLineNumbers();
+    }
   }, this));
 
   return this;
@@ -288,9 +344,10 @@ EditorCell.prototype.renderEditor = function () {
   this.editor = new CodeMirror(_.bind(function (el) {
     this.el.insertBefore(el, this.el.firstChild);
   }, this), _.extend({
-    view:     this,
-    value:    this.getValue(),
-    readOnly: this.isReadOnly()
+    view:            this,
+    value:           this.getValue(),
+    readOnly:        this.isReadOnly(),
+    firstLineNumber: this.firstLine()
   }, this.editorOptions));
 
   // Initialize every editor with the cursor at the end.
@@ -327,15 +384,10 @@ EditorCell.prototype.renderEditor = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.render = function () {
-  // Trigger positional updates on render.
-  this.update();
-
   View.prototype.render.call(this);
 
-  // Render the editor instance into the current view.
   this.renderEditor();
-
-  // Refresh the editor cells when refresh is triggered through messages.
+  this.update();
   this.listenTo(messages, 'refresh', this.refresh);
 
   var timeout       = 100;
