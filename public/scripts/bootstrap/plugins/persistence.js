@@ -143,6 +143,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
  * @param {Function} done
  */
 middleware.register('persistence:load', function (data, next, done) {
+  data.id      = null;
   data.content = config.get('content');
 
   return done();
