@@ -29,7 +29,7 @@
             <button class="btn-round notebook-clone hint--bottom {{#unless @data.cloneable}}btn-disabled{{/unless}}" data-hint="{{#if @data.cloneable}}Clone notebook{{else}}Save notebook to fork{{/if}}">
               <i class="icon-fork"></i>
             </button>
-            <button class="btn-round notebook-share hint--bottom {{#unless @data.shareable}}btn-disabled{{/unless}}" data-hint="{{#if @data.shareable}}Share notebook{{else}}Save notebook to share{{/if}}">
+            <button class="btn-round notebook-share hint--bottom" data-hint="Share {{#if @data.shareable}}current{{/if}} notebook">
               <i class="icon-share"></i>
             </button>
           </span><span class="btn-group">
