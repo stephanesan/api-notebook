@@ -41,7 +41,7 @@ DOMBars.registerHelper('equal', function (/* ...args, options */) {
  *
  * @return {*}
  */
-DOMBars.registerHelper('notEqual', function (/* ...args, options */) {
+DOMBars.registerHelper('unlessEqual', function (/* ...args, options */) {
   var options = arguments[arguments.length - 1];
 
   var args = Array.prototype.slice.call(arguments, 0, -1).concat({

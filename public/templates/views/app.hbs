@@ -72,13 +72,19 @@
       <button class="btn-footer notebook-exec hint--top" data-hint="Execute all cells">
         Play notebook<i class="icon-play"></i>
       </button>
-      <a href="{{@config.fullUrl}}" class="btn-footer hint--top" data-hint="Make your own copy of this Notebook">
-        Clone notebook<i class="icon-fork"></i>
-      </a>
+      {{#unlessEqual @config.fullUrl @config.siteUrl}}
+        <a href="{{@config.fullUrl}}" class="btn-footer hint--top" data-hint="Make your own copy of this notebook">
+          Clone notebook<i class="icon-fork"></i>
+        </a>
+      {{/unlessEqual}}
     </div>
 
     <div class="footer-inner">
-      <a href="{{@config.fullUrl}}">{{@persistence.notebook.meta.title}}</a> hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+      {{#if @data.shareable}}
+        <a href="{{@config.fullUrl}}">{{@persistence.notebook.meta.title}}</a> hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+      {{else}}
+        Hosted by <a href="{{@config.siteUrl}}">{{@config.siteTitle}}</a>
+      {{/if}}
     </div>
   </div>
 {{/if}}
