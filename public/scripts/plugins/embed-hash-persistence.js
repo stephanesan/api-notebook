@@ -28,8 +28,11 @@ module.exports = function (Notebook) {
     notebook.on('config:id', function (id) {
       id = (id == null ? '' : String(id));
 
-      window.location.hash = id;
-      notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
+      // Update the hash url if it changed.
+      if (window.location.hash.substr(1) !== id) {
+        window.location.hash = id;
+        notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
+      }
     });
 
     /**
