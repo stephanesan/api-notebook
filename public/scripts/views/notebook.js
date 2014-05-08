@@ -364,7 +364,6 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'remove', function (view) {
       var nextView = this.getNextView(view) || this.getPrevView(view);
 
-      this.collection.remove(view.model);
       messages.trigger('cell:remove', view);
 
       if (nextView) {
@@ -375,6 +374,8 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'delete', function () {
+      this.collection.remove(view.model);
+
       // If it's the last cell in the document, append an empty code cell.
       if (!this.collection.length) {
         var newView = this.appendCodeView();
