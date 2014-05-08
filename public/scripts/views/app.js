@@ -338,7 +338,7 @@ App.prototype.newNotebook = function () {
  */
 App.prototype.shareNotebook = function () {
   var id          = persistence.get('notebook').get('id');
-  var shareScript = '<script src="' + EMBED_SCRIPT + '"' +
+  var shareScript = '<script src="' + EMBED_SCRIPT + '" data-notebook' +
     (id ? ' data-id="' + id + '"' : '') + '></script>';
 
   middleware.trigger('ui:modal', {

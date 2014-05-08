@@ -85,14 +85,13 @@ var defaultStyles = {
 /**
  * Creates an embeddable version of the notebook for general consumption.
  *
- * @param  {Element|Function} el      Pass an element or a function that accepts
- *                                    an element as the argument.
- * @param  {Object}           options
+ * @param  {(Element|Function)} el
+ * @param  {Object}             options
  * @return {Notebook}
  */
 var Notebook = module.exports = function (el, options, styles) {
   if (!(this instanceof Notebook)) {
-    return new Notebook(el, options);
+    return new Notebook(el, options, styles);
   }
 
   var notebook = this;
@@ -436,20 +435,29 @@ Notebook.prototype.ready = function (fn) {
   var script;
 
   for (var i = 0, l = scripts.length; i < l; i++) {
-    script = scripts[i];
     // Allows the script to be loaded asynchronously if we provide this
     // attribute with the script tag.
-    if (typeof script.getAttribute('data-notebook') === 'string') { break; }
+    if (scripts[i].hasAttribute('data-notebook')) {
+      script = scripts[i];
+      break;
+    }
   }
 
-  var data     = getDataAttributes(script);
-  var selector = data.selector;
+  if (!script) {
+    return;
+  }
 
-  // Allow manual creation of embeddable notebooks.
-  if ('manual' in data) { return; }
+  // By default we'll create the notebook in the same element as the script.
+  var el = script.parentNode;
 
-  // TODO: Discuss replacing this implementation with something more
-  // cross-browser. Probably just stick with element ids.
-  var el = selector ? document.querySelector(selector) : script.parentNode;
-  return new Notebook(el, data);
+  // Allow the notebook attribute to point to another element.
+  if (script.getAttribute('data-notebook')) {
+    el = document.getElementById(script.getAttribute('data-notebook'));
+  }
+
+  // Remove the `data-notebook` attribute for future loads.
+  script.removeAttribute('data-notebook');
+
+  // Create the notebook instance and append.
+  return new Notebook(el, getDataAttributes(script));
 })(document.getElementsByTagName('script'));
