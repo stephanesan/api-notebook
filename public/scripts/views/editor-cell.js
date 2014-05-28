@@ -157,7 +157,9 @@ EditorCell.prototype.toggleComment = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.focus = function () {
-  this.editor.focus();
+  if (this.editor) {
+    this.editor.focus();
+  }
 
   return this;
 };
