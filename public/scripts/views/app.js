@@ -143,6 +143,7 @@ App.prototype.initialize = function () {
     var timestamp    = new Date().toLocaleTimeString();
     var isNew        = persistence.isCurrentNew();
     var currentState = persistence.get('state');
+    var canSave      = config.get('savable');
 
     var states = {
       1: 'Saving',
@@ -151,7 +152,7 @@ App.prototype.initialize = function () {
       4: isNew ? '' : 'Saved ' + timestamp,
       5: 'Load Failed',
       6: isNew ? '' : 'Loaded ' + timestamp,
-      7: 'Unsaved changes',
+      7: canSave ? 'Unsaved changes' : '', // Avoid displaying when impossible.
       8: 'Cloning notebook'
     };
 

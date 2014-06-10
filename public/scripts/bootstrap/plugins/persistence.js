@@ -9,7 +9,7 @@ var META_DATA_DELIMITER = '---';
 /**
  * Set the default content into the config object.
  */
-config.set('content', [
+config.set('defaultContent', [
   OPEN_CODE_BLOCK,
   '',
   CLOSE_CODE_BLOCK
@@ -144,7 +144,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
  */
 middleware.register('persistence:load', function (data, next, done) {
   data.id      = null;
-  data.content = config.get('content');
+  data.content = config.get('defaultContent');
 
   return done();
 });

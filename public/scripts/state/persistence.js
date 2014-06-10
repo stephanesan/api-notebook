@@ -169,7 +169,7 @@ Persistence.prototype.save = function (model, done) {
   }
 
   if (!this.isOwner(model)) {
-    return done && done(new Error('You are not the notebook owner'));
+    return done && done(new Error('You are not the current notebook owner'));
   }
 
   this.set('state', Persistence.SAVING);
@@ -234,6 +234,10 @@ Persistence.prototype.remove = function (id, done) {
  * @param {Function} done
  */
 Persistence.prototype.authenticate = function (done) {
+  if (!config.get('authentication')) {
+    return done && done(new Error('Authentication has been disabled'));
+  }
+
   middleware.trigger(
     'persistence:authenticate',
     _.extend(this.getMiddlewareData(), {
@@ -321,8 +325,13 @@ Persistence.prototype.load = function (model, done) {
         delete model._loading;
 
         this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
-        this.trigger('changeNotebook', this);
+        this.trigger('changeNotebook');
         model._savedContent = model.get('content');
+
+        // Trigger a change when the model is changed for data consistency.
+        middleware.trigger(
+          'persistence:change', persistence.getMiddlewareData(model)
+        );
 
         return done && done(err);
       }, this);
@@ -413,13 +422,9 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
   };
 
   /**
-   * Serialize the current notebook contents.
+   * Wrap serialization in async guards.
    */
-  var serialize = wrapSync('serialize');
-
-  /**
-   * Deserialize the current notebook contents.
-   */
+  var serialize   = wrapSync('serialize');
   var deserialize = wrapSync('deserialize');
 
   return function () {
@@ -427,6 +432,7 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
      * Remove listeners on the previous notebook instance.
      */
     persistence.stopListening(model);
+    persistence.stopListening(model.get('meta'));
     model = persistence.get('notebook');
 
     /**
@@ -483,6 +489,10 @@ persistence.listenTo(
  * jarring experience. Also load the initial notebook contents alongside.
  */
 persistence.listenTo(middleware, 'application:ready', function () {
+  if (!config.get('authentication')) {
+    return;
+  }
+
   return middleware.trigger(
     'persistence:authenticated',
     _.extend(this.getMiddlewareData(), {
@@ -525,9 +535,20 @@ persistence.listenTo(config, 'change:url', function () {
  * @param {Function} next
  */
 middleware.register('application:ready', function (app, next) {
-  return persistence.load(new Notebook({
-    id: config.get('id')
-  }), next);
+  var notebook = new Notebook({
+    id:      config.get('id'),
+    content: config.get('content')
+  });
+
+  // Handle configuration content over a remote data load.
+  if (notebook.get('content')) {
+    return persistence.deserialize(notebook, function () {
+      persistence.set('notebook', notebook);
+      return persistence.trigger('changeNotebook');
+    });
+  }
+
+  return persistence.load(notebook, next);
 });
 
 /**

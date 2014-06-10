@@ -29,8 +29,13 @@ middleware.register('application:start', function (options, next) {
  * @param {Function} next
  */
 middleware.register('application:start', function (options, next) {
-  /* jshint evil: true */
-  window.eval(options.exec || '');
+  try {
+    /* jshint evil: true */
+    window.eval(options.exec || '');
+  } catch (e) {
+    return next(e);
+  }
+
   return next();
 });
 
@@ -55,9 +60,14 @@ middleware.register('application:start', function (options, next) {
     'application:config',
     _.extend({}, options.config),
     function (err, options) {
-      if (!err) {
-        config.set(options);
+      if (err) {
+        return next(err);
       }
+
+      // Set certain properties before others to avoid ordering issues.
+      config.set('embedded',       !!options.embedded);
+      config.set('authentication', !!options.authentication);
+      config.set(_.omit(options, ['embedded', 'authentication']));
 
       return next();
     }

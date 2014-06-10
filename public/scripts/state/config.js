@@ -9,21 +9,31 @@ var bounce   = require('../lib/bounce');
  */
 var config = module.exports = new Backbone.Model({
   // The url is the embedding frame url.
-  url:                window.location.href,
-  // The full url is the url that the full application is available at.
-  fullUrl:            process.env.application.url,
-  // Site url is the sponsoring site location without any ids.
-  siteUrl:            process.env.application.url,
-  // The site title is the name of the sponsoring site.
-  siteTitle:          process.env.application.title,
-  header:             true,
-  footer:             false,
-  sidebar:            true,
-  savable:            true,
-  textReadOnly:       false,
-  codeReadOnly:       false,
+  // The `url` is the parent window url, `fullUrl` is the url to the full-size
+  // application (E.g. Anypoint Platform), `siteUrl` is the static sponsoring
+  // site and `siteTitle` is a configurable name for the site host.
+  url:       window.location.href,
+  fullUrl:   process.env.application.url,
+  siteUrl:   process.env.application.url,
+  siteTitle: process.env.application.title,
+
+  // Alter the visible UI.
+  header:         true,
+  footer:         false,
+  sidebar:        true,
+  savable:        true,
+  embedded:       false,
+  textReadOnly:   false,
+  codeReadOnly:   false,
+  authentication: true,
+
+  // Set the UI text.
   authenticateText:   'Authenticate',
-  unauthenticateText: 'Unauthenticate'
+  unauthenticateText: 'Unauthenticate',
+
+  // Content options.
+  content:        '',
+  defaultContent: ''
 });
 
 /**
@@ -43,18 +53,16 @@ config.listenTo(config, 'change:style', (function () {
  * styles.
  */
 config.listenTo(config, 'change:embedded', bounce(function () {
-  var isEmbedded = config.get('embedded');
+  var isEmbedded      = !!config.get('embedded');
+  var canAuthenticate = !!config.get('authentication');
 
-  // Iterate over the updates object and update options that have not been set.
-  if (isEmbedded != null) {
-    config.set({
-      footer:       isEmbedded,
-      header:       !isEmbedded,
-      sidebar:      !isEmbedded,
-      savable:      !isEmbedded,
-      textReadOnly: !isEmbedded
-    });
-  }
+  config.set({
+    footer:       isEmbedded,
+    header:       !isEmbedded,
+    sidebar:      !isEmbedded && canAuthenticate,
+    savable:      !isEmbedded && canAuthenticate,
+    textReadOnly: !isEmbedded
+  });
 
   var className = document.body.className.replace(' notebook-embedded', '');
 
@@ -62,4 +70,17 @@ config.listenTo(config, 'change:embedded', bounce(function () {
   if (isEmbedded) {
     document.body.className = className + ' notebook-embedded';
   }
+}));
+
+/**
+ * Changes in authentication affect other parts of the application.
+ */
+config.listenTo(config, 'change:authentication', bounce(function () {
+  var isEmbedded      = !!config.get('embedded');
+  var canAuthenticate = !!config.get('authentication');
+
+  config.set({
+    sidebar: canAuthenticate && !isEmbedded,
+    savable: canAuthenticate && !isEmbedded
+  });
 }));
