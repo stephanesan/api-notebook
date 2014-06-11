@@ -94,8 +94,7 @@ Persistence.prototype.isAuthenticated = function () {
  */
 Persistence.prototype.isSaved = function (model) {
   // Check against a map of the different states.
-  return this.isNew(model) ||
-    model.get('savedContent') === model.get('content');
+  return model.get('savedContent') === model.get('content');
 };
 
 /**
@@ -105,6 +104,20 @@ Persistence.prototype.isSaved = function (model) {
  */
 Persistence.prototype.isCurrentSaved = function () {
   return this.isSaved(this.get('notebook'));
+};
+
+/**
+ * Check whether a notebook should be saved. There are a number of factors that
+ * dictate whether we *should* save the notebook.
+ *
+ * @param  {Object}  model
+ * @return {Boolean}
+ */
+Persistence.prototype.shouldSave = function (model) {
+  return !this.isNew(model) &&
+    !this.isSaved(model) &&
+    this.isOwner(model) &&
+    this.isAuthenticated();
 };
 
 /**
@@ -288,6 +301,7 @@ Persistence.prototype.getMiddlewareData = function (model) {
     isNew:           _.bind(this.isNew, this, model),
     isOwner:         _.bind(this.isOwner, this, model),
     isSaved:         _.bind(this.isSaved, this, model),
+    shouldSave:      _.bind(this.shouldSave, this, model),
     authenticate:    _.bind(this.authenticate, this),
     isAuthenticated: _.bind(this.isAuthenticated, this)
   });

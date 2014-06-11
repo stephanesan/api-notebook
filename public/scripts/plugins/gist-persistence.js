@@ -66,13 +66,24 @@ var parseLinkHeader = function (header) {
 var oauth2Store = App.store.customStore('github');
 
 /**
- * Make saves to the server less frequently.
+ * Make saves to the server less frequently. Handles multiple notebooks saving
+ * concurrently.
  *
  * @type {Function}
  */
-var debounceSave = _.debounce(function (data) {
-  data.save();
-}, 600);
+var debounceSave = (function (hash) {
+  return function (data) {
+    // Remove any previously queued save request for the same resource.
+    if (hash[data.id]) {
+      clearTimeout(hash[data.id]);
+      delete hash[data.id];
+    }
+
+    hash[data.id] = setTimeout(function () {
+      return data.shouldSave() && data.save();
+    }, 600);
+  };
+})({});
 
 /**
  * When a change occurs *and* we are already authenticated, we can automatically
@@ -83,10 +94,6 @@ var debounceSave = _.debounce(function (data) {
  * @param {Function} done
  */
 var changePlugin = function (data, next, done) {
-  if (data.isSaved() || !data.isAuthenticated() || !data.isOwner()) {
-    return done();
-  }
-
   debounceSave(data);
 
   return done();

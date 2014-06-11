@@ -149,7 +149,7 @@ middleware.register('application:start', function (options, next) {
     if (name.substr(0, 7) !== 'change:') { return; }
 
     var option = name.substr(7);
-    postMessage.trigger('config:' + option, config.get(option));
+    postMessage.trigger('config', option, config.get(option));
   });
 
   /**
