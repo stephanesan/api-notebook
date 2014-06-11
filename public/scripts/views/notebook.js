@@ -76,11 +76,6 @@ Notebook.prototype.initialize = function () {
  * @return {Notebook}
  */
 Notebook.prototype.remove = function () {
-  // Remove every child view from the DOM.
-  _.each(this.collection.toArray().reverse(), function (model) {
-    return model.view.remove();
-  });
-
   // Remove lingering notebook views.
   if (this.sandbox) {
     this.sandbox.remove();
@@ -279,20 +274,6 @@ Notebook.prototype.getPrevView = function (view) {
 };
 
 /**
- * Update notebook views.
- *
- * @param  {Object}   view
- * @return {Notebook}
- */
-Notebook.prototype.updateFromView = function (view) {
-  do {
-    view.update();
-  } while (view = this.getNextView(view));
-
-  return this;
-};
-
-/**
  * Append and prepend new cell view instances.
  */
 Notebook.prototype.appendCodeView  = appendNewView(CodeView);
@@ -314,9 +295,8 @@ Notebook.prototype.appendView = function (view, before) {
       if (!view.el.previousSibling) { return; }
 
       view.el.parentNode.insertBefore(view.el, view.el.previousSibling);
-      view.focus();
       this.collection.sort();
-      this.updateFromView(view);
+      view.update().focus();
     });
 
     this.listenTo(view, 'moveDown', function (view) {
@@ -325,31 +305,31 @@ Notebook.prototype.appendView = function (view, before) {
       insertAfter(view.el, view.el.nextSibling);
       view.focus();
       this.collection.sort();
-      this.updateFromView(this.getPrevView(view));
+      this.getPrevView(view).update();
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
       var newView = this.prependTextView(view.el).refresh().focus();
 
-      this.updateFromView(newView);
+      newView.update();
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
       var newView = this.prependCodeView(view.el).refresh().focus();
 
-      this.updateFromView(newView);
+      newView.update();
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
       var newView = this.appendTextView(view.el).refresh().focus();
 
-      this.updateFromView(newView);
+      newView.update();
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
       var newView = this.appendCodeView(view.el).refresh().focus();
 
-      this.updateFromView(newView);
+      newView.update();
     });
 
     // Listen to clone events and append the new views after the current view
@@ -358,28 +338,25 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
-      this.updateFromView(clone);
+      clone.update();
     });
 
     this.listenTo(view, 'remove', function (view) {
       var nextView = this.getNextView(view) || this.getPrevView(view);
 
+      this.collection.remove(view.model);
       messages.trigger('cell:remove', view);
 
       if (nextView) {
         // Focus on the new cell instance.
-        nextView.focus().moveCursorToEnd();
-        this.updateFromView(nextView);
+        nextView.update().focus().moveCursorToEnd();
       }
     });
 
     this.listenTo(view, 'delete', function () {
-      this.collection.remove(view.model);
-
       // If it's the last cell in the document, append an empty code cell.
-      if (!this.collection.length) {
-        var newView = this.appendCodeView();
-        newView.refresh().focus().showButtonsAbove();
+      if (this.collection.length < 2) {
+        this.appendCodeView().refresh().focus().showButtonsAbove();
       }
     });
 
@@ -398,8 +375,8 @@ Notebook.prototype.appendView = function (view, before) {
 
       var cursor = view.editor && view.editor.getCursor();
 
-      view.remove();
-      newView.refresh().focus();
+      view.delete();
+      newView.update().refresh().focus();
 
       if (cursor) {
         newView.editor.setCursor(cursor);

@@ -92,8 +92,8 @@ EditorCell.prototype.editorOptions = {
  * @return {EditorCell}
  */
 EditorCell.prototype.delete = embedProtect(function () {
-  this.remove();
   this.trigger('delete', this);
+  this.remove();
 
   return this;
 });
@@ -104,7 +104,6 @@ EditorCell.prototype.delete = embedProtect(function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.remove = function () {
-  this.removeEditor();
   View.prototype.remove.call(this);
   messages.trigger('resize');
 
