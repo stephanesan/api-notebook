@@ -94,7 +94,8 @@ Persistence.prototype.isAuthenticated = function () {
  */
 Persistence.prototype.isSaved = function (model) {
   // Check against a map of the different states.
-  return this.isNew(model) || model.get('savedContent') === model.get('content');
+  return this.isNew(model) ||
+    model.get('savedContent') === model.get('content');
 };
 
 /**
@@ -288,7 +289,7 @@ Persistence.prototype.getMiddlewareData = function (model) {
     isOwner:         _.bind(this.isOwner, this, model),
     isSaved:         _.bind(this.isSaved, this, model),
     authenticate:    _.bind(this.authenticate, this),
-    isAuthenticated: _.bind(this.isAuthenticated, this),
+    isAuthenticated: _.bind(this.isAuthenticated, this)
   });
 };
 
