@@ -83,7 +83,7 @@ App.prototype.initialize = function () {
    * Block attempts to close the window when the persistence state is dirty.
    */
   this.listenTo(domListen(window), 'beforeunload', function (e) {
-    if (!config.get('savable') || persistence.isSaved()) { return; }
+    if (!config.get('savable') || persistence.isCurrentSaved()) { return; }
 
     return (e || window.event).returnValue = 'Your changes will be lost.';
   });
@@ -315,7 +315,7 @@ App.prototype.newNotebook = function () {
   };
 
   // If the current notebook is already saved, immediately reload.
-  if (persistence.isSaved()) {
+  if (persistence.isCurrentSaved()) {
     return newNotebook(null, true);
   }
 

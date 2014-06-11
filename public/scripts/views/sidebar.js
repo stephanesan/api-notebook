@@ -25,7 +25,7 @@ SidebarView.prototype.initialize = function () {
    * Check whether the current notebook has been saved.
    */
   this.listenTo(persistence, 'change:state', bounce(function () {
-    this.data.set('saved', persistence.isSaved());
+    this.data.set('saved', persistence.isCurrentSaved());
   }, this));
 };
 
@@ -45,7 +45,7 @@ SidebarView.prototype.events = {
     var id = target.getAttribute('data-load');
 
     // If the current notebook has not been saved yet, prompt the user.
-    if (!persistence.isSaved()) {
+    if (!persistence.isCurrentSaved()) {
       return middleware.trigger('ui:confirm', {
         title: 'You have unsaved changes. Abandon changes?',
         content: '<p>' +

@@ -83,7 +83,7 @@ var debounceSave = _.debounce(function (data) {
  * @param {Function} done
  */
 var changePlugin = function (data, next, done) {
-  if (data.isNew() || !data.isAuthenticated() || !data.isOwner()) {
+  if (data.isSaved() || !data.isAuthenticated() || !data.isOwner()) {
     return done();
   }
 

@@ -87,23 +87,23 @@ Persistence.prototype.isAuthenticated = function () {
 };
 
 /**
- * Checks whether the current persistence item is unsaved.
+ * Checks whether a persistence model has been unsaved.
+ *
+ * @param  {Object}  model
+ * @return {Boolean}
+ */
+Persistence.prototype.isSaved = function (model) {
+  // Check against a map of the different states.
+  return this.isNew(model) || model.get('savedContent') === model.get('content');
+};
+
+/**
+ * Check if the current model has been saved.
  *
  * @return {Boolean}
  */
-Persistence.prototype.isSaved = function () {
-  // Check against a map of the different states.
-  return ({
-    0: true,
-    1: false,
-    2: false,
-    3: false,
-    4: true,
-    5: true,
-    6: true,
-    7: false,
-    8: true
-  })[this.get('state')];
+Persistence.prototype.isCurrentSaved = function () {
+  return this.isSaved(this.get('notebook'));
 };
 
 /**
@@ -189,7 +189,7 @@ Persistence.prototype.save = function (model, done) {
       model.set('ownerId',   data.ownerId);
       model.set('updatedAt', new Date());
       model.get('meta').reset(data.meta);
-      model._savedContent = model.get('content');
+      model.set('savedContent', model.get('content'));
 
       this.set('state', Persistence.SAVE_DONE);
 
@@ -286,8 +286,9 @@ Persistence.prototype.getMiddlewareData = function (model) {
     save:            _.bind(this.save, this, model),
     isNew:           _.bind(this.isNew, this, model),
     isOwner:         _.bind(this.isOwner, this, model),
+    isSaved:         _.bind(this.isSaved, this, model),
     authenticate:    _.bind(this.authenticate, this),
-    isAuthenticated: _.bind(this.isAuthenticated, this)
+    isAuthenticated: _.bind(this.isAuthenticated, this),
   });
 };
 
@@ -298,8 +299,8 @@ Persistence.prototype.getMiddlewareData = function (model) {
  * @param {Function} done
  */
 Persistence.prototype.load = function (model, done) {
-  this.set('state', Persistence.LOADING);
   model._loading = true;
+  this.set('state', Persistence.LOADING);
 
   return middleware.trigger(
     'persistence:load',
@@ -322,17 +323,17 @@ Persistence.prototype.load = function (model, done) {
 
       delete model._loading;
 
-      if (err) {
-        this.set('state', Persistence.LOAD_FAIL);
-
-        return done && done(err);
-      }
-
-      return this.loadModel(model, _.bind(function (err) {
+      var complete = _.bind(function (err) {
         this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
 
         return done && done(err);
-      }, this));
+      }, this);
+
+      if (err) {
+        return complete(err);
+      }
+
+      return this.loadModel(model, complete);
     }, this)
   );
 };
@@ -342,9 +343,10 @@ Persistence.prototype.load = function (model, done) {
  */
 Persistence.prototype.loadModel = function (model, done) {
   return this.deserialize(model, _.bind(function (err) {
-    model._savedContent = model.get('content');
+    model.set('savedContent', model.get('content'));
 
     this.set('notebook', model);
+    config.set('content', model.get('content'));
     this.trigger('changeNotebook');
 
     return done && done(err);
@@ -382,7 +384,6 @@ Persistence.prototype.clone = function (done) {
   // Set the notebook instance in the state.
   model.unset('id');
   model.unset('ownerId');
-  this.set('notebook', model);
 
   middleware.trigger(
     'persistence:clone',
@@ -392,6 +393,7 @@ Persistence.prototype.clone = function (done) {
       model.get('meta').reset(data.meta);
 
       this.set('state', Persistence.NULL);
+      this.set('notebook', model);
       this.trigger('changeNotebook');
 
       return done && done(err);
@@ -470,21 +472,16 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
       // Avoid triggering content changes when the notebook is loading.
       if (model._loading) { return; }
 
-      var hasChanged = model._savedContent !== model.get('content');
+      var hasChanged = !persistence.isSaved(model);
 
       config.set('content', model.get('content'));
       persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
-    }));
 
-    /**
-     * When the notebook changes, trigger the `persistence:change` middleware.
-     */
-    persistence.listenTo(model, 'change:content', function () {
       middleware.trigger(
         'persistence:change',
         persistence.getMiddlewareData(persistence.get('notebook'))
       );
-    });
+    }));
   };
 })()));
 
