@@ -144,9 +144,7 @@ Notebook.unsubscriptions = [];
 Notebook.subscribe = function (fn) {
   Notebook.subscriptions.push(fn);
 
-  each(Notebook.instances, function (notebook) {
-    fn(notebook);
-  });
+  each(Notebook.instances, fn);
 };
 
 /**

@@ -299,7 +299,6 @@ Persistence.prototype.getMiddlewareData = function (model) {
  */
 Persistence.prototype.load = function (model, done) {
   this.set('state', Persistence.LOADING);
-  this.set('notebook', model);
   model._loading = true;
 
   return middleware.trigger(
@@ -321,24 +320,35 @@ Persistence.prototype.load = function (model, done) {
         silent: true
       });
 
-      var complete = _.bind(function () {
-        delete model._loading;
+      delete model._loading;
 
-        this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
-        this.trigger('changeNotebook');
-        model._savedContent = model.get('content');
-
-        // Trigger a change when the model is changed for data consistency.
-        middleware.trigger(
-          'persistence:change', persistence.getMiddlewareData(model)
-        );
+      if (err) {
+        this.set('state', Persistence.LOAD_FAIL);
 
         return done && done(err);
-      }, this);
+      }
 
-      return this.deserialize(model, complete);
+      return this.loadModel(model, _.bind(function (err) {
+        this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
+
+        return done && done(err);
+      }, this));
     }, this)
   );
+};
+
+/**
+ * Extremely basic model load function.
+ */
+Persistence.prototype.loadModel = function (model, done) {
+  return this.deserialize(model, _.bind(function (err) {
+    model._savedContent = model.get('content');
+
+    this.set('notebook', model);
+    this.trigger('changeNotebook');
+
+    return done && done(err);
+  }, this));
 };
 
 /**
@@ -454,16 +464,22 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
     }));
 
     /**
-     * Any time the notebook changes, trigger the `persistence:change`
-     * middleware handler.
+     * Any changes that occur should be synced with the state and config.
      */
-    persistence.listenTo(model, 'change:content', function () {
+    persistence.listenTo(model, 'change:content', bounce(function () {
       // Avoid triggering content changes when the notebook is loading.
       if (model._loading) { return; }
 
       var hasChanged = model._savedContent !== model.get('content');
-      persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
 
+      config.set('content', model.get('content'));
+      persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
+    }));
+
+    /**
+     * When the notebook changes, trigger the `persistence:change` middleware.
+     */
+    persistence.listenTo(model, 'change:content', function () {
       middleware.trigger(
         'persistence:change',
         persistence.getMiddlewareData(persistence.get('notebook'))
@@ -542,10 +558,7 @@ middleware.register('application:ready', function (app, next) {
 
   // Handle configuration content over a remote data load.
   if (notebook.get('content')) {
-    return persistence.deserialize(notebook, function () {
-      persistence.set('notebook', notebook);
-      return persistence.trigger('changeNotebook');
-    });
+    return persistence.loadModel(notebook, next);
   }
 
   return persistence.load(notebook, next);
@@ -573,6 +586,28 @@ middleware.register('application:ready', function (app, next) {
     }
 
     persistence.load(new Notebook({ id: configId }));
+  });
+
+  return next();
+});
+
+/**
+ * When the application is ready, start listening for config content changes.
+ *
+ * @param {Object}   app
+ * @param {Function} next
+ */
+middleware.register('application:ready', function (app, next) {
+  persistence.listenTo(config, 'change:content', function () {
+    var configContent   = config.get('content');
+    var notebookContent = persistence.get('notebook').get('content');
+
+    // Avoid loading over the same notebook content.
+    if (configContent === notebookContent) {
+      return;
+    }
+
+    persistence.loadModel(new Notebook({ content: configContent }));
   });
 
   return next();

@@ -66,7 +66,7 @@ middleware.register('application:start', function (options, next) {
 
       // Set certain properties before others to avoid ordering issues.
       config.set('embedded',       !!options.embedded);
-      config.set('authentication', !!options.authentication);
+      config.set('authentication', options.authentication !== false);
       config.set(_.omit(options, ['embedded', 'authentication']));
 
       return next();
