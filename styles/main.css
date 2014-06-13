@@ -1,0 +1,1115 @@
+/*! normalize.css v2.1.3 | MIT License | git.io/normalize */
+
+/* ==========================================================================
+   HTML5 display definitions
+   ========================================================================== */
+
+/**
+ * Correct `block` display not defined in IE 8/9.
+ */
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+nav,
+section,
+summary {
+    display: block;
+}
+
+/**
+ * Correct `inline-block` display not defined in IE 8/9.
+ */
+
+audio,
+canvas,
+video {
+    display: inline-block;
+}
+
+/**
+ * Prevent modern browsers from displaying `audio` without controls.
+ * Remove excess height in iOS 5 devices.
+ */
+
+audio:not([controls]) {
+    display: none;
+    height: 0;
+}
+
+/**
+ * Address `[hidden]` styling not present in IE 8/9.
+ * Hide the `template` element in IE, Safari, and Firefox < 22.
+ */
+
+[hidden],
+template {
+    display: none;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+/**
+ * 1. Set default font family to sans-serif.
+ * 2. Prevent iOS text size adjust after orientation change, without disabling
+ *    user zoom.
+ */
+
+html {
+    font-family: sans-serif; /* 1 */
+    -ms-text-size-adjust: 100%; /* 2 */
+    -webkit-text-size-adjust: 100%; /* 2 */
+}
+
+/**
+ * Remove default margin.
+ */
+
+body {
+    margin: 0;
+}
+
+/* ==========================================================================
+   Links
+   ========================================================================== */
+
+/**
+ * Remove the gray background color from active links in IE 10.
+ */
+
+a {
+    background: transparent;
+}
+
+/**
+ * Address `outline` inconsistency between Chrome and other browsers.
+ */
+
+a:focus {
+    outline: thin dotted;
+}
+
+/**
+ * Improve readability when focused and also mouse hovered in all browsers.
+ */
+
+a:active,
+a:hover {
+    outline: 0;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+
+/**
+ * Address variable `h1` font-size and margin within `section` and `article`
+ * contexts in Firefox 4+, Safari 5, and Chrome.
+ */
+
+h1 {
+    font-size: 2em;
+    margin: 0.67em 0;
+}
+
+/**
+ * Address styling not present in IE 8/9, Safari 5, and Chrome.
+ */
+
+abbr[title] {
+    border-bottom: 1px dotted;
+}
+
+/**
+ * Address style set to `bolder` in Firefox 4+, Safari 5, and Chrome.
+ */
+
+b,
+strong {
+    font-weight: bold;
+}
+
+/**
+ * Address styling not present in Safari 5 and Chrome.
+ */
+
+dfn {
+    font-style: italic;
+}
+
+/**
+ * Address differences between Firefox and other browsers.
+ */
+
+hr {
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    height: 0;
+}
+
+/**
+ * Address styling not present in IE 8/9.
+ */
+
+mark {
+    background: #ff0;
+    color: #000;
+}
+
+/**
+ * Correct font family set oddly in Safari 5 and Chrome.
+ */
+
+code,
+kbd,
+pre,
+samp {
+    font-family: monospace, serif;
+    font-size: 1em;
+}
+
+/**
+ * Improve readability of pre-formatted text in all browsers.
+ */
+
+pre {
+    white-space: pre-wrap;
+}
+
+/**
+ * Set consistent quote types.
+ */
+
+q {
+    quotes: "\201C" "\201D" "\2018" "\2019";
+}
+
+/**
+ * Address inconsistent and variable font size in all browsers.
+ */
+
+small {
+    font-size: 80%;
+}
+
+/**
+ * Prevent `sub` and `sup` affecting `line-height` in all browsers.
+ */
+
+sub,
+sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+sup {
+    top: -0.5em;
+}
+
+sub {
+    bottom: -0.25em;
+}
+
+/* ==========================================================================
+   Embedded content
+   ========================================================================== */
+
+/**
+ * Remove border when inside `a` element in IE 8/9.
+ */
+
+img {
+    border: 0;
+}
+
+/**
+ * Correct overflow displayed oddly in IE 9.
+ */
+
+svg:not(:root) {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Figures
+   ========================================================================== */
+
+/**
+ * Address margin not present in IE 8/9 and Safari 5.
+ */
+
+figure {
+    margin: 0;
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+/**
+ * Define consistent border, margin, and padding.
+ */
+
+fieldset {
+    border: 1px solid #c0c0c0;
+    margin: 0 2px;
+    padding: 0.35em 0.625em 0.75em;
+}
+
+/**
+ * 1. Correct `color` not being inherited in IE 8/9.
+ * 2. Remove padding so people aren't caught out if they zero out fieldsets.
+ */
+
+legend {
+    border: 0; /* 1 */
+    padding: 0; /* 2 */
+}
+
+/**
+ * 1. Correct font family not being inherited in all browsers.
+ * 2. Correct font size not being inherited in all browsers.
+ * 3. Address margins set differently in Firefox 4+, Safari 5, and Chrome.
+ */
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit; /* 1 */
+    font-size: 100%; /* 2 */
+    margin: 0; /* 3 */
+}
+
+/**
+ * Address Firefox 4+ setting `line-height` on `input` using `!important` in
+ * the UA stylesheet.
+ */
+
+button,
+input {
+    line-height: normal;
+}
+
+/**
+ * Address inconsistent `text-transform` inheritance for `button` and `select`.
+ * All other form control elements do not inherit `text-transform` values.
+ * Correct `button` style inheritance in Chrome, Safari 5+, and IE 8+.
+ * Correct `select` style inheritance in Firefox 4+ and Opera.
+ */
+
+button,
+select {
+    text-transform: none;
+}
+
+/**
+ * 1. Avoid the WebKit bug in Android 4.0.* where (2) destroys native `audio`
+ *    and `video` controls.
+ * 2. Correct inability to style clickable `input` types in iOS.
+ * 3. Improve usability and consistency of cursor style between image-type
+ *    `input` and others.
+ */
+
+button,
+html input[type="button"], /* 1 */
+input[type="reset"],
+input[type="submit"] {
+    -webkit-appearance: button; /* 2 */
+    cursor: pointer; /* 3 */
+}
+
+/**
+ * Re-set default cursor for disabled elements.
+ */
+
+button[disabled],
+html input[disabled] {
+    cursor: default;
+}
+
+/**
+ * 1. Address box sizing set to `content-box` in IE 8/9/10.
+ * 2. Remove excess padding in IE 8/9/10.
+ */
+
+input[type="checkbox"],
+input[type="radio"] {
+    box-sizing: border-box; /* 1 */
+    padding: 0; /* 2 */
+}
+
+/**
+ * 1. Address `appearance` set to `searchfield` in Safari 5 and Chrome.
+ * 2. Address `box-sizing` set to `border-box` in Safari 5 and Chrome
+ *    (include `-moz` to future-proof).
+ */
+
+input[type="search"] {
+    -webkit-appearance: textfield; /* 1 */
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box; /* 2 */
+    box-sizing: content-box;
+}
+
+/**
+ * Remove inner padding and search cancel button in Safari 5 and Chrome
+ * on OS X.
+ */
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+}
+
+/**
+ * Remove inner padding and border in Firefox 4+.
+ */
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+}
+
+/**
+ * 1. Remove default vertical scrollbar in IE 8/9.
+ * 2. Improve readability and alignment in all browsers.
+ */
+
+textarea {
+    overflow: auto; /* 1 */
+    vertical-align: top; /* 2 */
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+/**
+ * Remove most spacing between table cells.
+ */
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+@font-face {
+  font-family: 'notebook';
+  src: url('../font/notebook.eot?86415075');
+  src: url('../font/notebook.eot?86415075#iefix') format('embedded-opentype'),
+       url('../font/notebook.woff?86415075') format('woff'),
+       url('../font/notebook.ttf?86415075') format('truetype'),
+       url('../font/notebook.svg?86415075#notebook') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'notebook';
+    src: url('../font/notebook.svg?86415075#notebook') format('svg');
+  }
+}
+*/
+ 
+ [class^="icon-"]:before, [class*=" icon-"]:before {
+  font-family: "notebook";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+ 
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+ 
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+     
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+ 
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+ 
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+ 
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+ 
+.icon-notebook:before { content: '\e80a'; } /* '' */
+.icon-popup:before { content: '\e806'; } /* '' */
+.icon-plus-circled:before { content: '\e801'; } /* '' */
+.icon-doc:before { content: '\e808'; } /* '' */
+.icon-folder-open-empty:before { content: '\e802'; } /* '' */
+.icon-cancel-circled:before { content: '\e809'; } /* '' */
+.icon-play:before { content: '\e807'; } /* '' */
+.icon-floppy:before { content: '\e800'; } /* '' */
+.icon-fork:before { content: '\e804'; } /* '' */
+.icon-share:before { content: '\e805'; } /* '' */
+.icon-arrows-cw:before { content: '\e803'; } /* '' */
+/*
+   Animation example, for spinners
+*/
+.animate-spin {
+  -moz-animation: spin 2s infinite linear;
+  -o-animation: spin 2s infinite linear;
+  -webkit-animation: spin 2s infinite linear;
+  animation: spin 2s infinite linear;
+  display: inline-block;
+}
+@-moz-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-webkit-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-o-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-ms-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+/*! Hint.css - v1.3.0 - 2013-08-05
+* http://kushagragour.in/lab/hint/
+* Copyright (c) 2013 Kushagra Gour; Licensed MIT */
+
+/*!
+ * Modifed 2013-11-18 by Blake Embrey to support centering with pure CSS.
+ * Modifed 2013-11-18 by Blake Embrey to remove displaying on focus.
+ */
+
+/*-------------------------------------*\
+  HINT.css - A CSS tooltip library
+\*-------------------------------------*/
+/**
+ * HINT.css is a tooltip library made in pure CSS.
+ *
+ * Source: https://github.com/chinchang/hint.css
+ * Demo: http://kushagragour.in/labs/hint/
+ *
+ * Release under The MIT License
+ *
+ */
+/**
+ * source: hint-core.scss
+ *
+ * Defines the basic styling for the tooltip.
+ * Each tooltip is made of 2 parts:
+ *  1) body (:after)
+ *  2) arrow (:before)
+ *
+ * Classes added:
+ *  1) hint
+ */
+.hint, [data-hint] {
+  position: relative;
+  display: inline-block;
+  /**
+   * tooltip arrow
+   */
+  /**
+   * tooltip body
+   */ }
+  .hint:before, .hint:after, [data-hint]:before, [data-hint]:after {
+    position: absolute;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+    z-index: 1000000;
+    pointer-events: none;
+    -webkit-transition: 0.3s ease;
+    -moz-transition: 0.3s ease;
+    transition: 0.3s ease; }
+  .hint:hover:before, .hint:hover:after, [data-hint]:hover:before, [data-hint]:hover:after {
+    opacity: 1; }
+  .hint:before, [data-hint]:before {
+    content: '';
+    position: absolute;
+    background: transparent;
+    border: 6px solid transparent;
+    z-index: 1000001; }
+  .hint:after, [data-hint]:after {
+    content: attr(data-hint);
+    background: #383838;
+    color: white;
+    text-shadow: 0 -1px 0px black;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 12px;
+    white-space: nowrap;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3); }
+
+/**
+ * source: hint-position.scss
+ *
+ * Defines the positoning logic for the tooltips.
+ *
+ * Classes added:
+ *  1) hint--top
+ *  2) hint--bottom
+ *  3) hint--left
+ *  4) hint--right
+ */
+/**
+ * set default color for tooltip arrows
+ */
+.hint--top:before {
+  border-top-color: #383838; }
+
+.hint--bottom:before {
+  border-bottom-color: #383838; }
+
+.hint--left:before {
+  border-left-color: #383838; }
+
+.hint--right:before {
+  border-right-color: #383838; }
+
+/**
+ * top tooltip
+ */
+.hint--top:before {
+  margin-bottom: -12px; }
+.hint--top:before, .hint--top:after {
+  bottom: 100%;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  -moz-transform: translateX(-50%);
+  transform: translateX(-50%); }
+.hint--top:hover:after, .hint--top:hover:before {
+  -webkit-transform: translate(-50%, -8px);
+  -moz-transform: translate(-50%, -8px);
+  transform: translate(-50%, -8px); }
+
+/**
+ * bottom tooltip
+ */
+.hint--bottom:before {
+  margin-top: -12px; }
+.hint--bottom:before, .hint--bottom:after {
+  top: 100%;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  -moz-transform: translateX(-50%);
+  transform: translateX(-50%); }
+.hint--bottom:hover:after, .hint--bottom:hover:before {
+  -webkit-transform: translate(-50%, 8px);
+  -moz-transform: translate(-50%, 8px);
+  transform: translate(-50%, 8px); }
+
+/**
+ * right tooltip
+ */
+.hint--right:before {
+  margin-left: -12px;
+  margin-bottom: -6px; }
+.hint--right:before, .hint--right:after {
+  left: 100%;
+  bottom: 50%;
+  -webkit-transform: translateY(-50%);
+  -moz-transform: translateY(-50%);
+  transform: translateY(-50%); }
+.hint--right:hover:after, .hint--right:hover:before {
+  -webkit-transform: translate(8px, -50%);
+  -moz-transform: translate(8px, -50%);
+  transform: translate(8px, -50%); }
+
+/**
+ * left tooltip
+ */
+.hint--left:before {
+  margin-right: -12px;
+  margin-bottom: -6px; }
+.hint--left:before, .hint--left:after {
+  right: 100%;
+  bottom: 50%;
+  -webkit-transform: translateY(-50%);
+  -moz-transform: translateY(-50%);
+  transform: translateY(-50%); }
+.hint--left:hover:after, .hint--left:hover:before {
+  -webkit-transform: translate(-8px, -50%);
+  -moz-transform: translate(-8px, -50%);
+  transform: translate(-8px, -50%); }
+
+/**
+ * source: hint-color-types.scss
+ *
+ * Contains tooltips of various types based on color differences.
+ *
+ * Classes added:
+ *  1) hint--error
+ *  2) hint--warning
+ *  3) hint--info
+ *  4) hint--success
+ *
+ */
+/**
+ * Error
+ */
+.hint--error:after {
+  background-color: #b34e4d;
+  text-shadow: 0 -1px 0px #592726; }
+.hint--error.hint--top:before {
+  border-top-color: #b34e4d; }
+.hint--error.hint--bottom:before {
+  border-bottom-color: #b34e4d; }
+.hint--error.hint--left:before {
+  border-left-color: #b34e4d; }
+.hint--error.hint--right:before {
+  border-right-color: #b34e4d; }
+
+/**
+ * Warning
+ */
+.hint--warning:after {
+  background-color: #c09854;
+  text-shadow: 0 -1px 0px #6c5328; }
+.hint--warning.hint--top:before {
+  border-top-color: #c09854; }
+.hint--warning.hint--bottom:before {
+  border-bottom-color: #c09854; }
+.hint--warning.hint--left:before {
+  border-left-color: #c09854; }
+.hint--warning.hint--right:before {
+  border-right-color: #c09854; }
+
+/**
+ * Info
+ */
+.hint--info:after {
+  background-color: #3986ac;
+  text-shadow: 0 -1px 0px #193b4d; }
+.hint--info.hint--top:before {
+  border-top-color: #3986ac; }
+.hint--info.hint--bottom:before {
+  border-bottom-color: #3986ac; }
+.hint--info.hint--left:before {
+  border-left-color: #3986ac; }
+.hint--info.hint--right:before {
+  border-right-color: #3986ac; }
+
+/**
+ * Success
+ */
+.hint--success:after {
+  background-color: #458746;
+  text-shadow: 0 -1px 0px #1a321a; }
+.hint--success.hint--top:before {
+  border-top-color: #458746; }
+.hint--success.hint--bottom:before {
+  border-bottom-color: #458746; }
+.hint--success.hint--left:before {
+  border-left-color: #458746; }
+.hint--success.hint--right:before {
+  border-right-color: #458746; }
+
+/**
+ * source: hint-always.scss
+ *
+ * Defines a persisted tooltip which shows always.
+ *
+ * Classes added:
+ *  1) hint--always
+ *
+ */
+.hint--always:after, .hint--always:before {
+  opacity: 1; }
+.hint--always.hint--top:after, .hint--always.hint--top:before {
+  -webkit-transform: translate(-50%, -8px);
+  -moz-transform: translate(-50%, -8px);
+  transform: translate(-50%, -8px); }
+.hint--always.hint--bottom:after, .hint--always.hint--bottom:before {
+  -webkit-transform: translate(-50%, 8px);
+  -moz-transform: translate(-50%, 8px);
+  transform: translate(-50%, 8px); }
+.hint--always.hint--left:after, .hint--always.hint--left:before {
+  -webkit-transform: translate(-8px, -50%);
+  -moz-transform: translate(-8px, -50%);
+  transform: translate(-8px, -50%); }
+.hint--always.hint--right:after, .hint--always.hint--right:before {
+  -webkit-transform: translate(8px, -50%);
+  -moz-transform: translate(8px, -50%);
+  transform: translate(8px, -50%); }
+
+/**
+ * source: hint-rounded.scss
+ *
+ * Defines rounded corner tooltips.
+ *
+ * Classes added:
+ *  1) hint--rounded
+ *
+ */
+.hint--rounded:after {
+  border-radius: 4px; }
+
+/**
+ * source: hint-effects.scss
+ *
+ * Defines various transition effects for the tooltips.
+ *
+ * Classes added:
+ *  1) hint--bounce
+ *
+ */
+.hint--bounce:before, .hint--bounce:after {
+  -webkit-transition: opacity 0.3s ease, -webkit-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+  -moz-transition: opacity 0.3s ease, -moz-transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.71, 1.7, 0.77, 1.24); }
+/* BASICS */
+
+.CodeMirror {
+  /* Set height, width, borders, and global font properties here */
+  font-family: monospace;
+  height: 300px;
+}
+.CodeMirror-scroll {
+  /* Set scrolling behaviour here */
+  overflow: auto;
+}
+
+/* PADDING */
+
+.CodeMirror-lines {
+  padding: 4px 0; /* Vertical padding around content */
+}
+.CodeMirror pre {
+  padding: 0 4px; /* Horizontal padding of content */
+}
+
+.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+  background-color: white; /* The little square between H and V scrollbars */
+}
+
+/* GUTTER */
+
+.CodeMirror-gutters {
+  border-right: 1px solid #ddd;
+  background-color: #f7f7f7;
+  white-space: nowrap;
+}
+.CodeMirror-linenumbers {}
+.CodeMirror-linenumber {
+  padding: 0 3px 0 5px;
+  min-width: 20px;
+  text-align: right;
+  color: #999;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+/* CURSOR */
+
+.CodeMirror div.CodeMirror-cursor {
+  border-left: 1px solid black;
+}
+/* Shown when moving in bi-directional text */
+.CodeMirror div.CodeMirror-secondarycursor {
+  border-left: 1px solid silver;
+}
+.CodeMirror.cm-keymap-fat-cursor div.CodeMirror-cursor {
+  width: auto;
+  border: 0;
+  background: #7e7;
+}
+/* Can style cursor different in overwrite (non-insert) mode */
+div.CodeMirror-overwrite div.CodeMirror-cursor {}
+
+.cm-tab { display: inline-block; }
+
+.CodeMirror-ruler {
+  border-left: 1px solid #ccc;
+  position: absolute;
+}
+
+/* DEFAULT THEME */
+
+.cm-s-default .cm-keyword {color: #708;}
+.cm-s-default .cm-atom {color: #219;}
+.cm-s-default .cm-number {color: #164;}
+.cm-s-default .cm-def {color: #00f;}
+.cm-s-default .cm-variable,
+.cm-s-default .cm-punctuation,
+.cm-s-default .cm-property,
+.cm-s-default .cm-operator {}
+.cm-s-default .cm-variable-2 {color: #05a;}
+.cm-s-default .cm-variable-3 {color: #085;}
+.cm-s-default .cm-comment {color: #a50;}
+.cm-s-default .cm-string {color: #a11;}
+.cm-s-default .cm-string-2 {color: #f50;}
+.cm-s-default .cm-meta {color: #555;}
+.cm-s-default .cm-qualifier {color: #555;}
+.cm-s-default .cm-builtin {color: #30a;}
+.cm-s-default .cm-bracket {color: #997;}
+.cm-s-default .cm-tag {color: #170;}
+.cm-s-default .cm-attribute {color: #00c;}
+.cm-s-default .cm-header {color: blue;}
+.cm-s-default .cm-quote {color: #090;}
+.cm-s-default .cm-hr {color: #999;}
+.cm-s-default .cm-link {color: #00c;}
+
+.cm-negative {color: #d44;}
+.cm-positive {color: #292;}
+.cm-header, .cm-strong {font-weight: bold;}
+.cm-em {font-style: italic;}
+.cm-link {text-decoration: underline;}
+
+.cm-s-default .cm-error {color: #f00;}
+.cm-invalidchar {color: #f00;}
+
+div.CodeMirror span.CodeMirror-matchingbracket {color: #0f0;}
+div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
+.CodeMirror-activeline-background {background: #e8f2ff;}
+
+/* STOP */
+
+/* The rest of this file contains styles related to the mechanics of
+   the editor. You probably shouldn't touch them. */
+
+.CodeMirror {
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+  background: white;
+  color: black;
+}
+
+.CodeMirror-scroll {
+  /* 30px is the magic margin used to hide the element's real scrollbars */
+  /* See overflow: hidden in .CodeMirror */
+  margin-bottom: -30px; margin-right: -30px;
+  padding-bottom: 30px;
+  height: 100%;
+  outline: none; /* Prevent dragging from highlighting the element */
+  position: relative;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+.CodeMirror-sizer {
+  position: relative;
+  border-right: 30px solid transparent;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+/* The fake, visible scrollbars. Used to force redraw during scrolling
+   before actuall scrolling happens, thus preventing shaking and
+   flickering artifacts. */
+.CodeMirror-vscrollbar, .CodeMirror-hscrollbar, .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+  position: absolute;
+  z-index: 6;
+  display: none;
+}
+.CodeMirror-vscrollbar {
+  right: 0; top: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.CodeMirror-hscrollbar {
+  bottom: 0; left: 0;
+  overflow-y: hidden;
+  overflow-x: scroll;
+}
+.CodeMirror-scrollbar-filler {
+  right: 0; bottom: 0;
+}
+.CodeMirror-gutter-filler {
+  left: 0; bottom: 0;
+}
+
+.CodeMirror-gutters {
+  position: absolute; left: 0; top: 0;
+  padding-bottom: 30px;
+  z-index: 3;
+}
+.CodeMirror-gutter {
+  white-space: normal;
+  height: 100%;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+  padding-bottom: 30px;
+  margin-bottom: -32px;
+  display: inline-block;
+  /* Hack to make IE7 behave */
+  *zoom:1;
+  *display:inline;
+}
+.CodeMirror-gutter-elt {
+  position: absolute;
+  cursor: default;
+  z-index: 4;
+}
+
+.CodeMirror-lines {
+  cursor: text;
+}
+.CodeMirror pre {
+  /* Reset some styles that the rest of the page might have set */
+  -moz-border-radius: 0; -webkit-border-radius: 0; border-radius: 0;
+  border-width: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  white-space: pre;
+  word-wrap: normal;
+  line-height: inherit;
+  color: inherit;
+  z-index: 2;
+  position: relative;
+  overflow: visible;
+}
+.CodeMirror-wrap pre {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: normal;
+}
+
+.CodeMirror-linebackground {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 0;
+}
+
+.CodeMirror-linewidget {
+  position: relative;
+  z-index: 2;
+  overflow: auto;
+}
+
+.CodeMirror-widget {}
+
+.CodeMirror-wrap .CodeMirror-scroll {
+  overflow-x: hidden;
+}
+
+.CodeMirror-measure {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.CodeMirror-measure pre { position: static; }
+
+.CodeMirror div.CodeMirror-cursor {
+  position: absolute;
+  border-right: none;
+  width: 0;
+}
+
+div.CodeMirror-cursors {
+  visibility: hidden;
+  position: relative;
+  z-index: 1;
+}
+.CodeMirror-focused div.CodeMirror-cursors {
+  visibility: visible;
+}
+
+.CodeMirror-selected { background: #d9d9d9; }
+.CodeMirror-focused .CodeMirror-selected { background: #d7d4f0; }
+.CodeMirror-crosshair { cursor: crosshair; }
+
+.cm-searching {
+  background: #ffa;
+  background: rgba(255, 255, 0, .4);
+}
+
+/* IE7 hack to prevent it from returning funny offsetTops on the spans */
+.CodeMirror span { *vertical-align: text-bottom; }
+
+/* Used to force a border model for a node */
+.cm-force-border { padding-right: .1px; }
+
+@media print {
+  /* Hide the cursor when printing */
+  .CodeMirror div.CodeMirror-cursors {
+    visibility: hidden;
+  }
+}
+.CodeMirror{border:1px solid #eee;height:auto;line-height:normal}.CodeMirror-gutters{border-right:1px solid #eee}.cm-s-text-cell .cm-keyword{color:#cda869}.cm-s-text-cell .cm-atom{color:#cf7ea9}.cm-s-text-cell .cm-number{color:#78cf8a}.cm-s-text-cell .cm-def{color:#aac6e3}.cm-s-text-cell .cm-variable{color:#ffb795}.cm-s-text-cell .cm-variable-2{color:#eed1b3}.cm-s-text-cell .cm-variable-3{color:#faded3}.cm-s-text-cell .cm-property{color:#eed1b3}.cm-s-text-cell .cm-operator{color:#fa8d6a}.cm-s-text-cell .cm-comment{color:#555;font-style:italic}.cm-s-text-cell .cm-string{color:#428bca}.cm-s-text-cell .cm-string-2{color:#9d937c}.cm-s-text-cell .cm-meta{color:#d2a8a1}.cm-s-text-cell .cm-error{color:#af2018}.cm-s-text-cell .cm-qualifier{color:#ff0}.cm-s-text-cell .cm-builtin{color:#99c}.cm-s-text-cell .cm-bracket{color:#24c2c7}.cm-s-text-cell .cm-tag{color:#fee4ff}.cm-s-text-cell .cm-attribute{color:#9b859d}.cm-s-text-cell .cm-quote{color:#24c2c7}.cm-s-text-cell .cm-hr{color:#ffc0cb}.cm-s-text-cell .cm-link{color:#428bca}.cm-s-text-cell .cm-special{color:#ff9d00}.cm-s-text-cell .CodeMirror-matchingbracket{color:#0f0}.cm-s-text-cell .CodeMirror-nonmatchingbracket{color:#f22}.cm-s-text-cell{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}.cm-s-text-cell .CodeMirror-selected{background:rgba(0,0,0,0.15)}.cm-s-text-cell .CodeMirror-focused .CodeMirror-selected{background:rgba(0,0,0,0.1)}.cm-s-text-cell .CodeMirror-lines{padding:8px 0}.cm-s-text-cell .CodeMirror-linenumber{font-family:monospace}.CodeMirror-readOnly .CodeMirror-cursor{display:none}.CodeMirror-code .CodeMirror-hint-ghost{color:#999}.CodeMirror-hints,.CodeMirror-hint-documentation{position:absolute;margin:5px;padding:0;z-index:20;max-height:20em;font-size:95%;font-family:monospace;overflow:auto;list-style:none;border:1px solid #a8a8a8;-webkit-border-radius:0 4px 4px 4px;border-radius:0 4px 4px 4px;background-color:#fff}.CodeMirror-hints-top{border-top-left-radius:4px;border-bottom-left-radius:0}.CodeMirror-hint{margin:0;padding:0 4px;border:1px solid transparent;color:#313942;cursor:pointer;overflow:hidden;white-space:pre;}.CodeMirror-hint:hover{border-color:#ccc}.CodeMirror-hint-active{background-color:#d4d4d4}.CodeMirror-hint-match{font-weight:bold}.CodeMirror-hint-text{float:left}.CodeMirror-hint-type{float:right;color:#888;font-style:italic;margin-left:.5em}.CodeMirror-hint-documentation{max-width:30em;-webkit-border-radius:4px;border-radius:4px}.CodeMirror-hint-documentation-doc,.CodeMirror-hint-documentation-url,.CodeMirror-hint-documentation-type{margin:.3em .5em}.CodeMirror-hint-documentation-type{font-weight:bold}.CodeMirror-hint-documentation-doc > p,.CodeMirror-hint-documentation-doc > h1,.CodeMirror-hint-documentation-doc > h2,.CodeMirror-hint-documentation-doc > h3,.CodeMirror-hint-documentation-doc > h4,.CodeMirror-hint-documentation-doc > h5,.CodeMirror-hint-documentation-doc > h6,.CodeMirror-hint-documentation-doc > pre{margin-bottom:8px}.CodeMirror-documentation{margin:3px 0;padding:4px;font-size:90%;overflow:scroll;max-height:8em;border-top:1px solid #eee;border-bottom:1px solid #eee;background-color:#f7f7f7}.CodeMirror-documentation-title,.CodeMirror-documentation-description-doc,.CodeMirror-documentation-description-url,.CodeMirror-documentation-description-type{margin-bottom:4px;}.CodeMirror-documentation-title:last-child,.CodeMirror-documentation-description-doc:last-child,.CodeMirror-documentation-description-url:last-child,.CodeMirror-documentation-description-type:last-child{margin-bottom:0}.CodeMirror-documentation-argument-active{font-weight:bold}.CodeMirror-documentation-description-type{font-style:italic}.ir{overflow:hidden;text-indent:100%;white-space:nowrap}.clearfix:after,.clearfix:before{content:" ";display:table}.clearfix:after{clear:both}.hide{display:none;visibility:hidden}*{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}html{position:relative;color:#333;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}.text-underline{text-decoration:underline}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.text-em{font-style:italic}.text-small{font-size:.8em}.ui-loading-icon{position:absolute;top:33%;left:50%;font-size:2em;margin-top:-.7em;margin-left:-.7em}.notebook{display:-webkit-box;display:-moz-box;display:-webkit-flex;display:-ms-flexbox;display:box;display:flex;width:100%;border:1px solid #ccc;background:#fff;-webkit-border-radius:5px;border-radius:5px;}.application-has-header .notebook{border-top-left-radius:0;border-top-right-radius:0}.application-has-footer .notebook{border-bottom-left-radius:0;border-bottom-right-radius:0}.notebook-content{-webkit-box-flex:1;-moz-box-flex:1;-o-box-flex:1;box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1;padding:.5em 1em}.notebook-header{padding:1em 2em;color:#fff;background:#333;border:1px solid #000;border-top:0;-webkit-border-radius:5px 5px 0 0;border-radius:5px 5px 0 0}.notebook-title{display:inline-block;width:100%;margin:0;color:#fff;font-size:2em;font-weight:bold;border:solid 1px rgba(0,0,0,0);background-color:transparent;}.notebook-title:hover{background-color:rgba(255,255,255,0.05)}.notebook-title:focus{outline:0;background-color:rgba(255,255,255,0.1);border:solid 1px #404040;border-top-color:#000;border-left-color:#000}.notebook-view > .cell{margin:1.3em 0;position:relative;min-height:1.55em}.notebook-view > .cell > .CodeMirror:hover,.notebook-view > .cell-text > .markdown:hover{border:solid 1px #bfbfbf;}.notebook-view > .cell > .CodeMirror:hover ~ .cell-controls-btn,.notebook-view > .cell-text > .markdown:hover ~ .cell-controls-btn{border-color:#bfbfbf}.notebook-view > .cell > .CodeMirror{border:1px solid #ddd;min-height:25px}.notebook-view > .cell-text > .markdown{border:1px dotted #f2f2f2;min-height:25px}.notebook-view > .cell-text{font-size:.85em}.notebook-view > .cell-code > .cell-ui-execute{position:absolute;top:4px;right:28px;color:#356df4}.notebook-view > .cell-code > .cell-result{border:1px solid #ddd;border-top:0;border-left-width:5px;color:#999;font-size:.95em;line-height:1.45;font-family:monospace;background-color:#f5f5f5;}.notebook-view > .cell-code > .cell-result > .result-label{float:left;color:#55a;padding:.55em .3em .55em .45em}.notebook-view > .cell-code > .cell-result > .result-content{padding:.6em 0;overflow:hidden}.notebook-view > .cell-code > .cell-result-pending{display:none}.notebook-view > .cell-code-error > .CodeMirror,.notebook-view > .cell-code-error > .cell-result,.notebook-view > .cell-code-error > .cell-controls-btn{border-color:#dfb5b4}.notebook-view > .cell-code-error > .cell-result{color:#af4d4b;background-color:#fcf2f2}.notebook-view > .cell-code-error > .cell-ui-execute{color:#af4d4b}.cell > .cell-border{position:absolute;top:-1.15em;width:100%;height:1em;cursor:pointer;}.cell > .cell-border > .cell-border-line{position:absolute;top:50%;left:0;right:0;border-bottom:1px dotted #f2f2f2}.cell > .cell-border > .cell-border-btn{position:absolute;top:50%;left:50%;padding:0 4px;margin-top:-5px;margin-left:-10px;color:#eaeaea;font-size:.4em;text-shadow:0 -1px 1px rgba(128,128,128,0.3);background-color:#fff;}.cell > .cell-border > .cell-border-btn:hover{color:#a5a5a5}.cell > .cell-border-below{top:auto;bottom:-1.15em;display:none}.cell:last-child > .cell-border-below{display:block}.cell-buttons{position:absolute;top:-5px;width:100%;z-index:10;text-align:center;}.cell-buttons .cell-buttons-container{display:inline-block}.cell-buttons .action{color:#333;float:left;padding:.6em 1em;font-size:11px;border:solid 1px #bfbfbf;background:-webkit-linear-gradient(#fff, #e6e6e6);background:-moz-linear-gradient(#fff, #e6e6e6);background:-o-linear-gradient(#fff, #e6e6e6);background:-ms-linear-gradient(#fff, #e6e6e6);background:linear-gradient(#fff, #e6e6e6);-webkit-box-shadow:0 1px 1px #bfbfbf;box-shadow:0 1px 1px #bfbfbf;text-shadow:0 1px 1px rgba(255,255,255,0.55);}.cell-buttons .action:hover{color:#333;background:#e7e7e7}.cell-buttons .action + .action{margin-left:-1px}.cell-buttons .action:first-child{-webkit-border-top-left-radius:3px;border-top-left-radius:3px;-webkit-border-bottom-left-radius:3px;border-bottom-left-radius:3px;}.cell-buttons .action:last-child{-webkit-border-top-right-radius:3px;border-top-right-radius:3px;-webkit-border-bottom-right-radius:3px;border-bottom-right-radius:3px;}.markdown{padding:8px 20px 8px 25px;}.markdown p,.markdown h1,.markdown h2,.markdown h3,.markdown h4,.markdown h5,.markdown h6,.markdown ul,.markdown ol{margin:0 0 16px}.notebook-toolbar{position:relative;height:3.2em;font-size:.8em;border:solid 1px #ccc;border-bottom:0;background-color:#f4f4f4;}.notebook-toolbar .toolbar-inner{margin-right:25px;}.notebook-toolbar .toolbar-inner .persistence-status{display:inline-block;height:100%;padding:1em;font-style:italic}.notebook-toolbar .toolbar-buttons{float:right;text-align:right;padding:0;}.notebook-toolbar .toolbar-buttons button{float:left;margin-right:1em}.notebook-toolbar .toolbar-buttons button:last-child{margin-right:0}.notebook-toolbar .toolbar-buttons .btn-group{display:inline-block;padding:0 1.3em;margin:.5em 0 0 0;border-left:solid 1px #e0e0e0}.notebook-toolbar .toolbar-buttons .btn-text{line-height:26px}.notebook-toolbar.notebook-view-active .btn-edit{display:none}.notebook-toolbar.notebook-edit-active .btn-view{display:none}.notebook-toolbar.notebook-edit-active .toolbar-end{background:#f9f9f9}.notebook-toolbar .toolbar-end{float:right;height:100%;background:#e5e5e5;border-left:1px solid #b2b2b2}.notebook-raw > pre{border:0;padding:0;white-space:pre-wrap;background-color:transparent}.notebook-edit{margin:1em 0}.powered-by-logo{float:right;width:179px;height:40px;margin:0 1em .5em .5em;background-image:url("../images/powered-by-mulesoft.png")}.notebook-share-about,.notebook-share-input{color:#8a8a8a;font-size:.75em}.notebook-share-about{margin:0 0 6px;line-height:1}.notebook-footer{border:1px solid #ccc;font-size:.75em;border-top:0;-webkit-border-radius:0 0 5px 5px;border-radius:0 0 5px 5px;background:-webkit-linear-gradient(top, #f9f9f9, #ededed);background:-moz-linear-gradient(top, #f9f9f9, #ededed);background:-o-linear-gradient(top, #f9f9f9, #ededed);background:-ms-linear-gradient(top, #f9f9f9, #ededed);background:linear-gradient(to bottom, #f9f9f9, #ededed);letter-spacing:.05em;color:#999;text-shadow:1px 1px rgba(255,255,255,0.8);}.notebook-footer a,.notebook-footer button{font-weight:bold;color:#666;letter-spacing:.05em;text-shadow:1px 1px rgba(255,255,255,0.8);}.notebook-footer a:hover,.notebook-footer button:hover{text-decoration:underline}.notebook-footer a i,.notebook-footer button i{margin-left:6px}.notebook-footer .footer-inner{padding:.8em;border-top:solid 1px #fff;overflow:hidden}.notebook-footer .footer-end{border-top:solid 1px #fff;float:right}.notebook-footer .btn-footer{float:right;height:100%;padding:.8em;border:0;background:none;border-left:1px solid #ccc;}.notebook-footer .btn-footer:hover{background:rgba(0,0,0,0.05)}a{color:#308bd8;text-decoration:none}a:hover{text-decoration:underline}h1,h2{margin-top:2em;margin-bottom:.75em;line-height:1.2}h1:first-child{margin-top:0}h3,h4,h5,h6{margin-top:.75em;margin-bottom:0}h5,h6{font-size:.9em;line-height:1}p{margin:0 0 .75em 0}.markdown hr{width:100%;margin:3em auto;border:0;color:#eee;background-color:#ccc;height:1px;-webkit-box-shadow:0 1px 0 rgba(255,255,255,0.75)}.markdown p:last-child{margin-bottom:0}ol{list-style:outside decimal}ul{list-style:outside disc}ol,ul{padding-left:1.6em;margin-bottom:.75em}li > ol,li > ul{padding-left:.75em}dl{margin-bottom:.75em}dl dt{font-weight:bold;margin-bottom:.5em}dl dd{margin-left:0;margin-bottom:.75em}pre{white-space:pre;margin-bottom:.75em;overflow:scroll;padding:3px 10px;border:1px solid #ddd;-webkit-border-radius:3px;border-radius:3px;background-color:#eee}code{padding:2px;white-space:nowrap;border:1px solid #ddd;-webkit-border-radius:3px;border-radius:3px;background-color:#eee}pre code{white-space:pre;border:none;padding:0;background-color:transparent;-webkit-border-radius:0;border-radius:0}blockquote{margin-left:0;margin-right:0;padding:0 10px;border-left:3px solid #ddd;color:#777}table{margin-left:auto;margin-right:auto;margin-bottom:.75em;border-bottom:1px solid #ddd;border-right:1px solid #ddd;border-spacing:0}table th,table td{padding:.45em;border-top:1px solid #ddd;border-left:1px solid #ddd}table th{background-color:#eee}caption{font-size:1.2em;font-weight:bold;margin-bottom:.3em}figure{display:block;text-align:center}.markdown img{border:none;display:block;margin:1em auto;max-width:100%}figcaption{font-size:.8em;font-style:italic}mark{background:#fefec0;padding:1px 3px}@media print{body{overflow:auto}img,pre,table,blockquote,figure{page-break-inside:avoid}pre,code{border:none !important}}.cell-controls{top:0;right:37px;z-index:100;position:absolute;margin-top:14px;margin-left:10px;padding:3px 0;color:#fff;font-size:11px;border:1px solid #eee;background:#333;-webkit-border-radius:5px;border-radius:5px;-webkit-transform:translateY(-50%);-moz-transform:translateY(-50%);-o-transform:translateY(-50%);-ms-transform:translateY(-50%);transform:translateY(-50%);-webkit-transition:0.3s ease opacity;-moz-transition:0.3s ease opacity;-o-transition:0.3s ease opacity;-ms-transition:0.3s ease opacity;transition:0.3s ease opacity;}.cell-controls:after{content:"";position:absolute;top:50%;right:-20px;margin-top:-10px;border:10px solid transparent;border-left-color:#333}.cell-controls:before{content:"";position:absolute;top:50%;right:-22px;margin-top:-11px;border:11px solid transparent;border-left-color:#eee}.cell-controls.pull-right{left:100%;right:auto;}.cell-controls.pull-right:after{left:-20px;right:auto;border-left-color:transparent;border-right-color:#333}.cell-controls.pull-right:before{left:-22px;right:auto;border-left-color:transparent;border-right-color:#eee}.cell-controls button{display:block;width:12.5em;height:2.5em;margin:2px 5px;border:1px solid transparent;-webkit-border-radius:3px;border-radius:3px;background:transparent;color:#fff;line-height:22px;padding:0 7px;text-align:left;}.cell-controls button:hover{border-color:#777}.cell-controls button i{top:-1px;position:relative;margin-right:3px}.cell-controls span{float:right;font-size:.75em;color:#aaa}.cell-controls-btn{position:absolute;top:0;right:0;z-index:10;width:25px;height:25px;padding:2px 0;color:#aaa;text-align:center;cursor:pointer;border:1px solid #ddd;background:#fff;}.cell-controls-btn [class^="icon-"]{position:absolute;top:6px;left:5px;font-size:.5em}.controls-table{width:100%;margin:0;table-layout:fixed;}.controls-table tr{border-top:1px solid #eee;}.controls-table tr:first-child{border-top:0}.controls-table th,.controls-table td{padding:8px;text-align:left}.controls-col-mini{width:30%}.controls-col-large{width:70%}.btn-base,.btn-round,.btn-square{position:relative;width:28px;height:28px;padding:0;color:#7f7f7f;background:transparent;line-height:26px;background:transparent;}.btn-base[class*="icon-"]:before,.btn-round[class*="icon-"]:before,.btn-square[class*="icon-"]:before{margin:0 .4em}.btn-round{border:2px solid #999;-webkit-border-radius:50em;border-radius:50em;text-shadow:1px 1px rgba(255,255,255,0.8);-webkit-box-shadow:1px 1px rgba(255,255,255,0.8);box-shadow:1px 1px rgba(255,255,255,0.8);}.btn-round:hover{border-color:#3f3f3f;color:#3f3f3f}.btn-round.btn-disabled{text-shadow:1px 1px rgba(255,255,255,0.8);border-color:#ccc;color:#ccc}.btn-square{border:2px solid transparent}.edit-source{width:44px;height:100%;border:0;background:transparent}.edit-source .icon:after{content:'</>';color:#7f7f7f;font-size:18px}.notebook-exec i:before{font-size:.9em;margin:0 0 0 2px}.notebook-help .icon:before{content:'?';display:block;position:absolute;top:1px;left:0;width:24px;height:24px;text-align:center;font-style:normal;text-indent:0;line-height:24px}.btn-text{padding:6px 12px 0 0;border:0;background:transparent;color:#7f7f7f;font-size:12px;text-decoration:underline}.btn-list{padding-top:1em;}.btn-list > .btn{margin-right:.75em}.btn-pill,.btn-primary,.btn-secondary{padding:.4em 1em;-webkit-border-radius:8px;border-radius:8px}.btn-primary{color:#fff;background-color:#428bca;border:solid 1px #357ebd;}.btn-primary:hover{background-color:#3276b1;border-color:#285e8e}.btn-secondary{color:#343434;background-color:#f3f3f3;border:solid 1px #b5b5b5;}.btn-secondary:hover{background-color:#e4e4e4;border-color:#b1b1b1}.btn-small{padding:.6em;font-size:.8em;-webkit-border-radius:.4em;border-radius:.4em}.inspector{padding-left:1em}.inspector > .preview > .property{color:#7a3694;font-weight:bold}.inspector > .preview > .is-special{color:#b287c2}.inspector > .preview{height:1.4em;overflow:hidden;white-space:nowrap;-o-text-overflow:ellipsis;text-overflow:ellipsis}.inspector > .children{display:none}.inspector.open > .children{display:block}.inspector.can-expand{cursor:pointer}.inspector > .arrow{display:none}.inspector.can-expand > .arrow{float:left;display:block;margin-top:3px;margin-left:-10px;border:5px solid transparent;border-left-width:7px;border-left-color:#666;border-right-width:0}.inspector.can-expand.open > .arrow{margin-top:5px;margin-left:-12px;border-width:5px;border-color:transparent;border-top-width:7px;border-top-color:#666;border-bottom-width:0}.inspector-trace{white-space:pre}.modal-visible{overflow:hidden}.modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;overflow:scroll;background-color:rgba(0,0,0,0.15);}.notebook-embedded .modal{border:1px solid rgba(0,0,0,0.2);-webkit-border-radius:5px;border-radius:5px}.modal-dialog{position:relative;margin:0 auto;padding:1.5em;max-width:40em;}.modal-notify .modal-dialog{max-width:25em}.modal-content{border:1px solid #aaa;overflow:hidden;-webkit-box-shadow:2px 2px 5px rgba(0,0,0,0.1);box-shadow:2px 2px 5px rgba(0,0,0,0.1);-webkit-border-radius:5px;border-radius:5px;background-color:#fff}.modal-header{position:relative;padding:1em;text-align:center;text-shadow:0 -1px 0 rgba(255,255,255,0.3);border-bottom:1px solid #ccc;background-color:#eee}.modal-title{margin:0;text-align:left}.modal-headline{border-bottom:dotted 1px #ccc;padding-bottom:.2em;margin-bottom:.5em}.modal-instructions{margin:.5em 0 1em 0}.modal-close{position:absolute;top:1em;right:1em;border:0;padding:0;cursor:pointer;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:transparent}.modal-body{padding:1em;font-size:.85em;}.modal-body .item-list{width:100%;padding:0;}.modal-body .item-list > li{zoom:1;list-style-type:none;padding:1em 0;margin:0;border-top:dotted 1px #c4c4c4;cursor:pointer;}.modal-body .item-list > li:before,.modal-body .item-list > li:after{content:"";display:table}.modal-body .item-list > li:after{clear:both}.modal-body .item-list > li:hover{background-color:rgba(0,0,0,0.03)}.modal-body .item-list > li > .item-action{float:left;width:10%;text-align:center}.modal-body .item-list > li > .item-description{float:left;padding-left:.5em;width:90%;}.modal-body .item-list > li > .item-description > .item-details-link{float:right;padding-right:.5em}.modal-body .item-list > li > .item-description > .item-details{display:none;width:90%;margin-top:.5em}.modal-body .item-list > .item-details-visible > .item-description > .item-details{display:block}.modal-body form{margin:0 20px 20px}.modal-body .form-group{margin:auto auto 10px auto;zoom:1;}.modal-body .form-group:before,.modal-body .form-group:after{content:"";display:table}.modal-body .form-group:after{clear:both}.modal-body .form-group .form-label{text-align:right;padding-top:6px;padding-right:10px;float:left;width:25%}.modal-body .form-group .form-content{float:left;width:75%}.modal-body .form-group input:not([type="checkbox"]){width:100%;border:solid 1px #ccc;border-bottom-color:#eee;border-right-color:#eee;padding:5px 3px}.modal-body .form-group input[type="checkbox"]{float:left;margin-top:4px;margin-left:-20px}.modal-body .form-group .radio,.modal-body .form-group .checkbox{display:block;margin:6px 0;padding-left:20px}.modal-body .form-footer{margin:20px 0 0 25%}.notebook-sidebar{display:-webkit-box;display:-moz-box;display:-webkit-flex;display:-ms-flexbox;display:box;display:flex;position:relative;width:30%;max-width:20em;min-height:400px;-webkit-transition:0.3s width ease;-moz-transition:0.3s width ease;-o-transition:0.3s width ease;-ms-transition:0.3s width ease;transition:0.3s width ease;}.notebook-sidebar.sidebar-closed{width:0;}.notebook-sidebar.sidebar-closed .sidebar-content{border-right:transparent}.notebook-sidebar.sidebar-closed .sidebar-list{overflow-y:hidden}.sidebar-content{-webkit-box-flex:1;-moz-box-flex:1;-o-box-flex:1;box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1;overflow:hidden;border-right:1px solid #ccc;background-color:#f9f9f9;border-bottom-left-radius:5px;}.notebook-embedded .sidebar-content{border-bottom-left-radius:0}.sidebar-user{height:50px;padding:.75em;line-height:1.2;font-weight:bold;font-size:.9em;border-bottom:1px solid #ccc;}.sidebar-user .persistence-unauthenticate{display:none}.sidebar-user:hover .persistence-unauthenticate{display:block}.sidebar-user-icon{float:left;margin-right:5px}.sidebar-user-title{white-space:nowrap;overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis;margin-left:1.7em}.sidebar-list{position:absolute;top:50px;left:0;right:1px;bottom:0;overflow-y:scroll;overflow-x:hidden;color:#555;}.sidebar-list .list-item{margin:0;list-style:none}.sidebar-list .item{position:relative;padding:.6em .8em;padding-left:2.2em;border-top:solid 1px #fff;border-bottom:1px dotted #ccc;-webkit-transition:0.5s background-color ease;-moz-transition:0.5s background-color ease;-o-transition:0.5s background-color ease;-ms-transition:0.5s background-color ease;transition:0.5s background-color ease;}.sidebar-list .item:first-child{border-top:none}.sidebar-list .item:last-child{border-bottom:none}.sidebar-list .item:hover{background-color:rgba(0,0,0,0.02)}.sidebar-list .item .icon-cancel-circled{float:right;display:none;margin-top:5px;cursor:pointer}.sidebar-list .item:hover .icon-cancel-circled{display:block}.sidebar-list .sidebar-updating{padding:1em}.sidebar-list .item-active{background-color:#f2f2f2;border-bottom:solid 2px #d8d8d8;}.sidebar-list .item-active:hover{background-color:#eaeaea}.sidebar-list .item-hidden{display:none}.sidebar-list [data-load]{cursor:pointer}.sidebar-list .item-unsaved:before{content:"";position:absolute;top:50%;left:.95em;width:8px;height:8px;margin-top:-4px;-webkit-border-radius:50%;border-radius:50%;background-color:#555}.sidebar-list .item-description{font-size:.75em}.sidebar-list .item-timestamp{font-size:.8em;font-style:italic}.sidebar-list .item-title{white-space:nowrap;overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis;font-weight:bold}.sidebar-toggle{cursor:pointer;width:10px;height:16px;position:absolute;top:50%;right:-5px;margin-top:-8px;z-index:1;border:1px solid #bbb;-webkit-border-radius:3px;border-radius:3px;background-color:#eee;}.sidebar-toggle .icon{position:absolute;top:3px;left:2px;border:4px solid transparent;margin-left:-4px;border-right-color:#bbb;}.sidebar-closed .sidebar-toggle .icon{border-left-color:#bbb;border-right-color:transparent;margin-left:auto;margin-right:-4px}[data-overflow-scroll]{overflow:hidden}
