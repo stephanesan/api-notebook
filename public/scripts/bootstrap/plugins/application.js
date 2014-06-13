@@ -145,11 +145,13 @@ middleware.register('application:start', function (options, next) {
    * Trigger changes on the config object to the parent frame. This is
    * incredibly useful for helping the parent frame with integration.
    */
-  postMessage.listenTo(config, 'all', function (name) {
-    if (name.substr(0, 7) !== 'change:') { return; }
+  postMessage.listenTo(config, 'all', function (event) {
+    if (event.substr(0, 7) !== 'change:') { return; }
 
-    var option = name.substr(7);
-    postMessage.trigger('config', option, config.get(option));
+    var name  = event.substr(7);
+    var value = config.get(name);
+
+    postMessage.trigger('config', name, value);
   });
 
   /**

@@ -25,13 +25,15 @@ module.exports = function (Notebook) {
     window.addEventListener('hashchange', updateId);
 
     // Update the window hash when the id changes.
-    notebook.on('config:id', function (id) {
-      id = (id == null ? '' : String(id));
+    notebook.on('config', function (name, value) {
+      if (name !== 'id') { return; }
+
+      value = (value == null ? '' : String(value));
 
       // Update the hash url if it changed.
-      if (window.location.hash.substr(1) !== id) {
-        window.location.hash = id;
-        notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
+      if (window.location.hash.substr(1) !== value) {
+        window.location.hash = value;
+        notebook.config('fullUrl', NOTEBOOK_URL + (value ? '#' + value : ''));
       }
     });
 
