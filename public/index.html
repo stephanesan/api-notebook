@@ -19,11 +19,13 @@
   </head>
   <body>
     <script src="scripts/bundle.js"></script>
-    <script src="plugins/hash-persistence.js"></script>
-    <script>
-      App.middleware.register(hashPersistencePlugin);
 
-      App.start(document.body);
+    <script>
+      App.start(document.body, {
+        config: {
+          authentication: false
+        }
+      });
     </script>
   </body>
 </html>
