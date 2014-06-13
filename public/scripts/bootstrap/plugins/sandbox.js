@@ -2,7 +2,7 @@ var loadScript = require('../../lib/browser/load-script');
 var middleware = require('../../state/middleware');
 
 var ASYNC_TIMEOUT = 2000;
-var PROXY_URL     = process.env.plugins.proxy.url;
+var PROXY_URL     = process.env.plugins.proxy && process.env.plugins.proxy.url;
 
 /**
  * Set the some additional context variables.
