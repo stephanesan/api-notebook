@@ -1,0 +1,8 @@
+{
+  "application": {
+    "url": "https://mulesoft.github.io/api-notebook/"
+  },
+  "embed": {
+    "script": "https://mulesoft.github.io/api-notebook/scripts/embed.js"
+  }
+}

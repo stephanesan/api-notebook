@@ -159,12 +159,20 @@ module.exports = function (grunt) {
      */
     shell: {
       'mocha-browser': {
-        command: './node_modules/.bin/mocha-phantomjs test/index.html',
-        options: {
-          stdout: true,
-          stderr: true,
-          failOnError: true
-        }
+        command: './node_modules/.bin/mocha-phantomjs test/index.html'
+      },
+      'build-gh-pages': {
+        command: 'NODE_ENV="gh-pages" grunt build'
+      },
+      'gh-pages': {
+        command: [
+          'cd ./build',
+          'git init .',
+          'git add .',
+          'git commit -m \"Deploy\"',
+          'git push \"git@github.com:mulesoft/api-notebook.git\" ' +
+            'master:gh-pages --force; rm -rf .git'
+        ].join(' && ')
       }
     },
 
@@ -272,6 +280,10 @@ module.exports = function (grunt) {
   // Generate the built application.
   grunt.registerTask('build', [
     'clean:build', 'copy:build', 'browserify', 'stylus'
+  ]);
+
+  grunt.registerTask('pages', [
+    'shell:build-gh-pages', 'shell:gh-pages'
   ]);
 
   // Do a static check to make sure the code is correct.
