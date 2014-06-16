@@ -168,9 +168,6 @@ Notebook.prototype._makeFrame = function (el, options) {
   var src      = NOTEBOOK_URL + '/embed.html';
   var frame    = this.el = document.createElement('iframe');
 
-  this.window  = frame.contentWindow;
-  this.options = options;
-
   // Configure base frame options.
   frame.src       = src;
   frame.className = options.className || '';
@@ -231,6 +228,9 @@ Notebook.prototype._makeFrame = function (el, options) {
   } else {
     el(frame);
   }
+
+  this.window  = frame.contentWindow;
+  this.options = options;
 
   return this;
 };
