@@ -97,11 +97,10 @@ App.prototype.initialize = function () {
    * Update user state data when the user changes.
    */
   this.listenTo(persistence, 'changeUser changeNotebook', bounce(function () {
-    var canSave = config.get('savable');
     var isOwner = persistence.isCurrentOwner();
 
     this.data.set('owner',         isOwner);
-    this.data.set('savable',       canSave && isOwner);
+    this.data.set('saved',         !persistence.isCurrentNew());
     this.data.set('authenticated', persistence.isAuthenticated());
   }, this));
 
@@ -114,14 +113,6 @@ App.prototype.initialize = function () {
 
     // Update model reference.
     model = persistence.get('notebook');
-
-    this.listenTo(model, 'change:id', bounce(function () {
-      var canSave = config.get('savable');
-      var isNew   = persistence.isNew(model);
-
-      this.data.set('shareable', !isNew);
-      this.data.set('cloneable', canSave && !isNew);
-    }, this));
 
     // Update the title when the current notebook updates.
     this.listenTo(model.get('meta'), 'change:title', bounce(function () {

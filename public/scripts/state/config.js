@@ -1,4 +1,6 @@
+var _        = require('underscore');
 var Backbone = require('backbone');
+var messages = require('./messages');
 var bounce   = require('../lib/bounce');
 
 /**
@@ -8,7 +10,6 @@ var bounce   = require('../lib/bounce');
  * @type {Object}
  */
 var config = module.exports = new Backbone.Model({
-  // The url is the embedding frame url.
   // The `url` is the parent window url, `fullUrl` is the url to the full-size
   // application (E.g. Anypoint Platform), `siteUrl` is the static sponsoring
   // site and `siteTitle` is a configurable name for the site host.
@@ -23,6 +24,7 @@ var config = module.exports = new Backbone.Model({
   sidebar:        true,
   savable:        true,
   embedded:       false,
+  cloneable:      true,
   textReadOnly:   false,
   codeReadOnly:   false,
   authentication: true,
@@ -84,3 +86,10 @@ config.listenTo(config, 'change:authentication', bounce(function () {
     savable: canAuthenticate && !isEmbedded
   });
 }));
+
+/**
+ * Resize the UI when the configuration changes.
+ */
+config.listenTo(config, 'change:header change:footer', _.throttle(function () {
+  messages.trigger('resize');
+}, 50));

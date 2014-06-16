@@ -399,6 +399,7 @@ Persistence.prototype.clone = function (done) {
   // Set the notebook instance in the state.
   model.unset('id');
   model.unset('ownerId');
+  model.set('meta', model.get('meta').clone());
 
   middleware.trigger(
     'persistence:clone',
@@ -569,11 +570,11 @@ middleware.register('application:ready', function (app, next) {
   });
 
   // Handle configuration content over a remote data load.
-  if (notebook.get('content')) {
-    return persistence.loadModel(notebook, next);
+  if (notebook.get('id')) {
+    return persistence.load(notebook, next);
   }
 
-  return persistence.load(notebook, next);
+  return persistence.loadModel(notebook, next);
 });
 
 /**

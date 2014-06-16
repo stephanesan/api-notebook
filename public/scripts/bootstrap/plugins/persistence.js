@@ -75,19 +75,20 @@ middleware.register('persistence:deserialize', function (data, next, done) {
   ].join(''));
 
   // Replace potential meta data with nothing and parse it separately.
-  var content = data.content.replace(preambleRegExp, function (content, body) {
-    // Split each line of the metadata and set on the `data` export object.
-    _.each(body.split('\n'), function (meta) {
-      var parts = meta.split(': ');
+  var content = String(data.content || '')
+    .replace(preambleRegExp, function (content, body) {
+      // Split each line of the metadata and set on the `data` export object.
+      _.each(body.split('\n'), function (meta) {
+        var parts = meta.split(': ');
 
-      // Ignore the line if we don't have a `title: data` combination.
-      if (parts.length === 2) {
-        data.meta[parts[0]] = parts[1];
-      }
+        // Ignore the line if we don't have a `title: data` combination.
+        if (parts.length === 2) {
+          data.meta[parts[0]] = parts[1];
+        }
+      });
+
+      return '';
     });
-
-    return '';
-  });
 
   data.cells = _.chain(content.split('\n')).reduce(function (cells, line) {
     var cell = cells[cells.length - 1];
@@ -159,6 +160,20 @@ middleware.register('persistence:clone', function (data, next) {
   data.meta.title += ' (cloned)';
 
   return next();
+});
+
+middleware.register('persistence:clone', function (data, next, done) {
+  if (!config.get('embedded')) {
+    return next();
+  }
+
+  // Redirect to an external url using links since we don't have anu kind of
+  // iframe state manager or way to easily open the link in the parent frame.
+  var a = document.createElement('a');
+  a.href = config.get('fullUrl');
+  a.click();
+
+  return done();
 });
 
 /**

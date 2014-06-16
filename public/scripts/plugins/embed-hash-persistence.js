@@ -21,20 +21,26 @@ module.exports = function (Notebook) {
       notebook.config('url', url);
     };
 
+    var updateUrl = function () {
+      var id = notebook.options.config.id;
+
+      id = (id == null ? '' : String(id));
+
+      // Update the hash url if it changed.
+      if (window.location.hash.substr(1) !== id) {
+        window.location.hash = id;
+        notebook.config('fullUrl', NOTEBOOK_URL + (id ? '#' + id : ''));
+      }
+    };
+
     updateId();
     window.addEventListener('hashchange', updateId);
 
     // Update the window hash when the id changes.
-    notebook.on('config', function (name, value) {
+    notebook.on('config', function (name) {
       if (name !== 'id') { return; }
 
-      value = (value == null ? '' : String(value));
-
-      // Update the hash url if it changed.
-      if (window.location.hash.substr(1) !== value) {
-        window.location.hash = value;
-        notebook.config('fullUrl', NOTEBOOK_URL + (value ? '#' + value : ''));
-      }
+      return updateUrl();
     });
 
     /**

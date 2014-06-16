@@ -164,9 +164,12 @@ Notebook.unsubscribe = function (fn) {
  * @return {Notebook}
  */
 Notebook.prototype._makeFrame = function (el, options) {
-  var that  = this;
-  var src   = NOTEBOOK_URL + '/embed.html';
-  var frame = this.el = document.createElement('iframe');
+  var notebook = this;
+  var src      = NOTEBOOK_URL + '/embed.html';
+  var frame    = this.el = document.createElement('iframe');
+
+  this.window  = frame.contentWindow;
+  this.options = options;
 
   // Configure base frame options.
   frame.src       = src;
@@ -181,16 +184,27 @@ Notebook.prototype._makeFrame = function (el, options) {
     content:  options.content
   }, options.config);
 
+  /**
+   * Keep config options in sync.
+   *
+   * @param  {String} name
+   * @param  {*}      value
+   */
+  this.on('config', function (name, value) {
+    options.config[name] = value;
+  });
+
   // When the app is ready to receive events, send configuration data and let
   // the frame know that we are ready to execute.
   this.once('ready', function () {
     this.trigger('ready', options);
+  });
 
-    this.once('rendered', function () {
-      Notebook.instances.push(that);
-      each(Notebook.subscriptions, function (fn) {
-        fn(that);
-      });
+  this.once('rendered', function () {
+    Notebook.instances.push(notebook);
+
+    each(Notebook.subscriptions, function (fn) {
+      fn(notebook);
     });
   });
 
@@ -208,8 +222,8 @@ Notebook.prototype._makeFrame = function (el, options) {
   global.addEventListener('message', this._messageListener = function (e) {
     if (e.source !== frame.contentWindow) { return; }
 
-    that._frameEvent = e;
-    that.trigger.apply(that, Kamino.parse(e.data));
+    notebook._frameEvent = e;
+    notebook.trigger.apply(notebook, Kamino.parse(e.data));
   }, false);
 
   if (typeof el.appendChild === 'function') {
@@ -217,8 +231,6 @@ Notebook.prototype._makeFrame = function (el, options) {
   } else {
     el(frame);
   }
-
-  this.window = frame.contentWindow;
 
   return this;
 };
