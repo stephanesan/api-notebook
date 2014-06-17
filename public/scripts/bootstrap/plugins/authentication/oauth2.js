@@ -19,7 +19,7 @@ var REDIRECT_URI = url.resolve(
  *
  * @type {Array}
  */
-var SUPPORTED_GRANTS = ['token', 'code'];
+var SUPPORTED_GRANTS = ['token', 'code', 'credentials'];
 
 /**
  * Format error response types to regular strings for displaying the clients.
@@ -159,7 +159,7 @@ var authResponse = function (options, response, done) {
  * @param {Object}   options
  * @param {Function} done
  */
-var oauth2TokenFlow = function (options, done) {
+var oAuth2TokenFlow = function (options, done) {
   if (!_.isString(options.clientId)) {
     return done(new TypeError('"clientId" expected'));
   }
@@ -282,13 +282,55 @@ var oAuth2CodeFlow = function (options, done) {
 };
 
 /**
+ * Trigger the OAuth2 credential flow using headers.
+ * Reference: http://tools.ietf.org/html/rfc6749#section-4.4
+ *
+ * @param {Object}   options
+ * @param {Function} done
+ */
+var oAuth2CredentialsFlow = function (options, done) {
+  if (!_.isString(options.clientId)) {
+    return done(new TypeError('"clientId" expected'));
+  }
+
+  if (!_.isString(options.clientSecret)) {
+    return done(new TypeError('"clientSecret" expected'));
+  }
+
+  if (!_.isString(options.accessTokenUri)) {
+    return done(new TypeError('"accessTokenUri" expected'));
+  }
+
+  // Get the token by passing the client details in the auth header.
+  App.middleware.trigger('ajax', {
+    url: options.accessTokenUri,
+    method: 'POST',
+    headers: {
+      'Accept':        'application/json',
+      'Content-Type':  'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + new Buffer(
+        options.clientId + ':' + options.clientSecret
+      ).toString('base64')
+    },
+    data: qs.stringify({
+      'grant_type': 'client_credentials'
+    })
+  }, function (err, xhr) {
+    if (err) { return done(err); }
+
+    return authResponse(options, JSON.parse(xhr.responseText), done);
+  });
+};
+
+/**
  * Map authentication methods to a function.
  *
  * @type {Object}
  */
 var authenticate = {
-  code:  oAuth2CodeFlow,
-  token: oauth2TokenFlow
+  code:        oAuth2CodeFlow,
+  token:       oAuth2TokenFlow,
+  credentials: oAuth2CredentialsFlow
 };
 
 /**
@@ -298,7 +340,7 @@ var authenticate = {
  *   `authorizationUri`    - "https://www.example.com/oauth2/authorize"
  *   `clientId`            - EXAMPLE_CLIENT_ID
  *   `clientSecret`        - EXAMPLE_CLIENT_SECRET
- *   `authorizationGrants` - ["code"]
+ *   `authorizationGrants` - ["code", "token", "credentials"]
  *   `scopes`              - ["user", "read", "write"]
  *
  * @param {Object}   options

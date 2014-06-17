@@ -56,6 +56,7 @@ describe('Authentication', function () {
       );
 
       expect(window.open.lastCall.args[0]).to.contain(authorizationUri);
+
       // Cheat and grab the state we passed through to the authentication server.
       var state = window.open.lastCall.args[0].match(/state=(\w+)/)[1];
       window.authenticateOAuth(App.Library.url.resolve(
