@@ -63,15 +63,16 @@ var API = {};
  * Responsible for loading RAML documents and return API clients.
  *
  * @param {String}   name
- * @param {String}   [url]
+ * @param {String}   uri
+ * @param {Object}   [config]
  * @param {Function} done
  */
-API.createClient = function (name, url, config, done) {
+API.createClient = function (name, uri, config, done) {
   if (!_.isString(name)) {
     throw new Error('Provide a name for the generated client');
   }
 
-  if (!_.isString(url)) {
+  if (!_.isString(uri)) {
     throw new Error('Provide a URL for the ' + name + ' RAML document');
   }
 
@@ -85,26 +86,59 @@ API.createClient = function (name, url, config, done) {
   done   = done   || App._executeContext.async();
   config = config || {};
 
-  // Pass our url to the RAML parser for processing and transform the promise
-  // back into a callback format.
-  ramlParser.loadFile(url, {
-    reader: createReader(config)
-  }).then(function (data) {
-    var client;
-
+  /**
+   * Generate and attach the RAML client from the AST.
+   *
+   * @param  {[type]} ast [description]
+   * @return {[type]}     [description]
+   */
+  var createClient = function (ast) {
     try {
-      client = clientGenerator(data, config);
-      fromPath(App._executeWindow, name.split('.'), client);
+      fromPath(
+        App._executeWindow, name.split('.'), clientGenerator(ast, config)
+      );
     } catch (e) {
       return done(e);
     }
 
     return done(
       null,
-      'Create a new code cell and type \'' + name + '.\' ' +
-      'to explore this API.'
+      'Create a new code cell and type "' + name + '." to explore this API.'
     );
-  }, done);
+  };
+
+  /**
+   * Manually initialise the first ajax request to support JSON responses.
+   */
+  return App.middleware.trigger('ajax', {
+    url:   uri,
+    proxy: config.proxy,
+    headers: {
+      'Accept': 'application/raml+yaml, application/json, */*'
+    }
+  }, function (err, xhr) {
+    if (err) {
+      return done(err);
+    }
+
+    if (Math.floor(xhr.status / 100) !== 2) {
+      return done(new Error('HTTP ' + xhr.status));
+    }
+
+    // Support JSON responses. Originally this checked the response content
+    // types, etc. but it's just as easy to attempt parsing as JSON and if it
+    // fails pass it onto the raml parser.
+    try {
+      return createClient(JSON.parse(xhr.responseText));
+    } catch (e) {}
+
+    // Pass our url to the RAML parser for processing and transform the promise
+    // back into a callback format.
+    return ramlParser.load(xhr.responseText, uri, {
+      reader: createReader(config)
+    }).then(createClient, done);
+  });
+
 };
 
 /**
