@@ -383,7 +383,7 @@ middleware.register('authenticate', function (options, next, done) {
 middleware.register('ajax:oauth2', function (data, next) {
   // Check that we have an access token to use for the request and mix it in.
   if (_.isObject(data.oauth2) && data.oauth2.accessToken) {
-    if (data.oauth2.tokenType === 'bearer') {
+    if ((data.oauth2.tokenType || '').toLowerCase() === 'bearer') {
       data.headers = _.extend({
         'Authorization': 'Bearer ' + data.oauth2.accessToken
       }, data.headers);
