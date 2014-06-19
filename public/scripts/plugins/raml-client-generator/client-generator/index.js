@@ -400,8 +400,9 @@ var sanitizeXHR = function (xhr) {
   var body    = xhr.responseText;
   var headers = getAllReponseHeaders(xhr);
 
-  // Automatically parse certain response types.
-  body = (getMatch(parse, mime) || _.identity)(body);
+  // Automatically parse all response bodies. Only parse when we have response
+  // body content. Errors that occur parsing will be propagated to the client.
+  body = body ? (getMatch(parse, mime) || _.identity)(body) : undefined;
 
   return {
     body:    body,
