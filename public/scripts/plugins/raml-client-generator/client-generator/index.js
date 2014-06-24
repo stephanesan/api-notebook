@@ -773,9 +773,14 @@ var attachResources = function (nodes, context, resources) {
       return context[routeName];
     }
 
-    context[routeName] = newContext(
-      routeNodes, resource, hasMediaExtension, context[routeName]
-    );
+    // Handle root `/` resources.
+    if (!routeName) {
+      context = newContext(routeNodes, resource, hasMediaExtension, context);
+    } else {
+      context[routeName] = newContext(
+        routeNodes, resource, hasMediaExtension, context[routeName]
+      );
+    }
   });
 
   return context;
