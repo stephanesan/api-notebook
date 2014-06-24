@@ -89,8 +89,7 @@ API.createClient = function (name, uri, config, done) {
   /**
    * Generate and attach the RAML client from the AST.
    *
-   * @param  {[type]} ast [description]
-   * @return {[type]}     [description]
+   * @param  {Object} ast
    */
   var createClient = function (ast) {
     try {
