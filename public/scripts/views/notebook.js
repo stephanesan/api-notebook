@@ -342,14 +342,14 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'remove', function (view) {
-      var nextView = this.getNextView(view) || this.getPrevView(view);
+      var newView = this.getPrevView(view) || this.getNextView(view);
 
       this.collection.remove(view.model);
       messages.trigger('cell:remove', view);
 
-      if (nextView) {
+      if (newView) {
         // Focus on the new cell instance.
-        nextView.update().focus().moveCursorToEnd();
+        newView.update().focus().moveCursorToEnd();
       }
     });
 
