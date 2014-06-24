@@ -97,10 +97,7 @@ App.prototype.initialize = function () {
    * Update user state data when the user changes.
    */
   this.listenTo(persistence, 'changeUser changeNotebook', bounce(function () {
-    var isOwner = persistence.isCurrentOwner();
-
-    this.data.set('owner',         isOwner);
-    this.data.set('saved',         !persistence.isCurrentNew());
+    this.data.set('owner',         persistence.isCurrentOwner());
     this.data.set('authenticated', persistence.isAuthenticated());
   }, this));
 
@@ -124,6 +121,11 @@ App.prototype.initialize = function () {
       }
 
       document.title = title ? title + ' • Notebook' : 'Notebook';
+    }, this));
+
+    // Update the saved state when the id changes.
+    this.listenTo(model, 'change:id', bounce(function () {
+      this.data.set('saved', !persistence.isCurrentNew());
     }, this));
   }, this));
 
