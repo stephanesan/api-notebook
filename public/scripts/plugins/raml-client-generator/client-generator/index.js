@@ -821,7 +821,7 @@ var generateClient = function (ast, config) {
    */
   var client = function (path, context) {
     var route = template(
-      path, {}, context || {}
+      path || '', {}, context || {}
     ).replace(/^\/+/, '').split('/');
 
     return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
