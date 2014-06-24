@@ -445,6 +445,24 @@ var httpRequest = function (nodes, method) {
     var baseUri = template(nodes.client.baseUri, {}, config.baseUriParameters);
     var fullUri = baseUri + '/' + nodes.join('/');
 
+    // If the request is async, set the relevant function callbacks.
+    if (async) {
+      App._executeContext.timeout(Infinity);
+
+      if (!_.isFunction(done)) {
+        done = App._executeContext.async();
+      }
+    } else {
+      // Synchronous error and response handling.
+      done = function (err, res) {
+        if (err) {
+          throw err;
+        }
+
+        return res;
+      };
+    }
+
     // GET and HEAD requests accept the query string as the first argument.
     if (isQueryMethod(method.method)) {
       _.extend(config.query, sanitizeOption.query(body));
@@ -519,15 +537,6 @@ var httpRequest = function (nodes, method) {
       }
     });
 
-    // If the request is async, set the relevant function callbacks.
-    if (async) {
-      App._executeContext.timeout(Infinity);
-
-      if (!_.isFunction(done)) {
-        done = App._executeContext.async();
-      }
-    }
-
     // Awkward sync and async code mixing.
     var response, error;
 
@@ -548,13 +557,8 @@ var httpRequest = function (nodes, method) {
     });
 
     // If the request was synchronous, return the sanitized XHR response data.
-    // This is super jank for handling errors, etc.
     if (!async) {
-      if (error) {
-        throw error;
-      }
-
-      return response;
+      return done(error, response);
     }
   };
 };
