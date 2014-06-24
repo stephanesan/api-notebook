@@ -77,14 +77,19 @@
   font-size: 0.95em
   line-height: 1.45
   font-family: monospace
+  overflow: scroll
   background-color: $color-result-bg
-  > .result-label
-    float: left
-    color: $color-result-label
-    padding: 0.55em 0.3em 0.55em 0.45em
-  > .result-content
-    padding: 0.6em 0
+  > .result-container
+    display: table
     overflow: hidden
+    > .result-label
+      display: table-cell
+      color: $color-result-label
+      padding: 0.5em 0.3em 0.5em 0.4em
+    > .result-content
+      display: table-cell
+      padding: 0.5em 0.3em 0.5em 0
+      overflow: hidden
 
 .notebook-view > .cell-code > .cell-result-pending
   display: none
