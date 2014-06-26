@@ -108,6 +108,7 @@ CodeCell.prototype.editorOptions.extraKeys = _.extend(
  */
 CodeCell.prototype.update = function () {
   this.resultCell.update();
+
   return EditorCell.prototype.update.call(this);
 };
 

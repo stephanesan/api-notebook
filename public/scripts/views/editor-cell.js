@@ -205,10 +205,9 @@ EditorCell.prototype.lineCount = function () {
 /**
  * Update the editor line numbers.
  *
- * @param  {Number}     [line]
- * @return {EditorCell}
+ * @param {Number} [line]
  */
-EditorCell.prototype.updateLineNumbers = function (line) {
+EditorCell.prototype._updateLineNumbers = function (line) {
   var nextView = this.getNextView();
 
   // Update the first line number. Pass a number to set it manually.
@@ -219,7 +218,7 @@ EditorCell.prototype.updateLineNumbers = function (line) {
     this.editor.setOption('firstLineNumber', line);
   }
 
-  return nextView && nextView.updateLineNumbers(line + this.lineCount() + 1);
+  return nextView && nextView._updateLineNumbers(line + this.lineCount() + 1);
 };
 
 /**
@@ -228,7 +227,14 @@ EditorCell.prototype.updateLineNumbers = function (line) {
  * @return {EditorCell}
  */
 EditorCell.prototype.update = function () {
-  this.updateLineNumbers();
+  var nextView = this.getNextView();
+
+  this._updateLineNumbers();
+
+  // Update the following view for result cells.
+  if (nextView) {
+    nextView.update();
+  }
 
   return this;
 };
@@ -271,7 +277,7 @@ EditorCell.prototype.bindEditor = function () {
     messages.trigger('resize');
 
     if (data.text.length > 1 || data.from.line !== data.to.line) {
-      this.updateLineNumbers();
+      this._updateLineNumbers();
     }
   }, this));
 
