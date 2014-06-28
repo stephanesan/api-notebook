@@ -23,11 +23,14 @@ var completionMiddleware = require('../lib/sandbox-completion');
 var appendNewView = function (View) {
   return function (el, value) {
     var view = new View({ notebook: this });
-    this.appendView(view, el);
 
+    // Set a default value on the view, if specified.
     if (value) {
       view.setValue(value);
     }
+
+    // Append the view to the notebook.
+    this.appendView(view, el);
 
     // Trigger a message to listen to, when we aren't rendering a notebook.
     if (!this._rendering) {
@@ -309,27 +312,19 @@ Notebook.prototype.appendView = function (view, before) {
     });
 
     this.listenTo(view, 'newTextAbove', function (view) {
-      var newView = this.prependTextView(view.el).refresh().focus();
-
-      newView.update();
+      this.prependTextView(view.el).focus();
     });
 
     this.listenTo(view, 'newCodeAbove', function (view) {
-      var newView = this.prependCodeView(view.el).refresh().focus();
-
-      newView.update();
+      this.prependCodeView(view.el).focus();
     });
 
     this.listenTo(view, 'newTextBelow', function (view) {
-      var newView = this.appendTextView(view.el).refresh().focus();
-
-      newView.update();
+      this.appendTextView(view.el).focus();
     });
 
     this.listenTo(view, 'newCodeBelow', function (view) {
-      var newView = this.appendCodeView(view.el).refresh().focus();
-
-      newView.update();
+      this.appendCodeView(view.el).focus();
     });
 
     // Listen to clone events and append the new views after the current view
@@ -338,7 +333,6 @@ Notebook.prototype.appendView = function (view, before) {
       // Need to work around the editor being removed and added with text cells
       var cursor = view.editor && view.editor.getCursor();
       clone.focus().editor.setCursor(cursor);
-      clone.update();
     });
 
     this.listenTo(view, 'remove', function (view) {
@@ -376,7 +370,7 @@ Notebook.prototype.appendView = function (view, before) {
       var cursor = view.editor && view.editor.getCursor();
 
       view.delete();
-      newView.update().refresh().focus();
+      newView.focus();
 
       if (cursor) {
         newView.editor.setCursor(cursor);
@@ -428,7 +422,7 @@ Notebook.prototype.appendView = function (view, before) {
       if (this._executing || config.get('embedded')) { return; }
 
       if (this.el.lastChild === view.el) {
-        this.appendCodeView().refresh().focus();
+        this.appendCodeView().focus();
       } else {
         this.getNextView(view).focus().moveCursorToEnd();
       }
@@ -449,6 +443,9 @@ Notebook.prototype.appendView = function (view, before) {
   // Sort the collection every time a node is added in a different position to
   // just being appended at the end.
   if (before) { this.collection.sort(); }
+
+  // Update line numbers and refresh the view.
+  view.update().refresh();
 
   return this;
 };
