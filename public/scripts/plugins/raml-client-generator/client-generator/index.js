@@ -272,7 +272,7 @@ var getAllReponseHeaders = function (xhr) {
  * @return {String}
  */
 var getMime = function (contentType) {
-  return (contentType || '').split(';')[0];
+  return contentType == null ? null : String(contentType).split(';')[0];
 };
 
 /**
