@@ -479,26 +479,6 @@ var httpRequest = function (nodes, method) {
       fullUri += '?' + qs.stringify(config.query);
     }
 
-    // Set the correct `Content-Type` header, if none exists. Kind of random if
-    // more than one exists - in that case I would suggest setting it yourself.
-    if (!mime) {
-      // If we have a method body object, sort the method types by most
-      // desirable and fallback to a random content type.
-      if (typeof method.body === 'object') {
-        mime = _.keys(method.body).sort(function (mime) {
-          return getMatch([
-            [JSON_REGEXP, 3],
-            ['application/x-www-form-urlencoded', 2],
-            ['multipart/form-data', 1]
-          ], mime) || 0;
-        }).pop();
-      }
-
-      // Set the config to the updated mime type header. If none exists, use
-      // `application/json` by default.
-      config.headers['content-type'] = mime = mime || 'application/json';
-    }
-
     // If we have no accept header set already, default to accepting
     // everything. This is required because Firefox sets the base accept
     // header to essentially be `html/xml`.
@@ -508,6 +488,27 @@ var httpRequest = function (nodes, method) {
 
     // If we were passed in data, attempt to sanitize it to the correct type.
     if (!isHost(config.body)) {
+      // Set the correct `Content-Type` header, if none exists. Kind of random
+      // if more than one exists - I would suggest setting it yourself.
+      if (mime == null) {
+        // If we have a method body object, sort the method types by most
+        // desirable and fallback to a random content type.
+        if (typeof method.body === 'object') {
+          mime = _.keys(method.body).sort(function (mime) {
+            return getMatch([
+              [JSON_REGEXP, 3],
+              ['application/x-www-form-urlencoded', 2],
+              ['multipart/form-data', 1]
+            ], mime) || 0;
+          }).pop();
+        }
+
+        // Set the config to the updated mime type header. If none exists, use
+        // `application/json` by default.
+        config.headers['Content-Type'] = mime = mime || 'application/json';
+      }
+
+      // Automatically attempt to serialize the body.
       var serializer = getMatch(serialize, mime);
 
       if (!serializer) {
