@@ -321,7 +321,7 @@ TextCell.prototype.setValue = function (value) {
  * @return {TextCell}
  */
 TextCell.prototype.removeEditor = function () {
-  if (this.markdownElement) {
+  if (this.markdownElement && this.markdownElement.parentNode) {
     this.markdownElement.parentNode.removeChild(this.markdownElement);
     delete this.markdownElement;
   }
