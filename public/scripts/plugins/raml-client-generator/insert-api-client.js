@@ -104,9 +104,6 @@ var selectAPIDefinition = function (done) {
         itemsUnavailableEl.classList.add('hide');
         itemsLoadingEl.classList.remove('hide');
 
-        // Empty the list before we populate it again.
-        itemsListEl.innerHTML = '';
-
         // Set both buttons to disabled for now.
         itemsNextBtnEl.setAttribute('disabled', 'disabled');
         itemsPrevBtnEl.setAttribute('disabled', 'disabled');
@@ -125,6 +122,9 @@ var selectAPIDefinition = function (done) {
       var updateResults = function (err, result) {
         // Always remove the loading indicator.
         itemsLoadingEl.classList.add('hide');
+
+        // Empty the list before we populate it again.
+        itemsListEl.innerHTML = '';
 
         if (err) {
           return done(err);
