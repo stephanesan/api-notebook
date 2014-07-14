@@ -24,7 +24,6 @@
 
 .modal-content
   border: 1px solid #aaa
-  overflow: hidden
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1)
   border-radius: 5px
   background-color: #fff
@@ -62,7 +61,7 @@
 .modal-body
   padding: 1em
   font-size: 0.85em
-  .item-list
+  .items-list
     width: 100%
     padding: 0
     > li
@@ -74,25 +73,23 @@
       cursor: pointer
       &:hover
         background-color: rgba(0,0,0,0.03)
-      > .item-action
-        float: left
-        width: 10%
-        text-align: center
-      > .item-description
-        float: left
-        padding-left: 0.5em
-        width: 90%
-        > .item-details-link
-          float: right
-          padding-right: 0.5em
-        > .item-details
-          display: none
-          width: 90%
-          margin-top: 0.5em
-    > .item-details-visible
-      > .item-description
-        > .item-details
-          display: block
+    .item-info
+      font-weight: bold
+    .item-action
+      float: left
+      text-align: center
+      padding: 0 1em
+    .item-more-link
+      float: right
+    .item-name,
+    .item-more-link
+      padding: 0.35em
+    .item-versions
+      clearfix()
+      display: none
+      margin-top: 1em
+    .item-visible > .item-versions
+      display: block
   form
     margin: 0 20px 20px
   .form-group

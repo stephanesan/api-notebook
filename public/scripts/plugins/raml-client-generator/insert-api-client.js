@@ -1,7 +1,12 @@
 /* global App */
 var _          = App.Library._;
+var qs         = App.Library.qs;
+var domify     = App.Library.domify;
 var Backbone   = App.Library.Backbone;
 var changeCase = App.Library.changeCase;
+
+var BASE_URI       = 'http://api-portal.anypoint.mulesoft.com/rest/v1/apis';
+var ITEMS_PER_PAGE = 10;
 
 /**
  * Create an api client cell that can load the selected api document.
@@ -11,17 +16,17 @@ var changeCase = App.Library.changeCase;
  * @return {Function}
  */
 var createApiClientCell = function (cell, invoke) {
-  return function (err, api) {
+  return function (err, api, version) {
     if (err) { return; }
 
-    var url      = api.ramlUrl;
-    var variable = changeCase.camelCase(api.title);
-    var code     = [
-      '// Read about the ' + api.title + ' at ' + api.portalUrl,
-      'API.createClient(\'' + variable + '\', \'' + url + '\');'
-    ].join('\n');
+    // Convert the API name into a variable for use.
+    var variable = changeCase.camelCase(api.name);
 
-    var view = cell.notebook[invoke + 'CodeView'](cell.el, code).execute();
+    // Create the view with api creation details.
+    var view = cell.notebook[invoke + 'CodeView'](cell.el, [
+      '// Read about the ' + api.name + ' at ' + version.portalUrl,
+      'API.createClient(\'' + variable + '\', \'' + version.ramlUrl + '\');'
+    ].join('\n')).execute();
 
     cell.focus();
 
@@ -30,19 +35,6 @@ var createApiClientCell = function (cell, invoke) {
 
     return view;
   };
-};
-
-/**
- * Load all the API definitions and return the items as an array.
- *
- * @param {Function} done
- */
-var loadAPIDefinitions = function (done) {
-  return App.middleware.trigger('ajax', {
-    url: 'http://api.apihub.com/v1/apis?specFormat=RAML'
-  }, function (err, xhr) {
-    return done(err, JSON.parse(xhr.responseText).items);
-  });
 };
 
 /**
@@ -55,86 +47,193 @@ var selectAPIDefinition = function (done) {
   // Trigger modal display messages.
   App.messages.trigger('ramlClient:modal');
 
+  /**
+   * The current search specification object, passed to the middleware layer.
+   *
+   * @type {Object}
+   */
+  var searchSpec = {
+    offset: 0,
+    limit:  ITEMS_PER_PAGE,
+    query:  ''
+  };
+
   return App.middleware.trigger('ui:modal', {
     title: 'Insert an API Client',
     content: function (done) {
-      return loadAPIDefinitions(function (err, items) {
-        if (err) { return done(err); }
-
-        return done(null, '<div class="modal-instructions">' +
-          'Insert an API client from a RAML specification.' +
-          ' An API client is a JavaScript representation of an API' +
-          ' that you can use to explore available endpoints and' +
-          ' their parameters. ' +
-          '<a href="http://raml.org/" target="_blank">' +
-          'Learn more about RAML</a>.' +
-          '</div>' +
-          '<div class="form-group">' +
-          '<input class="item-search" placeholder="Search">' +
-          '</div>' +
-          '<ul class="item-list">' +
-          _.map(items, function (item) {
-            return '<li data-title="' + item.title + '" ' +
-              'data-raml="' + item.specs.RAML.url + '" ' +
-              'data-title="' + item.title + '" ' +
-              'data-portal="' + item.apihubPortal + '">' +
-              '<div class="item-action">' +
-              '<a href="#" class="btn btn-primary btn-small">Add</a>' +
-              '</div>' +
-              '<div class="item-description">' + item.title +
-              '<a href="#" class="item-details-link" data-details>details</a>' +
-              '<div class="item-details">' + item.description + '</div>' +
-              '</div>' +
-              '</li>';
-          }).join('') + '</ul>' +
-          '<p class="hide item-list-unavailable">No matching APIs found. ' +
-          'Please search on the <a ' +
-          'href="http://api-portal.anypoint.mulesoft.com/" target="_blank">' +
-          'Anypoint API Portal</a> and submit a request for more ' +
-          'documentation for this API.</p>'
-        );
-      });
+      return done(null, '<div class="modal-instructions">' +
+        'Insert an API client from a RAML specification. An API client is ' +
+        'a JavaScript representation of an API that you can use to explore ' +
+        'available endpoints and their parameters. ' +
+        '<a href="http://raml.org/" target="_blank">' +
+        'Learn more about RAML</a>.' +
+        '</div>' +
+        '<div class="form-group">' +
+        '<input class="item-search" placeholder="Search">' +
+        '</div>' +
+        '<div class="items-loading" ' +
+        'style="text-align: center; font-size: 3em;">' +
+        '<i class="icon-arrows-cw animate-spin"></i>' +
+        '</div>' +
+        '<div class="items-container clearfix">' +
+        '<ul class="items-list"></ul>' +
+        '<button class="btn-secondary items-prev-btn" style="float: left">' +
+        'Previous</button>' +
+        '<button class="btn-secondary items-next-btn" style="float: right">' +
+        'Next</button>' +
+        '</div>' +
+        '<p class="items-unavailable">No matching APIs found.</p>'
+      );
     },
     show: function (modal) {
-      Backbone.$(modal.el)
-        .on('click', '[data-details]', function (e, target) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
+      var itemsEl            = modal.el.querySelector('.items-container');
+      var itemsListEl        = itemsEl.querySelector('.items-list');
+      var itemsLoadingEl     = modal.el.querySelector('.items-loading');
+      var itemsNextBtnEl     = itemsEl.querySelector('.items-next-btn');
+      var itemsPrevBtnEl     = itemsEl.querySelector('.items-prev-btn');
+      var itemsUnavailableEl = modal.el.querySelector('.items-unavailable');
 
-          var classList = target.parentNode.parentNode.classList;
+      /**
+       * Load all the API definitions and return the items as an array.
+       *
+       * @param {Function} done
+       */
+      var loadAPIDefinitions = function (search, done) {
+        // Reset element states and show a loading indicator.
+        itemsEl.classList.add('hide');
+        itemsUnavailableEl.classList.add('hide');
+        itemsLoadingEl.classList.remove('hide');
 
-          if (!classList.contains('item-details-visible')) {
-            classList.add('item-details-visible');
-          } else {
-            classList.remove('item-details-visible');
-          }
-        })
-        .on('click', '[data-raml]', function (e, target) {
-          e.preventDefault();
+        // Empty the list before we populate it again.
+        itemsListEl.innerHTML = '';
 
-          // Close the modal behind ourselves.
-          modal.close();
+        // Set both buttons to disabled for now.
+        itemsNextBtnEl.setAttribute('disabled', 'disabled');
+        itemsPrevBtnEl.setAttribute('disabled', 'disabled');
 
-          return done(null, {
-            title:     target.getAttribute('data-title'),
-            ramlUrl:   target.getAttribute('data-raml'),
-            portalUrl: target.getAttribute('data-portal')
-          });
-        })
-        .on('keyup', '.item-search', function (e) {
-          var listItemEls   = modal.el.querySelectorAll('.item-list > li');
-          var unavailableEl = modal.el.querySelector('.item-list-unavailable');
+        return App.middleware.trigger('ramlClient:search', search, done);
+      };
 
-          var hasResults = _.filter(listItemEls, function (el) {
-            var title   = el.getAttribute('data-title').toLowerCase();
-            var matches = title.indexOf(e.target.value.toLowerCase()) > -1;
+      /**
+       * Render the search results.
+       *
+       * @param {Error}  err
+       * @param {Object} result
+       * @param {Number} result.total
+       * @param {Array}  result.items
+       */
+      var updateResults = function (err, result) {
+        // Always remove the loading indicator.
+        itemsLoadingEl.classList.add('hide');
 
-            el.classList[matches ? 'remove' : 'add']('hide');
-            return matches;
-          }).length;
+        if (err) {
+          return done(err);
+        }
 
-          unavailableEl.classList[hasResults ? 'add' : 'remove']('hide');
+        if (!result.items) {
+          return itemsUnavailableEl.classList.remove('hide');
+        }
+
+        itemsEl.classList.remove('hide');
+
+        // If the offset is past the first page, allow going back.
+        if (searchSpec.offset > 0) {
+          itemsPrevBtnEl.removeAttribute('disabled');
+        }
+
+        // If the offset can still move before hitting the last result, allow.
+        if (searchSpec.offset < result.total - searchSpec.limit) {
+          itemsNextBtnEl.removeAttribute('disabled');
+        }
+
+        // Iterate over each version and append to the item list.
+        _.each(result.items, function (item) {
+          var name = _.escape(item.name);
+
+          var el = domify([
+            '<li>',
+            '<div class="item-info clearfix">',
+            '<div class="item-action">',
+            '<button class="btn btn-primary btn-small item-add">Add</button>',
+            '</div>',
+            '<a href="#" class="item-more-link item-all">All versions</a>',
+            '<div class="item-name">' + name + '</div>',
+            '</div>',
+            '<div class="item-versions">',
+            _.map(item.versions, function (version, index) {
+              var name        = _.escape(version.name);
+              var description = _.escape(version.description);
+              var portalUrl   = _.escape(version.portalUrl);
+
+              return [
+                '<div class="item-version clearfix">',
+                '<div class="item-action">',
+                '<button class="btn btn-primary btn-small item-add" ' +
+                'data-index="' + index + '">',
+                'Select',
+                '</button>',
+                '</div>',
+                '<a href="' + portalUrl + '" class="item-more-link" ' +
+                'target="_blank">Read more</a>',
+                '<div class="item-name">',
+                '<span class="hint--top" data-hint="' + description + '">',
+                name,
+                '</span>',
+                '</div>',
+                '</div>'
+              ].join('\n');
+            }).join('\n'),
+            '</div>',
+            '</li>'
+          ].join('\n'));
+
+          itemsListEl.appendChild(el);
+
+          // When the element is clicked, render the code cell.
+          Backbone.$(el)
+            .on('click', function (e) {
+              e.preventDefault();
+
+              var method = 'add';
+
+              // Remove the attribute if it exists.
+              if (el.classList.contains('item-visible')) {
+                method = 'remove';
+              }
+
+              el.classList[method]('item-visible');
+            })
+            .on('click', '.item-add', function (e, el) {
+              modal.close();
+              e.stopPropagation();
+
+              // Resolve to the clicked API version, or "latest".
+              var version = item.versions[el.getAttribute('data-index') || 0];
+
+              return done(null, item, version);
+            });
         });
+      };
+
+      Backbone.$(modal.el)
+        .on('click', '.items-next-btn', function () {
+          return loadAPIDefinitions(_.extend(searchSpec, {
+            offset: searchSpec.offset + ITEMS_PER_PAGE
+          }), updateResults);
+        })
+        .on('click', '.items-prev-btn', function () {
+          return loadAPIDefinitions(_.extend(searchSpec, {
+            offset: searchSpec.offset - ITEMS_PER_PAGE
+          }), updateResults);
+        })
+        .on('keyup', '.item-search', _.throttle(function (e) {
+          return loadAPIDefinitions(_.extend(searchSpec, {
+            offset: 0,
+            query:  e.target.value
+          }), updateResults);
+        }));
+
+      return loadAPIDefinitions(searchSpec, updateResults);
     }
   });
 };
@@ -167,4 +266,53 @@ App.View.CellButtons.controls.push({
 App.View.CodeCell.prototype.cellControls.push({
   label:   'Insert API Client',
   command: 'newRAMLBelow'
+});
+
+/**
+ * Register the basic raml client search middleware.
+ */
+App.middleware.register('ramlClient:search', function (search, next, done) {
+  var url = BASE_URI + '?' + qs.stringify({
+    specFormat: 'RAML',
+    count:      search.limit,
+    start:      search.offset,
+    title:      search.query
+  });
+
+  return App.middleware.trigger('ajax', {
+    url: url
+  }, function (err, xhr) {
+    var result;
+
+    if (err) {
+      return done(err);
+    }
+
+    try {
+      result = JSON.parse(xhr.responseText);
+    } catch (e) {
+      return done(e);
+    }
+
+    if (Array.isArray(result)) {
+      return done(null, { total: 0, items: [] });
+    }
+
+    // Map the items to the usable format.
+    result.items = result.items.map(function (item) {
+      return {
+        name: item.title,
+        versions: [{
+          name:        'Latest',
+          portalUrl:   item.apihubPortal,
+          ramlUrl:     item.specs.RAML.url,
+          description: item.description,
+          deprecated:  false,
+          tags:        []
+        }]
+      };
+    });
+
+    return done(null, result);
+  });
 });
