@@ -226,12 +226,17 @@ var selectAPIDefinition = function (done) {
             offset: searchSpec.offset - ITEMS_PER_PAGE
           }), updateResults);
         })
-        .on('keyup', '.item-search', _.throttle(function (e) {
+        .on('keyup', '.item-search', _.throttle(function (e, el) {
+          // Avoid updating when the value hasn't changed.
+          if (searchSpec.query === el.value) {
+            return;
+          }
+
           return loadAPIDefinitions(_.extend(searchSpec, {
             offset: 0,
-            query:  e.target.value
+            query:  el.value
           }), updateResults);
-        }));
+        }, 700));
 
       return loadAPIDefinitions(searchSpec, updateResults);
     }
