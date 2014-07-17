@@ -220,10 +220,11 @@ var loadPlugin = function (data, next, done) {
       return next(new Error('Unexpected notebook response'));
     }
 
-    data.id        = content.id;
-    data.ownerId   = content.owner && content.owner.id;
-    data.content   = content.files['notebook.md'].content;
-    data.updatedAt = new Date(content.updated_at);
+    data.id         = content.id;
+    data.ownerId    = content.owner.id;
+    data.ownerTitle = content.owner.login;
+    data.content    = content.files['notebook.md'].content;
+    data.updatedAt  = new Date(content.updated_at);
     return done();
   });
 };
@@ -269,8 +270,9 @@ var savePlugin = function (data, next, done) {
 
     try {
       var content = JSON.parse(xhr.responseText);
-      data.id      = content.id;
-      data.ownerId = content.owner && content.owner.id;
+      data.id         = content.id;
+      data.ownerId    = content.owner.id;
+      data.ownerTitle = content.owner.login;
     } catch (e) {
       return next(e);
     }

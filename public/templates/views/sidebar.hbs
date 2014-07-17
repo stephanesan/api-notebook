@@ -47,7 +47,11 @@
 
         <div class="item-timestamp">
           {{#if updatedAt}}
-            {{dateFormat updatedAt}}</div>
+            {{dateFormat updatedAt}}
+
+            {{#unlessEqual @persistence.userId ownerId}}
+              {{#if ownerTitle}}by {{ownerTitle}}{{/if}}
+            {{/unlessEqual}}
           {{else}}
             Unsaved
           {{/if}}

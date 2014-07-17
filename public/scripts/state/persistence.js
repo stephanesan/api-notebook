@@ -149,8 +149,9 @@ Persistence.prototype.deserialize = function (model, done) {
   middleware.trigger(
     'persistence:deserialize',
     _.extend(this.getMiddlewareData(model), {
-      ownerId: null,
-      cells:   null
+      ownerId:    null,
+      ownerTitle: null,
+      cells:      null
     }),
     function (err, data) {
       model.get('meta').reset(data.meta);
@@ -198,10 +199,11 @@ Persistence.prototype.save = function (model, done) {
       }
 
       // Update the model attributes.
-      model.set('id',        data.id);
-      model.set('content',   data.content);
-      model.set('ownerId',   data.ownerId);
-      model.set('updatedAt', new Date());
+      model.set('id',         data.id);
+      model.set('content',    data.content);
+      model.set('ownerId',    data.ownerId);
+      model.set('ownerTitle', data.ownerTitle);
+      model.set('updatedAt',  new Date());
       model.get('meta').reset(data.meta);
       model.set('savedContent', model.get('content'));
 
@@ -327,9 +329,10 @@ Persistence.prototype.load = function (model, done) {
     _.bind(function (err, data) {
       // Update all relevant model attributes.
       model.set({
-        id:        data.id,
-        ownerId:   data.ownerId,
-        updatedAt: data.updatedAt
+        id:         data.id,
+        ownerId:    data.ownerId,
+        ownerTitle: data.ownerTitle,
+        updatedAt:  data.updatedAt
       });
 
       model.set('content', data.content, {
@@ -399,6 +402,7 @@ Persistence.prototype.clone = function (done) {
   // Set the notebook instance in the state.
   model.unset('id');
   model.unset('ownerId');
+  model.unset('ownerTitle');
   model.set('meta', model.get('meta').clone());
 
   middleware.trigger(
@@ -528,15 +532,11 @@ persistence.listenTo(middleware, 'application:ready', function () {
       userId:    null,
       userTitle: null
     }), _.bind(function (err, data) {
-      this.set('userId',     data.userId);
-      this.set('userTitle',  data.userTitle);
+      this.set('userId',    data.userId);
+      this.set('userTitle', data.userTitle);
 
       // Set the ready state flag for the API Notebook Site to hook onto.
       this.set('readyState', true);
-
-      if (!this.has('id') && !this.has('ownerId')) {
-        this.set('ownerId', this.get('userId'));
-      }
     }, this)
   );
 });
