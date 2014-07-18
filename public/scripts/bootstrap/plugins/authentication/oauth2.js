@@ -5,6 +5,9 @@ var url         = require('url');
 var authWindow  = require('./lib/auth-window');
 var middleware  = require('../../../state/middleware');
 
+var URL_ENCODED = 'application/x-www-form-urlencoded';
+var JSON_REGEXP = /^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i;
+
 /**
  * Set the default redirection url.
  *
@@ -115,14 +118,17 @@ var sanitizeOptions = function (options) {
 /**
  * Validate an OAuth2 response object.
  *
+ * @param {Object}   options
  * @param {Object}   response
  * @param {Function} done
  */
 var authResponse = function (options, response, done) {
+  // Check the response object for errors.
   if (erroredResponse(response)) {
     return done(new Error(erroredResponse(response)));
   }
 
+  // Filter the response data of known parameters.
   var data = {
     scope: response.scope || options.scope,
     response: _.omit(response, [
@@ -150,6 +156,38 @@ var authResponse = function (options, response, done) {
   }
 
   return done(null, data);
+};
+
+/**
+ * Handle the xhr response for OAuth requests consistently.
+ *
+ * @param  {Object}   options
+ * @param  {Function} done
+ * @return {Function}
+ */
+var handleAjaxResponse = function (options, done) {
+  return function (err, xhr) {
+    if (err) {
+      return done(err);
+    }
+
+    var body = xhr.responseText;
+    var mime = (xhr.getResponseHeader('Content-Type') || '').split(';')[0];
+
+    // Attempt to parse the response and pass to the auth response handler. If
+    // anything fails, return `done` with the error.
+    try {
+      if (JSON_REGEXP.test(mime)) {
+        return authResponse(options, JSON.parse(body), done);
+      } else if (mime === URL_ENCODED) {
+        return authResponse(options, qs.parse(body), done);
+      } else {
+        return done(new Error('Unable to parse response type "' + mime + '"'));
+      }
+    } catch (e) {
+      return done(e);
+    }
+  };
 };
 
 /**
@@ -263,7 +301,7 @@ var oAuth2CodeFlow = function (options, done) {
       url: options.accessTokenUri,
       method: 'POST',
       headers: {
-        'Accept':       'application/json',
+        'Accept':       'application/json, application/x-www-form-urlencoded',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       data: qs.stringify({
@@ -273,11 +311,7 @@ var oAuth2CodeFlow = function (options, done) {
         'client_id':     options.clientId,
         'client_secret': options.clientSecret
       })
-    }, function (err, xhr) {
-      if (err) { return done(err); }
-
-      return authResponse(options, JSON.parse(xhr.responseText), done);
-    });
+    }, handleAjaxResponse(options, done));
   };
 };
 
@@ -306,7 +340,7 @@ var oAuth2CredentialsFlow = function (options, done) {
     url: options.accessTokenUri,
     method: 'POST',
     headers: {
-      'Accept':        'application/json',
+      'Accept':        'application/json, application/x-www-form-urlencoded',
       'Content-Type':  'application/x-www-form-urlencoded',
       'Authorization': 'Basic ' + new Buffer(
         options.clientId + ':' + options.clientSecret
@@ -315,11 +349,7 @@ var oAuth2CredentialsFlow = function (options, done) {
     data: qs.stringify({
       'grant_type': 'client_credentials'
     })
-  }, function (err, xhr) {
-    if (err) { return done(err); }
-
-    return authResponse(options, JSON.parse(xhr.responseText), done);
-  });
+  }, handleAjaxResponse(options, done));
 };
 
 /**
