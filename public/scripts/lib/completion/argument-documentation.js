@@ -15,6 +15,63 @@ var FUNCTION_TYPES = {
 };
 
 /**
+ * Format an argument as html for the rendered documentation.
+ *
+ * @param  {Object} object
+ * @return {String}
+ */
+var formatArgumentDocs = function (object, key) {
+  var html   = [];
+  var docs   = formatDocs(object, key);
+  var prefix = 'CodeMirror-documentation-description-';
+
+  // Push the type defintion into the html when a key or type exists.
+  if (key || docs.type) {
+    html.push(
+      '<div class="' + prefix + 'type">',
+      key ? ('<strong>' + _.escape(key) + '</strong>') : '',
+      docs.type ? ('<em>' + _.escape(docs.type) + '</em>') : '',
+      '</div>'
+    );
+  }
+
+  // Append documentation to the output html.
+  if (docs.doc) {
+    html.push(
+      '<div class="' + prefix + 'doc">',
+      docs.doc,
+      '</div>'
+    );
+  }
+
+  // If a url is specified, set a read more link.
+  if (docs.url) {
+    html.push(
+      '<div class="' + prefix + 'url">',
+      '<a href="' + docs.url + '" target="_blank">Read more</a>',
+      '</div>'
+    );
+  }
+
+  // Iterate over the argument object and push each child definition into the
+  // html array. Ignore private defintion keys.
+  _.each(object, function (object, key) {
+    if (key.charAt(0) === '!') {
+      return;
+    }
+
+    // Push each child object into the html array.
+    html.push(
+      '<div class="' + prefix + 'child">',
+      formatArgumentDocs(object, key),
+      '</div>'
+    );
+  });
+
+  return html.join('\n');
+};
+
+/**
  * Check if a token is before another token.
  *
  * @param  {Object}  pos
@@ -54,6 +111,9 @@ var ArgumentDocs = module.exports = function (completion, data) {
 
   title.className         = 'CodeMirror-documentation-title';
   documentation.className = 'CodeMirror-documentation';
+
+  // Stop the scrollbar from showing and force scroll to block inside.
+  documentation.setAttribute('data-overflow-scroll', 'true');
 
   // Get the function name as the variable preceding the opening bracket.
   var fnName = this.fnName = tokenHelpers.eatEmpty(
@@ -97,7 +157,6 @@ var ArgumentDocs = module.exports = function (completion, data) {
  * @param {Number} index
  */
 ArgumentDocs.prototype.select = function (index) {
-  var prefix   = 'CodeMirror-documentation-description-';
   var argument = this.data.description['!args'][index];
   var cm       = this.completion.cm;
   var curLine  = cm.getCursor().line;
@@ -128,18 +187,7 @@ ArgumentDocs.prototype.select = function (index) {
     return messages.trigger('resize');
   }
 
-  // Map the documentation to the description rendering.
-  var docs = _.object(_.map(formatDocs(argument), function (docs, type) {
-    if (type === 'url') {
-      docs = '<a href="' + docs + '" target="_blank">Read more</a>';
-    }
-
-    return [type, '<div class="' + prefix + type + '">' + docs + '</div>'];
-  }));
-
-  this.description.innerHTML += docs.type || '';
-  this.description.innerHTML += docs.doc  || '';
-  this.description.innerHTML += docs.url  || '';
+  this.description.innerHTML = formatArgumentDocs(argument);
 
   this.widget.changed();
   return messages.trigger('resize');

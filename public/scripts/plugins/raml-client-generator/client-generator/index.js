@@ -28,7 +28,7 @@ var EXTENSION_DESCRIPTION = {
   '!type': 'fn(extension)',
   '!args': [{
     '!type': 'string',
-    '!doc': 'Set the file extension with relevant `Accept` header.'
+    '!doc':  'Set the file extension with relevant `Accept` header.'
   }],
   '!doc': [
     'Set the path extension and corresponding accept header.'
@@ -44,10 +44,10 @@ var CLIENT_DESCRIPTION = {
   '!type': 'fn(url, data?)',
   '!args': [{
     '!type': 'string',
-    '!doc': 'Provide a url relative to the base uri.'
+    '!doc':  'Provide a url relative to the base uri.'
   }, {
     '!type': 'object',
-    '!doc': 'Provide a data object to replace template tags in the `url`.'
+    '!doc':  'Provide a data object to replace template tags in the `url`.'
   }],
   '!doc': [
     'Make an API request to a custom URL.'
@@ -63,6 +63,153 @@ var authMap = {
   'OAuth 1.0':            'oauth1',
   'OAuth 2.0':            'oauth2',
   'Basic Authentication': 'basicAuth'
+};
+
+/**
+ * Transform a data object into a form data instance.
+ *
+ * @param  {Object}   data
+ * @return {FormData}
+ */
+var toFormData = function (data) {
+  var form = new FormData();
+
+  // Iterate over every piece of data and append to the form data object.
+  _.each(data, function (value, key) {
+    form.append(key, value);
+  });
+
+  return form;
+};
+
+/**
+ * Map mime types to their parsers.
+ *
+ * @type {Object}
+ */
+var parse = [
+  [JSON_REGEXP, JSON.parse],
+  ['application/x-www-form-urlencoded', qs.parse]
+];
+
+/**
+ * Map mime types to their serializers.
+ *
+ * @type {Object}
+ */
+var serialize = [
+  [JSON_REGEXP, JSON.stringify],
+  ['application/x-www-form-urlencoded', qs.stringify],
+  ['multipart/form-data', toFormData]
+];
+
+/**
+ * Iterate over an array of match and result values, and return the
+ * first matching value.
+ *
+ * @param  {Array}    array
+ * @param  {String}   test
+ * @return {Function}
+ */
+var getMatch = function (array, test) {
+  var match = _.find(array, function (value) {
+    var check = value[0];
+
+    if (_.isRegExp(check)) {
+      return check.test(test);
+    }
+
+    return check === test;
+  });
+
+  return match && match[1];
+};
+
+/**
+ * Sort mimes by preference.
+ *
+ * @param  {String} mime
+ * @return {Number}
+ */
+var mimePreference = function (mime) {
+  return getMatch([
+    [JSON_REGEXP, 3],
+    ['application/x-www-form-urlencoded', 2],
+    ['multipart/form-data', 1]
+  ], mime) || 0;
+};
+
+/**
+ * Turn a string into inline code.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+var codifyMarkdown = function (str) {
+  return '`' + str + '`';
+};
+
+/**
+ * Convert a raml body object to a markdown documentation string.
+ *
+ * @param  {Object} body
+ * @return {String}
+ */
+var ramlBodyToMarkdown = function (body) {
+  var mimes         = _.keys(body).sort(mimePreference);
+  var documentation = [];
+
+  // If multiple mime types are supported, add a default mime type usage note.
+  if (mimes.length > 1) {
+    documentation.push(
+      'The body for this resource supports multiple content types. By ' +
+      'default, ' + codifyMarkdown(mimes[0]) + ' will be used. However, you ' +
+      'can easily specify another `Content-Type` to be used.'
+    );
+  }
+
+  // Iterate over each mime type and append documentation.
+  _.each(mimes, function (mime) {
+    var contentType = body[mime];
+
+    // If there are multiple available mime types, we need to prefix each
+    // definition with some text about the current mime type.
+    if (mimes.length) {
+      documentation.push(
+        'When using ' + codifyMarkdown(mime) + ' as the content type you ' +
+        'have access to the follow properties:'
+      );
+    }
+
+    // Append the available form parameters to the markdown content.
+    if (contentType.formParameters) {
+      // Iterate over each form parameter and generate basic documentation.
+      _.each(contentType.formParameters, function (param, key) {
+        documentation.push(
+          '* **' + key + (param.required ? '' : '?') + ':** ' +
+          '*' + param.type + '*' + param.description
+        );
+      });
+    }
+
+    // Push the schema onto the description for reference.
+    if (contentType.schema) {
+      documentation.push(
+        '**Schema:**',
+        '```\n' + contentType.schema + '\n```'
+      );
+    }
+
+    // Push the example onto the description for reference.
+    if (contentType.example) {
+      documentation.push(
+        '**Example:**',
+        '```\n' + contentType.example + '\n```'
+      );
+    }
+  });
+
+  return documentation.join('\n\n');
 };
 
 /**
@@ -115,28 +262,32 @@ var isQueryMethod = function (method) {
  * @type {Object}
  */
 var METHOD_DESCRIPTION = _.object(_.map(HTTP_METHODS, function (method) {
-  var argument = isQueryMethod(method) ? 'query?' : 'body?';
+  var body = isQueryMethod(method) ? 'query?' : 'body?';
 
   return [method, {
-    '!type': 'fn(' + argument + ', options?, async?)'
+    '!type': 'fn(' + body + ', options?, async?)'
   }];
 }));
 
 /**
- * Convert the RAML documentation to a string.
+ * Convert a raml object into a documentation object.
  *
  * @param  {Object} object
- * @return {String}
+ * @return {Object}
  */
-var toMarkdownDescription = function (object, name) {
-  var title = '**' + name + (object.required ? '' : '?') + ':** ';
+var ramlToDocumentationFormat = function (object) {
+  var documentation = {};
 
-  // If a type is available, italicise after the name.
-  if (object.type) {
-    title += '*' + object.type + '* ';
-  }
+  // Iterate over each key and wipe out wipe a clean documentation object.
+  _.each(object, function (object, key) {
+    documentation[key] = {
+      '!doc':      object.description,
+      '!type':     object.type,
+      '!required': object.required
+    };
+  });
 
-  return title + (object.description || '');
+  return documentation;
 };
 
 /**
@@ -147,84 +298,56 @@ var toMarkdownDescription = function (object, name) {
  * @return {Object}
  */
 var toMethodDescription = function (nodes, method) {
-  var args    = [];
-  var config  = [];
-  var body    = '';
-  var isQuery = isQueryMethod(method.method);
-  var documentation;
+  var isQuery       = isQueryMethod(method.method);
+  var configOptions = { '!type': 'object' };
+  var bodyOptions   = { '!type': 'object' };
 
-  if (method.queryParameters) {
-    documentation = _.map(method.queryParameters, function (query, name) {
-      return '* ' + toMarkdownDescription(query, name);
-    }).join('\n');
-
-    if (isQuery) {
-      body = documentation;
-    } else {
-      config.push('**query**', documentation);
-    }
-  }
-
-  if (method.headers) {
-    config.push(
-      '**headers:**',
-      _.map(method.headers, function (header, name) {
-        return '* ' + toMarkdownDescription(header, name);
-      }).join('\n')
-    );
-  }
-
-  if (method.body) {
-    documentation = _.map(method.body, function (body, contentType) {
-      var title  = '**' + contentType + ':** ';
-      var description;
-
-      // Map form parameters to their descriptions.
-      if (body) {
-        description = _.map(
-          body.formParameters, function (param, name) {
-            return '* * ' + toMarkdownDescription(param, name);
-          }
-        ).join('\n');
-      }
-
-      return '* ' + title + (description ? '\n' + description : '?');
-    }).join('\n');
-
-    if (isQuery) {
-      config.push('**body**', documentation);
-    } else {
-      body = documentation;
-    }
-  }
-
-  if (nodes.client.baseUriParameters) {
-    config.push(
-      '**baseUriParameters**',
-      _.map(nodes.client.baseUriParameters, function (param, name) {
-        return '* ' + toMarkdownDescription(param, name);
-      }).join('\n')
-    );
-  }
-
-  config.push(
-    '**proxy**', '*boolean* Disable the proxy for the current request.'
-  );
-
-  args.push({
-    '!doc': body,
-    '!type': 'object'
-  }, {
-    '!doc': config.join('\n\n'),
-    '!type': 'object'
-  }, {
-    '!doc': 'Pass a function to make the request execute asynchonously.',
+  var callbackOptions = {
+    '!doc':  'Pass a function to make the request execute asynchonously.',
     '!type': 'fn(error, response)'
-  });
+  };
+
+  // Add documentation on the proxy.
+  configOptions.proxy = {
+    '!type': 'string|boolean',
+    '!doc':  'Disable or set a custom proxy url for the current request.'
+  };
+
+  // Add documentation on header parameters.
+  configOptions.headers = _.extend({
+    '!type': 'object'
+  }, ramlToDocumentationFormat(method.headers));
+
+  // If the method is a query method (GET/HEAD), set the body as a config option
+  // and vise versa.
+  if (isQuery) {
+    _.extend(bodyOptions, ramlToDocumentationFormat(method.queryParameters));
+
+    configOptions.body = {
+      '!type': 'object',
+      '!doc':  ramlBodyToMarkdown(method.body)
+    };
+  } else {
+    bodyOptions = {
+      '!type': 'object|string',
+      '!doc':  ramlBodyToMarkdown(method.body),
+    };
+
+    configOptions.query = _.extend({
+      '!type': 'object'
+    }, ramlToDocumentationFormat(method.queryParameters));
+  }
+
+  // If the current node has baseUriParameters, show it in the documentation.
+  if (nodes.client.baseUriParameters) {
+    configOptions.baseUriParameters = _.extend({
+      '!type': 'object'
+    }, ramlToDocumentationFormat(nodes.client.baseUriParameters));
+  }
 
   return _.extend({
-    '!doc': method.description,
-    '!args': args
+    '!doc':  method.description,
+    '!args': [bodyOptions, configOptions, callbackOptions]
   }, METHOD_DESCRIPTION[method.method]);
 };
 
@@ -295,66 +418,6 @@ var isHost = function (obj) {
     default:
       return false;
   }
-};
-
-/**
- * Transform a data object into a form data instance.
- *
- * @param  {Object}   data
- * @return {FormData}
- */
-var toFormData = function (data) {
-  var form = new FormData();
-
-  // Iterate over every piece of data and append to the form data object.
-  _.each(data, function (value, key) {
-    form.append(key, value);
-  });
-
-  return form;
-};
-
-/**
- * Map mime types to their parsers.
- *
- * @type {Object}
- */
-var parse = [
-  [JSON_REGEXP, JSON.parse],
-  ['application/x-www-form-urlencoded', qs.parse]
-];
-
-/**
- * Map mime types to their serializers.
- *
- * @type {Object}
- */
-var serialize = [
-  [JSON_REGEXP, JSON.stringify],
-  ['application/x-www-form-urlencoded', qs.stringify],
-  ['multipart/form-data', toFormData]
-];
-
-/**
- * Iterate over an array of match and result values, and return the
- * first matching value.
- *
- * @param  {Array}    array
- * @param  {String}   test
- * @return {Function}
- */
-var getMatch = function (array, test) {
-  var match = _.find(array, function (value) {
-    var check = value[0];
-
-    if (_.isRegExp(check)) {
-      return check.test(test);
-    }
-
-    return check === test;
-  });
-
-  return match && match[1];
 };
 
 /**
@@ -494,13 +557,7 @@ var httpRequest = function (nodes, method) {
         // If we have a method body object, sort the method types by most
         // desirable and fallback to a random content type.
         if (typeof method.body === 'object') {
-          mime = _.keys(method.body).sort(function (mime) {
-            return getMatch([
-              [JSON_REGEXP, 3],
-              ['application/x-www-form-urlencoded', 2],
-              ['multipart/form-data', 1]
-            ], mime) || 0;
-          }).pop();
+          mime = _.keys(method.body).sort(mimePreference).pop();
         }
 
         // Set the config to the updated mime type header. If none exists, use
@@ -778,7 +835,7 @@ var attachResources = function (nodes, context, resources) {
         '!args': _.map(tags, function (param) {
           return {
             '!type': param.type,
-            '!doc': param.description
+            '!doc':  param.description
           };
         }),
         '!doc': 'Dynamically inject variables into the request path.'

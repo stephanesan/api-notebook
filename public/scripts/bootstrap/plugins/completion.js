@@ -104,8 +104,13 @@ var getPropertyNames = function (context, global) {
     // Checking typeof on the `window` prototype in Firefox 26 causes an error
     // to be thrown: "Illegal operation on WrappedNative prototype object".
     try {
-      // Lookup from the current context object to avoid failures in Firefox.
-      prop.type = typeof context[property];
+      if (context[property] == null) {
+        // Stringify `null` or `undefined`.
+        prop.type = String(context[property]);
+      } else {
+        // Lookup from the current context object to avoid failures in Firefox.
+        prop.type = typeof context[property];
+      }
     } catch (e) {}
 
     prop.value = property;
