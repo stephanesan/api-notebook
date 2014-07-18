@@ -1,21 +1,43 @@
-var marked = require('marked');
+var marked   = require('marked');
+var renderer = new marked.Renderer();
+
+/**
+ * Override the link renderer to always open in a new tab.
+ *
+ * @param  {String} href
+ * @param  {String} title
+ * @param  {String} text
+ * @return {String}
+ */
+renderer.link = function (href, title, text) {
+  var html = '<a href="' + href + '"';
+
+  if (title) {
+    html += ' title="' + title + '"';
+  }
+
+  html += ' target="_blank">' + text + '</a>';
+
+  return html;
+};
 
 /**
  * Format the standard description object for rendering in the browser.
  *
  * @param  {Object} description
- * @param  {String} variable
+ * @param  {String} currentVariable
  * @return {Object}
  */
-module.exports = function (description, variable) {
+module.exports = function (description, currentVariable) {
   var formatted = {};
 
   if (description['!doc']) {
     formatted.doc = marked(description['!doc'], {
-      gfm: true,
-      tables: true,
-      sanitize: true,
-      smartLists: true
+      gfm:        true,
+      tables:     true,
+      sanitize:   true,
+      smartLists: true,
+      renderer:   renderer
     });
   }
 
@@ -26,8 +48,9 @@ module.exports = function (description, variable) {
   if (description['!type']) {
     formatted.type = description['!type'];
 
-    if (variable && /^fn\(/.test(formatted.type)) {
-      formatted.type = variable + formatted.type.substr(2);
+    // Replace the arbitrary function name with the current variable name.
+    if (currentVariable && /^fn\(/.test(formatted.type)) {
+      formatted.type = currentVariable + formatted.type.substr(2);
     }
   }
 
