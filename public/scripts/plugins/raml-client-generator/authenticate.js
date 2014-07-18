@@ -249,11 +249,15 @@ var authenticate = function (scheme, options, done) {
   App.middleware.trigger('authenticate', _.extend({
     type: scheme.type
   }, scheme.settings, options), function (err, tokens) {
+    if (err) {
+      return done(err);
+    }
+
     if (!tokens) {
       return done(new Error('Authentication failed'));
     }
 
-    return done(err, scheme, options, tokens);
+    return done(null, scheme, options, tokens);
   }, true);
 };
 

@@ -179,10 +179,8 @@ var handleAjaxResponse = function (options, done) {
     try {
       if (JSON_REGEXP.test(mime)) {
         return authResponse(options, JSON.parse(body), done);
-      } else if (mime === URL_ENCODED) {
-        return authResponse(options, qs.parse(body), done);
       } else {
-        return done(new Error('Unable to parse response type "' + mime + '"'));
+        return authResponse(options, qs.parse(body), done);
       }
     } catch (e) {
       return done(e);
