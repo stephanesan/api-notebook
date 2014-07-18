@@ -69,7 +69,7 @@ middleware.register('persistence:deserialize', function (data, next, done) {
   var preambleRegExp = new RegExp([
     '^',
     META_DATA_DELIMITER,
-    '\\n([\\S\\s]+)\\n',
+    '\\n([\\S\\s]+?)\\n',
     META_DATA_DELIMITER,
     '\\n'
   ].join(''));
