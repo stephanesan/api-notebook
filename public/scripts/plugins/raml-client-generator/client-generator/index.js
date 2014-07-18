@@ -172,6 +172,11 @@ var ramlBodyToMarkdown = function (body) {
   _.each(mimes, function (mime) {
     var contentType = body[mime];
 
+    // Avoid building documentation if it's not an object.
+    if (!_.isObject(contentType)) {
+      return;
+    }
+
     // If there are multiple available mime types, we need to prefix each
     // definition with some text about the current mime type.
     if (mimes.length) {
