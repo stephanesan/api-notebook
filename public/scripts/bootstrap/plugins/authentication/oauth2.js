@@ -5,7 +5,6 @@ var url         = require('url');
 var authWindow  = require('./lib/auth-window');
 var middleware  = require('../../../state/middleware');
 
-var URL_ENCODED = 'application/x-www-form-urlencoded';
 var JSON_REGEXP = /^application\/([\w!#\$%&\*`\-\.\^~]*\+)?json$/i;
 
 /**
