@@ -674,8 +674,10 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
    * @return {Object}
    */
   context.extension = function (extension) {
+    extension = extension == null ? '' : String(extension);
+
     // Prepend a period to the extension before adding to the route.
-    if (extension.charAt(0) !== '.') {
+    if (extension && extension.charAt(0) !== '.') {
       extension = '.' + extension;
     }
 
@@ -703,6 +705,12 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
   // Attach a description and return property.
   context.extension[RETURN_PROPERTY]      = context.extension('');
   context.extension[DESCRIPTION_PROPERTY] = EXTENSION_DESCRIPTION;
+
+  // If the media type extension is not required, allow direct invocation of
+  // the request method.
+  if (resource.uriParameters.mediaTypeExtension.required === false) {
+    attachMethods(nodes, context, resource.methods);
+  }
 
   // Iterate over the enum options and automatically attach to the context.
   _.each(resource.uriParameters.mediaTypeExtension.enum, function (extension) {
