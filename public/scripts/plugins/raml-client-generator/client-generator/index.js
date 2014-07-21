@@ -179,10 +179,9 @@ var ramlBodyToMarkdown = function (body) {
 
     // If there are multiple available mime types, we need to prefix each
     // definition with some text about the current mime type.
-    if (mimes.length) {
+    if (mimes.length > 1) {
       documentation.push(
-        'When using ' + codifyMarkdown(mime) + ' as the content type you ' +
-        'have access to the follow properties:'
+        'When the content type is ' + codifyMarkdown(mime) + ':'
       );
     }
 
@@ -197,19 +196,19 @@ var ramlBodyToMarkdown = function (body) {
       });
     }
 
-    // Push the schema onto the description for reference.
-    if (contentType.schema) {
-      documentation.push(
-        '**Schema:**',
-        '```\n' + contentType.schema + '\n```'
-      );
-    }
-
     // Push the example onto the description for reference.
     if (contentType.example) {
       documentation.push(
         '**Example:**',
         '```\n' + contentType.example + '\n```'
+      );
+    }
+
+    // Push the schema onto the description for reference.
+    if (contentType.schema) {
+      documentation.push(
+        '**Schema:**',
+        '```\n' + contentType.schema + '\n```'
       );
     }
   });
