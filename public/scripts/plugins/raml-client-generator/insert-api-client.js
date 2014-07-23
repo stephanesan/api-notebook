@@ -156,7 +156,7 @@ var selectAPIDefinition = function (done) {
             '<div class="item-action">',
             '<button class="btn btn-primary btn-small item-add">Add</button>',
             '</div>',
-            '<a href="#" class="item-more-link item-all">All versions</a>',
+            '<a href="#" class="item-link">All versions</a>',
             '<div class="item-name">' + name + '</div>',
             '</div>',
             '<div class="item-versions">',
@@ -173,8 +173,8 @@ var selectAPIDefinition = function (done) {
                 'Select',
                 '</button>',
                 '</div>',
-                '<a href="' + portalUrl + '" class="item-more-link" ' +
-                'target="_blank">Read more</a>',
+                '<a href="' + portalUrl + '" class="item-link ' +
+                'item-read-more" target="_blank">Read more</a>',
                 '<div class="item-name">',
                 '<span class="hint--top" data-hint="' + description + '">',
                 name,
@@ -192,6 +192,12 @@ var selectAPIDefinition = function (done) {
           // When the element is clicked, render the code cell.
           Backbone.$(el)
             .on('click', function (e) {
+              // Do nothing if the read more link is clicked.
+              if (e.target.classList.contains('item-read-more')) {
+                return;
+              }
+
+              // Prevent following of links.
               e.preventDefault();
 
               var method = 'add';
