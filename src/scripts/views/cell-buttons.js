@@ -32,10 +32,24 @@ ButtonsView.prototype.initialize = function () {
       return;
     }
 
-    return this.remove();
+    return this.hide();
   }, 10));
 
   return View.prototype.initialize.call(this);
+};
+
+/**
+ * Hide the buttons.
+ */
+ButtonsView.prototype.hide = function () {
+  this.el.classList.remove('show-buttons');
+};
+
+/**
+ * Show the buttons.
+ */
+ButtonsView.prototype.show = function () {
+  this.el.classList.add('show-buttons');
 };
 
 /**
@@ -54,8 +68,8 @@ ButtonsView.prototype.template = template;
 ButtonsView.prototype.onClick = function (e) {
   e.preventDefault();
 
+  this.hide();
   this.trigger('action', this, e.target.getAttribute('data-action'));
-  this.remove();
 };
 
 /**

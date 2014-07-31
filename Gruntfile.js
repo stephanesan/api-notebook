@@ -1,9 +1,10 @@
+var path        = require('path');
 var request     = require('request');
 var DEV         = process.env.NODE_ENV !== 'production';
-var PLUGIN_DIR  = __dirname + '/public/scripts/plugins';
-var BUILD_DIR   = __dirname + '/build';
-var TEST_DIR    = BUILD_DIR + '/test';
-var FIXTURE_DIR = TEST_DIR  + '/fixtures';
+var PLUGIN_DIR  = path.join(__dirname, 'src/scripts/plugins');
+var BUILD_DIR   = path.join(__dirname, 'build');
+var TEST_DIR    = path.join(BUILD_DIR, 'test');
+var FIXTURE_DIR = path.join(TEST_DIR, 'fixtures');
 var PORT        = process.env.PORT || 3000;
 
 /**
@@ -32,8 +33,8 @@ module.exports = function (grunt) {
     var outFile = fileName + (jsRegex.test(fileName) ? '' : '.js');
 
     browserifyPlugins[name] = {
-      src:  PLUGIN_DIR + '/' + inFile,
-      dest: 'build/plugins/' + outFile,
+      src:  path.join(PLUGIN_DIR, inFile),
+      dest: path.join(BUILD_DIR, 'plugins', outFile),
       options: {
         debug:      DEV,
         transform:  browserifyTransform,
@@ -118,7 +119,7 @@ module.exports = function (grunt) {
         files: [
           {
             expand: true,
-            cwd: 'public',
+            cwd: 'src',
             src: ['*.html', 'authenticate/**', 'images/**', 'favicon.ico'],
             dest: 'build/'
           },
@@ -145,7 +146,7 @@ module.exports = function (grunt) {
      */
     jshint: {
       all: {
-        src: ['public/**/*.js', '*.js']
+        src: ['src/**/*.js', '*.js']
       },
       options: {
         jshintrc: '.jshintrc'
@@ -183,7 +184,7 @@ module.exports = function (grunt) {
      */
     browserify: grunt.util._.extend({
       application: {
-        src: 'public/scripts/index.js',
+        src: 'src/scripts/index.js',
         dest: 'build/scripts/bundle.js',
         options: {
           debug:     DEV,
@@ -191,7 +192,7 @@ module.exports = function (grunt) {
         }
       },
       embed: {
-        src: 'public/scripts/embed.js',
+        src: 'src/scripts/embed.js',
         dest: 'build/scripts/embed.js',
         options: {
           debug:      DEV,
@@ -217,7 +218,7 @@ module.exports = function (grunt) {
     stylus: {
       compile: {
         files: {
-          'build/styles/main.css': 'public/styles/index.styl'
+          'build/styles/main.css': 'src/styles/index.styl'
         },
         options: {
           'include css': true,
@@ -249,7 +250,7 @@ module.exports = function (grunt) {
      */
     watch: {
       html: {
-        files: ['public/**/*.html'],
+        files: ['src/**/*.html'],
         tasks: ['newer:copy:build']
       },
       lint: {
@@ -257,11 +258,11 @@ module.exports = function (grunt) {
         tasks: ['newer:jshint:all']
       },
       scripts: {
-        files: ['public/**/*.{hbs,js}'],
+        files: ['src/**/*.{hbs,js}'],
         tasks: ['browserify']
       },
       styles: {
-        files: ['public/**/*.styl'],
+        files: ['src/**/*.styl'],
         tasks: ['stylus']
       }
     }

@@ -394,10 +394,11 @@ EditorCell.prototype.render = function () {
   View.prototype.render.call(this);
 
   this.renderEditor();
+  this.renderButtons();
   this.update();
   this.listenTo(messages, 'refresh', this.refresh);
 
-  var timeout       = 100;
+  var timeout       = 50;
   var aboveListener = domListen(this.el.querySelector('.cell-border-above'));
   var belowListener = domListen(this.el.querySelector('.cell-border-below'));
 
@@ -451,45 +452,36 @@ EditorCell.prototype.showControls = function (e) {
  *
  * @return {CellButtons}
  */
-EditorCell.prototype.showButtonsAbove = function () {
-  if (this.data.has('cellButtonsAbove')) { return; }
+EditorCell.prototype.renderButtons = function () {
+  var buttonsAbove = new CellButtons();
+  this.data.set('cellButtonsAbove', buttonsAbove);
 
-  var buttons = new CellButtons();
-  this.data.set('cellButtonsAbove', buttons);
-
-  this.listenTo(buttons, 'remove', function (view) {
-    this.stopListening(view);
-    this.data.unset('cellButtonsAbove');
-  });
-
-  this.listenTo(buttons, 'action', function (_, action) {
+  this.listenTo(buttonsAbove, 'action', function (_, action) {
     return this[action + 'Above']();
   });
 
-  return buttons;
-};
+  var buttonsBelow = new CellButtons();
+  this.data.set('cellButtonsBelow', buttonsBelow);
 
-/**
- * Create a cell buttons instance and show it below the notebook cell.
- *
- * @return {CellButtons}
- */
-EditorCell.prototype.showButtonsBelow = function () {
-  if (this.data.has('cellButtonsBelow')) { return; }
-
-  var buttons = new CellButtons();
-  this.data.set('cellButtonsBelow', buttons);
-
-  this.listenTo(buttons, 'remove', function (view) {
-    this.stopListening(view);
-    this.data.unset('cellButtonsBelow');
-  });
-
-  this.listenTo(buttons, 'action', function (_, action) {
+  this.listenTo(buttonsBelow, 'action', function (_, action) {
     return this[action + 'Below']();
   });
 
-  return buttons;
+  return this;
+};
+
+/**
+ * Display cell buttons above.
+ */
+EditorCell.prototype.showButtonsAbove = function () {
+  this.data.get('cellButtonsAbove').show();
+};
+
+/**
+ * Display cell buttons below.
+ */
+EditorCell.prototype.showButtonsBelow = function () {
+  this.data.get('cellButtonsBelow').show();
 };
 
 /**

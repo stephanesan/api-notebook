@@ -66,11 +66,11 @@ config.listenTo(config, 'change:embedded', bounce(function () {
     textReadOnly: !isEmbedded
   });
 
-  var className = document.body.className.replace(' notebook-embedded', '');
-
-  // If the notebook is embedded add the embedded class.
+  // If the notebook is embedded add the correct class.
   if (isEmbedded) {
-    document.body.className = className + ' notebook-embedded';
+    document.body.classList.add('notebook-embedded');
+  } else {
+    document.body.classList.remove('notebook-embedded');
   }
 }));
 

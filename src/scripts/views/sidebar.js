@@ -103,7 +103,7 @@ SidebarView.prototype.updateList = function () {
  *
  * @type {Object}
  */
-SidebarView.prototype.templateHelpers = {
+SidebarView.prototype.helpers = {
   dateFormat: function (date) {
     return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
   }

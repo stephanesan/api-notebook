@@ -141,11 +141,15 @@
 .cell:last-child > .cell-border-below
   display: block
 
+.notebook-embedded .cell > .cell-border
+  display: none
+
 .cell-buttons
   position: absolute
   top: -5px
   width: 100%
   z-index: 10
+  display: none
   text-align: center
   .cell-buttons-container
     display: inline-block
@@ -167,6 +171,8 @@
     border-radius: left 3px
   .action:last-child
     border-radius: right 3px
+  &.show-buttons
+    display: block
 
 .notebook-toolbar
   position: relative
