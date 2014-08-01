@@ -134,7 +134,8 @@ Persistence.prototype.serialize = function (model, done) {
     }),
     function (err, data) {
       model.set('content', data.content);
-      return done(err, data);
+
+      return done && done(err, data);
     }
   );
 };
@@ -156,7 +157,8 @@ Persistence.prototype.deserialize = function (model, done) {
     function (err, data) {
       model.get('meta').reset(data.meta);
       model.set('cells', data.cells);
-      return done(err, data);
+
+      return done && done(err, data);
     }
   );
 };
@@ -198,15 +200,16 @@ Persistence.prototype.save = function (model, done) {
         return done && done(err);
       }
 
-      // Update the model attributes.
-      model.set('id',         data.id);
-      model.set('content',    data.content);
-      model.set('ownerId',    data.ownerId);
-      model.set('ownerTitle', data.ownerTitle);
-      model.set('updatedAt',  new Date());
-      model.get('meta').reset(data.meta);
-      model.set('savedContent', model.get('content'));
+      model.set({
+        id:           data.id,
+        content:      data.content,
+        savedContent: data.content,
+        ownerId:      data.ownerId,
+        ownerTitle:   data.ownerTitle,
+        updatedAt:    new Date()
+      });
 
+      model.get('meta').reset(data.meta);
       this.set('state', Persistence.SAVE_DONE);
 
       // Add a persistence item entry.
@@ -297,7 +300,8 @@ Persistence.prototype.unauthenticate = function (done) {
 Persistence.prototype.getMiddlewareData = function (model) {
   var obj = model ? model.toJSON() : {};
 
-  return _.extend(obj, {
+  // Extend the base object with all utility methods.
+  _.extend(obj, {
     meta:            model ? model.get('meta').toJSON() : {},
     save:            _.bind(this.save, this, model),
     isNew:           _.bind(this.isNew, this, model),
@@ -307,6 +311,14 @@ Persistence.prototype.getMiddlewareData = function (model) {
     authenticate:    _.bind(this.authenticate, this),
     isAuthenticated: _.bind(this.isAuthenticated, this)
   });
+
+  // Extend the meta-data with site specific data.
+  _.extend(obj.meta, {
+    site:               config.get('url'),
+    apiNotebookVersion: process.env.pkg.version
+  });
+
+  return obj;
 };
 
 /**
@@ -316,7 +328,6 @@ Persistence.prototype.getMiddlewareData = function (model) {
  * @param {Function} done
  */
 Persistence.prototype.load = function (model, done) {
-  model._loading = true;
   this.set('state', Persistence.LOADING);
 
   return middleware.trigger(
@@ -330,17 +341,17 @@ Persistence.prototype.load = function (model, done) {
       // Update all relevant model attributes.
       model.set({
         id:         data.id,
+        content:    data.content,
         ownerId:    data.ownerId,
         ownerTitle: data.ownerTitle,
         updatedAt:  data.updatedAt
       });
 
-      model.set('content', data.content, {
-        silent: true
-      });
-
-      delete model._loading;
-
+      /**
+       * Complete the load event and set the state.
+       *
+       * @param {Error} err
+       */
       var complete = _.bind(function (err) {
         this.set('state', err ? Persistence.LOAD_FAIL : Persistence.LOAD_DONE);
 
@@ -361,13 +372,20 @@ Persistence.prototype.load = function (model, done) {
  */
 Persistence.prototype.loadModel = function (model, done) {
   return this.deserialize(model, _.bind(function (err) {
-    model.set('savedContent', model.get('content'));
+    // Return early and avoid re-serialization attempt.
+    if (err) {
+      return done && done(err);
+    }
 
     this.set('notebook', model);
-    config.set('content', model.get('content'));
     this.trigger('changeNotebook');
 
-    return done && done(err);
+    // Serialize the loaded model data to make sure it's all valid.
+    return this.serialize(model, _.bind(function (err) {
+      model.set('savedContent', model.get('content'));
+
+      return done && done(err);
+    }, this));
   }, this));
 };
 
@@ -431,7 +449,7 @@ var persistence = module.exports = new Persistence();
 /**
  * Sync the notebook and stringified contents together.
  */
-persistence.listenTo(persistence, 'change:notebook', bounce((function () {
+persistence.listenTo(persistence, 'change:notebook', (function () {
   var model   = persistence.get('notebook');
   var syncing = false;
 
@@ -459,12 +477,25 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
   var serialize   = wrapSync('serialize');
   var deserialize = wrapSync('deserialize');
 
+  /**
+   * Update the current content state.
+   */
+  var updateState = function () {
+    var hasChanged = !persistence.isSaved(model);
+
+    persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
+  };
+
+  /**
+   * Return the function used to run every notebook change.
+   */
   return function () {
-    /**
-     * Remove listeners on the previous notebook instance.
-     */
-    persistence.stopListening(model);
-    persistence.stopListening(model.get('meta'));
+    if (model) {
+      persistence.stopListening(model);
+      persistence.stopListening(model.get('meta'));
+    }
+
+    // Alias the current model to remove later.
     model = persistence.get('notebook');
 
     /**
@@ -486,24 +517,28 @@ persistence.listenTo(persistence, 'change:notebook', bounce((function () {
     }));
 
     /**
+     * Saved content can change independently of text content.
+     */
+    persistence.listenTo(model, 'change:savedContent', updateState);
+
+    /**
      * Any changes that occur should be synced with the state and config.
      */
-    persistence.listenTo(model, 'change:content', bounce(function () {
-      // Avoid triggering content changes when the notebook is loading.
-      if (model._loading) { return; }
+    persistence.listenTo(model, 'change:content', function () {
+      // Update the content state.
+      updateState();
 
-      var hasChanged = !persistence.isSaved(model);
-
+      // Set the config `content` option for syncing.
       config.set('content', model.get('content'));
-      persistence.set('state', persistence[hasChanged ? 'CHANGED' : 'NULL']);
 
+      // Trigger persistence change every time the data changes.
       middleware.trigger(
         'persistence:change',
         persistence.getMiddlewareData(persistence.get('notebook'))
       );
-    }));
+    });
   };
-})()));
+})());
 
 /**
  * Listens to any changes to the user id and emits a custom `changeUser` event
@@ -546,15 +581,6 @@ persistence.listenTo(middleware, 'application:ready', function () {
  */
 persistence.listenTo(messages, 'load', function (id) {
   return persistence.load(new Notebook({ id: id }));
-});
-
-/**
- * Keep the persistence meta data in sync with the config option.
- */
-persistence.listenTo(config, 'change:url', function () {
-  if (!config.get('id')) { return; }
-
-  persistence.get('notebook').get('meta').set('site', config.get('url'));
 });
 
 /**

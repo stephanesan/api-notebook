@@ -162,6 +162,13 @@ middleware.register('persistence:clone', function (data, next) {
   return next();
 });
 
+/**
+ * Clone the current notebook instance onto the notebook site.
+ *
+ * @param {Object}   data
+ * @param {Function} next
+ * @param {Function} done
+ */
 middleware.register('persistence:clone', function (data, next, done) {
   if (!config.get('embedded')) {
     return next();
@@ -174,16 +181,4 @@ middleware.register('persistence:clone', function (data, next, done) {
   a.click();
 
   return done();
-});
-
-/**
- * Update the persistence meta data when we attempt to save.
- */
-middleware.register('persistence:save', function (data, next) {
-  _.extend(data.meta, {
-    site:               config.get('url'),
-    apiNotebookVersion: process.env.pkg.version
-  });
-
-  return next();
 });

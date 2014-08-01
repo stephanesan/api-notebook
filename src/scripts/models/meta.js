@@ -6,11 +6,7 @@ var Backbone = require('backbone');
  *
  * @type {Function}
  */
-var Meta = module.exports = Backbone.Model.extend({
-  defaults: {
-    title: 'Untitled Notebook'
-  }
-});
+var Meta = module.exports = Backbone.Model.extend();
 
 /**
  * Reset a model by removing any unused attributes and updating everything else.

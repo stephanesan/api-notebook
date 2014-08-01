@@ -84,9 +84,22 @@ App.start = function (el /*, options */, done) {
     done    = arguments[2];
   }
 
+  /**
+   * Complete application start up.
+   *
+   * @param {Error} err
+   */
+  var complete = function (err) {
+    if (err) {
+      console.error(err);
+    }
+
+    return done && done(err);
+  };
+
   return App.middleware.trigger('application:start', options, function (err) {
     if (err) {
-      return done && done(err);
+      return complete(err);
     }
 
     var app = new App.View.App().render().appendTo(el);
@@ -96,6 +109,6 @@ App.start = function (el /*, options */, done) {
       App.postMessage.trigger('rendered');
     }
 
-    return App.middleware.trigger('application:ready', app, done);
+    return App.middleware.trigger('application:ready', app, complete);
   });
 };

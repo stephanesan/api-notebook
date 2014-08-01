@@ -62,7 +62,7 @@ var getDataAttributes = function (el) {
  */
 var defaultOptions = {
   id:      null, // Initial id to pull content from
-  content: null, // Fallback content in case of no id
+  content: '',   // Fallback content in case of no id
   style:   {},   // Set styles on the iframe
   alias:   {}    // Alias objects into the frame once available
 };

@@ -53,16 +53,15 @@ App.prototype.events = {
   'click .notebook-share':  'shareNotebook',
   'click .toggle-notebook': 'toggleView',
   'click .notebook-new':    'newNotebook',
-  // Listen for `Enter` presses and blur the input.
-  'keydown .notebook-title': function (e) {
-    if (e.which !== ENTER_KEY) { return; }
+  'keyup .notebook-title': function (e, el) {
+    var meta = persistence.get('notebook').get('meta');
 
-    e.preventDefault();
-    e.srcElement.blur();
-  },
-  // Update the notebook title on blur to avoid multiple persistence attempts.
-  'focusout .notebook-title': function (e) {
-    persistence.get('notebook').get('meta').set('title', e.target.value);
+    // Update the title on keypress.
+    meta[el.value ? 'set' : 'unset']('title', el.value);
+
+    if (e.which === ENTER_KEY) {
+      el.blur();
+    }
   }
 };
 
@@ -73,11 +72,10 @@ App.prototype.events = {
 App.prototype.initialize = function () {
   View.prototype.initialize.apply(this, arguments);
 
-  var model = persistence.get('notebook');
+  var model;
 
   // Set a sidebar instance to render.
   this.data.set('sidebar', new Sidebar());
-  this.data.set('activeView', 'view');
 
   /**
    * Block attempts to close the window when the persistence state is dirty.
@@ -105,8 +103,10 @@ App.prototype.initialize = function () {
    * Update the saved view state when the id changes.
    */
   this.listenTo(persistence, 'change:notebook', bounce(function () {
-    this.stopListening(model, 'change:id');
-    this.stopListening(model.get('meta'), 'change:title');
+    if (model) {
+      this.stopListening(model, 'change:id');
+      this.stopListening(model.get('meta'), 'change:title');
+    }
 
     // Update model reference.
     model = persistence.get('notebook');
@@ -116,8 +116,9 @@ App.prototype.initialize = function () {
       var title   = model.get('meta').get('title');
       var titleEl = this.el.querySelector('.notebook-title');
 
-      if (titleEl) {
-        titleEl.value = title;
+      // Update the title if it's out of sync.
+      if (titleEl && titleEl.value !== title) {
+        titleEl.value = title || '';
       }
 
       document.title = title ? title + ' • Notebook' : 'Notebook';
@@ -190,10 +191,18 @@ App.prototype.template = require('../../templates/views/app.hbs');
  * Render the current view.
  */
 App.prototype.renderView = function () {
-  var view   = this.data.get('activeView');
-  var method = (view === 'view' ? 'showNotebook' : 'showEditor');
+  var method = this.isNotebook() ? 'showNotebook' : 'showEditor';
 
   return this[method]();
+};
+
+/**
+ * Return whether we are currently using the notebook view.
+ *
+ * @return {Boolean}
+ */
+App.prototype.isNotebook = function () {
+  return this.data.get('notebook') instanceof Notebook;
 };
 
 /**
@@ -224,11 +233,9 @@ App.prototype.showEditor = function () {
  * Toggle the view between edit and notebook view.
  */
 App.prototype.toggleView = function () {
-  // Set the opposite view to active.
-  var view = this.data.get('activeView');
-  this.data.set('activeView', view === 'view' ? 'edit' : 'view');
+  var method = this.isNotebook() ? 'showEditor' : 'showNotebook';
 
-  return this.renderView();
+  return this[method]();
 };
 
 /**
@@ -269,7 +276,15 @@ App.prototype.showShortcuts = function () {
  */
 App.prototype.appendTo = function () {
   View.prototype.appendTo.apply(this, arguments);
-  this.renderView();
+  this.showNotebook();
+
+  // When changing to embedded mode, ensure we are in notebook mode.
+  this.listenTo(config, 'change:embedded', function () {
+    if (config.get('embedded') && !this.isNotebook()) {
+      this.showNotebook();
+    }
+  });
+
   return this;
 };
 

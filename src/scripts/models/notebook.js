@@ -29,9 +29,8 @@ Notebook.prototype.isNew = function () {
  * Set fresh model data when initializing.
  */
 Notebook.prototype.initialize = function (attrs) {
-  this.set('meta', (attrs && attrs.meta) || new Meta({
-    title: 'Untitled Notebook'
-  }));
+  attrs = attrs || {};
 
-  this.set('cells', (attrs && attrs.cells) || []);
+  this.set('meta',  attrs.meta  || new Meta());
+  this.set('cells', attrs.cells || []);
 };

@@ -41,7 +41,7 @@
           {{#if meta.title}}
             {{meta.title}}
           {{else}}
-            &nbsp;
+            <em>Untitled Notebook</em>
           {{/if}}
         </div>
 
@@ -70,7 +70,13 @@
           <i class="icon-cancel-circled" data-delete="{{id}}"></i>
 
           <div class="item-description">
-            <div class="item-title">{{#if meta.title}}{{meta.title}}{{else}}{{id}}{{/if}}</div>
+            <div class="item-title">
+              {{#if meta.title}}
+                {{meta.title}}
+              {{else}}
+                <em>Untitled Notebook</em>
+              {{/if}}
+            </div>
 
             {{#if updatedAt}}
               <div class="item-timestamp">{{dateFormat updatedAt}}</div>
