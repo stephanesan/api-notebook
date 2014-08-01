@@ -1,7 +1,6 @@
 /* global App */
 var _           = App.Library._;
 var qs          = App.Library.qs;
-var mime        = require('mime-component');
 var escape      = require('escape-regexp');
 var parser      = require('uritemplate');
 var sanitizeAST = require('./sanitize-ast');
@@ -15,9 +14,17 @@ var HTTP_METHODS         = ['get', 'head', 'put', 'post', 'patch', 'delete'];
 var RETURN_PROPERTY      = '!return';
 var DESCRIPTION_PROPERTY = '!description';
 var CONFIG_OPTIONS       = [
-  'body', 'proxy', 'uriParameters', 'baseUriParameters', 'headers', 'query'
+  'body',
+  'proxy',
+  'uriParameters',
+  'baseUriParameters',
+  'headers',
+  'query',
+  'beforeSend'
 ];
-var OVERRIDABLE_CONFIG_OPTIONS = _.object(['body', 'proxy'], true);
+var OVERRIDABLE_CONFIG_OPTIONS = _.object(
+  ['body', 'proxy', 'beforeSend'], true
+);
 
 /**
  * Static description of the media type extension function.
@@ -317,6 +324,12 @@ var toMethodDescription = function (nodes, method) {
     '!doc':  'Disable or set a custom proxy url for the current request.'
   };
 
+  // Document the `beforeSend` ability.
+  configOptions.beforeSend = {
+    '!type': 'fn(xhr)',
+    '!doc':  'Modify the `XMLHttpRequest` before it gets sent.'
+  };
+
   // Add documentation on header parameters.
   configOptions.headers = _.extend({
     '!type': 'object'
@@ -492,11 +505,12 @@ var httpRequest = function (nodes, method) {
       config = null;
     }
 
+    config = config || {};
+
     // Map configuration options and merge with the passed in object.
     config = _.object(CONFIG_OPTIONS, _.map(CONFIG_OPTIONS, function (option) {
       if (_.has(OVERRIDABLE_CONFIG_OPTIONS, option)) {
-        return config && option in config ?
-          config[option] : nodes.config[option];
+        return _.has(config, option) ? config[option] : nodes.config[option];
       }
 
       var nodeOption   = nodes.config[option];
@@ -586,12 +600,13 @@ var httpRequest = function (nodes, method) {
     }
 
     var options = {
-      url:     fullUri,
-      data:    config.body,
-      async:   async,
-      proxy:   config.proxy,
-      method:  method.method,
-      headers: config.headers
+      url:        fullUri,
+      data:       config.body,
+      async:      async,
+      proxy:      config.proxy,
+      method:     method.method,
+      headers:    config.headers,
+      beforeSend: config.beforeSend
     };
 
     // Iterate through `securedBy` methods and accept the first one we are
@@ -680,20 +695,11 @@ var attachMediaTypeExtension = function (nodes, context, resource) {
       extension = '.' + extension;
     }
 
-    var newContext  = {};
-    var routeNodes  = _.extend([], nodes);
-    var contentType = mime.lookup(extension);
+    var newContext = {};
+    var routeNodes = _.extend([], nodes);
 
     // Append the extension to the current route.
     routeNodes[routeNodes.length - 1] += extension;
-
-    // Automagically set the correct accepts header. Needs to clone the config
-    // object and the headers to avoid breaking references.
-    if (contentType) {
-      routeNodes.config = _.extend({}, routeNodes.config);
-      routeNodes.config.headers = _.extend({}, routeNodes.config.headers);
-      routeNodes.config.headers.accept = contentType;
-    }
 
     attachMethods(routeNodes, newContext, resource.methods);
     attachResources(routeNodes, newContext, resource.resources);
