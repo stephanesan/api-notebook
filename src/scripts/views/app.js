@@ -117,7 +117,7 @@ App.prototype.initialize = function () {
       var titleEl = this.el.querySelector('.notebook-title');
 
       // Update the title if it's out of sync.
-      if (titleEl && titleEl.value !== title) {
+      if (titleEl && document.activeElement !== titleEl) {
         titleEl.value = title || '';
       }
 
