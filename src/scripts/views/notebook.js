@@ -98,7 +98,7 @@ Notebook.prototype.remove = function () {
  *
  * @return {Notebook}
  */
-Notebook.prototype.updateCompletion = _.throttle(function () {
+Notebook.prototype.updateCompletion = function () {
   // Extends the context with additional inline completion results. Requires
   // using `Object.create` since you can't extend an object with every property
   // of the global object.
@@ -109,7 +109,7 @@ Notebook.prototype.updateCompletion = _.throttle(function () {
   }, this));
 
   return this;
-}, 100);
+};
 
 /**
  * Render the notebook view.
