@@ -98,7 +98,7 @@ Notebook.prototype.remove = function () {
  *
  * @return {Notebook}
  */
-Notebook.prototype.updateCompletion = function () {
+Notebook.prototype.updateCompletion = _.throttle(function () {
   // Extends the context with additional inline completion results. Requires
   // using `Object.create` since you can't extend an object with every property
   // of the global object.
@@ -109,7 +109,7 @@ Notebook.prototype.updateCompletion = function () {
   }, this));
 
   return this;
-};
+}, 100);
 
 /**
  * Render the notebook view.
@@ -131,6 +131,15 @@ Notebook.prototype.render = function () {
   // Register a middleware hook for augmenting the sandbox context.
   this._middleware = {
     'sandbox:context': _.bind(function (context, next) {
+      var active   = this.activeView;
+      var prevCode = active && this.collection.getPrevCode(active.model);
+
+      // Assign the previous cell value.
+      if (prevCode) {
+        context.$_ = prevCode.get('result');
+      }
+
+      // Assign numeric cell values.
       _.each(this.collection.filter(function (model) {
         return model.get('type') === 'code';
       }), function (model, index) {
@@ -387,6 +396,17 @@ Notebook.prototype.appendView = function (view, before) {
           ch:   view.editor.getCursor().ch
         });
       }
+    });
+
+    this.listenTo(view, 'focus', function (view) {
+      // Avoid updating when the view hasn't changed.
+      if (this.activeView === view) {
+        return;
+      }
+
+      // Update the active view and trigger the completion context update.
+      this.activeView = view;
+      this.updateCompletion();
     });
   }
 
