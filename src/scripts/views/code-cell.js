@@ -125,6 +125,7 @@ CodeCell.prototype.execute = function (done) {
   this.notebook.executePrevious(this, _.bind(function () {
     // Add a class to the cell to display execution.
     this.data.set('executing', true);
+    this.trigger('executing', this);
 
     this.notebook.sandbox.execute(this.getValue(), _.bind(function (err, data) {
       this.data.set({

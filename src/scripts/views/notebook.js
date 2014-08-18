@@ -398,7 +398,7 @@ Notebook.prototype.appendView = function (view, before) {
       }
     });
 
-    this.listenTo(view, 'focus', function (view) {
+    this.listenTo(view, 'focus executing', function (view) {
       // Avoid updating when the view hasn't changed.
       if (this.activeView === view) {
         return;
