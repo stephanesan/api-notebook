@@ -166,16 +166,6 @@ Notebook.prototype.render = function () {
   // Remove the rendering flag once the initial view has been set up.
   delete this._rendering;
 
-  // When we only have one cell and no value (fresh notebook), show the first
-  // cells border buttons.
-  if (this.collection.length === 1) {
-    var model = this.collection.at(0);
-
-    if (!model.get('value')) {
-      model.view.showButtonsAbove();
-    }
-  }
-
   this.listenTo(this.collection, 'remove sort', this.updateCompletion);
 
   this.listenTo(this.collection, 'change remove sort', function () {
@@ -350,7 +340,7 @@ Notebook.prototype.appendView = function (view, before) {
     this.listenTo(view, 'delete', function () {
       // If it's the last cell in the document, append an empty code cell.
       if (this.collection.length < 2) {
-        this.appendCodeView().refresh().focus().showButtonsAbove();
+        this.appendCodeView().refresh().focus();
       }
     });
 
