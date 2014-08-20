@@ -391,10 +391,11 @@ EditorCell.prototype.renderEditor = function () {
  * @return {EditorCell}
  */
 EditorCell.prototype.render = function () {
+  this.renderButtons();
+
   View.prototype.render.call(this);
 
   this.renderEditor();
-  this.renderButtons();
   this.update();
   this.listenTo(messages, 'refresh', this.refresh);
 
