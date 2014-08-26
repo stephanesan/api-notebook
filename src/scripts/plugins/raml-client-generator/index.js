@@ -318,7 +318,7 @@ API.authenticate[DESCRIPTION_PROPERTY] = {
     '!doc': 'Select an authentication method defined in the RAML file.'
   }, {
     '!type': 'object',
-    '!doc': 'Coverride the default selected authentication method options.'
+    '!doc': 'Override the default selected authentication method options.'
   }, {
     '!type': 'fn(error, response)'
   }],

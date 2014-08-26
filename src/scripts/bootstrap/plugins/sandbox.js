@@ -113,7 +113,7 @@ middleware.register('sandbox:execute', function (data, next, done) {
   data.window.eval([
     'console._notebookApi.load = function (src, done) {',
     '  console._notebookApi.timeout(Infinity);', // Increase AJAX timeout.
-    '  if (!/^https?:\\/\\//.test(src)) {',
+    '  if (/^https?:\\/\\//.test(src)) {',
     '    src = ' + (PROXY_URL ? '"' + PROXY_URL + '/" + ' : '') + 'src',
     '  }',
     '  return (' + loadScript + ')(src, done || console._notebookApi.async());',
