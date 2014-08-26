@@ -1,8 +1,7 @@
-var loadScript = require('../../lib/browser/load-script');
+/* global App */
 var middleware = require('../../state/middleware');
 
 var ASYNC_TIMEOUT = 2000;
-var PROXY_URL     = process.env.plugins.proxy && process.env.plugins.proxy.url;
 
 /**
  * Set the some additional context variables.
@@ -13,7 +12,24 @@ var PROXY_URL     = process.env.plugins.proxy && process.env.plugins.proxy.url;
 middleware.register('sandbox:context', function (context, next) {
   // Unfortunately it isn't as easy as this since we have scoping issues with
   // the wrong window object. It would load the script in the wrong window.
-  context.load    = function (/* src, done */) {};
+  context.load = function (src, done) {
+    done = done || App._executeContext.async();
+
+    App._executeContext.timeout(20000);
+
+    return middleware.trigger('ajax', {
+      url: src,
+      method: 'GET'
+    }, function (err, xhr) {
+      if (Math.floor(xhr.status / 100) === 2 && xhr.responseText) {
+        /* jshint evil: true */
+        App._executeWindow.eval(xhr.responseText);
+      }
+
+      return done();
+    });
+  };
+
   context.async   = function () {};
   context.timeout = function () {};
 
@@ -28,7 +44,6 @@ middleware.register('sandbox:context', function (context, next) {
  * @param {Function} done
  */
 middleware.register('sandbox:execute', function (data, next, done) {
-  /* global App */
   var code    = 'with (window.console._notebookApi) {\n' + data.code + '\n}';
   var async   = false;
   var exec    = {};
@@ -108,17 +123,6 @@ middleware.register('sandbox:execute', function (data, next, done) {
       return complete(null, exec);
     };
   };
-
-  /* jshint evil: true */
-  data.window.eval([
-    'console._notebookApi.load = function (src, done) {',
-    '  console._notebookApi.timeout(Infinity);', // Increase AJAX timeout.
-    '  if (/^https?:\\/\\//.test(src)) {',
-    '    src = ' + (PROXY_URL ? '"' + PROXY_URL + '/" + ' : '') + 'src',
-    '  }',
-    '  return (' + loadScript + ')(src, done || console._notebookApi.async());',
-    '};'
-  ].join('\n'));
 
   // Uses an asynchronous callback to clear the any possible stack trace
   // that would include implementation logic.
