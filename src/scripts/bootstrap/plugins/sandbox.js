@@ -141,6 +141,17 @@ middleware.register('sandbox:execute', function (data, next, done) {
       exec.result  = error;
       exec.isError = true;
     } finally {
+      // Support cell promise callbacks. This will be better supported in a
+      // future iteration when internal methods are ported to be promises.
+      if (!async && exec.result && typeof exec.result.then === 'function') {
+        return exec.result
+          .then(function (value) {
+            return complete(null, { result: value, isError: false });
+          }, function (err) {
+            return complete(null, { result: err, isError: true });
+          });
+      }
+
       // If the execution is not asynchronous or an error has been thrown,
       // trigger completion of the cell execution.
       if (!async || exec.isError) {
