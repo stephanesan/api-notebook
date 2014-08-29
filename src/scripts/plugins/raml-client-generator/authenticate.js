@@ -10,13 +10,81 @@ var async = App.Library.async;
 var ORDER_PREFERENCE = ['OAuth 2.0', 'OAuth 1.0', 'Basic Authentication'];
 
 /**
+ * Required authentication keys used to check the options object.
+ *
+ * @type {Object}
+ */
+var DEFAULT_REQUIRED_FIELDS = {
+  'OAuth 1.0': {
+    consumerKey:    true,
+    consumerSecret: true
+  },
+  'OAuth 2.0': {
+    clientId:     true,
+    clientSecret: true
+  },
+  'Basic Authentication': {
+    username: true,
+    password: true
+  }
+};
+
+/**
+ * Possible tokens to be filled out by the user.
+ *
+ * @type {Object}
+ */
+var DEFAULT_POSSIBLE_FIELDS = {
+  'OAuth 1.0':            ['consumerKey', 'consumerSecret'],
+  'OAuth 2.0':            ['clientId', 'clientSecret', 'scopes'],
+  'Basic Authentication': ['username', 'password']
+};
+
+/**
+ * Default authentication prompt titles.
+ *
+ * @type {Object}
+ */
+var DEFAULT_PROMPT_TITLES = {
+  'OAuth 1.0':            'Please Enter Your OAuth 1.0 Keys',
+  'OAuth 2.0':            'Please Enter Your OAuth 2.0 Keys',
+  'Basic Authentication': 'Please Enter Your Username and Password'
+};
+
+/**
+ * Map of object keys to their readable names.
+ *
+ * @type {Object}
+ */
+var DEFAULT_FIELD_NAMES = {
+  consumerKey:    'Consumer Key',
+  consumerSecret: 'Consumer Secret',
+  clientId:       'Client ID',
+  clientSecret:   'Client Secret',
+  scopes:         'Permissions',
+  username:       'Username',
+  password:       'Password'
+};
+
+/**
+ * These fields must be hidden in the UI.
+ *
+ * @type {Object}
+ */
+var SECRET_FIELDS = {
+  clientSecret: true,
+  consumerSecret: true,
+  password: true
+};
+
+/**
  * Returns an object of available keys and whether they are required.
  *
  * @param  {Object} scheme
  * @return {Object}
  */
 var requiredTokens = function (scheme) {
-  var keys = _.extend({}, requiredTokens.defaults[scheme.type]);
+  var keys = _.extend({}, DEFAULT_REQUIRED_FIELDS[scheme.type]);
 
   // Special case is required for OAuth2 implicit auth flow.
   if (scheme.type === 'OAuth 2.0') {
@@ -44,26 +112,6 @@ var sanitizeScope = function (scopes) {
   }
 
   return scopes;
-};
-
-/**
- * Required authentication keys used to check the options object.
- *
- * @type {Object}
- */
-requiredTokens.defaults = {
-  'OAuth 1.0': {
-    consumerKey:    true,
-    consumerSecret: true
-  },
-  'OAuth 2.0': {
-    clientId:     true,
-    clientSecret: true
-  },
-  'Basic Authentication': {
-    username: true,
-    password: true
-  }
 };
 
 /**
@@ -95,7 +143,7 @@ var promptTokens = function (scheme, options, done) {
   // Generate an array of the tokens to use with our prompt and filter
   // explicitly not required tokens.
   var possibleTokens = _.filter(
-    promptTokens.possibleTokens[scheme.type],
+    DEFAULT_POSSIBLE_FIELDS[scheme.type],
     function (token) {
       return needsTokens[token] !== false;
     }
@@ -134,7 +182,7 @@ var promptTokens = function (scheme, options, done) {
 
       return [
         '<div class="form-group">',
-        '<label class="form-label">' + promptTokens.titles[key] + '</label>',
+        '<label class="form-label">' + DEFAULT_FIELD_NAMES[key] + '</label>',
         '<div class="form-content">' + scopeOptions + '</div>',
         '</div>'
       ].join('\n');
@@ -144,22 +192,23 @@ var promptTokens = function (scheme, options, done) {
     return [
       '<div class="form-group">',
       '<label for="' + key + '" class="form-label">',
-      promptTokens.titles[key],
+      DEFAULT_FIELD_NAMES[key],
       '</label>',
       '<div class="form-content">',
-      '<input id="' + key + '" value="' + (options[key] || '') + '">',
+      '<input id="' + key + '" value="' + (options[key] || '') + '"' +
+        (SECRET_FIELDS[key] ? ' type="password"' : '') + '>',
       '</div>',
       '</div>'
     ].join('');
   }).join('\n');
 
   return App.middleware.trigger('ui:modal', {
-    title: promptTokens.prompts[scheme.type],
+    title: DEFAULT_PROMPT_TITLES[scheme.type],
     content: [
       '<p>',
       'This API requires authentication. Please enter your application keys.',
       '</p>',
-      '<p><em>We will not store your keys.</em></p>',
+      '<p><em>We do not store your keys.</em></p>',
       '<form>',
       promptForm,
       '<div class="form-footer">',
@@ -202,43 +251,6 @@ var promptTokens = function (scheme, options, done) {
 };
 
 /**
- * Default authentication prompt titles.
- *
- * @type {Object}
- */
-promptTokens.prompts = {
-  'OAuth 1.0':            'Please Enter Your OAuth 1.0 Keys',
-  'OAuth 2.0':            'Please Enter Your OAuth 2.0 Keys',
-  'Basic Authentication': 'Please Enter Your Username and Password'
-};
-
-/**
- * Map of object keys to their readable names.
- *
- * @type {Object}
- */
-promptTokens.titles = {
-  consumerKey:    'Consumer Key',
-  consumerSecret: 'Consumer Secret',
-  clientId:       'Client ID',
-  clientSecret:   'Client Secret',
-  scopes:         'Permissions',
-  username:       'Username',
-  password:       'Password'
-};
-
-/**
- * Possible tokens to be filled out by the user.
- *
- * @type {Object}
- */
-promptTokens.possibleTokens = {
-  'OAuth 1.0':            ['consumerKey', 'consumerSecret'],
-  'OAuth 2.0':            ['clientId', 'clientSecret', 'scopes'],
-  'Basic Authentication': ['username', 'password']
-};
-
-/**
  * Authenticate using an authentication scheme and passed in options.
  *
  * @param  {Object}   scheme
@@ -257,6 +269,15 @@ var authenticate = function (scheme, options, done) {
       return done(new Error('Authentication failed'));
     }
 
+    // Set private fields to asterisks of an arbitrary length.
+    _.each(tokens, function (value, key) {
+      if (!SECRET_FIELDS[key] || value !== options[key]) {
+        return;
+      }
+
+      tokens[key] = new Array(Math.ceil(value.length / 5) * 5).join('*');
+    });
+
     return done(null, scheme, options, tokens);
   }, true);
 };
@@ -265,10 +286,15 @@ var authenticate = function (scheme, options, done) {
  * Request authentication credentials from a third-party source.
  *
  * @param {Object}   scheme
+ * @param {Object}   options
  * @param {Function} done
  */
-var requestTokens = function (scheme, done) {
-  return App.middleware.trigger('ramlClient:token', scheme, done, true);
+var requestTokens = function (scheme, options, done) {
+  var cb = function (err, tokens) {
+    return done(err, _.extend({}, tokens, options));
+  };
+
+  return App.middleware.trigger('ramlClient:token', scheme, cb, true);
 };
 
 /**
@@ -297,16 +323,17 @@ var preferredScheme = function (schemes) {
  * prompting the user.
  *
  * @param {Object}   schemes
+ * @param {Object}   options
  * @param {Function} done
  */
-var retrieveTokens = function (schemes, done) {
+var retrieveTokens = function (schemes, options, done) {
   var tokens;
 
   // Attempt to get the first resolving set of access tokens.
   async.detectSeries(_.map(schemes, function (secured, method) {
     return schemes[method];
   }), function (scheme, cb) {
-    return requestTokens(scheme, function (err, data) {
+    return requestTokens(scheme, options, function (err, data) {
       if (err || !data || !hasRequiredTokens(scheme, data)) {
         return cb(false);
       }
@@ -317,7 +344,7 @@ var retrieveTokens = function (schemes, done) {
     if (!scheme) {
       scheme = preferredScheme(schemes);
 
-      return promptTokens(scheme, {}, function (err, tokens) {
+      return promptTokens(scheme, options, function (err, tokens) {
         return done(err, scheme, tokens);
       });
     }
@@ -332,10 +359,11 @@ var retrieveTokens = function (schemes, done) {
  * optimal authentication scheme available.
  *
  * @param {Object}   schemes
+ * @param {Object}   options
  * @param {Function} done
  */
-var resolveScheme = function (schemes, done) {
-  return retrieveTokens(schemes, function (err, scheme, tokens) {
+var resolveScheme = function (schemes, options, done) {
+  return retrieveTokens(schemes, options, function (err, scheme, tokens) {
     if (err) { return done(err); }
 
     return authenticate(scheme, tokens, done);
@@ -353,9 +381,11 @@ var resolveScheme = function (schemes, done) {
  * @param {Function} done
  */
 module.exports = function (schemes, method, options, done) {
+  var auth = _.extend({}, options);
+
   // If no authentication method has been passed in, attempt to pick our own.
   if (!method) {
-    return resolveScheme(schemes, done);
+    return resolveScheme(schemes, auth, done);
   }
 
   // Ensure we are attempting to authenticate with a valid method.
@@ -367,16 +397,15 @@ module.exports = function (schemes, method, options, done) {
   }
 
   var scheme = schemes[method];
-  var auth   = _.extend({}, options);
 
   // If we don't have all the required tokens available, prompt the user to
   // input tokens and continue authenticating.
   if (!hasRequiredTokens(scheme, auth)) {
-    return requestTokens(scheme, function (err, data) {
+    return requestTokens(scheme, auth, function (err, data) {
       if (err) { return done(err); }
 
       // Don't prompt for the tokens if we managed to retrieve them anyway.
-      if (hasRequiredTokens(scheme, _.extend(auth, data))) {
+      if (hasRequiredTokens(scheme, _.defaults(auth, data))) {
         return authenticate(scheme, auth, done);
       }
 
