@@ -8,7 +8,7 @@ require('./bootstrap');
 var App = module.exports = window.App = {};
 
 App.Library = {
-  qs:         require('qs'),
+  qs:         require('querystring'),
   url:        require('url'),
   async:      require('async'),
   domify:     require('domify'),

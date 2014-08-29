@@ -1,6 +1,6 @@
 /* global App */
 var _           = require('underscore');
-var qs          = require('qs');
+var qs          = require('querystring');
 var url         = require('url');
 var crypto      = require('crypto');
 var authWindow  = require('./lib/auth-window');
