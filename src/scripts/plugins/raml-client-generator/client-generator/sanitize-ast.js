@@ -38,10 +38,6 @@ var sanitizeSecuredBy = function (secured) {
  * @return {Object}
  */
 module.exports = function (ast) {
-  if (!_.isString(ast.baseUri)) {
-    throw new Error('A baseUri is required');
-  }
-
   // Create the base sanitized ast with only the properties we want.
   var sanitizedAst = _.pick(ast, [
     'title',

@@ -17,13 +17,14 @@ var CONFIG_OPTIONS       = [
   'body',
   'proxy',
   'uriParameters',
+  'baseUri',
   'baseUriParameters',
   'headers',
   'query',
   'beforeSend'
 ];
 var OVERRIDABLE_CONFIG_OPTIONS = _.object(
-  ['body', 'proxy', 'beforeSend'], true
+  ['body', 'proxy', 'baseUri', 'beforeSend'], true
 );
 
 /**
@@ -523,8 +524,8 @@ var httpRequest = function (nodes, method) {
     var async   = !!done;
     var request = 'ajax';
     var mime    = getMime(findHeader(config.headers, 'Content-Type'));
-    var baseUri = template(nodes.client.baseUri, {}, config.baseUriParameters);
-    var fullUri = baseUri + '/' + nodes.join('/');
+    var baseUri = template(config.baseUri, {}, config.baseUriParameters);
+    var fullUri = baseUri.replace(/\/+$/, '') + '/' + nodes.join('/');
 
     // If the request is async, set the relevant function callbacks.
     if (async) {
@@ -894,20 +895,24 @@ var generateClient = function (ast, config) {
   // make a request. For this reason, it's important that we use objects which
   // are passed by reference.
   var nodes = _.extend([], {
-    config: config || (config = {}),
+    config: _.extend({
+      baseUri: ast.baseUri,
+      baseUriParameters: _.extend(
+        {}, config.baseUriParameters, _.pick(ast, 'version')
+      )
+    }, config),
     client: {
-      baseUri:           ast.baseUri.replace(/\/+$/, ''),
-      baseUriParameters: ast.baseUriParameters,
       securedBy:         ast.securedBy,
       authentication:    {},
-      securitySchemes:   ast.securitySchemes
+      securitySchemes:   ast.securitySchemes,
+      baseUriParameters: ast.baseUriParameters
     }
   });
 
-  // Set up the initial baseUriParameters configuration.
-  config.baseUriParameters = _.extend(
-    {}, config.baseUriParameters, _.pick(ast, 'version')
-  );
+  // Throw an error if the baseUri string is missing.
+  if (!_.isString(nodes.config.baseUri)) {
+    throw new Error('A "baseUri" string is required');
+  }
 
   /**
    * The root client implementation is simply a function. This allows us to

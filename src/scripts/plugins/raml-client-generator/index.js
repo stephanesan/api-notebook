@@ -156,6 +156,7 @@ API.createClient[DESCRIPTION_PROPERTY] = {
       '* **proxy**: Set to a custom proxy or `false` to disable entirely',
       '* **body**: Set a fallback request body',
       '* **uriParameters**: Set fallback uri parameters to inject',
+      '* **baseUri:** Override the base uri',
       '* **baseUriParameters**: Inject base uri parameters to override',
       '* **headers**: Set default headers to send with every request',
       '* **query**: Set a default query string to send with every request'
