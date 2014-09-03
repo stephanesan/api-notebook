@@ -173,6 +173,9 @@ Notebook.prototype._makeFrame = function (el, options) {
   frame.className = options.className || '';
   frame.scrolling = 'no';
 
+  // Alias access to the current instance.
+  frame.Notebook  = this;
+
   // Extend basic configuration options.
   options.config = extend({
     id:       options.id,
@@ -413,6 +416,13 @@ Notebook.prototype.config = function () {
  */
 Notebook.prototype.message = function () {
   this.trigger.apply(this, ['message'].concat(__slice.call(arguments)));
+};
+
+/**
+ * Pass meta data for the current notebook.
+ */
+Notebook.prototype.meta = function () {
+  this.trigger.apply(this, ['meta'].concat(__slice.call(arguments)));
 };
 
 /**

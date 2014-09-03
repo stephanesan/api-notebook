@@ -6,6 +6,7 @@ var state       = require('../../state/state');
 var config      = require('../../state/config');
 var messages    = require('../../state/messages');
 var middleware  = require('../../state/middleware');
+var persistence = require('../../state/persistence');
 var PostMessage = require('../../lib/post-message');
 
 /**
@@ -132,6 +133,15 @@ middleware.register('application:start', function (options, next) {
    */
   postMessage.on('config', function () {
     config.set.apply(config, arguments);
+  });
+
+  /**
+   * Listen for meta data changes.
+   */
+  postMessage.on('meta', function () {
+    var meta = persistence.get('notebook').get('meta');
+
+    meta.set.apply(meta, arguments);
   });
 
   /**
