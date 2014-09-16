@@ -64,7 +64,8 @@ TextCell.prototype.editorOptions = _.extend(
   {},
   EditorCell.prototype.editorOptions,
   {
-    mode: 'gfm'
+    mode:        'gfm',
+    lineNumbers: false
   }
 );
 

@@ -178,9 +178,7 @@ EditorCell.prototype.hasFocus = function () {
  * @return {Number}
  */
 EditorCell.prototype.firstLine = function () {
-  var prevView = this.getPrevView();
-
-  return prevView ? prevView.lastLine() + 1 : 1;
+  return 1;
 };
 
 /**
@@ -189,7 +187,6 @@ EditorCell.prototype.firstLine = function () {
  * @return {Number}
  */
 EditorCell.prototype.lastLine = function () {
-  // Avoid using `this.editor` to calculate the last line.
   return this.firstLine() + this.lineCount();
 };
 
@@ -204,21 +201,16 @@ EditorCell.prototype.lineCount = function () {
 
 /**
  * Update the editor line numbers.
- *
- * @param {Number} [line]
  */
-EditorCell.prototype._updateLineNumbers = function (line) {
+EditorCell.prototype._updateLineNumbers = function () {
   var nextView = this.getNextView();
-
-  // Update the first line number. Pass a number to set it manually.
-  line = line || this.firstLine();
 
   // Allow the editor to update the line number.
   if (this.editor) {
-    this.editor.setOption('firstLineNumber', line);
+    this.editor.setOption('firstLineNumber', this.firstLine());
   }
 
-  return nextView && nextView._updateLineNumbers(line + this.lineCount() + 1);
+  return nextView && nextView._updateLineNumbers();
 };
 
 /**

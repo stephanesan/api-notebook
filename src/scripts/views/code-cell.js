@@ -187,3 +187,14 @@ CodeCell.prototype.unbindEditor = function () {
   delete this._completion;
   return EditorCell.prototype.unbindEditor.call(this);
 };
+
+/**
+ * Return the first line of the code editor.
+ *
+ * @return {Number}
+ */
+CodeCell.prototype.firstLine = function () {
+  var prevCode = this.model.collection.getPrevCode(this.model);
+
+  return prevCode ? prevCode.view.lastLine() + 1 : 1;
+};

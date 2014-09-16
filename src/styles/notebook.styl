@@ -46,19 +46,21 @@
   position: relative
   min-height: 1.55em
 
-.notebook-view > .cell > .CodeMirror,
+.notebook-view > .cell > .CodeMirror
 .notebook-view > .cell-text > .markdown
+  border: 1px solid $color-cell-border
+  min-height: 25px
   &:hover
     border: solid 1px #bfbfbf
     ~ .cell-controls-btn
       border-color: #bfbfbf
 
-.notebook-view > .cell > .CodeMirror
-  border: 1px solid $color-cell-border
-  min-height: 25px
+.notebook-view > .cell-text > .markdown,
+.notebook-view > .cell-text > .CodeMirror
+  padding: 0.6em
+
 .notebook-view > .cell-text > .markdown
   border: 1px dotted #f2f2f2
-  padding: 0.6em
   font-size: 95%
   min-height: 25px
   *:last-child
