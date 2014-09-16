@@ -478,7 +478,7 @@ var sanitizeXHR = function (xhr) {
   if (!xhr) { return xhr; }
 
   var mime    = getMime(xhr.getResponseHeader('Content-Type'));
-  var body    = xhr.responseText;
+  var body    = xhr.responseText.trim();
   var headers = getAllReponseHeaders(xhr);
 
   // Automatically parse all response bodies. Only parse when we have response
