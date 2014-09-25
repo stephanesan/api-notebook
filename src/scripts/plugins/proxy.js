@@ -20,8 +20,8 @@ var ajaxPlugin = function (data, next) {
   var proxy = _.isString(data.proxy) ? data.proxy : PROXY_URL;
 
   // Attach the proxy if the url is not a relative url.
-  if (uri.protocol && uri.host && proxy) {
-    data.url = url.resolve(window.location.href, proxy + '/' + data.url);
+  if (proxy && uri.protocol && uri.host) {
+    data.url = url.resolve(window.location.href, proxy) + '/' + data.url;
   }
 
   return next();
