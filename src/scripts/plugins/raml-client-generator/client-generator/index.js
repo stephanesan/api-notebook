@@ -1,7 +1,6 @@
 /* global App */
 var _           = App.Library._;
 var qs          = App.Library.qs;
-var escape      = require('escape-regexp');
 var sanitizeAST = require('./sanitize-ast');
 
 var CONFIG_PROPERTY = '!config';
@@ -620,7 +619,8 @@ var httpRequest = function (nodes, method) {
 
       if (authenticated) {
         options[authType] = authenticated;
-        return request = 'ajax:' + authType;
+
+        return (request = 'ajax:' + authType);
       }
     });
 
