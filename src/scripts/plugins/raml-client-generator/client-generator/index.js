@@ -2,7 +2,6 @@
 var _           = App.Library._;
 var qs          = App.Library.qs;
 var escape      = require('escape-regexp');
-var parser      = require('uritemplate');
 var sanitizeAST = require('./sanitize-ast');
 
 var CONFIG_PROPERTY = '!config';
@@ -225,37 +224,33 @@ var ramlBodyToMarkdown = function (body) {
 };
 
 /**
- * Accepts a params object and transforms it into a regex for matching the
- * tokens in the route.
+ * Match raml uri parameters in a uri.
  *
- * @param  {Object} params
- * @return {RegExp}
+ * @type {RegExp}
  */
-var uriParamRegex = function (params) {
-  // Transform the params into a regular expression for matching.
-  return new RegExp('{(' + _.map(_.keys(params), escape).join('|') + ')}', 'g');
-};
+var URI_PARAM_REGEXP = /{[^}]+}/g;
 
 /**
  * Simple "template" function for working with the uri param variables.
  *
- * @param  {String}       template
- * @param  {Object}       params
- * @param  {Object|Array} context
+ * @param  {String}         template
+ * @param  {(Object|Array)} context
  * @return {String}
  */
-var template = function (string, params, context) {
+var template = function (string, context) {
   // If the context is an array, we need to transform the replacements into
   // index based positions for the uri template parser.
   if (_.isArray(context)) {
     var index = 0;
 
-    string = string.replace(uriParamRegex(params), function () {
-      return '{' + (index++) + '}';
+    return string.replace(URI_PARAM_REGEXP, function () {
+      return encodeURIComponent(context[index++] || '');
     });
   }
 
-  return parser.parse(string).expand(context);
+  return string.replace(URI_PARAM_REGEXP, function (match) {
+    return encodeURIComponent(context[match.slice(1, -1)] || '');
+  });
 };
 
 /**
@@ -524,7 +519,7 @@ var httpRequest = function (nodes, method) {
     var async   = !!done;
     var request = 'ajax';
     var mime    = getMime(findHeader(config.headers, 'Content-Type'));
-    var baseUri = template(config.baseUri, {}, config.baseUriParameters);
+    var baseUri = template(config.baseUri, config.baseUriParameters);
     var fullUri = baseUri.replace(/\/+$/, '') + '/' + nodes.join('/');
 
     // If the request is async, set the relevant function callbacks.
@@ -775,7 +770,7 @@ var attachResources = function (nodes, context, resources) {
     }
 
     // Check the route against our valid uri parameters.
-    var templateTags = route.match(uriParamRegex(resource.uriParameters));
+    var templateTags = route.match(URI_PARAM_REGEXP);
 
     // Push the current route into the route array.
     routeNodes.push(route);
@@ -839,9 +834,7 @@ var attachResources = function (nodes, context, resources) {
         });
 
         // Change the last path fragment to the proper template text.
-        routeNodes[routeNodes.length - 1] = template(
-          route, resource.uriParameters, parts
-        );
+        routeNodes[routeNodes.length - 1] = template(route, parts);
 
         return newContext(routeNodes, resource, hasMediaExtension);
       }, context[routeName]);
@@ -925,7 +918,7 @@ var generateClient = function (ast, config) {
    */
   var client = function (path, context) {
     var route = template(
-      path || '', {}, context || {}
+      path || '', context || {}
     ).replace(/^\/+/, '').split('/');
 
     return attachMethods(_.extend([], nodes, route), {}, allHttpMethods);
