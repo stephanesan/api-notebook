@@ -97,7 +97,7 @@ module.exports = function (ast) {
 
       (function attachResource (map, segments) {
         var segment = segments.shift();
-        var part    = map[segment] = {};
+        var part    = map[segment] = map[segment] || {};
 
         // Currently on the last url segment, embed the full resource.
         if (!segments.length) {
