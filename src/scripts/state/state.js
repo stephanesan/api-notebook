@@ -29,9 +29,14 @@ state.listenTo(messages, 'resize refresh', function () {
   execTimeout = DOMBars.VM.exec(function () {
     execTimeout = null;
 
+    var docEl     = document.documentElement;
+    var bodyEl    = document.body;
+    var docWidth  = Math.max(docEl.scrollWidth, bodyEl.scrollWidth);
+    var docHeight = Math.max(docEl.scrollHeight, bodyEl.scrollHeight);
+
     state.set('viewportWidth',  window.innerWidth);
     state.set('viewportHeight', window.innerHeight);
-    state.set('documentWidth',  document.documentElement.scrollWidth);
-    state.set('documentHeight', document.documentElement.scrollHeight);
+    state.set('documentWidth',  docWidth);
+    state.set('documentHeight', docHeight);
   });
 });
