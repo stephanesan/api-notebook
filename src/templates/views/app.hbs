@@ -20,10 +20,10 @@
         </span>
         <span class="btn-view">
           <span class="btn-group">
+            {{#if @config.savable}}
             <button class="btn-round notebook-new hint--bottom" data-hint="New notebook">
               <i class="icon-doc"></i>
             </button>
-            {{#if @config.savable}}
             <button class="btn-round notebook-save hint--bottom {{#unless @data.owner}}btn-disabled{{/unless}}" data-hint="{{#if @data.owner}}Save notebook{{else}}Clone the notebook to save{{/if}}">
               <i class="icon-floppy"></i>
             </button>
