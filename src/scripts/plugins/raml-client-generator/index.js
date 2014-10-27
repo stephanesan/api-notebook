@@ -281,6 +281,9 @@ API.authenticate = function (client, method, options, done) {
   var clientOption    = client['!client'];
   var securitySchemes = clientOption.securitySchemes;
 
+  // Extend passed in options with global options (for `baseUriParameters`).
+  options = _.extend({}, options, client['!config']);
+
   /**
    * The callback is used to handle the persistence of data to the client.
    *

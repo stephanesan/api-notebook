@@ -1,6 +1,7 @@
 /* global App */
-var _     = App.Library._;
-var async = App.Library.async;
+var _        = App.Library._;
+var async    = App.Library.async;
+var template = require('./client-generator/template');
 
 /**
  * Map authentication types to automatic preference.
@@ -258,9 +259,22 @@ var promptTokens = function (scheme, options, done) {
  * @param  {Function} done
  */
 var authenticate = function (scheme, options, done) {
-  App.middleware.trigger('authenticate', _.extend({
+  var authOpts = _.defaults({
     type: scheme.type
-  }, scheme.settings, options), function (err, tokens) {
+  }, options, scheme.settings);
+
+  // Interpolate the authorization uri.
+  authOpts.authorizationUri = template(
+    authOpts.authorizationUri, authOpts.baseUriParameters
+  );
+
+  // Interpolate the access token uri.
+  authOpts.accessTokenUri = template(
+    authOpts.accessTokenUri, authOpts.baseUriParameters
+  );
+
+  // Trigger the authentication flow.
+  App.middleware.trigger('authenticate', authOpts, function (err, tokens) {
     if (err) {
       return done(err);
     }
