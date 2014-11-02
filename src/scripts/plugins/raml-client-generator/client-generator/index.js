@@ -198,7 +198,7 @@ var ramlBodyToMarkdown = function (body) {
       _.each(contentType.formParameters, function (param, key) {
         documentation.push(
           '* **' + key + (param.required ? '' : '?') + ':** ' +
-          '*' + param.type + '*' + param.description
+          '*' + param.type + '* ' + param.description
         );
       });
     }
