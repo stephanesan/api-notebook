@@ -16,6 +16,13 @@ var URI_PARAM_REGEXP = /{[^}]+}/g;
  * @return {String}
  */
 exports = module.exports = function (string, context) {
+  context = context || {};
+
+  // No uri string has been specified.
+  if (string == null) {
+    return null;
+  }
+
   // If the context is an array, we need to transform the replacements into
   // index based positions for the uri template parser.
   if (_.isArray(context)) {

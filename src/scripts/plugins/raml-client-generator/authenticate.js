@@ -259,22 +259,23 @@ var promptTokens = function (scheme, options, done) {
  * @param  {Function} done
  */
 var authenticate = function (scheme, options, done) {
-  var authOpts = _.defaults({
+  var opts = _.defaults({
     type: scheme.type
   }, options, scheme.settings);
 
-  // Interpolate the authorization uri.
-  authOpts.authorizationUri = template(
-    authOpts.authorizationUri, authOpts.baseUriParameters
-  );
-
-  // Interpolate the access token uri.
-  authOpts.accessTokenUri = template(
-    authOpts.accessTokenUri, authOpts.baseUriParameters
-  );
+  // Interpolate all uri parameters.
+  _.each([
+    'accessTokenUri',
+    'authorizationUri',
+    'requestTokenUri',
+    'authorizationUri',
+    'tokenCredentialsUri'
+  ], function (param) {
+    opts[param] = template(opts[param], opts, opts.baseUriParameters);
+  });
 
   // Trigger the authentication flow.
-  App.middleware.trigger('authenticate', authOpts, function (err, tokens) {
+  App.middleware.trigger('authenticate', opts, function (err, tokens) {
     if (err) {
       return done(err);
     }
