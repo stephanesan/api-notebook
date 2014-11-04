@@ -853,6 +853,11 @@ var attachResources = function (nodes, context, resources) {
  * @return {Object}
  */
 var generateClient = function (ast, config) {
+  // Generate the base uri parameters and defaults.
+  var baseUriParameters = _.extend(
+    {}, _.pick(ast, 'version'), config.baseUriParameters
+  );
+
   // Generate the root node array. Set properties directly on this array to be
   // copied to the next execution part. We have a global configuration object
   // which can be altered externally at any point, as well as when we finally
@@ -860,11 +865,10 @@ var generateClient = function (ast, config) {
   // are passed by reference.
   var nodes = _.extend([], {
     config: _.extend({
-      baseUri: ast.baseUri,
-      baseUriParameters: _.extend(
-        {}, config.baseUriParameters, _.pick(ast, 'version')
-      )
-    }, config),
+      baseUri: ast.baseUri
+    }, config, {
+      baseUriParameters: baseUriParameters
+    }),
     client: {
       securedBy:         ast.securedBy,
       authentication:    {},
