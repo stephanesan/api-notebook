@@ -284,15 +284,6 @@ var authenticate = function (scheme, options, done) {
       return done(new Error('Authentication failed'));
     }
 
-    // Set private fields to asterisks of an arbitrary length.
-    _.each(tokens, function (value, key) {
-      if (!SECRET_FIELDS[key] || value !== options[key]) {
-        return;
-      }
-
-      tokens[key] = new Array(Math.ceil(value.length / 5) * 5).join('*');
-    });
-
     return done(null, scheme, options, tokens);
   }, true);
 };
@@ -395,7 +386,7 @@ var resolveScheme = function (schemes, options, done) {
  * @param {Object}   options
  * @param {Function} done
  */
-module.exports = function (schemes, method, options, done) {
+exports = module.exports = function (schemes, method, options, done) {
   var auth = _.extend({}, options);
 
   // If no authentication method has been passed in, attempt to pick our own.
@@ -435,3 +426,8 @@ module.exports = function (schemes, method, options, done) {
   // Finally we have everything we need and can initiate authentication.
   return authenticate(scheme, auth, done);
 };
+
+/**
+ * Expose secret field names.
+ */
+exports.SECRET_FIELDS = SECRET_FIELDS;

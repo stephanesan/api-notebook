@@ -301,6 +301,13 @@ API.authenticate = function (client, method, options, done) {
     // Alias onto the client object for future use.
     clientOption.authentication[scheme.type] = _.extend({}, options, tokens);
 
+    // Set private fields to asterisks of an arbitrary length.
+    _.each(tokens, function (value, key) {
+      if (authenticate.SECRET_FIELDS[key]) {
+        tokens[key] = new Array(Math.ceil(value.length / 5) * 5).join('*');
+      }
+    });
+
     return done(null, tokens);
   };
 
