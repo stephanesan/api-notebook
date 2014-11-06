@@ -271,7 +271,7 @@ var authenticate = function (scheme, options, done) {
     'authorizationUri',
     'tokenCredentialsUri'
   ], function (param) {
-    opts[param] = template(opts[param], opts, opts.baseUriParameters);
+    opts[param] = template(opts[param], opts.baseUriParameters);
   });
 
   // Trigger the authentication flow.
