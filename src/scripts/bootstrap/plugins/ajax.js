@@ -11,7 +11,7 @@ var AJAX_TIMEOUT = 20000;
  */
 middleware.register('ajax', function (options, next) {
   var url     = options.url;
-  var method  = options.method || 'GET';
+  var method  = (options.method || 'GET').toUpperCase();
   var xhr     = options.xhr = new XMLHttpRequest();
   var async   = options.async !== false;
   var timeout = +options.timeout || AJAX_TIMEOUT;
