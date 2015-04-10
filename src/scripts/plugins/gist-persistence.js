@@ -2,8 +2,14 @@
 var _             = App._;
 var AUTH_URL      = 'https://github.com/login/oauth/authorize';
 var TOKEN_URL     = 'https://github.com/login/oauth/access_token';
-var CLIENT_ID     = process.env.plugins.github.clientId;
-var CLIENT_SECRET = process.env.plugins.github.clientSecret;
+var plugin        = (process.env.plugins || {}).github || {};
+var CLIENT_ID     = plugin.clientId;
+var CLIENT_SECRET = plugin.clientSecret;
+
+// Detect if the plugin is not enabled.
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.warn('GitHub plugin has not been configured. Please set the `clientId` and `clientSecret` in your config to use it.');
+}
 
 /**
  * OAuth2 authentication options object.
