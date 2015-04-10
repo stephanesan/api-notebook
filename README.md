@@ -59,6 +59,10 @@ Remember to add a new config file (E.g. `config/development.json`) to get up and
 }
 ```
 
+### Sources
+
+The project is split with multiple HTML files acting as entry points to fulfil the embedded requirement of the API Notebook. For example, `src/index.html` is the most feature complete page featuring all the available plugins and rendering in "page" mode, while `src/embedded.html` is an example of the notebook running in "embedded" mode. Finally, `src/embed.html` should never be opened directly but it is the rendered notebook that usually resides inside the `<iframe>` instance.
+
 ## Configuration
 
 Project configuration is through [node-config](https://github.com/lorenwest/node-config). To add or override config options, just add a file for your environment (E.g. `development.json`). All plugin config options should be stored under the `plugins` key, while other options are depicted in the `example.json` and `default.json` files.
