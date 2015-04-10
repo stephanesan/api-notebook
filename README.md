@@ -8,15 +8,16 @@ Interactive API notebook - [demo](http://apinotebook.com).
 # Install dependencies
 npm install
 npm install -g grunt-cli
-npm install -g phantomjs
 
 # Start development server
 grunt
+# open http://localhost:3000
 
 # Run tests in the browser (requires the server to be running)
 open test/index.html
 
 # Run headless tests
+npm install -g phantomjs
 grunt test
 ```
 
