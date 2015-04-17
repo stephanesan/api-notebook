@@ -1,7 +1,7 @@
 var _          = require('underscore');
 var middleware = require('../../state/middleware');
 
-var AJAX_TIMEOUT = 20000;
+var AJAX_TIMEOUT = 60000;
 
 /**
  * Send an ajax request and return the xhr request back to the final listener.

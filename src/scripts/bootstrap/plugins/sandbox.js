@@ -1,7 +1,7 @@
 /* global App */
 var middleware = require('../../state/middleware');
 
-var ASYNC_TIMEOUT = 2000;
+var ASYNC_TIMEOUT = 60000;
 
 /**
  * Set the some additional context variables.
@@ -15,7 +15,7 @@ middleware.register('sandbox:context', function (context, next) {
   context.load = function (src, done) {
     done = done || App._executeContext.async();
 
-    App._executeContext.timeout(20000);
+    App._executeContext.timeout(ASYNC_TIMEOUT);
 
     return middleware.trigger('ajax', {
       url: src,
