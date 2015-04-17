@@ -111,7 +111,7 @@ var paramsToArray = function (obj) {
  */
 var arrayToParams = function (array) {
   return _.map(array, function (args) {
-    return encodeData(args[0]) + '=' + encodeData(args[1]);
+    return args[0] + '=' + args[1];
   }).join('&');
 };
 
