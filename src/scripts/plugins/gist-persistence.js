@@ -8,7 +8,8 @@ var CLIENT_SECRET = plugin.clientSecret;
 
 // Detect if the plugin is not enabled.
 if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.warn('GitHub plugin has not been configured. Please set the `clientId` and `clientSecret` in your config to use it.');
+  console.warn('GitHub plugin has not been configured. Please set the ' +
+    '`clientId` and `clientSecret` in your config to use it.');
 }
 
 /**
