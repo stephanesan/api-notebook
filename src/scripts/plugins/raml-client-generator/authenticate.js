@@ -310,6 +310,11 @@ var requestTokens = function (scheme, options, done) {
  * @return {Object}
  */
 var preferredScheme = function (schemes) {
+  // Fix `undefined` schemes issues.
+  if (!schemes || !Object.keys(schemes).length) {
+    return;
+  }
+
   var method = _.intersection(ORDER_PREFERENCE, _.pluck(schemes, 'type'))[0];
 
   // Return an essentially random but consistent scheme.
@@ -349,6 +354,10 @@ var retrieveTokens = function (schemes, options, done) {
   }, function (scheme) {
     if (!scheme) {
       scheme = preferredScheme(schemes);
+
+      if (!scheme) {
+        return done(new Error('No schemes available'));
+      }
 
       return promptTokens(scheme, options, function (err, tokens) {
         return done(err, scheme, tokens);
