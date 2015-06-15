@@ -5,7 +5,8 @@ var domify     = App.Library.domify;
 var Backbone   = App.Library.Backbone;
 var changeCase = App.Library.changeCase;
 
-var BASE_URI       = 'http://api-portal.anypoint.mulesoft.com/rest/v1/apis';
+var BASE_URI = 'https://anypoint.mulesoft.com/apiplatform/repository/v2/' +
+  'organizations/52560d3f-c37a-409d-9887-79e0a9a9ecff/public/portals';
 var ITEMS_PER_PAGE = 10;
 
 /**
@@ -284,16 +285,18 @@ App.View.CodeCell.prototype.cellControls.push({
  */
 App.middleware.register('ramlClient:search', function (search, next, done) {
   var url = BASE_URI + '?' + qs.stringify({
-    specFormat: 'RAML',
-    count:      search.limit,
-    start:      search.offset,
-    title:      search.query
+    sort:      'name',
+    ascending: true,
+    limit:     search.limit,
+    offset:    search.offset,
+    query:     search.query
   });
 
   return App.middleware.trigger('ajax', {
     url: url
   }, function (err, xhr) {
     var result;
+    var data = {};
 
     if (err) {
       return done(err);
@@ -305,25 +308,28 @@ App.middleware.register('ramlClient:search', function (search, next, done) {
       return done(e);
     }
 
-    if (Array.isArray(result)) {
-      return done(null, { total: 0, items: [] });
-    }
+    data.total = result.total;
 
-    // Map the items to the usable format.
-    result.items = result.items.map(function (item) {
+    data.items = result.apis.map(function (item) {
       return {
-        name: item.title,
-        versions: [{
-          name:        'Latest',
-          portalUrl:   item.apihubPortal,
-          ramlUrl:     item.specs.RAML.url,
-          description: item.description,
-          deprecated:  false,
-          tags:        []
-        }]
+        name: item.name,
+        versions: item.versions.map(function (version) {
+          return {
+            name: version.name,
+            portalUrl: 'https://anypoint.mulesoft.com/apiplatform/popular/#' +
+              '/portals/organizations/' + version.organizationId + '/apis/' +
+              version.apiId + '/versions/' + version.id,
+            ramlUrl: 'https://anypoint.mulesoft.com/apiplatform/repository/v2' +
+              '/organizations/' + version.organizationId + '/public/apis/' +
+              version.apiId + '/versions/' + version.id + '/files/root',
+            description: version.description,
+            deprecated: version.deprecated,
+            tags: version.tags
+          };
+        })
       };
     });
 
-    return done(null, result);
+    return done(null, data);
   });
 });
