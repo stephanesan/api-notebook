@@ -93,6 +93,7 @@ var selectAPIDefinition = function (done) {
       var itemsNextBtnEl     = itemsEl.querySelector('.items-next-btn');
       var itemsPrevBtnEl     = itemsEl.querySelector('.items-prev-btn');
       var itemsUnavailableEl = modal.el.querySelector('.items-unavailable');
+      var searchId;
 
       /**
        * Load all the API definitions and return the items as an array.
@@ -100,6 +101,11 @@ var selectAPIDefinition = function (done) {
        * @param {Function} done
        */
       var loadAPIDefinitions = function (search, done) {
+        var currentSearchId = Math.random();
+
+        // Track current search index.
+        searchId = currentSearchId;
+
         // Reset element states and show a loading indicator.
         itemsEl.classList.add('hide');
         itemsUnavailableEl.classList.add('hide');
@@ -109,7 +115,18 @@ var selectAPIDefinition = function (done) {
         itemsNextBtnEl.setAttribute('disabled', 'disabled');
         itemsPrevBtnEl.setAttribute('disabled', 'disabled');
 
-        return App.middleware.trigger('ramlClient:search', search, done);
+        return App.middleware.trigger(
+          'ramlClient:search',
+          search,
+          function (err, data) {
+            // Skip updates when the ID has changed.
+            if (currentSearchId !== searchId) {
+              return;
+            }
+
+            return done(err, data);
+          }
+        );
       };
 
       /**
