@@ -1,3 +1,4 @@
+/* global App */
 var _          = require('underscore');
 var config     = require('../../state/config');
 var middleware = require('../../state/middleware');
@@ -174,11 +175,7 @@ middleware.register('persistence:clone', function (data, next, done) {
     return next();
   }
 
-  // Redirect to an external url using links since we don't have anu kind of
-  // iframe state manager or way to easily open the link in the parent frame.
-  var a = document.createElement('a');
-  a.href = config.get('fullUrl');
-  a.click();
+  App.postMessage.trigger('redirect', config.get('fullUrl'));
 
   return done();
 });

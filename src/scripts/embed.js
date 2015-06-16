@@ -215,6 +215,11 @@ Notebook.prototype._makeFrame = function (el, options) {
     this.el.height = height;
   });
 
+  // Handle redirects from the child by executing in the parent frame.
+  this.on('redirect', function (location) {
+    window.location = location;
+  });
+
   // Set up a single message listener that will trigger events from the frame
   global.addEventListener('message', this._messageListener = function (e) {
     if (e.source !== frame.contentWindow) { return; }
