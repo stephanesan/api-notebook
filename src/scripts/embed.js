@@ -1,10 +1,8 @@
+var url     = require('url');
 var css     = require('css-component');
 var each    = require('foreach');
 var Kamino  = require('kamino');
 var __slice = Array.prototype.slice;
-
-// Set the location to load the notebook from
-var NOTEBOOK_URL = process.env.application.url;
 
 /**
  * Extend any object with the properties from other objects, overriding of left
@@ -61,10 +59,16 @@ var getDataAttributes = function (el) {
  * @type {Object}
  */
 var defaultOptions = {
-  id:      null, // Initial id to pull content from
-  content: '',   // Fallback content in case of no id
-  style:   {},   // Set styles on the iframe
-  alias:   {}    // Alias objects into the frame once available
+  // Location to load the notebook from.
+  url:     url.resolve(process.env.application.url, 'embed.html'),
+  // Initial id to pull content from.
+  id:      null,
+  // Fallback content in case of no id.
+  content: '',
+  // Set styles on the iframe.
+  style:   {},
+  // Alias objects into the frame once available.
+  alias:   {}
 };
 
 /**
@@ -95,9 +99,14 @@ var Notebook = module.exports = function (el, options, styles) {
   }
 
   var notebook = this;
+  var notebookStyles = extend({}, defaultStyles, styles);
+  var notebookOptions = extend({}, defaultOptions, options);
 
-  notebook._makeFrame(el, extend({}, defaultOptions, options));
-  notebook._styleFrame(extend({}, defaultStyles, styles));
+  // Resolve the URL relative to the current window.
+  notebookOptions.url = url.resolve(window.location.href, notebookOptions.url);
+
+  notebook._makeFrame(el, notebookOptions);
+  notebook._styleFrame(notebookStyles);
 
   // Listen to the ready event and set a flag for future ready functions.
   notebook.once('ready', function () {
@@ -165,11 +174,10 @@ Notebook.unsubscribe = function (fn) {
  */
 Notebook.prototype._makeFrame = function (el, options) {
   var notebook = this;
-  var src      = NOTEBOOK_URL + '/embed.html';
   var frame    = this.el = document.createElement('iframe');
 
   // Configure base frame options.
-  frame.src       = src;
+  frame.src       = options.url;
   frame.className = options.className || '';
   frame.scrolling = 'no';
 
@@ -402,7 +410,7 @@ Notebook.prototype.trigger = function (name /*, ..args */) {
   }
 
   args = __slice.call(arguments, 0);
-  this.el.contentWindow.postMessage(Kamino.stringify(args), NOTEBOOK_URL);
+  this.el.contentWindow.postMessage(Kamino.stringify(args), this.options.url);
   return this;
 };
 
