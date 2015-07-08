@@ -11,7 +11,6 @@ var Cell         = require('../models/cell');
 var CellButtons  = require('./cell-buttons');
 var CellControls = require('./cell-controls');
 var embedProtect = require('./lib/embed-protect');
-var cellControls = new CellControls();
 
 /**
  * Wrap a function method and ensure it only triggers when we're allowed access.
@@ -340,14 +339,15 @@ EditorCell.prototype.renderEditor = function () {
   this.removeEditor();
 
   // If an editor already exists, rerender the editor keeping the same options.
-  this.editor = new CodeMirror(_.bind(function (el) {
-    this.el.insertBefore(el, this.el.firstChild);
-  }, this), _.extend({
-    view:            this,
-    value:           this.getValue(),
-    readOnly:        this.isReadOnly(),
-    firstLineNumber: this.firstLine()
-  }, this.editorOptions));
+  this.editor = new CodeMirror(
+    this.el.querySelector('.cell-content'),
+    _.extend({
+      view:            this,
+      value:           this.getValue(),
+      readOnly:        this.isReadOnly(),
+      firstLineNumber: this.firstLine()
+    }, this.editorOptions)
+  );
 
   // Initialize every editor with the cursor at the end.
   this.moveCursorToEnd();
@@ -424,18 +424,28 @@ EditorCell.prototype.render = function () {
 /**
  * Create a cell controls instance and append to the editor cell.
  *
- * @param  {Object}       e
  * @return {CellControls}
  */
-EditorCell.prototype.showControls = function (e) {
-  e.stopPropagation();
+EditorCell.prototype.showControls = function () {
+  var that = this;
 
-  var controls = cellControls.render(this.cellControls).appendTo(this.el);
+  setTimeout(function () {
+    var el = that.el.querySelector('.cell-menu-toggle');
+    var controls = new CellControls()
+      .render(that.cellControls)
+      .appendTo(that.el);
 
-  this.listenTo(controls, 'remove', this.stopListening);
-  this.listenTo(controls, 'action', function (_, action) {
-    return this[action]();
-  });
+    el.classList.add('open');
+
+    that.listenTo(controls, 'remove', function (view) {
+      that.stopListening(view);
+      el.classList.remove('open');
+    });
+
+    that.listenTo(controls, 'action', function (_, action) {
+      return that[action]();
+    });
+  }, 0);
 
   return controls;
 };

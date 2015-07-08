@@ -133,11 +133,15 @@ TextCell.prototype.removeEditor = function () {
  * @return {TextCell}
  */
 TextCell.prototype.renderEditor = function () {
+  if (!this.data.get('rendered')) {
+    return;
+  }
+
   this.removeEditor();
 
-  this.markdownElement = this.el.insertBefore(
-    domify('<div class="markdown"></div>'), this.el.firstChild
-  );
+  this.markdownElement = domify('<div class="markdown"></div>');
+
+  this.el.querySelector('.cell-content').appendChild(this.markdownElement);
 
   marked(this.getValue(), {
     gfm: true,
