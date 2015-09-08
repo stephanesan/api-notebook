@@ -5,8 +5,8 @@ var domify     = App.Library.domify;
 var Backbone   = App.Library.Backbone;
 var changeCase = App.Library.changeCase;
 
-var BASE_URI = 'https://anypoint.mulesoft.com/apiplatform/repository/v2/' +
-  'organizations/52560d3f-c37a-409d-9887-79e0a9a9ecff/public/portals';
+var BASE_URI = 'https://anypoint.mulesoft.com/apiplatform/repository/v2' +
+  '/public/apis';
 var ITEMS_PER_PAGE = 10;
 
 /**
@@ -77,6 +77,7 @@ var selectAPIDefinition = function (done) {
         '<i class="icon-arrows-cw animate-spin"></i>' +
         '</div>' +
         '<div class="items-container clearfix">' +
+        '<div class="items-container-total"></div>' +
         '<ul class="items-list"></ul>' +
         '<button class="btn-secondary items-prev-btn" style="float: left">' +
         'Previous</button>' +
@@ -93,6 +94,7 @@ var selectAPIDefinition = function (done) {
       var itemsNextBtnEl     = itemsEl.querySelector('.items-next-btn');
       var itemsPrevBtnEl     = itemsEl.querySelector('.items-prev-btn');
       var itemsUnavailableEl = modal.el.querySelector('.items-unavailable');
+      var totalItemsEl       = modal.el.querySelector('.items-container-total');
       var searchId;
 
       /**
@@ -143,14 +145,19 @@ var selectAPIDefinition = function (done) {
 
         // Empty the list before we populate it again.
         itemsListEl.innerHTML = '';
+        totalItemsEl.innerHTML = '';
 
         if (err) {
           return done(err);
         }
 
-        if (!result.items) {
+        if (result.items.length === 0) {
           return itemsUnavailableEl.classList.remove('hide');
         }
+
+        totalItemsEl.appendChild(document.createTextNode(
+          'Showing ' + result.items.length + ' of ' + result.total + ' results'
+        ));
 
         itemsEl.classList.remove('hide');
 
@@ -167,6 +174,7 @@ var selectAPIDefinition = function (done) {
         // Iterate over each version and append to the item list.
         _.each(result.items, function (item) {
           var name = _.escape(item.name);
+          var masterOrg = _.escape(item.versions[0].masterOrganizationName);
 
           var el = domify([
             '<li>',
@@ -175,12 +183,14 @@ var selectAPIDefinition = function (done) {
             '<button class="btn btn-primary btn-small item-add">Add</button>',
             '</div>',
             '<a href="#" class="item-link">All versions</a>',
-            '<div class="item-name">' + name + '</div>',
+            '<div class="item-name">' +
+            name + ' <small>' + masterOrg + '</small>' +
+            '</div>',
             '</div>',
             '<div class="item-versions">',
             _.map(item.versions, function (version, index) {
               var name        = _.escape(version.name);
-              var description = _.escape(version.description);
+              var description = _.escape(version.description).trim();
               var portalUrl   = _.escape(version.portalUrl);
 
               return [
@@ -194,9 +204,11 @@ var selectAPIDefinition = function (done) {
                 '<a href="' + portalUrl + '" class="item-link ' +
                 'item-read-more" target="_blank">Read more</a>',
                 '<div class="item-name">',
-                '<span class="hint--top" data-hint="' + description + '">',
+                description ?
+                  '<span class="hint--top" data-hint="' + description + '">' :
+                  '',
                 name,
-                '</span>',
+                description ? '</span>' : '',
                 '</div>',
                 '</div>'
               ].join('\n');
@@ -302,11 +314,12 @@ App.View.CodeCell.prototype.cellControls.push({
  */
 App.middleware.register('ramlClient:search', function (search, next, done) {
   var url = BASE_URI + '?' + qs.stringify({
-    sort:      'name',
-    ascending: true,
-    limit:     search.limit,
-    offset:    search.offset,
-    query:     search.query
+    sort:        'name',
+    ascending:   true,
+    requireRaml: true,
+    limit:       search.limit,
+    offset:      search.offset,
+    query:       search.query
   });
 
   return App.middleware.trigger('ajax', {
@@ -325,27 +338,8 @@ App.middleware.register('ramlClient:search', function (search, next, done) {
       return done(e);
     }
 
+    data.items = result.apis;
     data.total = result.total;
-
-    data.items = result.apis.map(function (item) {
-      return {
-        name: item.name,
-        versions: item.versions.map(function (version) {
-          return {
-            name: version.name,
-            portalUrl: 'https://anypoint.mulesoft.com/apiplatform/popular/#' +
-              '/portals/organizations/' + version.organizationId + '/apis/' +
-              version.apiId + '/versions/' + version.id,
-            ramlUrl: 'https://anypoint.mulesoft.com/apiplatform/repository/v2' +
-              '/organizations/' + version.organizationId + '/public/apis/' +
-              version.apiId + '/versions/' + version.id + '/files/root',
-            description: version.description,
-            deprecated: version.deprecated,
-            tags: version.tags
-          };
-        })
-      };
-    });
 
     return done(null, data);
   });
