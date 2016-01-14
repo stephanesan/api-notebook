@@ -36,9 +36,11 @@ module.exports = function (grunt) {
       src:  path.join(PLUGIN_DIR, inFile),
       dest: path.join(BUILD_DIR, 'plugins', outFile),
       options: {
-        debug:      DEV,
-        transform:  browserifyTransform,
-        standalone: name
+        browserifyOptions: {
+          debug:      DEV,
+          transform:  browserifyTransform,
+          standalone: name
+        }
       }
     };
   });
@@ -187,25 +189,31 @@ module.exports = function (grunt) {
         src: 'src/scripts/index.js',
         dest: 'build/scripts/bundle.js',
         options: {
-          debug:     DEV,
-          transform: browserifyTransform
+          browserifyOptions: {
+            debug:     DEV,
+            transform: browserifyTransform
+          }
         }
       },
       embed: {
         src: 'src/scripts/embed.js',
         dest: 'build/scripts/embed.js',
         options: {
-          debug:      DEV,
-          transform:  browserifyTransform,
-          standalone: 'Notebook'
+          browserifyOptions: {
+            debug:      DEV,
+            transform:  browserifyTransform,
+            standalone: 'Notebook'
+          }
         }
       },
       test: {
         src: ['test/scripts/common.js', 'test/scripts/helpers.js'],
-        dest: TEST_DIR + '/scripts/bundle.js',
+          dest: TEST_DIR + '/scripts/bundle.js',
         options: {
-          debug:     DEV,
-          transform: browserifyTransform
+          browserifyOptions: {
+            debug:     DEV,
+            transform: browserifyTransform
+          }
         }
       }
     }, browserifyPlugins),
