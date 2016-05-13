@@ -204,11 +204,18 @@ var ramlBodyToMarkdown = function (body) {
     }
 
     // Push the example onto the description for reference.
-    if (contentType.example) {
-      documentation.push(
-        '**Example:**',
-        '```\n' + contentType.example + '\n```'
-      );
+    if (contentType.example || contentType.examples) {
+      (function () {
+        var example = contentType.example || userfriendlifyExamples(contentType.examples);
+        if (typeof example !== 'string') {
+          example = JSON.stringify(example, null, 2);
+        }
+
+        documentation.push(
+          '**Example(s):**',
+          '```\n' + example + '\n```'
+        );
+      })();
     }
 
     // Push the schema onto the description for reference.
@@ -221,6 +228,16 @@ var ramlBodyToMarkdown = function (body) {
   });
 
   return documentation.join('\n\n');
+};
+
+var userfriendlifyExamples = function (examples) {
+  var newExamples = {};
+
+  examples.forEach(function (example, index) {
+    newExamples[example.name || ('Example #' + index + 1)] = example.value.content || example.value;
+  });
+
+  return newExamples;
 };
 
 /**

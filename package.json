@@ -58,8 +58,9 @@
   },
   "scripts": {
     "build": "grunt build",
-    "test": "grunt test",
-    "start": "grunt"
+    "grunt": "grunt",
+    "start": "grunt",
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",
