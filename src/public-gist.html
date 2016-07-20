@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>Notebook</title>
+<link rel="stylesheet" href="styles/main.css">
+<style>
+body {
+    padding: 1em;
+    background-color: #eee;
+}
+
+.application {
+    margin: 0 auto;
+    max-width: 52em;
+}
+</style>
+</head>
+<body>
+<script src="scripts/bundle.js"></script>
+
+<script>
+App.start(document.body, {
+        inject: [
+          'plugins/public-gist.js',
+          'plugins/filter-properties.js',
+          'plugins/raml-client-generator.js',
+          'plugins/function-property-filter.js'
+        ],
+        exec: [
+          'App.middleware.register(publicGistPlugin);',
+          'App.middleware.register(filterPropertiesPlugin);',
+          'App.middleware.register(ramlClientGeneratorPlugin);',
+          'App.middleware.register(functionPropertyFilterPlugin);'
+        ].join('\n'),
+        config: {
+            authentication: true,
+            savable: false,
+            plugin: {
+                ownerId: "stephanesan"
+            }
+        }
+});
+</script>
+</body>
+</html>

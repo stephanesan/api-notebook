@@ -403,7 +403,7 @@ Persistence.prototype.list = function (done) {
   return middleware.trigger(
     'persistence:list', [], _.bind(function (err, list) {
       this.get('items').set(list);
-
+      if(list && list.length>0) config.set('id', list[0].id);
       return done(err, this.get('items').toJSON());
     }, this)
   );
